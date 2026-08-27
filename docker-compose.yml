@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: motosafe-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: motosafe
+      POSTGRES_PASSWORD: motosafe_dev
+      POSTGRES_DB: motosafe_gba
+    ports:
+      - "5432:5432"
+    volumes:
+      - motosafe_db_data:/var/lib/postgresql/data
+
+volumes:
+  motosafe_db_data:

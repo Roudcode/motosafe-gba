@@ -1,0 +1,21 @@
+# Datos (nunca subir CSVs pesados al repo)
+data/
+*.csv
+*.xlsx
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+.ipynb_checkpoints/
+
+# Node / React
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
