@@ -14,6 +14,8 @@ const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
 const API_URL = 'http://localhost:8000'
+const CLAVE_REPORTES = 'motosafe_reportes'
+const CLAVE_NIVELES = 'motosafe_niveles_activos'
 
 const NIVELES = {
   bajo:    { label: 'Bajo',    color: '#3DDC84' },
@@ -108,8 +110,8 @@ function ControlesZoom() {
   const map = useMap()
   return (
     <div className="zoom-controls panel-enter" style={{ animationDelay: '0.1s' }}>
-      <button onClick={() => map.zoomIn(0.5)}>+</button>
-      <button onClick={() => map.zoomOut(0.5)}>−</button>
+      <button onClick={() => map.zoomIn(0.5)} aria-label="Acercar mapa">+</button>
+      <button onClick={() => map.zoomOut(0.5)} aria-label="Alejar mapa">−</button>
     </div>
   )
 }
@@ -157,21 +159,34 @@ function useSegundosDesde() {
   return segundos
 }
 
+function cargarDeLocalStorage(clave, porDefecto) {
+  try {
+    const guardado = localStorage.getItem(clave)
+    return guardado ? JSON.parse(guardado) : porDefecto
+  } catch {
+    return porDefecto
+  }
+}
+
 function App() {
   const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
   const [cargandoHotspots, setCargandoHotspots] = useState(true)
   const [backendError, setBackendError] = useState(false)
-  const [nivelesActivos, setNivelesActivos] = useState(new Set(Object.keys(NIVELES)))
+  const [nivelesActivos, setNivelesActivos] = useState(
+    () => new Set(cargarDeLocalStorage(CLAVE_NIVELES, Object.keys(NIVELES)))
+  )
   const [busqueda, setBusqueda] = useState('')
   const [paso, setPaso] = useState('idle')
   const [ubicacionReporte, setUbicacionReporte] = useState(null)
-  const [reportes, setReportes] = useState([])
+  const [reportes, setReportes] = useState(() => cargarDeLocalStorage(CLAVE_REPORTES, []))
   const [miUbicacion, setMiUbicacion] = useState(null)
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false)
   const [vuelo, setVuelo] = useState(null)
   const [zonaSeleccionada, setZonaSeleccionada] = useState(null)
+  const [zonaResaltada, setZonaResaltada] = useState(null)
   const [clima, setClima] = useState(null)
   const [actividadAbierta, setActividadAbierta] = useState(false)
+  const [toast, setToast] = useState(null)
   const segundos = useSegundosDesde()
 
   const [rutaAbierta, setRutaAbierta] = useState(false)
@@ -185,6 +200,11 @@ function App() {
   const [rutaSeleccionada, setRutaSeleccionada] = useState(0)
   const [rutaCargando, setRutaCargando] = useState(false)
   const [rutaError, setRutaError] = useState(null)
+
+  const mostrarToast = (texto) => {
+    setToast(texto)
+    setTimeout(() => setToast(null), 2200)
+  }
 
   const cargarHotspots = () => {
     setCargandoHotspots(true)
@@ -216,7 +236,6 @@ function App() {
     cargarHotspots()
   }, [])
 
-  // Si el backend está caído, reintenta solo cada 5 segundos hasta que vuelva.
   useEffect(() => {
     if (!backendError) return
     const id = setInterval(cargarHotspots, 5000)
@@ -230,7 +249,14 @@ function App() {
       .catch(() => setClima(null))
   }, [])
 
-  // Escape cierra cualquier panel abierto, el que sea.
+  // Persistencia liviana en el propio navegador (no toca el backend).
+  useEffect(() => {
+    localStorage.setItem(CLAVE_REPORTES, JSON.stringify(reportes))
+  }, [reportes])
+  useEffect(() => {
+    localStorage.setItem(CLAVE_NIVELES, JSON.stringify([...nivelesActivos]))
+  }, [nivelesActivos])
+
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key !== 'Escape') return
@@ -251,6 +277,7 @@ function App() {
       return next
     })
   }
+  const restablecerFiltros = () => setNivelesActivos(new Set(Object.keys(NIVELES)))
 
   const pedirUbicacion = () => {
     setBuscandoUbicacion(true)
@@ -293,6 +320,13 @@ function App() {
     }
     setReportes((prev) => [nuevo, ...prev])
     setPaso('idle')
+    mostrarToast('✓ Reporte enviado — gracias por sumar el dato')
+  }
+
+  const borrarReportes = () => {
+    setReportes([])
+    setActividadAbierta(false)
+    mostrarToast('Reportes de esta sesión borrados')
   }
 
   const abrirPanelRuta = () => {
@@ -392,6 +426,9 @@ function App() {
     if (busqueda.trim().length > 2 && zonasFiltradas.length === 1) {
       const z = zonasFiltradas[0]
       setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 })
+      setZonaResaltada(z.id)
+      const t = setTimeout(() => setZonaResaltada(null), 3000)
+      return () => clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda])
@@ -451,6 +488,7 @@ function App() {
       .slice(0, 4)
   }, [zonasFiltradas, referencia])
 
+  const hayFiltrosApagados = nivelesActivos.size < Object.keys(NIVELES).length
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && reportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
   if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
@@ -483,9 +521,11 @@ function App() {
         </div>
       </header>
 
+      {toast && <div className="toast panel-enter">{toast}</div>}
+
       {backendError && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
-          ⚠ Sin conexión con el backend (localhost:8000). Reintentando solo cada 5s — fijate que "uvicorn main:app --reload" esté corriendo.
+          ⚠ Sin conexión con el backend (localhost:8000). Reintentando cada 5s.
           <button onClick={cargarHotspots}>Reintentar ahora</button>
         </div>
       )}
@@ -493,8 +533,8 @@ function App() {
       {actividadAbierta && reportes.length > 0 && (
         <div className="actividad-panel panel-enter hazard-edge">
           <div className="actividad-header">
-            <span className="cercanas-title">Actividad reciente (esta sesión)</span>
-            <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)}>✕</button>
+            <span className="cercanas-title">Actividad reciente</span>
+            <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad">✕</button>
           </div>
           {reportes.map((rep) => {
             const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
@@ -508,27 +548,28 @@ function App() {
               </button>
             )
           })}
+          <button className="actividad-borrar" onClick={borrarReportes}>Borrar mis reportes</button>
         </div>
       )}
 
       <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
         <span className="searchbar-icon">🔍</span>
-        <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-        {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')}>✕</button>}
+        <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar zona o avenida" />
+        {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda">✕</button>}
       </div>
 
       {rutaAbierta && (
         <div className="ruta-form panel-enter hazard-edge">
           <div className="ruta-form-fila">
             <span className="ruta-form-punto ruta-form-punto-origen" />
-            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} />
-            <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" onClick={() => marcarEnMapa('origen')}>📍</button>
+            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} aria-label="Origen de la ruta" />
+            <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}>📍</button>
           </div>
-          <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar">⇅</button>
+          <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar" aria-label="Intercambiar origen y destino">⇅</button>
           <div className="ruta-form-fila">
             <span className="ruta-form-punto ruta-form-punto-destino" />
-            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} />
-            <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" onClick={() => marcarEnMapa('destino')}>📍</button>
+            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} aria-label="Destino de la ruta" />
+            <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}>📍</button>
           </div>
           {campoActivo && <p className="ruta-form-hint">Tocá el mapa para marcar el {campoActivo}.</p>}
           <button className="ruta-form-miubicacion" onClick={usarMiUbicacionComoOrigen}>🎯 Usar mi ubicación como origen</button>
@@ -592,19 +633,20 @@ function App() {
         <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
           {zonasFiltradas.map((zona) => {
             const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
+            const resaltada = zonaResaltada === zona.id
             return (
               <CircleMarker
                 key={zona.id}
                 center={[zona.lat, zona.lng]}
-                radius={zona.ajuste.nivel === 'critico' ? 11 : 8}
+                radius={resaltada ? 14 : zona.ajuste.nivel === 'critico' ? 11 : 8}
                 pathOptions={{
-                  color: cruzada ? '#4FA8E8' : NIVELES[zona.ajuste.nivel].color,
+                  color: cruzada ? '#4FA8E8' : resaltada ? '#FFC933' : NIVELES[zona.ajuste.nivel].color,
                   fillColor: NIVELES[zona.ajuste.nivel].color,
                   fillOpacity: 0.75,
-                  weight: cruzada || zona.ajuste.subio ? 3 : 2,
+                  weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
                   nivelData: zona.ajuste.nivel,
                 }}
-                className={zona.ajuste.nivel === 'critico' ? 'pulse-marker' : ''}
+                className={zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}
                 eventHandlers={{ click: () => setZonaSeleccionada(zona) }}
               />
             )
@@ -633,7 +675,7 @@ function App() {
         <div className="ruta-resumen panel-enter hazard-edge">
           <div className="ruta-resumen-header">
             <span className="cercanas-title">Opciones de ruta</span>
-            <button className="ruta-resumen-editar" onClick={editarRuta}>✏️</button>
+            <button className="ruta-resumen-editar" onClick={editarRuta} aria-label="Editar origen y destino">✏️</button>
           </div>
           {rutasConScore.length > 1 && (
             <div className="ruta-prioridad">
@@ -670,7 +712,7 @@ function App() {
                 </div>
               ))}
               {zonasCruzadasOrdenadas.length > 6 && (
-                <p className="ruta-resumen-mas">+ {zonasCruzadasOrdenadas.length - 6} zonas más de menor riesgo en el trayecto</p>
+                <p className="ruta-resumen-mas">+ {zonasCruzadasOrdenadas.length - 6} zonas más de menor riesgo</p>
               )}
             </div>
           )}
@@ -680,7 +722,7 @@ function App() {
 
       {rutasCalculadas.length === 0 && !rutaAbierta && zonaSeleccionada && (
         <div className="detalle-panel panel-enter hazard-edge">
-          <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)}>✕</button>
+          <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)} aria-label="Cerrar detalle de zona">✕</button>
           <span className="popup-nivel" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
             Riesgo {NIVELES[zonaSeleccionada.ajuste.nivel].label}
           </span>
@@ -715,7 +757,10 @@ function App() {
       )}
 
       <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
-        <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
+        <div className="legend-header">
+          <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
+          {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+        </div>
         {Object.entries(NIVELES).map(([key, val]) => (
           <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
             <span className="legend-swatch" style={{ background: val.color }} />
@@ -729,7 +774,7 @@ function App() {
         <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}>🧭 <span>Trazar ruta</span></button>
       )}
 
-      <button className="locate-fab panel-enter" style={{ animationDelay: '0.25s' }} onClick={pedirUbicacion} disabled={buscandoUbicacion}>
+      <button className="locate-fab panel-enter" style={{ animationDelay: '0.25s' }} onClick={pedirUbicacion} disabled={buscandoUbicacion} aria-label="Centrar en mi ubicación">
         {buscandoUbicacion ? <span className="spinner" /> : '🎯'}
       </button>
 
