@@ -10,12 +10,14 @@ import './App.css'
 const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
 const UMBRAL_CRUCE_KM = 0.6
 const UMBRAL_REPORTE_KM = 0.5
+const UMBRAL_ALERTA_KM = 0.25
 const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
 const API_URL = 'http://localhost:8000'
 const CLAVE_REPORTES = 'motosafe_reportes'
 const CLAVE_NIVELES = 'motosafe_niveles_activos'
+const CLAVE_FAVORITOS = 'motosafe_favoritos'
 
 const NIVELES = {
   bajo:    { label: 'Bajo',    color: '#3DDC84' },
@@ -86,6 +88,48 @@ async function geocodificar(texto) {
   }
 }
 
+function reproducirBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.15, ctx.currentTime)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.3)
+  } catch { /* silencioso si el navegador bloquea audio sin interacción previa */ }
+}
+
+function textoManiobra(paso) {
+  const dir = {
+    left: 'a la izquierda', right: 'a la derecha',
+    'slight left': 'levemente a la izquierda', 'slight right': 'levemente a la derecha',
+    'sharp left': 'bruscamente a la izquierda', 'sharp right': 'bruscamente a la derecha',
+    straight: 'derecho', uturn: 'en U',
+  }[paso.modificador] || ''
+  const conCalle = paso.calle && paso.calle !== 'la vía'
+  if (paso.tipo === 'depart') return conCalle ? `Salí por ${paso.calle}` : 'Salí y continuá'
+  if (paso.tipo === 'arrive') return 'Llegaste a destino'
+  if (paso.tipo === 'turn') return conCalle ? `Doblá ${dir} en ${paso.calle}` : `Doblá ${dir}`
+  if (paso.tipo === 'roundabout' || paso.tipo === 'rotary') return conCalle ? `En la rotonda, tomá ${paso.calle}` : 'Tomá la rotonda'
+  if (paso.tipo === 'merge') return conCalle ? `Incorporate a ${paso.calle}` : 'Incorporate a la vía'
+  if (paso.tipo === 'fork') return conCalle ? `Mantenete ${dir} hacia ${paso.calle}` : `Mantenete ${dir}`
+  if (paso.tipo === 'end of road') return conCalle ? `Al final de la calle, doblá ${dir} hacia ${paso.calle}` : `Al final de la calle, doblá ${dir}`
+  return conCalle ? `Continuá por ${paso.calle}` : 'Continuá derecho'
+}
+
+function iconoManiobra(paso) {
+  if (paso.tipo === 'arrive') return '🏁'
+  if (paso.tipo === 'depart') return '🚦'
+  if (paso.tipo === 'roundabout' || paso.tipo === 'rotary') return '🔄'
+  if (paso.modificador?.includes('left')) return '⬅️'
+  if (paso.modificador?.includes('right')) return '➡️'
+  if (paso.modificador === 'uturn') return '↩️'
+  return '⬆️'
+}
+
 function crearIconoCluster(cluster) {
   const count = cluster.getChildCount()
   const hijos = cluster.getAllChildMarkers()
@@ -103,6 +147,14 @@ function VueloControlado({ destino }) {
   useEffect(() => {
     if (destino) map.flyTo([destino.lat, destino.lng], destino.zoom || 15, { duration: 1.4, easeLinearity: 0.15 })
   }, [destino, map])
+  return null
+}
+
+function SeguimientoEnVivo({ activo, punto }) {
+  const map = useMap()
+  useEffect(() => {
+    if (activo && punto) map.panTo([punto.lat, punto.lng], { animate: true, duration: 0.8 })
+  }, [activo, punto, map])
   return null
 }
 
@@ -179,6 +231,7 @@ function App() {
   const [paso, setPaso] = useState('idle')
   const [ubicacionReporte, setUbicacionReporte] = useState(null)
   const [reportes, setReportes] = useState(() => cargarDeLocalStorage(CLAVE_REPORTES, []))
+  const [favoritos, setFavoritos] = useState(() => cargarDeLocalStorage(CLAVE_FAVORITOS, { casa: null, trabajo: null }))
   const [miUbicacion, setMiUbicacion] = useState(null)
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false)
   const [vuelo, setVuelo] = useState(null)
@@ -186,6 +239,8 @@ function App() {
   const [zonaResaltada, setZonaResaltada] = useState(null)
   const [clima, setClima] = useState(null)
   const [actividadAbierta, setActividadAbierta] = useState(false)
+  const [statsAbierto, setStatsAbierto] = useState(false)
+  const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [toast, setToast] = useState(null)
   const segundos = useSegundosDesde()
 
@@ -200,6 +255,13 @@ function App() {
   const [rutaSeleccionada, setRutaSeleccionada] = useState(0)
   const [rutaCargando, setRutaCargando] = useState(false)
   const [rutaError, setRutaError] = useState(null)
+  const [pasoActual, setPasoActual] = useState(1)
+
+  const [modoViaje, setModoViaje] = useState(false)
+  const [vistaNavegacion, setVistaNavegacion] = useState(false)
+  const [watchId, setWatchId] = useState(null)
+  const [zonasAlertadas, setZonasAlertadas] = useState(new Set())
+  const [alertaViaje, setAlertaViaje] = useState(null)
 
   const mostrarToast = (texto) => {
     setToast(texto)
@@ -220,6 +282,9 @@ function App() {
           lat: h.latitud,
           lng: h.longitud,
           nivel: h.nivel_riesgo,
+          cantidad: h.cantidad_siniestros,
+          mortales: h.mortales,
+          graves: h.graves,
           motivo: `${h.cantidad_siniestros} siniestros de motociclistas registrados, ${h.mortales} mortales, ${h.graves} graves.`,
         }))
         setZonasRiesgo(zonasFormateadas)
@@ -249,13 +314,13 @@ function App() {
       .catch(() => setClima(null))
   }, [])
 
-  // Persistencia liviana en el propio navegador (no toca el backend).
+  useEffect(() => { localStorage.setItem(CLAVE_REPORTES, JSON.stringify(reportes)) }, [reportes])
+  useEffect(() => { localStorage.setItem(CLAVE_NIVELES, JSON.stringify([...nivelesActivos])) }, [nivelesActivos])
+  useEffect(() => { localStorage.setItem(CLAVE_FAVORITOS, JSON.stringify(favoritos)) }, [favoritos])
+
   useEffect(() => {
-    localStorage.setItem(CLAVE_REPORTES, JSON.stringify(reportes))
-  }, [reportes])
-  useEffect(() => {
-    localStorage.setItem(CLAVE_NIVELES, JSON.stringify([...nivelesActivos]))
-  }, [nivelesActivos])
+    return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
+  }, [watchId])
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -263,12 +328,14 @@ function App() {
       if (rutaAbierta) { cerrarTodoRuta(); return }
       if (paso === 'eligiendo') { setPaso('idle'); return }
       if (zonaSeleccionada) { setZonaSeleccionada(null); return }
+      if (statsAbierto) { setStatsAbierto(false); return }
       if (actividadAbierta) { setActividadAbierta(false); return }
+      if (herramientasAbiertas) { setHerramientasAbiertas(false); return }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rutaAbierta, paso, zonaSeleccionada, actividadAbierta])
+  }, [rutaAbierta, paso, zonaSeleccionada, statsAbierto, actividadAbierta, herramientasAbiertas])
 
   const toggleNivel = (nivel) => {
     setNivelesActivos((prev) => {
@@ -292,6 +359,29 @@ function App() {
       () => setBuscandoUbicacion(false),
       { timeout: 6000 }
     )
+  }
+
+  const toggleModoViaje = () => {
+    if (modoViaje) {
+      if (watchId != null) navigator.geolocation.clearWatch(watchId)
+      setWatchId(null)
+      setModoViaje(false)
+      setVistaNavegacion(false)
+      setZonasAlertadas(new Set())
+      setAlertaViaje(null)
+      mostrarToast('Modo Viaje desactivado')
+      return
+    }
+    if (!navigator.geolocation) { mostrarToast('Tu navegador no soporta geolocalización'); return }
+    const id = navigator.geolocation.watchPosition(
+      (pos) => setMiUbicacion({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => mostrarToast('No se pudo obtener tu ubicación en vivo'),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    )
+    setWatchId(id)
+    setModoViaje(true)
+    setZonasAlertadas(new Set())
+    mostrarToast('🏍️ Modo Viaje activado')
   }
 
   const iniciarReporte = () => {
@@ -333,6 +423,7 @@ function App() {
     setRutaAbierta(true)
     setZonaSeleccionada(null)
     setActividadAbierta(false)
+    setStatsAbierto(false)
     setRutasCalculadas([])
     setRutaError(null)
   }
@@ -341,6 +432,7 @@ function App() {
     setOrigenTexto(''); setDestinoTexto('')
     setOrigenPunto(null); setDestinoPunto(null)
     setRutasCalculadas([]); setRutaSeleccionada(0); setRutaError(null)
+    setPasoActual(1)
   }
   const editarRuta = () => {
     setRutasCalculadas([]); setRutaError(null); setRutaAbierta(true)
@@ -371,6 +463,17 @@ function App() {
     setCampoActivo(null)
   }
 
+  const usarFavorito = (fav) => { setDestinoTexto(fav.texto); setDestinoPunto(fav.punto) }
+  const guardarFavorito = async (clave, label) => {
+    let punto = destinoPunto
+    if (!punto) {
+      punto = await geocodificar(destinoTexto)
+      if (!punto) { mostrarToast(`No pudimos ubicar "${destinoTexto}" para guardarlo`); return }
+    }
+    setFavoritos((prev) => ({ ...prev, [clave]: { texto: destinoTexto, punto } }))
+    mostrarToast(`${label} guardado`)
+  }
+
   const buscarRuta = async () => {
     setRutaError(null)
     if (!origenTexto.trim() || !destinoTexto.trim()) { setRutaError('Completá origen y destino.'); return }
@@ -394,7 +497,7 @@ function App() {
   const calcularRuta = async (a, b) => {
     setRutaCargando(true); setRutaError(null)
     try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&alternatives=3`
+      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&alternatives=3&steps=true`
       const res = await fetch(url)
       if (!res.ok) throw new Error('OSRM respondió con error')
       const data = await res.json()
@@ -403,9 +506,17 @@ function App() {
         coords: r.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
         km: (r.distance / 1000).toFixed(1),
         min: Math.round(r.duration / 60),
+        pasos: (r.legs?.[0]?.steps || []).map((s) => ({
+          tipo: s.maneuver.type,
+          modificador: s.maneuver.modifier,
+          calle: s.name || 'la vía',
+          lat: s.maneuver.location[1],
+          lng: s.maneuver.location[0],
+        })),
       }))
       setRutasCalculadas(rutas)
       setRutaSeleccionada(0)
+      setPasoActual(1)
     } catch {
       setRutaError('No se pudo calcular la ruta (servidor de demo caído o sin conexión). Probá de nuevo.')
     } finally {
@@ -416,6 +527,35 @@ function App() {
   const zonasAjustadas = useMemo(() => {
     return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
   }, [ZONAS_RIESGO, clima, reportes])
+
+  useEffect(() => {
+    if (!modoViaje || !miUbicacion || zonasAjustadas.length === 0) return
+    const candidatas = zonasAjustadas.filter(
+      (z) => (z.ajuste.nivel === 'alto' || z.ajuste.nivel === 'critico')
+        && !zonasAlertadas.has(z.id)
+        && distanciaKm(miUbicacion, z) <= UMBRAL_ALERTA_KM
+    )
+    if (candidatas.length > 0) {
+      const zona = candidatas[0]
+      setAlertaViaje(zona)
+      setZonasAlertadas((prev) => new Set(prev).add(zona.id))
+      if (navigator.vibrate) navigator.vibrate([250, 100, 250])
+      reproducirBeep()
+      setTimeout(() => setAlertaViaje(null), 6000)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [miUbicacion, modoViaje, zonasAjustadas])
+
+  useEffect(() => {
+    if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
+    const pasos = rutasCalculadas[rutaSeleccionada]?.pasos || []
+    if (pasoActual >= pasos.length) return
+    const objetivo = pasos[pasoActual]
+    if (distanciaKm(miUbicacion, objetivo) <= 0.03) {
+      setPasoActual((p) => Math.min(p + 1, pasos.length - 1))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [miUbicacion, modoViaje])
 
   const zonasFiltradas = zonasAjustadas.filter(
     (z) => nivelesActivos.has(z.ajuste.nivel) && z.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -480,6 +620,19 @@ function App() {
     return acc
   }, {})
 
+  const indiceRiesgo = useMemo(() => {
+    if (zonasAjustadas.length === 0) return 0
+    const total = zonasAjustadas.reduce((acc, z) => acc + PESO_RIESGO[z.ajuste.nivel], 0)
+    const maximoPosible = zonasAjustadas.length * PESO_RIESGO.critico
+    return Math.round((total / maximoPosible) * 100)
+  }, [zonasAjustadas])
+
+  const totalSiniestros = useMemo(() => zonasAjustadas.reduce((acc, z) => acc + (z.cantidad || 0), 0), [zonasAjustadas])
+
+  const top5Peligrosas = useMemo(() => {
+    return [...zonasAjustadas].sort((a, b) => (b.cantidad || 0) - (a.cantidad || 0)).slice(0, 5)
+  }, [zonasAjustadas])
+
   const referencia = miUbicacion || CENTRO_GBA
   const cercanas = useMemo(() => {
     return [...zonasFiltradas]
@@ -488,10 +641,23 @@ function App() {
       .slice(0, 4)
   }, [zonasFiltradas, referencia])
 
+  const compartirRuta = async () => {
+    const r = rutasConScore[rutaSeleccionada]
+    const cruces = zonasCruzadasPorRuta[rutaSeleccionada]?.length || 0
+    const texto = `🏍️ MotoSafe GBA\nEn camino: ${r.km} km, ~${r.min} min.\n${cruces === 0 ? 'Ruta sin zonas de riesgo registradas.' : `Cruza ${cruces} zona(s) de riesgo.`}`
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Mi ruta en MotoSafe GBA', text: texto }) } catch { /* usuario canceló */ }
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(texto)
+      mostrarToast('📋 Ruta copiada al portapapeles')
+    }
+  }
+
   const hayFiltrosApagados = nivelesActivos.size < Object.keys(NIVELES).length
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && reportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
-  if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
+  if (modoViaje) textoTopbar = '🏍️ Modo Viaje · siguiendo tu ubicación'
+  else if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
   else if (cargandoHotspots) textoTopbar = 'Conectando con el servidor de datos...'
   else if (reportes.length > 0) textoTopbar = `${reportes.length} reporte${reportes.length > 1 ? 's' : ''} tuyo${reportes.length > 1 ? 's' : ''} · hace ${segundos}s`
   else if (mostrarAlerta) textoTopbar = `⚠ ${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
@@ -512,7 +678,7 @@ function App() {
             </div>
           )}
           <div
-            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${reportes.length > 0 ? 'clickeable' : ''}`}
+            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${reportes.length > 0 ? 'clickeable' : ''}`}
             onClick={() => reportes.length > 0 && setActividadAbierta((v) => !v)}
           >
             <span className="status-dot" />
@@ -522,6 +688,27 @@ function App() {
       </header>
 
       {toast && <div className="toast panel-enter">{toast}</div>}
+
+      {modoViaje && rutasCalculadas.length > 0 && rutasCalculadas[rutaSeleccionada]?.pasos?.[pasoActual] && (
+        <div className="navegacion-panel panel-enter">
+          <span className="navegacion-icono">{iconoManiobra(rutasCalculadas[rutaSeleccionada].pasos[pasoActual])}</span>
+          <div className="navegacion-texto">
+            <strong>{textoManiobra(rutasCalculadas[rutaSeleccionada].pasos[pasoActual])}</strong>
+            {miUbicacion && (
+              <span className="navegacion-distancia">
+                {Math.round(distanciaKm(miUbicacion, rutasCalculadas[rutaSeleccionada].pasos[pasoActual]) * 1000)} m
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {alertaViaje && (
+        <div className={`alerta-viaje panel-enter ${alertaViaje.ajuste.nivel === 'critico' ? 'critica' : 'alta'}`}>
+          ⚠️ Te acercás a una zona de riesgo {NIVELES[alertaViaje.ajuste.nivel].label.toUpperCase()}
+          <span className="alerta-viaje-detalle">{alertaViaje.nombre}</span>
+        </div>
+      )}
 
       {backendError && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
@@ -552,6 +739,39 @@ function App() {
         </div>
       )}
 
+      {statsAbierto && (
+        <div className="stats-panel panel-enter hazard-edge">
+          <div className="stats-header">
+            <span className="cercanas-title">Estadísticas de la Ciudad</span>
+            <button className="detalle-cerrar" onClick={() => setStatsAbierto(false)} aria-label="Cerrar estadísticas">✕</button>
+          </div>
+          <p className="stats-subtitulo">{totalSiniestros.toLocaleString('es-AR')} siniestros históricos en {zonasAjustadas.length} zonas (CABA)</p>
+          <div className="stats-indice">
+            <span className="stats-indice-numero" style={{ color: indiceRiesgo >= 60 ? '#FF3B3B' : indiceRiesgo >= 35 ? '#FF8C42' : '#3DDC84' }}>{indiceRiesgo}</span>
+            <span className="stats-indice-label">Índice de riesgo del mapa visible (0-100)</span>
+          </div>
+          <div className="stats-barras">
+            {Object.entries(NIVELES).map(([key, val]) => (
+              <div className="stats-barra-fila" key={key}>
+                <span className="stats-barra-label">{val.label}</span>
+                <div className="stats-barra-track">
+                  <div className="stats-barra-fill" style={{ width: `${zonasAjustadas.length ? (conteos[key] / zonasAjustadas.length) * 100 : 0}%`, background: val.color }} />
+                </div>
+                <span className="stats-barra-num">{conteos[key]}</span>
+              </div>
+            ))}
+          </div>
+          <span className="stats-top-titulo">Top 5 zonas más siniestradas</span>
+          {top5Peligrosas.map((z, i) => (
+            <button key={z.id} className="stats-top-item" onClick={() => { setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 }); setStatsAbierto(false) }}>
+              <span className="stats-top-rank">#{i + 1}</span>
+              <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />
+              <span className="cercanas-nombre">{z.nombre}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
         <span className="searchbar-icon">🔍</span>
         <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar zona o avenida" />
@@ -570,6 +790,22 @@ function App() {
             <span className="ruta-form-punto ruta-form-punto-destino" />
             <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} aria-label="Destino de la ruta" />
             <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}>📍</button>
+          </div>
+          <div className="favoritos-fila">
+            {favoritos.casa ? (
+              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.casa)}>🏠 Casa</button>
+            ) : destinoTexto.trim() ? (
+              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('casa', '🏠 Casa')}>💾 Guardar como Casa</button>
+            ) : (
+              <button className="favorito-chip favorito-chip-vacio" disabled>🏠 Casa</button>
+            )}
+            {favoritos.trabajo ? (
+              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.trabajo)}>💼 Trabajo</button>
+            ) : destinoTexto.trim() ? (
+              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('trabajo', '💼 Trabajo')}>💾 Guardar como Trabajo</button>
+            ) : (
+              <button className="favorito-chip favorito-chip-vacio" disabled>💼 Trabajo</button>
+            )}
           </div>
           {campoActivo && <p className="ruta-form-hint">Tocá el mapa para marcar el {campoActivo}.</p>}
           <button className="ruta-form-miubicacion" onClick={usarMiUbicacionComoOrigen}>🎯 Usar mi ubicación como origen</button>
@@ -590,86 +826,89 @@ function App() {
         <div className="ruta-banner ruta-banner-error panel-enter">{rutaError}<button onClick={cerrarTodoRuta}>Cerrar</button></div>
       )}
 
-      <MapContainer
-        center={[CENTRO_GBA.lat, CENTRO_GBA.lng]}
-        zoom={11}
-        zoomControl={false}
-        zoomSnap={0.5}
-        zoomDelta={0.5}
-        preferCanvas={true}
-        className="map"
-      >
-        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <ControlesZoom />
-        <EscalaMapa />
-        <VueloControlado destino={vuelo} />
-        <ClicksDeMapa campoActivo={campoActivo} onClick={clicMapa} />
+      <div className={`mapa-wrapper ${vistaNavegacion ? 'tilt' : ''}`}>
+        <MapContainer
+          center={[CENTRO_GBA.lat, CENTRO_GBA.lng]}
+          zoom={11}
+          zoomControl={false}
+          zoomSnap={0.5}
+          zoomDelta={0.5}
+          preferCanvas={true}
+          className="map"
+        >
+          <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <ControlesZoom />
+          <EscalaMapa />
+          <VueloControlado destino={vuelo} />
+          <SeguimientoEnVivo activo={modoViaje} punto={miUbicacion} />
+          <ClicksDeMapa campoActivo={campoActivo} onClick={clicMapa} />
 
-        {rutasCalculadas.map((r, i) => (
-          <Polyline
-            key={i}
-            positions={r.coords}
-            pathOptions={{
-              color: i === rutaSeleccionada ? '#4FA8E8' : '#6B7178',
-              weight: i === rutaSeleccionada ? 5 : 4,
-              opacity: i === rutaSeleccionada ? 0.9 : 0.45,
-              dashArray: i === rutaSeleccionada ? null : '6 6',
-            }}
-            eventHandlers={{ click: () => setRutaSeleccionada(i) }}
-          />
-        ))}
+          {rutasCalculadas.map((r, i) => (
+            <Polyline
+              key={i}
+              positions={r.coords}
+              pathOptions={{
+                color: i === rutaSeleccionada ? '#4FA8E8' : '#6B7178',
+                weight: i === rutaSeleccionada ? 5 : 4,
+                opacity: i === rutaSeleccionada ? 0.9 : 0.45,
+                dashArray: i === rutaSeleccionada ? null : '6 6',
+              }}
+              eventHandlers={{ click: () => setRutaSeleccionada(i) }}
+            />
+          ))}
 
-        {origenPunto && (
-          <CircleMarker center={[origenPunto.lat, origenPunto.lng]} radius={8} pathOptions={{ color: '#3DDC84', fillColor: '#3DDC84', fillOpacity: 1, weight: 3 }}>
-            <Popup>Origen</Popup>
-          </CircleMarker>
-        )}
-        {destinoPunto && (
-          <CircleMarker center={[destinoPunto.lat, destinoPunto.lng]} radius={8} pathOptions={{ color: '#FF3B3B', fillColor: '#FF3B3B', fillOpacity: 1, weight: 3 }}>
-            <Popup>Destino</Popup>
-          </CircleMarker>
-        )}
+          {origenPunto && (
+            <CircleMarker center={[origenPunto.lat, origenPunto.lng]} radius={8} pathOptions={{ color: '#3DDC84', fillColor: '#3DDC84', fillOpacity: 1, weight: 3 }}>
+              <Popup>Origen</Popup>
+            </CircleMarker>
+          )}
+          {destinoPunto && (
+            <CircleMarker center={[destinoPunto.lat, destinoPunto.lng]} radius={8} pathOptions={{ color: '#FF3B3B', fillColor: '#FF3B3B', fillOpacity: 1, weight: 3 }}>
+              <Popup>Destino</Popup>
+            </CircleMarker>
+          )}
 
-        <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
-          {zonasFiltradas.map((zona) => {
-            const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
-            const resaltada = zonaResaltada === zona.id
-            return (
-              <CircleMarker
-                key={zona.id}
-                center={[zona.lat, zona.lng]}
-                radius={resaltada ? 14 : zona.ajuste.nivel === 'critico' ? 11 : 8}
-                pathOptions={{
-                  color: cruzada ? '#4FA8E8' : resaltada ? '#FFC933' : NIVELES[zona.ajuste.nivel].color,
-                  fillColor: NIVELES[zona.ajuste.nivel].color,
-                  fillOpacity: 0.75,
-                  weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
-                  nivelData: zona.ajuste.nivel,
-                }}
-                className={zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}
-                eventHandlers={{ click: () => setZonaSeleccionada(zona) }}
-              />
-            )
-          })}
-        </MarkerClusterGroup>
+          <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
+            {zonasFiltradas.map((zona) => {
+              const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
+              const resaltada = zonaResaltada === zona.id
+              return (
+                <CircleMarker
+                  key={zona.id}
+                  center={[zona.lat, zona.lng]}
+                  radius={resaltada ? 14 : zona.ajuste.nivel === 'critico' ? 11 : 8}
+                  pathOptions={{
+                    color: cruzada ? '#4FA8E8' : resaltada ? '#FFC933' : NIVELES[zona.ajuste.nivel].color,
+                    fillColor: NIVELES[zona.ajuste.nivel].color,
+                    fillOpacity: 0.75,
+                    weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
+                    nivelData: zona.ajuste.nivel,
+                  }}
+                  className={zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}
+                  eventHandlers={{ click: () => setZonaSeleccionada(zona) }}
+                />
+              )
+            })}
+          </MarkerClusterGroup>
 
-        {reportes.map((rep) => (
-          <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color: '#FFC933', fillColor: '#FFC933', fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">
-            <Popup>
-              <div className="popup-content">
-                <span className="popup-nivel" style={{ color: '#FFC933' }}>Tu reporte · {rep.hora}</span>
-                <strong>{CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label}</strong>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
+          {reportes.map((rep) => (
+            <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color: '#FFC933', fillColor: '#FFC933', fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">
+              <Popup>
+                <div className="popup-content">
+                  <span className="popup-nivel" style={{ color: '#FFC933' }}>Tu reporte · {rep.hora}</span>
+                  <strong>{CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label}</strong>
+                </div>
+              </Popup>
+            </CircleMarker>
+          ))}
 
-        {miUbicacion && (
-          <CircleMarker center={[miUbicacion.lat, miUbicacion.lng]} radius={7} pathOptions={{ color: '#4FA8E8', fillColor: '#4FA8E8', fillOpacity: 0.9, weight: 3 }} className="pulse-marker-yo">
-            <Popup>Tu ubicación actual</Popup>
-          </CircleMarker>
-        )}
-      </MapContainer>
+          {miUbicacion && (
+            <CircleMarker center={[miUbicacion.lat, miUbicacion.lng]} radius={7} pathOptions={{ color: '#4FA8E8', fillColor: '#4FA8E8', fillOpacity: 0.9, weight: 3 }} className="pulse-marker-yo">
+              <Popup>Tu ubicación actual</Popup>
+            </CircleMarker>
+          )}
+        </MapContainer>
+      </div>
 
       {rutasCalculadas.length > 0 && (
         <div className="ruta-resumen panel-enter hazard-edge">
@@ -716,7 +955,10 @@ function App() {
               )}
             </div>
           )}
-          <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
+          <div className="ruta-resumen-acciones-finales">
+            <button className="ruta-resumen-compartir" onClick={compartirRuta}>📤 Compartir</button>
+            <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
+          </div>
         </div>
       )}
 
@@ -741,7 +983,7 @@ function App() {
         </div>
       )}
 
-      {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && (
+      {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && !statsAbierto && (
         <div className="cercanas-panel panel-enter hazard-edge" style={{ animationDelay: '0.15s' }}>
           <span className="cercanas-title">Zonas cercanas {miUbicacion ? '· a vos' : '· al centro del GBA'}</span>
           {cargandoHotspots && <p className="cercanas-empty">Cargando...</p>}
@@ -774,9 +1016,33 @@ function App() {
         <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}>🧭 <span>Trazar ruta</span></button>
       )}
 
-      <button className="locate-fab panel-enter" style={{ animationDelay: '0.25s' }} onClick={pedirUbicacion} disabled={buscandoUbicacion} aria-label="Centrar en mi ubicación">
-        {buscandoUbicacion ? <span className="spinner" /> : '🎯'}
-      </button>
+      <div className="herramientas-stack">
+        {herramientasAbiertas && (
+          <div className="herramientas-menu panel-enter">
+            <button onClick={() => { pedirUbicacion(); setHerramientasAbiertas(false) }}>
+              {buscandoUbicacion ? <span className="spinner" /> : '🎯'} Mi ubicación
+            </button>
+            <button className={modoViaje ? 'activo' : ''} onClick={toggleModoViaje}>
+              🏍️ Modo Viaje {modoViaje ? '· activo' : ''}
+            </button>
+            {modoViaje && (
+              <button className={vistaNavegacion ? 'activo' : ''} onClick={() => setVistaNavegacion((v) => !v)}>
+                📐 Vista inclinada {vistaNavegacion ? '· activa' : ''}
+              </button>
+            )}
+            <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false) }}>
+              📊 Estadísticas
+            </button>
+          </div>
+        )}
+        <button
+          className={`herramientas-fab ${herramientasAbiertas ? 'activo' : ''}`}
+          onClick={() => setHerramientasAbiertas((v) => !v)}
+          aria-label="Más herramientas"
+        >
+          {herramientasAbiertas ? '✕' : '🔧'}
+        </button>
+      </div>
 
       <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte}>
         {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? '✕' : '⚠'}
