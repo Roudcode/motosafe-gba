@@ -7,6 +7,9 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
 .map { height: 100%; width: 100%; }
 
 .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6); }
+.leaflet-fade-anim .leaflet-tile { transition: opacity 0.3s ease; }
+.leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.leaflet-interactive { transition: fill 0.4s ease, stroke 0.4s ease, opacity 0.3s ease; }
 
 @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .panel-enter { animation: panelIn 0.45s ease backwards; }
@@ -45,6 +48,8 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
 .topbar-status.alerta { color: #FF3B3B; border-color: rgba(255,59,59,0.4); background: rgba(255,59,59,0.12); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #3DDC84; flex-shrink: 0; }
 .topbar-status.alerta .status-dot { background: #FF3B3B; }
+
+.backend-banner { top: 62px !important; }
 
 .actividad-panel {
   position: absolute; top: 62px; right: 20px; z-index: 1001; width: 240px;
@@ -114,8 +119,9 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
   display: flex; align-items: center; gap: 12px;
   background: #1F2328; border: 1px solid #FFC933; border-radius: 20px;
   padding: 10px 18px; font-size: 13px; color: #E8EAED; font-family: 'Inter', sans-serif;
+  max-width: 90vw;
 }
-.ruta-banner button { background: none; border: 1px solid #2C3138; color: #8A9099; border-radius: 12px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
+.ruta-banner button { background: none; border: 1px solid #2C3138; color: #8A9099; border-radius: 12px; padding: 3px 10px; font-size: 11px; cursor: pointer; flex-shrink: 0; }
 .ruta-banner-error { border-color: #FF3B3B; }
 .spinner-dark { border-color: rgba(232,234,237,0.25); border-top-color: #E8EAED; }
 
@@ -126,6 +132,7 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
 .zoom-controls button {
   width: 36px; height: 38px; background: rgba(31,35,40,0.95); color: #E8EAED;
   border: none; font-size: 16px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; border-bottom: 1px solid #2C3138;
+  transition: background 0.2s ease;
 }
 .zoom-controls button:last-child { border-bottom: none; }
 .zoom-controls button:hover { background: rgba(44,49,56,0.95); }
@@ -160,6 +167,7 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
   position: absolute; top: 154px; right: 20px; z-index: 1000; width: 250px;
   background: rgba(31,35,40,0.95); border: 1px solid #2C3138; border-radius: 12px;
   padding: 14px; backdrop-filter: blur(6px);
+  max-height: calc(100vh - 180px); overflow-y: auto;
 }
 .ruta-resumen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .ruta-resumen-editar { background: none; border: none; cursor: pointer; font-size: 13px; opacity: 0.7; }
@@ -167,14 +175,14 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
 .ruta-prioridad { display: flex; gap: 6px; margin-bottom: 10px; }
 .ruta-prioridad button {
   flex: 1; background: #14171A; border: 1px solid #2C3138; color: #8A9099;
-  border-radius: 8px; padding: 7px 6px; font-size: 11px; cursor: pointer;
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  border-radius: 8px; padding: 7px 4px; font-size: 10px; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; transition: all 0.2s ease;
 }
 .ruta-prioridad button.activa { border-color: #FFC933; color: #FFC933; background: rgba(255,201,51,0.08); }
 .ruta-opcion {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
   background: #14171A; border: 1px solid #2C3138; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
-  cursor: pointer; text-align: left; font-family: 'Inter', sans-serif;
+  cursor: pointer; text-align: left; font-family: 'Inter', sans-serif; transition: all 0.2s ease;
 }
 .ruta-opcion.activa { border-color: #4FA8E8; background: rgba(79,168,232,0.1); }
 .ruta-opcion-num { font-size: 11px; font-weight: 700; color: #E8EAED; font-family: 'Space Grotesk', sans-serif; }
@@ -185,12 +193,15 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
 .badge-ambas { background: rgba(255,201,51,0.15); color: #FFC933; }
 .badge-rapida { background: rgba(79,168,232,0.15); color: #4FA8E8; }
 .badge-segura { background: rgba(61,220,132,0.15); color: #3DDC84; }
+.badge-equilibrada { background: rgba(255,140,66,0.15); color: #FF8C42; }
 .ruta-opcion-datos { font-size: 12px; color: #C8CDD3; }
 .ruta-opcion-riesgo { font-size: 11px; }
 .ruta-opcion-riesgo.ok { color: #3DDC84; }
 .ruta-opcion-riesgo.warn { color: #FF8C42; }
 .ruta-opcion-riesgo.alto { color: #FF3B3B; }
-.ruta-resumen-detalle { margin-top: 8px; padding-top: 8px; border-top: 1px solid #2C3138; }
+.ruta-sin-alternativa { font-size: 11px; color: #6B7178; margin-top: 4px; font-style: italic; }
+.ruta-resumen-detalle { margin-top: 8px; padding-top: 8px; border-top: 1px solid #2C3138; max-height: 160px; overflow-y: auto; }
+.ruta-resumen-mas { font-size: 11px; color: #6B7178; margin-top: 6px; font-style: italic; }
 .ruta-resumen-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; }
 .ruta-resumen-nueva { margin-top: 10px; width: 100%; background: #FFC933; color: #14171A; border: none; border-radius: 8px; padding: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; }
 
@@ -266,7 +277,7 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
 .cluster-bubble {
   background: rgba(31,35,40,0.95); border: 2px solid #FFC933; border-radius: 50%;
   color: #E8EAED; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
-  text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.4); transition: transform 0.15s ease;
 }
 .cluster-critico { border-color: #FF3B3B; }
 
@@ -284,7 +295,7 @@ body { font-family: 'Inter', sans-serif; background: #14171A; color: #E8EAED; }
   .actividad-panel { top: 58px; right: 12px; width: 82vw; }
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
-  .cercanas-panel, .ruta-resumen, .detalle-panel { top: auto; bottom: 210px; right: 12px; width: 200px; }
+  .cercanas-panel, .ruta-resumen, .detalle-panel { top: auto; bottom: 210px; right: 12px; width: 200px; max-height: 40vh; }
   .legend { left: 12px; bottom: 90px; padding: 10px 12px; }
   .locate-fab { right: 16px; bottom: 88px; }
   .route-fab { right: 16px; bottom: 144px; }

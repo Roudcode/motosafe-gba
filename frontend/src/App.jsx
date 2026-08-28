@@ -13,6 +13,7 @@ const UMBRAL_REPORTE_KM = 0.5
 const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
+const API_URL = 'http://localhost:8000'
 
 const NIVELES = {
   bajo:    { label: 'Bajo',    color: '#3DDC84' },
@@ -98,7 +99,7 @@ function crearIconoCluster(cluster) {
 function VueloControlado({ destino }) {
   const map = useMap()
   useEffect(() => {
-    if (destino) map.flyTo([destino.lat, destino.lng], destino.zoom || 15, { duration: 1.1 })
+    if (destino) map.flyTo([destino.lat, destino.lng], destino.zoom || 15, { duration: 1.4, easeLinearity: 0.15 })
   }, [destino, map])
   return null
 }
@@ -107,8 +108,8 @@ function ControlesZoom() {
   const map = useMap()
   return (
     <div className="zoom-controls panel-enter" style={{ animationDelay: '0.1s' }}>
-      <button onClick={() => map.zoomIn()}>+</button>
-      <button onClick={() => map.zoomOut()}>−</button>
+      <button onClick={() => map.zoomIn(0.5)}>+</button>
+      <button onClick={() => map.zoomOut(0.5)}>−</button>
     </div>
   )
 }
@@ -158,6 +159,8 @@ function useSegundosDesde() {
 
 function App() {
   const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
+  const [cargandoHotspots, setCargandoHotspots] = useState(true)
+  const [backendError, setBackendError] = useState(false)
   const [nivelesActivos, setNivelesActivos] = useState(new Set(Object.keys(NIVELES)))
   const [busqueda, setBusqueda] = useState('')
   const [paso, setPaso] = useState('idle')
@@ -183,22 +186,63 @@ function App() {
   const [rutaCargando, setRutaCargando] = useState(false)
   const [rutaError, setRutaError] = useState(null)
 
+  const cargarHotspots = () => {
+    setCargandoHotspots(true)
+    fetch(`${API_URL}/hotspots`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Respuesta no OK')
+        return r.json()
+      })
+      .then((data) => {
+        const zonasFormateadas = data.map((h) => ({
+          id: h.id,
+          nombre: `Zona ${h.cluster} (${h.cantidad_siniestros} siniestros históricos)`,
+          lat: h.latitud,
+          lng: h.longitud,
+          nivel: h.nivel_riesgo,
+          motivo: `${h.cantidad_siniestros} siniestros de motociclistas registrados, ${h.mortales} mortales, ${h.graves} graves.`,
+        }))
+        setZonasRiesgo(zonasFormateadas)
+        setCargandoHotspots(false)
+        setBackendError(false)
+      })
+      .catch(() => {
+        setBackendError(true)
+        setCargandoHotspots(false)
+      })
+  }
+
   useEffect(() => {
-  fetch('http://localhost:8000/hotspots')
-    .then((r) => r.json())
-    .then((data) => {
-      const zonasFormateadas = data.map((h) => ({
-        id: h.id,
-        nombre: `Zona ${h.cluster} (${h.cantidad_siniestros} siniestros históricos)`,
-        lat: h.latitud,
-        lng: h.longitud,
-        nivel: h.nivel_riesgo,
-        motivo: `${h.cantidad_siniestros} siniestros de motociclistas registrados, ${h.mortales} mortales, ${h.graves} graves.`,
-      }))
-      setZonasRiesgo(zonasFormateadas)
-    })
-    .catch(() => console.error('No se pudo conectar con el backend en localhost:8000'))
+    cargarHotspots()
   }, [])
+
+  // Si el backend está caído, reintenta solo cada 5 segundos hasta que vuelva.
+  useEffect(() => {
+    if (!backendError) return
+    const id = setInterval(cargarHotspots, 5000)
+    return () => clearInterval(id)
+  }, [backendError])
+
+  useEffect(() => {
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${CENTRO_GBA.lat}&longitude=${CENTRO_GBA.lng}&current_weather=true`)
+      .then((r) => r.json())
+      .then((data) => setClima(data.current_weather))
+      .catch(() => setClima(null))
+  }, [])
+
+  // Escape cierra cualquier panel abierto, el que sea.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return
+      if (rutaAbierta) { cerrarTodoRuta(); return }
+      if (paso === 'eligiendo') { setPaso('idle'); return }
+      if (zonaSeleccionada) { setZonaSeleccionada(null); return }
+      if (actividadAbierta) { setActividadAbierta(false); return }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rutaAbierta, paso, zonaSeleccionada, actividadAbierta])
 
   const toggleNivel = (nivel) => {
     setNivelesActivos((prev) => {
@@ -316,7 +360,7 @@ function App() {
   const calcularRuta = async (a, b) => {
     setRutaCargando(true); setRutaError(null)
     try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&alternatives=true`
+      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&alternatives=3`
       const res = await fetch(url)
       if (!res.ok) throw new Error('OSRM respondió con error')
       const data = await res.json()
@@ -336,7 +380,7 @@ function App() {
   }
 
   const zonasAjustadas = useMemo(() => {
-  return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
+    return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
   }, [ZONAS_RIESGO, clima, reportes])
 
   const zonasFiltradas = zonasAjustadas.filter(
@@ -357,6 +401,12 @@ function App() {
   }, [rutasCalculadas, zonasAjustadas])
   const zonasCruzadasActual = zonasCruzadasPorRuta[rutaSeleccionada] || []
 
+  const zonasCruzadasOrdenadas = useMemo(() => {
+    return [...zonasCruzadasActual].sort(
+      (a, b) => ORDEN_NIVELES.indexOf(b.ajuste.nivel) - ORDEN_NIVELES.indexOf(a.ajuste.nivel)
+    )
+  }, [zonasCruzadasActual])
+
   const rutasConScore = useMemo(() => {
     return rutasCalculadas.map((r, i) => ({
       ...r,
@@ -374,6 +424,20 @@ function App() {
     return rutasConScore.reduce((best, r, i) => (r.riesgo < rutasConScore[best].riesgo ? i : best), 0)
   }, [rutasConScore])
 
+  const idxEquilibrada = useMemo(() => {
+    if (rutasConScore.length < 3) return idxMasRapida
+    const tiempos = rutasConScore.map((r) => r.min)
+    const riesgos = rutasConScore.map((r) => r.riesgo)
+    const minT = Math.min(...tiempos), maxT = Math.max(...tiempos)
+    const minR = Math.min(...riesgos), maxR = Math.max(...riesgos)
+    const normalizado = rutasConScore.map((r) => {
+      const t = maxT > minT ? (r.min - minT) / (maxT - minT) : 0
+      const rk = maxR > minR ? (r.riesgo - minR) / (maxR - minR) : 0
+      return t + rk
+    })
+    return normalizado.indexOf(Math.min(...normalizado))
+  }, [rutasConScore, idxMasRapida])
+
   const conteos = Object.keys(NIVELES).reduce((acc, n) => {
     acc[n] = zonasAjustadas.filter((z) => z.ajuste.nivel === n).length
     return acc
@@ -390,6 +454,7 @@ function App() {
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && reportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
   if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
+  else if (cargandoHotspots) textoTopbar = 'Conectando con el servidor de datos...'
   else if (reportes.length > 0) textoTopbar = `${reportes.length} reporte${reportes.length > 1 ? 's' : ''} tuyo${reportes.length > 1 ? 's' : ''} · hace ${segundos}s`
   else if (mostrarAlerta) textoTopbar = `⚠ ${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
   else textoTopbar = `${zonasFiltradas.length} zonas registradas · hace ${segundos}s`
@@ -417,6 +482,13 @@ function App() {
           </div>
         </div>
       </header>
+
+      {backendError && (
+        <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
+          ⚠ Sin conexión con el backend (localhost:8000). Reintentando solo cada 5s — fijate que "uvicorn main:app --reload" esté corriendo.
+          <button onClick={cargarHotspots}>Reintentar ahora</button>
+        </div>
+      )}
 
       {actividadAbierta && reportes.length > 0 && (
         <div className="actividad-panel panel-enter hazard-edge">
@@ -477,7 +549,15 @@ function App() {
         <div className="ruta-banner ruta-banner-error panel-enter">{rutaError}<button onClick={cerrarTodoRuta}>Cerrar</button></div>
       )}
 
-      <MapContainer center={[CENTRO_GBA.lat, CENTRO_GBA.lng]} zoom={11} zoomControl={false} className="map">
+      <MapContainer
+        center={[CENTRO_GBA.lat, CENTRO_GBA.lng]}
+        zoom={11}
+        zoomControl={false}
+        zoomSnap={0.5}
+        zoomDelta={0.5}
+        preferCanvas={true}
+        className="map"
+      >
         <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <ControlesZoom />
         <EscalaMapa />
@@ -557,8 +637,11 @@ function App() {
           </div>
           {rutasConScore.length > 1 && (
             <div className="ruta-prioridad">
-              <button className={rutaSeleccionada === idxMasRapida ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasRapida)}>⚡ Más rápida</button>
-              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)}>🛡️ Más segura</button>
+              <button className={rutaSeleccionada === idxMasRapida ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasRapida)}>⚡ Rápida</button>
+              {rutasConScore.length >= 3 && (
+                <button className={rutaSeleccionada === idxEquilibrada ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxEquilibrada)}>⚖️ Equilibrada</button>
+              )}
+              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)}>🛡️ Segura</button>
             </div>
           )}
           {rutasConScore.map((r, i) => (
@@ -566,8 +649,9 @@ function App() {
               <span className="ruta-opcion-num">
                 Ruta {i + 1}
                 {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas">⚡🛡️ recomendada</span>}
-                {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida">⚡ más rápida</span>}
-                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura">🛡️ más segura</span>}
+                {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida">⚡ rápida</span>}
+                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura">🛡️ segura</span>}
+                {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada">⚖️ equilibrada</span>}
               </span>
               <span className="ruta-opcion-datos">{r.km} km · {r.min} min</span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
@@ -575,13 +659,19 @@ function App() {
               </span>
             </button>
           ))}
-          {zonasCruzadasActual.length > 0 && (
+          {rutasConScore.length === 1 && (
+            <p className="ruta-sin-alternativa">OSRM no encontró una ruta alternativa razonable para este tramo.</p>
+          )}
+          {zonasCruzadasOrdenadas.length > 0 && (
             <div className="ruta-resumen-detalle">
-              {zonasCruzadasActual.map((z) => (
+              {zonasCruzadasOrdenadas.slice(0, 6).map((z) => (
                 <div key={z.id} className="ruta-resumen-item">
                   <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />{z.nombre}
                 </div>
               ))}
+              {zonasCruzadasOrdenadas.length > 6 && (
+                <p className="ruta-resumen-mas">+ {zonasCruzadasOrdenadas.length - 6} zonas más de menor riesgo en el trayecto</p>
+              )}
             </div>
           )}
           <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
@@ -612,7 +702,8 @@ function App() {
       {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && (
         <div className="cercanas-panel panel-enter hazard-edge" style={{ animationDelay: '0.15s' }}>
           <span className="cercanas-title">Zonas cercanas {miUbicacion ? '· a vos' : '· al centro del GBA'}</span>
-          {cercanas.length === 0 && <p className="cercanas-empty">Sin resultados</p>}
+          {cargandoHotspots && <p className="cercanas-empty">Cargando...</p>}
+          {!cargandoHotspots && cercanas.length === 0 && <p className="cercanas-empty">Sin resultados</p>}
           {cercanas.map((z) => (
             <button key={z.id} className="cercanas-item" onClick={() => setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 })}>
               <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />
