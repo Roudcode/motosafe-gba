@@ -1,28 +1,27 @@
 import { useState, useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
+import MarkerClusterGroup from 'react-leaflet-cluster'
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import './App.css'
 
 const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
-const UMBRAL_CRUCE_KM = 0.6 // qué tan cerca de la ruta tiene que estar una zona para contar como "cruzada"
-
-const ZONAS_RIESGO = [
-  { id: 1, nombre: 'Av. Rivadavia y Gral. Paz, Ramos Mejía', lat: -34.6432, lng: -58.5622, nivel: 'critico', motivo: 'Alta siniestralidad histórica + hora pico' },
-  { id: 2, nombre: 'Av. Mitre, Avellaneda', lat: -34.6626, lng: -58.3654, nivel: 'alto', motivo: 'Cruce sin semáforo, poca visibilidad nocturna' },
-  { id: 3, nombre: 'Ruta 8 y Panamericana, San Isidro', lat: -34.4708, lng: -58.5468, nivel: 'alto', motivo: 'Velocidad alta, tránsito pesado' },
-  { id: 4, nombre: 'Av. Calchaquí, Quilmes', lat: -34.7186, lng: -58.2831, nivel: 'medio', motivo: 'Pavimento irregular reportado' },
-  { id: 5, nombre: 'Av. Hipólito Yrigoyen, Lomas de Zamora', lat: -34.7614, lng: -58.4056, nivel: 'medio', motivo: 'Congestión en horario escolar' },
-  { id: 6, nombre: 'Av. Santa Fe, Palermo', lat: -34.5875, lng: -58.4205, nivel: 'bajo', motivo: 'Buena iluminación, baja siniestralidad' },
-  { id: 7, nombre: 'Camino de Cintura, La Matanza', lat: -34.7095, lng: -58.6152, nivel: 'critico', motivo: 'Zona con reportes recientes de usuarios' },
-  { id: 8, nombre: 'Av. Rivadavia, San Justo', lat: -34.6773, lng: -58.5637, nivel: 'medio', motivo: 'Obra vial en curso' },
-]
+const UMBRAL_CRUCE_KM = 0.6
+const UMBRAL_REPORTE_KM = 0.5
+const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
+const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
+const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
 
 const NIVELES = {
-  bajo:    { label: 'Bajo',    color: '#4CAF6D' },
-  medio:   { label: 'Medio',   color: '#E8C547' },
-  alto:    { label: 'Alto',    color: '#E8823D' },
-  critico: { label: 'Crítico', color: '#E1493F' },
+  bajo:    { label: 'Bajo',    color: '#3DDC84' },
+  medio:   { label: 'Medio',   color: '#FFD23F' },
+  alto:    { label: 'Alto',    color: '#FF8C42' },
+  critico: { label: 'Crítico', color: '#FF3B3B' },
 }
+
+const CODIGOS_LLUVIA = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]
 
 const CATEGORIAS_REPORTE = [
   { id: 'pavimento', label: 'Pavimento en mal estado', icon: '🕳️' },
@@ -50,6 +49,52 @@ function distanciaAPolilinea(punto, coords) {
   return min
 }
 
+function calcularAjuste(zona, climaCode, reportes) {
+  let idx = ORDEN_NIVELES.indexOf(zona.nivel)
+  const motivos = []
+  const esLluvia = climaCode != null && CODIGOS_LLUVIA.includes(climaCode)
+  if (esLluvia && idx < 3) { idx += 1; motivos.push('lluvia actual') }
+  const reportesCercanos = reportes.filter((r) => distanciaKm(zona, r) <= UMBRAL_REPORTE_KM).length
+  if (reportesCercanos > 0 && idx < 3) { idx += 1; motivos.push(`${reportesCercanos} reporte${reportesCercanos > 1 ? 's' : ''} tuyo${reportesCercanos > 1 ? 's' : ''} cerca`) }
+  return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
+}
+
+function iconoClima(code) {
+  if (code === 0) return { icon: '☀️', label: 'Despejado' }
+  if ([1, 2, 3].includes(code)) return { icon: '⛅', label: 'Parcialmente nublado' }
+  if ([45, 48].includes(code)) return { icon: '🌫️', label: 'Niebla' }
+  if ([51, 53, 55, 56, 57].includes(code)) return { icon: '🌦️', label: 'Llovizna' }
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { icon: '🌧️', label: 'Lluvia' }
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return { icon: '❄️', label: 'Nieve' }
+  if ([95, 96, 99].includes(code)) return { icon: '⛈️', label: 'Tormenta' }
+  return { icon: '🌡️', label: 'Sin datos' }
+}
+
+async function geocodificar(texto) {
+  const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=1`
+  const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
+  const data = await res.json()
+  if (!data || data.length === 0) return null
+  return {
+    lat: parseFloat(data[0].lat),
+    lng: parseFloat(data[0].lon),
+    label: data[0].display_name.split(',').slice(0, 2).join(','),
+  }
+}
+
+function crearIconoCluster(cluster) {
+  const count = cluster.getChildCount()
+  const hijos = cluster.getAllChildMarkers()
+  const tieneCritico = hijos.some((m) => m.options.nivelData === 'critico')
+  const size = count < 10 ? 34 : count < 30 ? 42 : 50
+  return L.divIcon({
+    html: `<div class="cluster-bubble ${tieneCritico ? 'cluster-critico' : ''}" style="width:${size}px;height:${size}px;line-height:${size}px;">${count}</div>`,
+    className: 'cluster-icon-wrapper',
+    iconSize: L.point(size, size),
+  })
+}
+
 function VueloControlado({ destino }) {
   const map = useMap()
   useEffect(() => {
@@ -68,13 +113,38 @@ function ControlesZoom() {
   )
 }
 
-function ClicksDeRuta({ activo, onClick }) {
+function ClicksDeMapa({ campoActivo, onClick }) {
   useMapEvents({
     click(e) {
-      if (activo) onClick({ lat: e.latlng.lat, lng: e.latlng.lng })
+      if (campoActivo) onClick({ lat: e.latlng.lat, lng: e.latlng.lng })
     },
   })
   return null
+}
+
+function EscalaMapa() {
+  const map = useMap()
+  const [texto, setTexto] = useState('')
+  useEffect(() => {
+    const actualizar = () => {
+      const centro = map.getCenter()
+      const zoom = map.getZoom()
+      const metrosPorPixel = 156543.03392 * Math.cos((centro.lat * Math.PI) / 180) / Math.pow(2, zoom)
+      const metros = metrosPorPixel * 80
+      const pasos = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]
+      const cercano = pasos.reduce((prev, curr) => (Math.abs(curr - metros) < Math.abs(prev - metros) ? curr : prev))
+      setTexto(cercano >= 1000 ? `${cercano / 1000} km` : `${cercano} m`)
+    }
+    actualizar()
+    map.on('zoomend moveend', actualizar)
+    return () => map.off('zoomend moveend', actualizar)
+  }, [map])
+  return (
+    <div className="escala-mapa">
+      <div className="escala-linea" />
+      <span>{texto}</span>
+    </div>
+  )
 }
 
 function useSegundosDesde() {
@@ -87,6 +157,7 @@ function useSegundosDesde() {
 }
 
 function App() {
+  const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
   const [nivelesActivos, setNivelesActivos] = useState(new Set(Object.keys(NIVELES)))
   const [busqueda, setBusqueda] = useState('')
   const [paso, setPaso] = useState('idle')
@@ -95,16 +166,39 @@ function App() {
   const [miUbicacion, setMiUbicacion] = useState(null)
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false)
   const [vuelo, setVuelo] = useState(null)
+  const [zonaSeleccionada, setZonaSeleccionada] = useState(null)
+  const [clima, setClima] = useState(null)
+  const [actividadAbierta, setActividadAbierta] = useState(false)
   const segundos = useSegundosDesde()
 
-  // --- Ruta ---
-  const [modoRuta, setModoRuta] = useState(false)
-  const [origen, setOrigen] = useState(null)
-  const [destino, setDestino] = useState(null)
-  const [rutaCoords, setRutaCoords] = useState(null)
-  const [rutaInfo, setRutaInfo] = useState(null) // { km, min }
+  const [rutaAbierta, setRutaAbierta] = useState(false)
+  const [origenTexto, setOrigenTexto] = useState('')
+  const [destinoTexto, setDestinoTexto] = useState('')
+  const [origenPunto, setOrigenPunto] = useState(null)
+  const [destinoPunto, setDestinoPunto] = useState(null)
+  const [campoActivo, setCampoActivo] = useState(null)
+  const [geocodificando, setGeocodificando] = useState(false)
+  const [rutasCalculadas, setRutasCalculadas] = useState([])
+  const [rutaSeleccionada, setRutaSeleccionada] = useState(0)
   const [rutaCargando, setRutaCargando] = useState(false)
   const [rutaError, setRutaError] = useState(null)
+
+  useEffect(() => {
+  fetch('http://localhost:8000/hotspots')
+    .then((r) => r.json())
+    .then((data) => {
+      const zonasFormateadas = data.map((h) => ({
+        id: h.id,
+        nombre: `Zona ${h.cluster} (${h.cantidad_siniestros} siniestros históricos)`,
+        lat: h.latitud,
+        lng: h.longitud,
+        nivel: h.nivel_riesgo,
+        motivo: `${h.cantidad_siniestros} siniestros de motociclistas registrados, ${h.mortales} mortales, ${h.graves} graves.`,
+      }))
+      setZonasRiesgo(zonasFormateadas)
+    })
+    .catch(() => console.error('No se pudo conectar con el backend en localhost:8000'))
+  }, [])
 
   const toggleNivel = (nivel) => {
     setNivelesActivos((prev) => {
@@ -157,71 +251,131 @@ function App() {
     setPaso('idle')
   }
 
-  // --- Lógica de ruta ---
-  const activarModoRuta = () => {
-    setModoRuta(true)
-    setOrigen(null)
-    setDestino(null)
-    setRutaCoords(null)
-    setRutaInfo(null)
+  const abrirPanelRuta = () => {
+    setRutaAbierta(true)
+    setZonaSeleccionada(null)
+    setActividadAbierta(false)
+    setRutasCalculadas([])
     setRutaError(null)
   }
-
-  const cancelarRuta = () => {
-    setModoRuta(false)
-    setOrigen(null)
-    setDestino(null)
-    setRutaCoords(null)
-    setRutaInfo(null)
-    setRutaError(null)
+  const cerrarTodoRuta = () => {
+    setRutaAbierta(false); setCampoActivo(null)
+    setOrigenTexto(''); setDestinoTexto('')
+    setOrigenPunto(null); setDestinoPunto(null)
+    setRutasCalculadas([]); setRutaSeleccionada(0); setRutaError(null)
   }
-
-  const clicMapaRuta = async (punto) => {
-    if (!origen) {
-      setOrigen(punto)
+  const editarRuta = () => {
+    setRutasCalculadas([]); setRutaError(null); setRutaAbierta(true)
+  }
+  const intercambiar = () => {
+    setOrigenTexto(destinoTexto); setDestinoTexto(origenTexto)
+    setOrigenPunto(destinoPunto); setDestinoPunto(origenPunto)
+  }
+  const usarMiUbicacionComoOrigen = () => {
+    if (miUbicacion) {
+      setOrigenPunto(miUbicacion); setOrigenTexto('Tu ubicación actual')
       return
     }
-    if (!destino) {
-      setDestino(punto)
-      setModoRuta(false)
-      await calcularRuta(origen, punto)
+    setBuscandoUbicacion(true)
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        const p = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setMiUbicacion(p); setOrigenPunto(p); setOrigenTexto('Tu ubicación actual')
+        setBuscandoUbicacion(false)
+      },
+      () => setBuscandoUbicacion(false)
+    )
+  }
+  const marcarEnMapa = (campo) => setCampoActivo(campo === campoActivo ? null : campo)
+  const clicMapa = (punto) => {
+    if (campoActivo === 'origen') { setOrigenPunto(punto); setOrigenTexto('Punto marcado en el mapa') }
+    if (campoActivo === 'destino') { setDestinoPunto(punto); setDestinoTexto('Punto marcado en el mapa') }
+    setCampoActivo(null)
+  }
+
+  const buscarRuta = async () => {
+    setRutaError(null)
+    if (!origenTexto.trim() || !destinoTexto.trim()) { setRutaError('Completá origen y destino.'); return }
+    setGeocodificando(true)
+    try {
+      let a = origenPunto
+      let b = destinoPunto
+      if (!a) a = await geocodificar(origenTexto)
+      if (!b) b = await geocodificar(destinoTexto)
+      if (!a) { setRutaError(`No encontramos "${origenTexto}". Probá con más detalle (ej: "Av. Rivadavia 1200, Ramos Mejía").`); setGeocodificando(false); return }
+      if (!b) { setRutaError(`No encontramos "${destinoTexto}". Probá con más detalle.`); setGeocodificando(false); return }
+      setGeocodificando(false)
+      setRutaAbierta(false)
+      await calcularRuta(a, b)
+    } catch {
+      setGeocodificando(false)
+      setRutaError('Error buscando las direcciones. Probá de nuevo.')
     }
   }
 
   const calcularRuta = async (a, b) => {
-    setRutaCargando(true)
-    setRutaError(null)
+    setRutaCargando(true); setRutaError(null)
     try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`
+      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&alternatives=true`
       const res = await fetch(url)
       if (!res.ok) throw new Error('OSRM respondió con error')
       const data = await res.json()
       if (!data.routes || data.routes.length === 0) throw new Error('Sin ruta disponible')
-      const coords = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng])
-      setRutaCoords(coords)
-      setRutaInfo({
-        km: (data.routes[0].distance / 1000).toFixed(1),
-        min: Math.round(data.routes[0].duration / 60),
-      })
-    } catch (err) {
+      const rutas = data.routes.map((r) => ({
+        coords: r.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+        km: (r.distance / 1000).toFixed(1),
+        min: Math.round(r.duration / 60),
+      }))
+      setRutasCalculadas(rutas)
+      setRutaSeleccionada(0)
+    } catch {
       setRutaError('No se pudo calcular la ruta (servidor de demo caído o sin conexión). Probá de nuevo.')
     } finally {
       setRutaCargando(false)
     }
   }
 
-  const zonasCruzadas = useMemo(() => {
-    if (!rutaCoords) return []
-    return ZONAS_RIESGO.filter((z) => distanciaAPolilinea(z, rutaCoords) <= UMBRAL_CRUCE_KM)
-  }, [rutaCoords])
+  const zonasAjustadas = useMemo(() => {
+  return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
+  }, [ZONAS_RIESGO, clima, reportes])
 
-  const zonasFiltradas = ZONAS_RIESGO.filter(
-    (z) => nivelesActivos.has(z.nivel) && z.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  const zonasFiltradas = zonasAjustadas.filter(
+    (z) => nivelesActivos.has(z.ajuste.nivel) && z.nombre.toLowerCase().includes(busqueda.toLowerCase())
   )
-  const criticosVisibles = zonasFiltradas.filter((z) => z.nivel === 'critico').length
+  const criticosVisibles = zonasFiltradas.filter((z) => z.ajuste.nivel === 'critico').length
+
+  useEffect(() => {
+    if (busqueda.trim().length > 2 && zonasFiltradas.length === 1) {
+      const z = zonasFiltradas[0]
+      setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busqueda])
+
+  const zonasCruzadasPorRuta = useMemo(() => {
+    return rutasCalculadas.map((r) => zonasAjustadas.filter((z) => distanciaAPolilinea(z, r.coords) <= UMBRAL_CRUCE_KM))
+  }, [rutasCalculadas, zonasAjustadas])
+  const zonasCruzadasActual = zonasCruzadasPorRuta[rutaSeleccionada] || []
+
+  const rutasConScore = useMemo(() => {
+    return rutasCalculadas.map((r, i) => ({
+      ...r,
+      riesgo: (zonasCruzadasPorRuta[i] || []).reduce((acc, z) => acc + PESO_RIESGO[z.ajuste.nivel], 0),
+    }))
+  }, [rutasCalculadas, zonasCruzadasPorRuta])
+
+  const idxMasRapida = useMemo(() => {
+    if (rutasConScore.length === 0) return 0
+    return rutasConScore.reduce((best, r, i) => (r.min < rutasConScore[best].min ? i : best), 0)
+  }, [rutasConScore])
+
+  const idxMasSegura = useMemo(() => {
+    if (rutasConScore.length === 0) return 0
+    return rutasConScore.reduce((best, r, i) => (r.riesgo < rutasConScore[best].riesgo ? i : best), 0)
+  }, [rutasConScore])
 
   const conteos = Object.keys(NIVELES).reduce((acc, n) => {
-    acc[n] = ZONAS_RIESGO.filter((z) => z.nivel === n).length
+    acc[n] = zonasAjustadas.filter((z) => z.ajuste.nivel === n).length
     return acc
   }, {})
 
@@ -233,6 +387,13 @@ function App() {
       .slice(0, 4)
   }, [zonasFiltradas, referencia])
 
+  const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && reportes.length === 0 && rutasCalculadas.length === 0
+  let textoTopbar
+  if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
+  else if (reportes.length > 0) textoTopbar = `${reportes.length} reporte${reportes.length > 1 ? 's' : ''} tuyo${reportes.length > 1 ? 's' : ''} · hace ${segundos}s`
+  else if (mostrarAlerta) textoTopbar = `⚠ ${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
+  else textoTopbar = `${zonasFiltradas.length} zonas registradas · hace ${segundos}s`
+
   return (
     <div className="app">
       <header className="topbar">
@@ -241,17 +402,42 @@ function App() {
           <span className="brand-name">MotoSafe</span>
           <span className="brand-badge">GBA</span>
         </div>
-        <div className={`topbar-status ${criticosVisibles > 0 && reportes.length === 0 && !rutaCoords ? 'alerta' : ''}`}>
-          <span className="status-dot" />
-          {rutaCoords
-            ? `Ruta: ${rutaInfo.km} km · ${rutaInfo.min} min`
-            : reportes.length > 0
-              ? `${reportes.length} reporte${reportes.length > 1 ? 's' : ''} tuyo${reportes.length > 1 ? 's' : ''} · hace ${segundos}s`
-              : criticosVisibles > 0
-                ? `⚠ ${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} en el mapa`
-                : `Datos de ejemplo · actualizado hace ${segundos}s`}
+        <div className="topbar-right">
+          {clima && (
+            <div className="clima-badge" title={iconoClima(clima.weathercode).label}>
+              {iconoClima(clima.weathercode).icon} {Math.round(clima.temperature)}°C
+            </div>
+          )}
+          <div
+            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${reportes.length > 0 ? 'clickeable' : ''}`}
+            onClick={() => reportes.length > 0 && setActividadAbierta((v) => !v)}
+          >
+            <span className="status-dot" />
+            {textoTopbar}
+          </div>
         </div>
       </header>
+
+      {actividadAbierta && reportes.length > 0 && (
+        <div className="actividad-panel panel-enter hazard-edge">
+          <div className="actividad-header">
+            <span className="cercanas-title">Actividad reciente (esta sesión)</span>
+            <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)}>✕</button>
+          </div>
+          {reportes.map((rep) => {
+            const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
+            return (
+              <button key={rep.id} className="actividad-item" onClick={() => { setVuelo({ lat: rep.lat, lng: rep.lng, zoom: 16 }); setActividadAbierta(false) }}>
+                <span className="actividad-icon">{cat?.icon}</span>
+                <span className="actividad-texto">
+                  <span className="actividad-label">{cat?.label}</span>
+                  <span className="actividad-hora">{rep.hora}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
         <span className="searchbar-icon">🔍</span>
@@ -259,82 +445,91 @@ function App() {
         {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')}>✕</button>}
       </div>
 
-      {modoRuta && (
-        <div className="ruta-banner panel-enter">
-          {!origen ? '📍 Tocá el mapa para marcar el origen' : '🏁 Ahora tocá el destino'}
-          <button onClick={cancelarRuta}>Cancelar</button>
+      {rutaAbierta && (
+        <div className="ruta-form panel-enter hazard-edge">
+          <div className="ruta-form-fila">
+            <span className="ruta-form-punto ruta-form-punto-origen" />
+            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} />
+            <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" onClick={() => marcarEnMapa('origen')}>📍</button>
+          </div>
+          <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar">⇅</button>
+          <div className="ruta-form-fila">
+            <span className="ruta-form-punto ruta-form-punto-destino" />
+            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} />
+            <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" onClick={() => marcarEnMapa('destino')}>📍</button>
+          </div>
+          {campoActivo && <p className="ruta-form-hint">Tocá el mapa para marcar el {campoActivo}.</p>}
+          <button className="ruta-form-miubicacion" onClick={usarMiUbicacionComoOrigen}>🎯 Usar mi ubicación como origen</button>
+          {rutaError && <p className="ruta-form-error">{rutaError}</p>}
+          <div className="ruta-form-acciones">
+            <button className="ruta-form-cancelar" onClick={cerrarTodoRuta}>Cancelar</button>
+            <button className="ruta-form-buscar" onClick={buscarRuta} disabled={geocodificando}>
+              {geocodificando ? <span className="spinner" /> : 'Buscar ruta'}
+            </button>
+          </div>
         </div>
       )}
 
       {rutaCargando && (
-        <div className="ruta-banner panel-enter">
-          <span className="spinner spinner-dark" /> Calculando ruta real...
-        </div>
+        <div className="ruta-banner panel-enter"><span className="spinner spinner-dark" /> Calculando rutas reales...</div>
       )}
-
-      {rutaError && (
-        <div className="ruta-banner ruta-banner-error panel-enter">
-          {rutaError}
-          <button onClick={cancelarRuta}>Cerrar</button>
-        </div>
+      {rutaError && !rutaAbierta && (
+        <div className="ruta-banner ruta-banner-error panel-enter">{rutaError}<button onClick={cerrarTodoRuta}>Cerrar</button></div>
       )}
 
       <MapContainer center={[CENTRO_GBA.lat, CENTRO_GBA.lng]} zoom={11} zoomControl={false} className="map">
         <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <ControlesZoom />
+        <EscalaMapa />
         <VueloControlado destino={vuelo} />
-        <ClicksDeRuta activo={modoRuta} onClick={clicMapaRuta} />
+        <ClicksDeMapa campoActivo={campoActivo} onClick={clicMapa} />
 
-        {rutaCoords && (
-          <Polyline positions={rutaCoords} pathOptions={{ color: '#4FA8E8', weight: 5, opacity: 0.85 }} />
-        )}
+        {rutasCalculadas.map((r, i) => (
+          <Polyline
+            key={i}
+            positions={r.coords}
+            pathOptions={{
+              color: i === rutaSeleccionada ? '#4FA8E8' : '#6B7178',
+              weight: i === rutaSeleccionada ? 5 : 4,
+              opacity: i === rutaSeleccionada ? 0.9 : 0.45,
+              dashArray: i === rutaSeleccionada ? null : '6 6',
+            }}
+            eventHandlers={{ click: () => setRutaSeleccionada(i) }}
+          />
+        ))}
 
-        {origen && (
-          <CircleMarker center={[origen.lat, origen.lng]} radius={8} pathOptions={{ color: '#4CAF6D', fillColor: '#4CAF6D', fillOpacity: 1, weight: 3 }}>
+        {origenPunto && (
+          <CircleMarker center={[origenPunto.lat, origenPunto.lng]} radius={8} pathOptions={{ color: '#3DDC84', fillColor: '#3DDC84', fillOpacity: 1, weight: 3 }}>
             <Popup>Origen</Popup>
           </CircleMarker>
         )}
-        {destino && (
-          <CircleMarker center={[destino.lat, destino.lng]} radius={8} pathOptions={{ color: '#E1493F', fillColor: '#E1493F', fillOpacity: 1, weight: 3 }}>
+        {destinoPunto && (
+          <CircleMarker center={[destinoPunto.lat, destinoPunto.lng]} radius={8} pathOptions={{ color: '#FF3B3B', fillColor: '#FF3B3B', fillOpacity: 1, weight: 3 }}>
             <Popup>Destino</Popup>
           </CircleMarker>
         )}
 
-        {zonasFiltradas.map((zona) => {
-          const cruzada = zonasCruzadas.some((z) => z.id === zona.id)
-          return (
-            <div key={zona.id}>
-              {(zona.nivel === 'critico' || cruzada) && (
-                <CircleMarker
-                  center={[zona.lat, zona.lng]}
-                  radius={12}
-                  pathOptions={{ color: cruzada ? '#4FA8E8' : NIVELES.critico.color, fillOpacity: 0, weight: 2 }}
-                  className="radar-ping"
-                />
-              )}
+        <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
+          {zonasFiltradas.map((zona) => {
+            const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
+            return (
               <CircleMarker
+                key={zona.id}
                 center={[zona.lat, zona.lng]}
-                radius={zona.nivel === 'critico' ? 12 : 9}
+                radius={zona.ajuste.nivel === 'critico' ? 11 : 8}
                 pathOptions={{
-                  color: cruzada ? '#4FA8E8' : NIVELES[zona.nivel].color,
-                  fillColor: NIVELES[zona.nivel].color,
-                  fillOpacity: 0.6,
-                  weight: cruzada ? 3 : 2,
+                  color: cruzada ? '#4FA8E8' : NIVELES[zona.ajuste.nivel].color,
+                  fillColor: NIVELES[zona.ajuste.nivel].color,
+                  fillOpacity: 0.75,
+                  weight: cruzada || zona.ajuste.subio ? 3 : 2,
+                  nivelData: zona.ajuste.nivel,
                 }}
-                className={zona.nivel === 'critico' ? 'pulse-marker' : ''}
-              >
-                <Popup>
-                  <div className="popup-content">
-                    <span className="popup-nivel" style={{ color: NIVELES[zona.nivel].color }}>Riesgo {NIVELES[zona.nivel].label}</span>
-                    <strong>{zona.nombre}</strong>
-                    <p>{zona.motivo}</p>
-                    {cruzada && <p className="popup-cruzada">⚠ Tu ruta pasa cerca de esta zona</p>}
-                  </div>
-                </Popup>
-              </CircleMarker>
-            </div>
-          )
-        })}
+                className={zona.ajuste.nivel === 'critico' ? 'pulse-marker' : ''}
+                eventHandlers={{ click: () => setZonaSeleccionada(zona) }}
+              />
+            )
+          })}
+        </MarkerClusterGroup>
 
         {reportes.map((rep) => (
           <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color: '#FFC933', fillColor: '#FFC933', fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">
@@ -354,34 +549,73 @@ function App() {
         )}
       </MapContainer>
 
-      {rutaCoords && (
+      {rutasCalculadas.length > 0 && (
         <div className="ruta-resumen panel-enter hazard-edge">
-          <span className="cercanas-title">Resumen de la ruta</span>
-          <p className="ruta-resumen-linea">{rutaInfo.km} km · ~{rutaInfo.min} min</p>
-          {zonasCruzadas.length === 0 ? (
-            <p className="ruta-resumen-ok">✅ No cruza zonas de riesgo alto o crítico registradas</p>
-          ) : (
-            <>
-              <p className="ruta-resumen-warn">⚠ Cruza {zonasCruzadas.length} zona{zonasCruzadas.length > 1 ? 's' : ''} de riesgo:</p>
-              {zonasCruzadas.map((z) => (
+          <div className="ruta-resumen-header">
+            <span className="cercanas-title">Opciones de ruta</span>
+            <button className="ruta-resumen-editar" onClick={editarRuta}>✏️</button>
+          </div>
+          {rutasConScore.length > 1 && (
+            <div className="ruta-prioridad">
+              <button className={rutaSeleccionada === idxMasRapida ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasRapida)}>⚡ Más rápida</button>
+              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)}>🛡️ Más segura</button>
+            </div>
+          )}
+          {rutasConScore.map((r, i) => (
+            <button key={i} className={`ruta-opcion ${i === rutaSeleccionada ? 'activa' : ''}`} onClick={() => setRutaSeleccionada(i)}>
+              <span className="ruta-opcion-num">
+                Ruta {i + 1}
+                {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas">⚡🛡️ recomendada</span>}
+                {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida">⚡ más rápida</span>}
+                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura">🛡️ más segura</span>}
+              </span>
+              <span className="ruta-opcion-datos">{r.km} km · {r.min} min</span>
+              <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
+                {r.riesgo === 0 ? '✅ sin cruces' : `⚠ riesgo ${r.riesgo} pts · cruza ${zonasCruzadasPorRuta[i].length}`}
+              </span>
+            </button>
+          ))}
+          {zonasCruzadasActual.length > 0 && (
+            <div className="ruta-resumen-detalle">
+              {zonasCruzadasActual.map((z) => (
                 <div key={z.id} className="ruta-resumen-item">
-                  <span className="cercanas-dot" style={{ background: NIVELES[z.nivel].color }} />
-                  {z.nombre}
+                  <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />{z.nombre}
                 </div>
               ))}
-            </>
+            </div>
           )}
-          <button className="ruta-resumen-nueva" onClick={cancelarRuta}>Nueva ruta</button>
+          <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
         </div>
       )}
 
-      {!rutaCoords && !modoRuta && (
+      {rutasCalculadas.length === 0 && !rutaAbierta && zonaSeleccionada && (
+        <div className="detalle-panel panel-enter hazard-edge">
+          <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)}>✕</button>
+          <span className="popup-nivel" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
+            Riesgo {NIVELES[zonaSeleccionada.ajuste.nivel].label}
+          </span>
+          <strong className="detalle-nombre">{zonaSeleccionada.nombre}</strong>
+          <p className="detalle-motivo">{zonaSeleccionada.motivo}</p>
+          {zonaSeleccionada.ajuste.subio && (
+            <div className="detalle-ajuste">
+              <span className="detalle-ajuste-base">Base: {NIVELES[zonaSeleccionada.nivel].label}</span>
+              <span className="detalle-ajuste-flecha">→</span>
+              <span className="detalle-ajuste-ahora" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
+                Ahora: {NIVELES[zonaSeleccionada.ajuste.nivel].label}
+              </span>
+              <p className="detalle-ajuste-motivo">Subió por: {zonaSeleccionada.ajuste.motivos.join(' + ')}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && (
         <div className="cercanas-panel panel-enter hazard-edge" style={{ animationDelay: '0.15s' }}>
           <span className="cercanas-title">Zonas cercanas {miUbicacion ? '· a vos' : '· al centro del GBA'}</span>
           {cercanas.length === 0 && <p className="cercanas-empty">Sin resultados</p>}
           {cercanas.map((z) => (
             <button key={z.id} className="cercanas-item" onClick={() => setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 })}>
-              <span className="cercanas-dot" style={{ background: NIVELES[z.nivel].color }} />
+              <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />
               <span className="cercanas-nombre">{z.nombre}</span>
               <span className="cercanas-km">{z.distancia.toFixed(1)} km</span>
             </button>
@@ -400,10 +634,8 @@ function App() {
         ))}
       </div>
 
-      {!modoRuta && !rutaCoords && (
-        <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={activarModoRuta}>
-          🧭 <span>Trazar ruta</span>
-        </button>
+      {!rutaAbierta && rutasCalculadas.length === 0 && (
+        <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}>🧭 <span>Trazar ruta</span></button>
       )}
 
       <button className="locate-fab panel-enter" style={{ animationDelay: '0.25s' }} onClick={pedirUbicacion} disabled={buscandoUbicacion}>
