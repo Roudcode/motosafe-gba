@@ -1,229 +1,42 @@
 import { useState, useEffect, useMemo } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Polyline, Popup } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
-import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import './App.css'
 
-const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
-const UMBRAL_CRUCE_KM = 0.6
-const UMBRAL_REPORTE_KM = 0.5
-const UMBRAL_ALERTA_KM = 0.25
-const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
-const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
-const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
-const API_URL = 'http://localhost:8000'
-const CLAVE_REPORTES = 'motosafe_reportes'
-const CLAVE_NIVELES = 'motosafe_niveles_activos'
-const CLAVE_FAVORITOS = 'motosafe_favoritos'
+import {
+  Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
+  ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
+} from 'lucide-react'
 
-const NIVELES = {
-  bajo:    { label: 'Bajo',    color: '#3DDC84' },
-  medio:   { label: 'Medio',   color: '#FFD23F' },
-  alto:    { label: 'Alto',    color: '#FF8C42' },
-  critico: { label: 'Crítico', color: '#FF3B3B' },
-}
+import {
+  CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
+  API_URL, CLAVE_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, NIVELES, CATEGORIAS_REPORTE,
+} from './constants'
+import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
+import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
+import { cargarDeLocalStorage } from './utils/storage'
+import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, EscalaMapa } from './components/MapaControles'
+import { LoadingScreen } from './components/LoadingScreen'
+import { Onboarding } from './components/Onboarding'
+import { ThemeToggle } from './components/ThemeToggle'
+import { useSegundosDesde } from './hooks/useSegundosDesde'
 
-const CODIGOS_LLUVIA = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]
-
-const CATEGORIAS_REPORTE = [
-  { id: 'pavimento', label: 'Pavimento en mal estado', icon: '🕳️' },
-  { id: 'corte', label: 'Corte o desvío', icon: '🚧' },
-  { id: 'iluminacion', label: 'Falta de iluminación', icon: '💡' },
-  { id: 'inseguro', label: 'Zona insegura', icon: '⚠️' },
-]
-
-function distanciaKm(a, b) {
-  const R = 6371
-  const dLat = (b.lat - a.lat) * Math.PI / 180
-  const dLng = (b.lng - a.lng) * Math.PI / 180
-  const lat1 = a.lat * Math.PI / 180
-  const lat2 = b.lat * Math.PI / 180
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
-  return 2 * R * Math.asin(Math.sqrt(h))
-}
-
-function distanciaAPolilinea(punto, coords) {
-  let min = Infinity
-  for (const [lat, lng] of coords) {
-    const d = distanciaKm(punto, { lat, lng })
-    if (d < min) min = d
-  }
-  return min
-}
-
-function calcularAjuste(zona, climaCode, reportes) {
-  let idx = ORDEN_NIVELES.indexOf(zona.nivel)
-  const motivos = []
-  const esLluvia = climaCode != null && CODIGOS_LLUVIA.includes(climaCode)
-  if (esLluvia && idx < 3) { idx += 1; motivos.push('lluvia actual') }
-  const reportesCercanos = reportes.filter((r) => distanciaKm(zona, r) <= UMBRAL_REPORTE_KM).length
-  if (reportesCercanos > 0 && idx < 3) { idx += 1; motivos.push(`${reportesCercanos} reporte${reportesCercanos > 1 ? 's' : ''} tuyo${reportesCercanos > 1 ? 's' : ''} cerca`) }
-  return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
-}
-
-function iconoClima(code) {
-  if (code === 0) return { icon: '☀️', label: 'Despejado' }
-  if ([1, 2, 3].includes(code)) return { icon: '⛅', label: 'Parcialmente nublado' }
-  if ([45, 48].includes(code)) return { icon: '🌫️', label: 'Niebla' }
-  if ([51, 53, 55, 56, 57].includes(code)) return { icon: '🌦️', label: 'Llovizna' }
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { icon: '🌧️', label: 'Lluvia' }
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return { icon: '❄️', label: 'Nieve' }
-  if ([95, 96, 99].includes(code)) return { icon: '⛈️', label: 'Tormenta' }
-  return { icon: '🌡️', label: 'Sin datos' }
-}
-
-async function geocodificar(texto) {
-  const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=1`
-  const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
-  const data = await res.json()
-  if (!data || data.length === 0) return null
-  return {
-    lat: parseFloat(data[0].lat),
-    lng: parseFloat(data[0].lon),
-    label: data[0].display_name.split(',').slice(0, 2).join(','),
-  }
-}
-
-function reproducirBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.frequency.value = 880
-    gain.gain.setValueAtTime(0.15, ctx.currentTime)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.3)
-  } catch { /* silencioso si el navegador bloquea audio sin interacción previa */ }
-}
-
-function textoManiobra(paso) {
-  const dir = {
-    left: 'a la izquierda', right: 'a la derecha',
-    'slight left': 'levemente a la izquierda', 'slight right': 'levemente a la derecha',
-    'sharp left': 'bruscamente a la izquierda', 'sharp right': 'bruscamente a la derecha',
-    straight: 'derecho', uturn: 'en U',
-  }[paso.modificador] || ''
-  const conCalle = paso.calle && paso.calle !== 'la vía'
-  if (paso.tipo === 'depart') return conCalle ? `Salí por ${paso.calle}` : 'Salí y continuá'
-  if (paso.tipo === 'arrive') return 'Llegaste a destino'
-  if (paso.tipo === 'turn') return conCalle ? `Doblá ${dir} en ${paso.calle}` : `Doblá ${dir}`
-  if (paso.tipo === 'roundabout' || paso.tipo === 'rotary') return conCalle ? `En la rotonda, tomá ${paso.calle}` : 'Tomá la rotonda'
-  if (paso.tipo === 'merge') return conCalle ? `Incorporate a ${paso.calle}` : 'Incorporate a la vía'
-  if (paso.tipo === 'fork') return conCalle ? `Mantenete ${dir} hacia ${paso.calle}` : `Mantenete ${dir}`
-  if (paso.tipo === 'end of road') return conCalle ? `Al final de la calle, doblá ${dir} hacia ${paso.calle}` : `Al final de la calle, doblá ${dir}`
-  return conCalle ? `Continuá por ${paso.calle}` : 'Continuá derecho'
-}
-
-function iconoManiobra(paso) {
-  if (paso.tipo === 'arrive') return '🏁'
-  if (paso.tipo === 'depart') return '🚦'
-  if (paso.tipo === 'roundabout' || paso.tipo === 'rotary') return '🔄'
-  if (paso.modificador?.includes('left')) return '⬅️'
-  if (paso.modificador?.includes('right')) return '➡️'
-  if (paso.modificador === 'uturn') return '↩️'
-  return '⬆️'
-}
-
-function crearIconoCluster(cluster) {
-  const count = cluster.getChildCount()
-  const hijos = cluster.getAllChildMarkers()
-  const tieneCritico = hijos.some((m) => m.options.nivelData === 'critico')
-  const size = count < 10 ? 34 : count < 30 ? 42 : 50
-  return L.divIcon({
-    html: `<div class="cluster-bubble ${tieneCritico ? 'cluster-critico' : ''}" style="width:${size}px;height:${size}px;line-height:${size}px;">${count}</div>`,
-    className: 'cluster-icon-wrapper',
-    iconSize: L.point(size, size),
-  })
-}
-
-function VueloControlado({ destino }) {
-  const map = useMap()
-  useEffect(() => {
-    if (destino) map.flyTo([destino.lat, destino.lng], destino.zoom || 15, { duration: 1.4, easeLinearity: 0.15 })
-  }, [destino, map])
-  return null
-}
-
-function SeguimientoEnVivo({ activo, punto }) {
-  const map = useMap()
-  useEffect(() => {
-    if (activo && punto) map.panTo([punto.lat, punto.lng], { animate: true, duration: 0.8 })
-  }, [activo, punto, map])
-  return null
-}
-
-function ControlesZoom() {
-  const map = useMap()
-  return (
-    <div className="zoom-controls panel-enter" style={{ animationDelay: '0.1s' }}>
-      <button onClick={() => map.zoomIn(0.5)} aria-label="Acercar mapa">+</button>
-      <button onClick={() => map.zoomOut(0.5)} aria-label="Alejar mapa">−</button>
-    </div>
-  )
-}
-
-function ClicksDeMapa({ campoActivo, onClick }) {
-  useMapEvents({
-    click(e) {
-      if (campoActivo) onClick({ lat: e.latlng.lat, lng: e.latlng.lng })
-    },
-  })
-  return null
-}
-
-function EscalaMapa() {
-  const map = useMap()
-  const [texto, setTexto] = useState('')
-  useEffect(() => {
-    const actualizar = () => {
-      const centro = map.getCenter()
-      const zoom = map.getZoom()
-      const metrosPorPixel = 156543.03392 * Math.cos((centro.lat * Math.PI) / 180) / Math.pow(2, zoom)
-      const metros = metrosPorPixel * 80
-      const pasos = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]
-      const cercano = pasos.reduce((prev, curr) => (Math.abs(curr - metros) < Math.abs(prev - metros) ? curr : prev))
-      setTexto(cercano >= 1000 ? `${cercano / 1000} km` : `${cercano} m`)
-    }
-    actualizar()
-    map.on('zoomend moveend', actualizar)
-    return () => map.off('zoomend moveend', actualizar)
-  }, [map])
-  return (
-    <div className="escala-mapa">
-      <div className="escala-linea" />
-      <span>{texto}</span>
-    </div>
-  )
-}
-
-function useSegundosDesde() {
-  const [segundos, setSegundos] = useState(0)
-  useEffect(() => {
-    const id = setInterval(() => setSegundos((s) => s + 1), 1000)
-    return () => clearInterval(id)
-  }, [])
-  return segundos
-}
-
-function cargarDeLocalStorage(clave, porDefecto) {
-  try {
-    const guardado = localStorage.getItem(clave)
-    return guardado ? JSON.parse(guardado) : porDefecto
-  } catch {
-    return porDefecto
-  }
-}
+// Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
+// panel de detalle de zona — mismos tonos semánticos que los niveles de riesgo
+// (bajo=verde, alto=naranja, crítico=rojo), pero mapeados a las clases reales del
+// modelo en vez de al nivel ya traducido.
+const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B' }
 
 function App() {
   const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
   const [cargandoHotspots, setCargandoHotspots] = useState(true)
+  const [primeraVezListo, setPrimeraVezListo] = useState(false)
   const [backendError, setBackendError] = useState(false)
+  const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
+  const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
     () => new Set(cargarDeLocalStorage(CLAVE_NIVELES, Object.keys(NIVELES)))
   )
@@ -286,9 +99,12 @@ function App() {
           mortales: h.mortales,
           graves: h.graves,
           motivo: `${h.cantidad_siniestros} siniestros de motociclistas registrados, ${h.mortales} mortales, ${h.graves} graves.`,
+          prediccionModelo: h.prediccion_modelo || null,
+          contextoEstimado: !!h.contexto_estimado,
         }))
         setZonasRiesgo(zonasFormateadas)
         setCargandoHotspots(false)
+        setPrimeraVezListo(true)
         setBackendError(false)
       })
       .catch(() => {
@@ -319,12 +135,18 @@ function App() {
   useEffect(() => { localStorage.setItem(CLAVE_FAVORITOS, JSON.stringify(favoritos)) }, [favoritos])
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tema)
+    localStorage.setItem(CLAVE_TEMA, JSON.stringify(tema))
+  }, [tema])
+
+  useEffect(() => {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
   }, [watchId])
 
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key !== 'Escape') return
+      if (mostrarOnboarding) { cerrarOnboarding(); return }
       if (rutaAbierta) { cerrarTodoRuta(); return }
       if (paso === 'eligiendo') { setPaso('idle'); return }
       if (zonaSeleccionada) { setZonaSeleccionada(null); return }
@@ -335,7 +157,14 @@ function App() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rutaAbierta, paso, zonaSeleccionada, statsAbierto, actividadAbierta, herramientasAbiertas])
+  }, [mostrarOnboarding, rutaAbierta, paso, zonaSeleccionada, statsAbierto, actividadAbierta, herramientasAbiertas])
+
+  const toggleTema = () => setTema((t) => (t === 'dark' ? 'light' : 'dark'))
+
+  const cerrarOnboarding = () => {
+    setMostrarOnboarding(false)
+    localStorage.setItem(CLAVE_ONBOARDING, JSON.stringify(true))
+  }
 
   const toggleNivel = (nivel) => {
     setNivelesActivos((prev) => {
@@ -381,7 +210,7 @@ function App() {
     setWatchId(id)
     setModoViaje(true)
     setZonasAlertadas(new Set())
-    mostrarToast('🏍️ Modo Viaje activado')
+    mostrarToast('Modo Viaje activado')
   }
 
   const iniciarReporte = () => {
@@ -410,7 +239,7 @@ function App() {
     }
     setReportes((prev) => [nuevo, ...prev])
     setPaso('idle')
-    mostrarToast('✓ Reporte enviado — gracias por sumar el dato')
+    mostrarToast('Reporte enviado — gracias por sumar el dato')
   }
 
   const borrarReportes = () => {
@@ -649,22 +478,27 @@ function App() {
       try { await navigator.share({ title: 'Mi ruta en MotoSafe GBA', text: texto }) } catch { /* usuario canceló */ }
     } else if (navigator.clipboard) {
       await navigator.clipboard.writeText(texto)
-      mostrarToast('📋 Ruta copiada al portapapeles')
+      mostrarToast('Ruta copiada al portapapeles')
     }
   }
 
   const hayFiltrosApagados = nivelesActivos.size < Object.keys(NIVELES).length
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && reportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
-  if (modoViaje) textoTopbar = '🏍️ Modo Viaje · siguiendo tu ubicación'
+  if (modoViaje) textoTopbar = 'Modo Viaje · siguiendo tu ubicación'
   else if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
   else if (cargandoHotspots) textoTopbar = 'Conectando con el servidor de datos...'
   else if (reportes.length > 0) textoTopbar = `${reportes.length} reporte${reportes.length > 1 ? 's' : ''} tuyo${reportes.length > 1 ? 's' : ''} · hace ${segundos}s`
-  else if (mostrarAlerta) textoTopbar = `⚠ ${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
+  else if (mostrarAlerta) textoTopbar = `${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
   else textoTopbar = `${zonasFiltradas.length} zonas registradas · hace ${segundos}s`
+
+  const climaInfo = clima ? iconoClima(clima.weathercode) : null
 
   return (
     <div className="app">
+      <LoadingScreen visible={!primeraVezListo} />
+      {mostrarOnboarding && primeraVezListo && <Onboarding onCerrar={cerrarOnboarding} />}
+
       <header className="topbar">
         <div className="brand">
           <span className="brand-dot" />
@@ -672,9 +506,10 @@ function App() {
           <span className="brand-badge">GBA</span>
         </div>
         <div className="topbar-right">
-          {clima && (
-            <div className="clima-badge" title={iconoClima(clima.weathercode).label}>
-              {iconoClima(clima.weathercode).icon} {Math.round(clima.temperature)}°C
+          <ThemeToggle tema={tema} onCambiar={toggleTema} />
+          {climaInfo && (
+            <div className="clima-badge" title={climaInfo.label}>
+              <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
             </div>
           )}
           <div
@@ -689,30 +524,34 @@ function App() {
 
       {toast && <div className="toast panel-enter">{toast}</div>}
 
-      {modoViaje && rutasCalculadas.length > 0 && rutasCalculadas[rutaSeleccionada]?.pasos?.[pasoActual] && (
-        <div className="navegacion-panel panel-enter">
-          <span className="navegacion-icono">{iconoManiobra(rutasCalculadas[rutaSeleccionada].pasos[pasoActual])}</span>
-          <div className="navegacion-texto">
-            <strong>{textoManiobra(rutasCalculadas[rutaSeleccionada].pasos[pasoActual])}</strong>
-            {miUbicacion && (
-              <span className="navegacion-distancia">
-                {Math.round(distanciaKm(miUbicacion, rutasCalculadas[rutaSeleccionada].pasos[pasoActual]) * 1000)} m
-              </span>
-            )}
+      {modoViaje && rutasCalculadas.length > 0 && rutasCalculadas[rutaSeleccionada]?.pasos?.[pasoActual] && (() => {
+        const pasoActivo = rutasCalculadas[rutaSeleccionada].pasos[pasoActual]
+        const ManiobraIcon = iconoManiobra(pasoActivo)
+        return (
+          <div className="navegacion-panel panel-enter">
+            <span className="navegacion-icono"><ManiobraIcon size={22} /></span>
+            <div className="navegacion-texto">
+              <strong>{textoManiobra(pasoActivo)}</strong>
+              {miUbicacion && (
+                <span className="navegacion-distancia">
+                  {Math.round(distanciaKm(miUbicacion, pasoActivo) * 1000)} m
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {alertaViaje && (
         <div className={`alerta-viaje panel-enter ${alertaViaje.ajuste.nivel === 'critico' ? 'critica' : 'alta'}`}>
-          ⚠️ Te acercás a una zona de riesgo {NIVELES[alertaViaje.ajuste.nivel].label.toUpperCase()}
+          <span className="alerta-viaje-cabecera"><TriangleAlert size={16} /> Te acercás a una zona de riesgo {NIVELES[alertaViaje.ajuste.nivel].label.toUpperCase()}</span>
           <span className="alerta-viaje-detalle">{alertaViaje.nombre}</span>
         </div>
       )}
 
       {backendError && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
-          ⚠ Sin conexión con el backend (localhost:8000). Reintentando cada 5s.
+          <WifiOff size={14} /> Sin conexión con el backend (localhost:8000). Reintentando cada 5s.
           <button onClick={cargarHotspots}>Reintentar ahora</button>
         </div>
       )}
@@ -721,13 +560,13 @@ function App() {
         <div className="actividad-panel panel-enter hazard-edge">
           <div className="actividad-header">
             <span className="cercanas-title">Actividad reciente</span>
-            <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad">✕</button>
+            <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad"><X size={14} /></button>
           </div>
           {reportes.map((rep) => {
             const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
             return (
               <button key={rep.id} className="actividad-item" onClick={() => { setVuelo({ lat: rep.lat, lng: rep.lng, zoom: 16 }); setActividadAbierta(false) }}>
-                <span className="actividad-icon">{cat?.icon}</span>
+                <span className="actividad-icon">{cat?.Icon && <cat.Icon size={15} />}</span>
                 <span className="actividad-texto">
                   <span className="actividad-label">{cat?.label}</span>
                   <span className="actividad-hora">{rep.hora}</span>
@@ -743,7 +582,7 @@ function App() {
         <div className="stats-panel panel-enter hazard-edge">
           <div className="stats-header">
             <span className="cercanas-title">Estadísticas de la Ciudad</span>
-            <button className="detalle-cerrar" onClick={() => setStatsAbierto(false)} aria-label="Cerrar estadísticas">✕</button>
+            <button className="detalle-cerrar" onClick={() => setStatsAbierto(false)} aria-label="Cerrar estadísticas"><X size={14} /></button>
           </div>
           <p className="stats-subtitulo">{totalSiniestros.toLocaleString('es-AR')} siniestros históricos en {zonasAjustadas.length} zonas (CABA)</p>
           <div className="stats-indice">
@@ -773,9 +612,9 @@ function App() {
       )}
 
       <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
-        <span className="searchbar-icon">🔍</span>
+        <span className="searchbar-icon"><Search size={13} /></span>
         <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar zona o avenida" />
-        {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda">✕</button>}
+        {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda"><X size={12} /></button>}
       </div>
 
       {rutaAbierta && (
@@ -783,32 +622,32 @@ function App() {
           <div className="ruta-form-fila">
             <span className="ruta-form-punto ruta-form-punto-origen" />
             <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} aria-label="Origen de la ruta" />
-            <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}>📍</button>
+            <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}><MapPin size={14} /></button>
           </div>
-          <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar" aria-label="Intercambiar origen y destino">⇅</button>
+          <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar" aria-label="Intercambiar origen y destino"><ArrowUpDown size={13} /></button>
           <div className="ruta-form-fila">
             <span className="ruta-form-punto ruta-form-punto-destino" />
             <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} aria-label="Destino de la ruta" />
-            <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}>📍</button>
+            <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}><MapPin size={14} /></button>
           </div>
           <div className="favoritos-fila">
             {favoritos.casa ? (
-              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.casa)}>🏠 Casa</button>
+              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.casa)}><Home size={12} /> Casa</button>
             ) : destinoTexto.trim() ? (
-              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('casa', '🏠 Casa')}>💾 Guardar como Casa</button>
+              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('casa', 'Casa')}><Save size={12} /> Guardar como Casa</button>
             ) : (
-              <button className="favorito-chip favorito-chip-vacio" disabled>🏠 Casa</button>
+              <button className="favorito-chip favorito-chip-vacio" disabled><Home size={12} /> Casa</button>
             )}
             {favoritos.trabajo ? (
-              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.trabajo)}>💼 Trabajo</button>
+              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.trabajo)}><Briefcase size={12} /> Trabajo</button>
             ) : destinoTexto.trim() ? (
-              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('trabajo', '💼 Trabajo')}>💾 Guardar como Trabajo</button>
+              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('trabajo', 'Trabajo')}><Save size={12} /> Guardar como Trabajo</button>
             ) : (
-              <button className="favorito-chip favorito-chip-vacio" disabled>💼 Trabajo</button>
+              <button className="favorito-chip favorito-chip-vacio" disabled><Briefcase size={12} /> Trabajo</button>
             )}
           </div>
           {campoActivo && <p className="ruta-form-hint">Tocá el mapa para marcar el {campoActivo}.</p>}
-          <button className="ruta-form-miubicacion" onClick={usarMiUbicacionComoOrigen}>🎯 Usar mi ubicación como origen</button>
+          <button className="ruta-form-miubicacion" onClick={usarMiUbicacionComoOrigen}><LocateFixed size={14} /> Usar mi ubicación como origen</button>
           {rutaError && <p className="ruta-form-error">{rutaError}</p>}
           <div className="ruta-form-acciones">
             <button className="ruta-form-cancelar" onClick={cerrarTodoRuta}>Cancelar</button>
@@ -826,7 +665,7 @@ function App() {
         <div className="ruta-banner ruta-banner-error panel-enter">{rutaError}<button onClick={cerrarTodoRuta}>Cerrar</button></div>
       )}
 
-      <div className={`mapa-wrapper ${vistaNavegacion ? 'tilt' : ''}`}>
+      <div className={`mapa-wrapper ${vistaNavegacion ? 'tilt' : ''} ${primeraVezListo ? 'cargado' : ''}`}>
         <MapContainer
           center={[CENTRO_GBA.lat, CENTRO_GBA.lng]}
           zoom={11}
@@ -878,7 +717,7 @@ function App() {
                   center={[zona.lat, zona.lng]}
                   radius={resaltada ? 14 : zona.ajuste.nivel === 'critico' ? 11 : 8}
                   pathOptions={{
-                    color: cruzada ? '#4FA8E8' : resaltada ? '#FFC933' : NIVELES[zona.ajuste.nivel].color,
+                    color: cruzada ? '#4FA8E8' : resaltada ? '#4FA8E8' : NIVELES[zona.ajuste.nivel].color,
                     fillColor: NIVELES[zona.ajuste.nivel].color,
                     fillOpacity: 0.75,
                     weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
@@ -914,29 +753,29 @@ function App() {
         <div className="ruta-resumen panel-enter hazard-edge">
           <div className="ruta-resumen-header">
             <span className="cercanas-title">Opciones de ruta</span>
-            <button className="ruta-resumen-editar" onClick={editarRuta} aria-label="Editar origen y destino">✏️</button>
+            <button className="ruta-resumen-editar" onClick={editarRuta} aria-label="Editar origen y destino"><Pencil size={13} /></button>
           </div>
           {rutasConScore.length > 1 && (
             <div className="ruta-prioridad">
-              <button className={rutaSeleccionada === idxMasRapida ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasRapida)}>⚡ Rápida</button>
+              <button className={rutaSeleccionada === idxMasRapida ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasRapida)}><Zap size={12} /> Rápida</button>
               {rutasConScore.length >= 3 && (
-                <button className={rutaSeleccionada === idxEquilibrada ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxEquilibrada)}>⚖️ Equilibrada</button>
+                <button className={rutaSeleccionada === idxEquilibrada ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxEquilibrada)}><Scale size={12} /> Equilibrada</button>
               )}
-              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)}>🛡️ Segura</button>
+              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)}><ShieldCheck size={12} /> Segura</button>
             </div>
           )}
           {rutasConScore.map((r, i) => (
             <button key={i} className={`ruta-opcion ${i === rutaSeleccionada ? 'activa' : ''}`} onClick={() => setRutaSeleccionada(i)}>
               <span className="ruta-opcion-num">
                 Ruta {i + 1}
-                {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas">⚡🛡️ recomendada</span>}
-                {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida">⚡ rápida</span>}
-                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura">🛡️ segura</span>}
-                {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada">⚖️ equilibrada</span>}
+                {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas"><Zap size={10} /><ShieldCheck size={10} /> recomendada</span>}
+                {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida"><Zap size={10} /> rápida</span>}
+                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> segura</span>}
+                {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada"><Scale size={10} /> equilibrada</span>}
               </span>
               <span className="ruta-opcion-datos">{r.km} km · {r.min} min</span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
-                {r.riesgo === 0 ? '✅ sin cruces' : `⚠ riesgo ${r.riesgo} pts · cruza ${zonasCruzadasPorRuta[i].length}`}
+                {r.riesgo === 0 ? <><CircleCheck size={12} /> sin cruces</> : <><TriangleAlert size={12} /> riesgo {r.riesgo} pts · cruza {zonasCruzadasPorRuta[i].length}</>}
               </span>
             </button>
           ))}
@@ -956,7 +795,7 @@ function App() {
             </div>
           )}
           <div className="ruta-resumen-acciones-finales">
-            <button className="ruta-resumen-compartir" onClick={compartirRuta}>📤 Compartir</button>
+            <button className="ruta-resumen-compartir" onClick={compartirRuta}><Share2 size={13} /> Compartir</button>
             <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
           </div>
         </div>
@@ -964,12 +803,29 @@ function App() {
 
       {rutasCalculadas.length === 0 && !rutaAbierta && zonaSeleccionada && (
         <div className="detalle-panel panel-enter hazard-edge">
-          <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)} aria-label="Cerrar detalle de zona">✕</button>
+          <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)} aria-label="Cerrar detalle de zona"><X size={14} /></button>
           <span className="popup-nivel" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
             Riesgo {NIVELES[zonaSeleccionada.ajuste.nivel].label}
           </span>
           <strong className="detalle-nombre">{zonaSeleccionada.nombre}</strong>
           <p className="detalle-motivo">{zonaSeleccionada.motivo}</p>
+          {zonaSeleccionada.prediccionModelo && (
+            <div className="detalle-modelo">
+              <span className="detalle-modelo-titulo">Salida del modelo, ahora mismo</span>
+              {Object.entries(zonaSeleccionada.prediccionModelo).map(([clase, prob]) => (
+                <div className="detalle-modelo-fila" key={clase}>
+                  <span className="detalle-modelo-label">{clase}</span>
+                  <div className="detalle-modelo-track">
+                    <div className="detalle-modelo-fill" style={{ width: `${prob * 100}%`, background: COLOR_CLASE_MODELO[clase] || '#8A9099' }} />
+                  </div>
+                  <span className="detalle-modelo-num">{Math.round(prob * 100)}%</span>
+                </div>
+              ))}
+              {zonaSeleccionada.contextoEstimado && (
+                <p className="detalle-modelo-nota">Esta zona no tiene perfil histórico propio: se usó el perfil promedio de la ciudad.</p>
+              )}
+            </div>
+          )}
           {zonaSeleccionada.ajuste.subio && (
             <div className="detalle-ajuste">
               <span className="detalle-ajuste-base">Base: {NIVELES[zonaSeleccionada.nivel].label}</span>
@@ -1013,25 +869,25 @@ function App() {
       </div>
 
       {!rutaAbierta && rutasCalculadas.length === 0 && (
-        <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}>🧭 <span>Trazar ruta</span></button>
+        <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}><Compass size={16} /> <span>Trazar ruta</span></button>
       )}
 
       <div className="herramientas-stack">
         {herramientasAbiertas && (
           <div className="herramientas-menu panel-enter">
             <button onClick={() => { pedirUbicacion(); setHerramientasAbiertas(false) }}>
-              {buscandoUbicacion ? <span className="spinner" /> : '🎯'} Mi ubicación
+              {buscandoUbicacion ? <span className="spinner" /> : <LocateFixed size={15} />} Mi ubicación
             </button>
             <button className={modoViaje ? 'activo' : ''} onClick={toggleModoViaje}>
-              🏍️ Modo Viaje {modoViaje ? '· activo' : ''}
+              <Bike size={15} /> Modo Viaje {modoViaje ? '· activo' : ''}
             </button>
             {modoViaje && (
               <button className={vistaNavegacion ? 'activo' : ''} onClick={() => setVistaNavegacion((v) => !v)}>
-                📐 Vista inclinada {vistaNavegacion ? '· activa' : ''}
+                <Box size={15} /> Vista inclinada {vistaNavegacion ? '· activa' : ''}
               </button>
             )}
             <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false) }}>
-              📊 Estadísticas
+              <BarChart3 size={15} /> Estadísticas
             </button>
           </div>
         )}
@@ -1040,12 +896,12 @@ function App() {
           onClick={() => setHerramientasAbiertas((v) => !v)}
           aria-label="Más herramientas"
         >
-          {herramientasAbiertas ? '✕' : '🔧'}
+          {herramientasAbiertas ? <X size={18} /> : <Wrench size={18} />}
         </button>
       </div>
 
       <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte}>
-        {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? '✕' : '⚠'}
+        {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? <X size={16} /> : <TriangleAlert size={16} />}
         <span>{paso === 'buscando' ? 'Ubicando...' : paso === 'eligiendo' ? 'Cancelar' : 'Reportar'}</span>
       </button>
 
@@ -1054,10 +910,10 @@ function App() {
           <h3>¿Qué estás viendo en la vía?</h3>
           <div className="report-options">
             {CATEGORIAS_REPORTE.map((cat) => (
-              <button key={cat.id} onClick={() => confirmarReporte(cat.id)}>{cat.icon} {cat.label}</button>
+              <button key={cat.id} onClick={() => confirmarReporte(cat.id)}><cat.Icon size={15} /> {cat.label}</button>
             ))}
           </div>
-          <p className="report-hint">📍 Ubicación tomada por GPS del dispositivo.</p>
+          <p className="report-hint"><MapPin size={12} /> Ubicación tomada por GPS del dispositivo.</p>
         </div>
       )}
     </div>
