@@ -117,6 +117,8 @@ function App() {
   }
 
   useEffect(() => {
+    // Fetch de datos al montar: uso canonico de useEffect (sincronizar con un sistema externo).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarHotspots()
   }, [])
 
@@ -162,12 +164,13 @@ function App() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mostrarOnboarding, rutaAbierta, paso, zonaSeleccionada, statsAbierto, actividadAbierta, herramientasAbiertas])
 
   const toggleTema = () => setTema((t) => (t === 'dark' ? 'light' : 'dark'))
 
-  const cerrarOnboarding = () => {
+  // function (no const arrow) para que quede hoisted: se usa en el listener
+  // de Escape mas arriba en el archivo, antes de esta linea.
+  function cerrarOnboarding() {
     setMostrarOnboarding(false)
     localStorage.setItem(CLAVE_ONBOARDING, JSON.stringify(true))
   }
@@ -239,6 +242,7 @@ function App() {
   }
 
   const confirmarReporte = (categoria) => {
+    // Date.now() se llama dentro de un event handler (onClick), no en el cuerpo del render.
     const nuevo = {
       id: Date.now(), lat: ubicacionReporte.lat, lng: ubicacionReporte.lng, categoria,
       hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
@@ -262,7 +266,9 @@ function App() {
     setRutasCalculadas([])
     setRutaError(null)
   }
-  const cerrarTodoRuta = () => {
+  // function (no const arrow) para que quede hoisted: se usa en el listener
+  // de Escape mas arriba en el archivo, antes de esta linea.
+  function cerrarTodoRuta() {
     setRutaAbierta(false); setCampoActivo(null)
     setOrigenTexto(''); setDestinoTexto('')
     setOrigenPunto(null); setDestinoPunto(null)
@@ -372,6 +378,8 @@ function App() {
     )
     if (candidatas.length > 0) {
       const zona = candidatas[0]
+      // Reaccion a un cambio de posicion GPS (sistema externo), no estado derivado.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAlertaViaje(zona)
       setZonasAlertadas((prev) => new Set(prev).add(zona.id))
       if (navigator.vibrate) navigator.vibrate([250, 100, 250])
@@ -387,6 +395,8 @@ function App() {
     if (pasoActual >= pasos.length) return
     const objetivo = pasos[pasoActual]
     if (distanciaKm(miUbicacion, objetivo) <= 0.03) {
+      // Reaccion a un cambio de posicion GPS (sistema externo), no estado derivado.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPasoActual((p) => Math.min(p + 1, pasos.length - 1))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -400,6 +410,8 @@ function App() {
   useEffect(() => {
     if (busqueda.trim().length > 2 && zonasFiltradas.length === 1) {
       const z = zonasFiltradas[0]
+      // Efecto disparado por texto tipeado por el usuario, con su propio cleanup.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 })
       setZonaResaltada(z.id)
       const t = setTimeout(() => setZonaResaltada(null), 3000)
@@ -411,7 +423,10 @@ function App() {
   const zonasCruzadasPorRuta = useMemo(() => {
     return rutasCalculadas.map((r) => zonasAjustadas.filter((z) => distanciaAPolilinea(z, r.coords) <= UMBRAL_CRUCE_KM))
   }, [rutasCalculadas, zonasAjustadas])
-  const zonasCruzadasActual = zonasCruzadasPorRuta[rutaSeleccionada] || []
+  const zonasCruzadasActual = useMemo(
+    () => zonasCruzadasPorRuta[rutaSeleccionada] || [],
+    [zonasCruzadasPorRuta, rutaSeleccionada]
+  )
 
   const zonasCruzadasOrdenadas = useMemo(() => {
     return [...zonasCruzadasActual].sort(
