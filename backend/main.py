@@ -111,35 +111,52 @@ def obtener_hotspots():
     hora_actual = ahora.hour
     dia_actual = ahora.strftime('%A')
 
-    for h in resultado:
-        # nivel_riesgo SIEMPRE sale del modelo entrenado en este endpoint: es la única
-        # fuente de verdad. El valor que trae la fila de la base (calculado con una
-        # heurística simple al momento de cargar los hotspots) es solo un placeholder
-        # inicial y se pisa acá en cada pedido, sin excepciones — incluso cuando el
-        # hotspot no tiene fila propia en hotspots_contexto.csv, en cuyo caso se usa
-        # el contexto genérico de la ciudad y se marca contexto_estimado=True para
-        # que quede trazable cuáles predicciones usan datos propios del hotspot y
-        # cuáles un perfil promedio.
-        ctx = contexto_hotspots[contexto_hotspots['cluster'] == h['cluster']]
-        if ctx.empty:
-            comuna = _CONTEXTO_GENERICO['comuna']
-            tipo_via = _CONTEXTO_GENERICO['tipo_via']
-            contraparte = _CONTEXTO_GENERICO['contraparte']
-            edad = _CONTEXTO_GENERICO['edad']
-            sexo = _CONTEXTO_GENERICO['sexo']
-            contexto_estimado = True
-        else:
-            comuna = ctx.iloc[0]['comuna_moda']
-            tipo_via = ctx.iloc[0]['tipo_via_moda']
-            contraparte = ctx.iloc[0]['contraparte_moda']
-            edad = ctx.iloc[0]['edad_promedio']
-            sexo = ctx.iloc[0]['sexo_moda']
-            contexto_estimado = False
+    # Vectorizado: se arman las filas de los 430 hotspots de una sola vez y se
+    # predice todo el lote junto (un solo pd.get_dummies + un solo predict_proba),
+    # en vez de un loop en Python armando un DataFrame de una fila por hotspot.
+    # Esto es lo que hacía que el endpoint tardara 15-20 segundos: no era el modelo
+    # en si (un RandomForest predice un lote de 430 filas en milisegundos), era el
+    # overhead de pandas (crear DataFrame, get_dummies, reindex) repetido 430 veces
+    # en Python puro, mas el filtro lineal sobre contexto_hotspots en cada vuelta.
+    columnas_contexto = ['cluster', 'comuna_moda', 'tipo_via_moda', 'contraparte_moda', 'edad_promedio', 'sexo_moda']
+    contexto = pd.DataFrame({'cluster': [h['cluster'] for h in resultado]}).merge(
+        contexto_hotspots[columnas_contexto], on='cluster', how='left',
+    )
+    # nivel_riesgo SIEMPRE sale del modelo entrenado en este endpoint: es la única
+    # fuente de verdad. El valor que trae la fila de la base (calculado con una
+    # heurística simple al momento de cargar los hotspots) es solo un placeholder
+    # inicial y se pisa acá en cada pedido, sin excepciones — incluso cuando el
+    # hotspot no tiene fila propia en hotspots_contexto.csv, en cuyo caso se usa
+    # el contexto genérico de la ciudad y se marca contexto_estimado=True para
+    # que quede trazable cuáles predicciones usan datos propios del hotspot y
+    # cuáles un perfil promedio.
+    contexto_estimado = contexto['comuna_moda'].isna()
+    contexto['comuna_moda'] = contexto['comuna_moda'].fillna(_CONTEXTO_GENERICO['comuna'])
+    contexto['tipo_via_moda'] = contexto['tipo_via_moda'].fillna(_CONTEXTO_GENERICO['tipo_via'])
+    contexto['contraparte_moda'] = contexto['contraparte_moda'].fillna(_CONTEXTO_GENERICO['contraparte'])
+    contexto['edad_promedio'] = contexto['edad_promedio'].fillna(_CONTEXTO_GENERICO['edad'])
+    contexto['sexo_moda'] = contexto['sexo_moda'].fillna(_CONTEXTO_GENERICO['sexo'])
 
-        probs = predecir_para_fila(comuna, tipo_via, hora_actual, dia_actual, contraparte, edad, sexo)
+    filas = pd.DataFrame({
+        'hora': hora_actual,
+        'edad_victima': contexto['edad_promedio'],
+        'edad_desconocida': 0,
+        'dia_semana': dia_actual,
+        'comuna': contexto['comuna_moda'],
+        'tipo_de_via_siniestro': contexto['tipo_via_moda'],
+        'contraparte_siniestro': contexto['contraparte_moda'],
+        'sexo_victima': contexto['sexo_moda'],
+    })
+    fila_codificada = pd.get_dummies(filas)
+    fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
+    matriz_probabilidades = modelo_final.predict_proba(fila_alineada)
+    clases = modelo_final.classes_.tolist()
+
+    for i, h in enumerate(resultado):
+        probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
         h['nivel_riesgo'] = nivel_desde_probabilidades(probs)
         h['prediccion_modelo'] = probs
-        h['contexto_estimado'] = contexto_estimado
+        h['contexto_estimado'] = bool(contexto_estimado.iloc[i])
 
     return resultado
 

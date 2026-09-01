@@ -29,9 +29,13 @@ for _, row in df.iterrows():
         INSERT INTO hotspots_riesgo (cluster, latitud, longitud, cantidad_siniestros, mortales, graves, nivel_riesgo, ubicacion)
         VALUES (%s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
     """, (
-        int(row['cluster']), row['latitud'], row['longitud'],
+        # latitud/longitud se castean a float nativo de Python: pandas las trae
+        # como np.float64, y psycopg2 arma el literal SQL con repr() del valor.
+        # Numpy >= 2.0 cambio el repr() de sus escalares (antes "-34.5", ahora
+        # "np.float64(-34.5)"), lo que rompia el INSERT con un valor no casteado.
+        int(row['cluster']), float(row['latitud']), float(row['longitud']),
         int(row['cantidad_siniestros']), int(row['mortales']), int(row['graves']),
-        NIVEL_PLACEHOLDER, row['longitud'], row['latitud']
+        NIVEL_PLACEHOLDER, float(row['longitud']), float(row['latitud'])
     ))
 
 conn.commit()
