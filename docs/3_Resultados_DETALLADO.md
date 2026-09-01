@@ -108,7 +108,22 @@ Se probó también combinar "grave" y "mortal" en una sola categoría llamada "s
 
 ---
 
-## 5. Qué variables importan más para predecir la gravedad
+## 5. Cómo se traduce la probabilidad del modelo en un nivel de riesgo (bajo/medio/alto/crítico)
+
+El modelo entrenado predice probabilidades por clase (LEVE/GRAVE/MORTAL), no un nivel de riesgo categórico. La función `nivel_desde_probabilidades()` en `backend/main.py` hace esa traducción, con los siguientes cortes:
+
+| Condición | Nivel resultante |
+|---|---|
+| p(MORTAL) ≥ 0.20 | Crítico |
+| p(MORTAL) ≥ 0.10 **o** p(GRAVE) ≥ 0.40 | Alto |
+| p(GRAVE) ≥ 0.20 | Medio |
+| Ninguna de las anteriores | Bajo |
+
+**Justificación de la asimetría entre los umbrales de MORTAL y GRAVE.** Como se detalla en la sección de comparación de modelos, el modelo elegido tiene una precisión baja para la clase GRAVE (0.11, y no supera 0.15 en ninguna de las cuatro versiones evaluadas): produce bastantes falsos positivos de "grave" sobre casos que en la realidad fueron leves. Esa limitación se acepta de forma consciente porque, en un sistema de alerta de seguridad vial, es preferible sobre-alertar que dejar pasar un caso serio sin avisar. Esa misma lógica se traslada al diseño de los umbrales: como la señal de GRAVE es más ruidosa, se le exige una probabilidad acumulada más alta (0.40, o 0.20 para el nivel intermedio) que a MORTAL (0.10-0.20) para que el sistema escale el nivel de riesgo mostrado en el mapa. No es un ajuste arbitrario de constantes: es la misma decisión de "priorizar recall sobre precisión" que ya se justificó al elegir el modelo, aplicada también en la capa de presentación.
+
+**Qué pasa cuando falta el contexto propio de un hotspot.** Cada uno de los 430 hotspots necesita, para pasar por el modelo, un perfil típico de esa zona (comuna, tipo de vía, contraparte y edad/sexo promedio de sus víctimas históricas), calculado una sola vez y guardado en `hotspots_contexto.csv`. En una primera versión del sistema, cuando un hotspot no tenía fila propia en ese archivo, el backend se quedaba con un nivel de riesgo calculado con una fórmula completamente distinta (una heurística simple sobre cantidad de siniestros, mortales y graves, usada solo para poblar la base de datos inicialmente) — es decir, convivían dos criterios de "riesgo" distintos en el mismo mapa sin que el usuario (ni el jurado revisando el código) pudiera distinguir cuál se estaba usando en cada punto. Se corrigió para que el modelo sea la única fuente de verdad: si falta el contexto propio del hotspot, se usa el perfil promedio de toda la ciudad como entrada al mismo modelo, y la respuesta de la API marca ese caso explícitamente con `contexto_estimado: true`, de forma que la limitación quede documentada y trazable en vez de oculta.
+
+## 6. Qué variables importan más para predecir la gravedad
 
 Analizando el modelo base (sin edad/sexo, para entender primero el peso de las variables de contexto), se encontró:
 
@@ -125,7 +140,7 @@ Analizando el modelo base (sin edad/sexo, para entender primero el peso de las v
 
 ---
 
-## 6. Limitaciones del modelo, para declarar con honestidad
+## 7. Limitaciones del modelo, para declarar con honestidad
 
 1. **La precisión al predecir "grave" se mantiene baja en todas las versiones probadas** (nunca supera 0,15) — el modelo genera bastantes falsas alarmas de "esto va a ser grave" sobre casos que en realidad terminaron siendo leves. En un contexto de seguridad vial, sobre-alertar es preferible a no alertar, pero es una limitación real que hay que reconocer, no ocultar.
 2. **El 40% de las edades usadas para entrenar son estimadas**, no reales.
@@ -135,7 +150,7 @@ Analizando el modelo base (sin edad/sexo, para entender primero el peso de las v
 
 ---
 
-## 7. Archivos que quedaron generados (en la carpeta `data/`, y copiados a `backend/` los que la aplicación usa en vivo)
+## 8. Archivos que quedaron generados (en la carpeta `data/`, y copiados a `backend/` los que la aplicación usa en vivo)
 
 | Archivo | Qué contiene |
 |---|---|

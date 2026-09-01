@@ -68,7 +68,22 @@ También se probó una versión binaria (LEVE vs. GRAVE+MORTAL combinadas) con e
 
 ---
 
-## 5. Por qué el modelo #3 es el elegido
+## 5. Cómo se traduce la probabilidad del modelo en un nivel de riesgo (bajo/medio/alto/crítico)
+
+El modelo no devuelve "bajo/medio/alto/crítico" directamente: devuelve una probabilidad para cada clase (LEVE/GRAVE/MORTAL). El backend (`nivel_desde_probabilidades` en `main.py`) traduce esas probabilidades a un nivel con estos cortes:
+
+| Condición | Nivel |
+|---|---|
+| p(MORTAL) ≥ 0.20 | Crítico |
+| p(MORTAL) ≥ 0.10 o p(GRAVE) ≥ 0.40 | Alto |
+| p(GRAVE) ≥ 0.20 | Medio |
+| resto | Bajo |
+
+**Por qué el umbral de MORTAL es más bajo que el de GRAVE:** como se documentó en la sección anterior, la precisión de GRAVE se mantiene baja (0.08–0.15) en las cuatro versiones probadas — el modelo genera bastantes falsas alarmas de "grave". Frente a esa limitación, se decidió priorizar no perder señal de MORTAL aun a costa de más falsos positivos: alcanza con menos probabilidad acumulada de MORTAL que de GRAVE para escalar el nivel de riesgo mostrado en el mapa. Es una decisión de diseño explícita, no un valor arbitrario, coherente con el criterio de "mejor sobre-alertar que no alertar" en seguridad vial.
+
+**Cobertura de contexto:** para calcular estas probabilidades, cada uno de los 430 hotspots necesita un perfil típico (comuna, tipo de vía, contraparte, edad/sexo promedio de las víctimas históricas de esa zona), guardado en `hotspots_contexto.csv`. Si un hotspot no tiene ese perfil propio, el backend usa el perfil promedio de toda la ciudad en su lugar y lo marca explícitamente con `contexto_estimado: true` en la respuesta de la API — así queda trazable cuáles predicciones se basan en el historial específico de la zona y cuáles en un perfil genérico, en vez de mostrar un nivel de riesgo calculado con un criterio distinto sin aviso.
+
+## 6. Por qué el modelo #3 es el elegido
 
 - **Mejora sustancial y consistente** en las dos clases más importantes (detectar graves y mortales), no solo en una métrica aislada.
 - Confirma la hipótesis de que **"quién" (edad, sexo de la víctima) aporta más información que "dónde y cuándo" solamente**.
@@ -76,7 +91,7 @@ También se probó una versión binaria (LEVE vs. GRAVE+MORTAL combinadas) con e
 
 ---
 
-## 6. Importancia de variables (modelo base, sin edad/sexo)
+## 7. Importancia de variables (modelo base, sin edad/sexo)
 
 | Variable | Importancia relativa |
 |---|---|
@@ -91,7 +106,7 @@ También se probó una versión binaria (LEVE vs. GRAVE+MORTAL combinadas) con e
 
 ---
 
-## 7. Limitaciones honestas del modelo, para declarar en la tesis
+## 8. Limitaciones honestas del modelo, para declarar en la tesis
 
 1. **Precisión de GRAVE se mantiene baja en todas las versiones** (máximo 0,15) — el modelo genera bastantes falsas alarmas de "grave" sobre casos que en realidad fueron leves. Aceptable en un contexto de seguridad (mejor sobre-alertar que no alertar), pero es una limitación real a declarar.
 2. **40% de las edades son estimadas**, no reales — impacta la calidad de la señal que aporta esa variable.
@@ -101,7 +116,7 @@ También se probó una versión binaria (LEVE vs. GRAVE+MORTAL combinadas) con e
 
 ---
 
-## 8. Archivos generados (ubicados en `data/` y copiados a `backend/`)
+## 9. Archivos generados (ubicados en `data/` y copiados a `backend/`)
 
 | Archivo | Contenido |
 |---|---|
