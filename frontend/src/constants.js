@@ -17,6 +17,7 @@ export const CLAVE_NIVELES = 'motosafe_niveles_activos'
 export const CLAVE_FAVORITOS = 'motosafe_favoritos'
 export const CLAVE_TEMA = 'motosafe_tema'
 export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
+export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
 
 export const NIVELES = {
   bajo:    { label: 'Bajo',    color: '#3DDC84' },

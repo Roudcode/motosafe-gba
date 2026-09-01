@@ -13,7 +13,7 @@ import {
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
-  API_URL, CLAVE_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, NIVELES, CATEGORIAS_REPORTE,
+  API_URL, CLAVE_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
@@ -22,6 +22,8 @@ import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, Escala
 import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
+import { CapaMapaToggle } from './components/CapaMapaToggle'
+import { CapaCalor } from './components/CapaCalor'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
 
 // Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
@@ -36,6 +38,7 @@ function App() {
   const [primeraVezListo, setPrimeraVezListo] = useState(false)
   const [backendError, setBackendError] = useState(false)
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
+  const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
     () => new Set(cargarDeLocalStorage(CLAVE_NIVELES, Object.keys(NIVELES)))
@@ -138,6 +141,9 @@ function App() {
     document.documentElement.setAttribute('data-theme', tema)
     localStorage.setItem(CLAVE_TEMA, JSON.stringify(tema))
   }, [tema])
+  useEffect(() => {
+    localStorage.setItem(CLAVE_CAPA_MAPA, JSON.stringify(capaMapa))
+  }, [capaMapa])
 
   useEffect(() => {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
@@ -507,6 +513,7 @@ function App() {
         </div>
         <div className="topbar-right">
           <ThemeToggle tema={tema} onCambiar={toggleTema} />
+          <CapaMapaToggle capa={capaMapa} onCambiar={() => setCapaMapa((c) => (c === 'clusters' ? 'heatmap' : 'clusters'))} />
           {climaInfo && (
             <div className="clima-badge" title={climaInfo.label}>
               <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
@@ -707,6 +714,9 @@ function App() {
             </CircleMarker>
           )}
 
+          {capaMapa === 'heatmap' && <CapaCalor zonas={zonasFiltradas} activa={capaMapa === 'heatmap'} />}
+
+          {capaMapa === 'clusters' && (
           <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
             {zonasFiltradas.map((zona) => {
               const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
@@ -729,6 +739,7 @@ function App() {
               )
             })}
           </MarkerClusterGroup>
+          )}
 
           {reportes.map((rep) => (
             <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color: '#FFC933', fillColor: '#FFC933', fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">

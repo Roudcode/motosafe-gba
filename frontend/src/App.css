@@ -128,6 +128,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .theme-toggle:hover { color: var(--amarillo); border-color: var(--amarillo); transform: rotate(15deg); }
 
+/* ===== Toggle de capa de mapa (clusters / heatmap) ===== */
+.capa-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(var(--surface-rgb), 0.85); border: 1px solid var(--border); color: var(--text-dim);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.capa-toggle:hover { color: #F2793B; border-color: #F2793B; transform: scale(1.08); }
+
 .toast {
   position: absolute; top: 62px; left: 50%; transform: translateX(-50%); z-index: 1002;
   background: var(--surface-solid); border: 1px solid var(--verde); color: var(--text);
