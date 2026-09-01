@@ -2,6 +2,10 @@
 data/
 *.csv
 *.xlsx
+# Excepcion: artefactos que el backend necesita para arrancar (copias chicas,
+# generadas por la notebook a partir de data/, se regeneran corriendo la
+# seccion 6 de 01_eda_hotspots_moto.ipynb si el modelo se reentrena)
+!backend/hotspots_contexto.csv
 
 # Python
 venv/
@@ -9,6 +13,7 @@ __pycache__/
 *.pyc
 .env
 .ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
 
 # Node / React
 node_modules/
