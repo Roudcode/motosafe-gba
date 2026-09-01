@@ -8,17 +8,16 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 
 df = pd.read_csv('../data/hotspots_moto_caba.csv')
 
-def calcular_nivel(row):
-    score = row['cantidad_siniestros'] + row['mortales'] * 5 + row['graves'] * 2
-    if score >= 100:
-        return 'critico'
-    if score >= 60:
-        return 'alto'
-    if score >= 30:
-        return 'medio'
-    return 'bajo'
-
-df['nivel_riesgo'] = df.apply(calcular_nivel, axis=1)
+# nivel_riesgo se inserta como placeholder fijo ('bajo') porque la columna es NOT NULL,
+# pero NUNCA se usa como tal: el endpoint GET /hotspots (main.py) recalcula el nivel
+# real de cada hotspot en cada pedido, en vivo, a partir del modelo entrenado
+# (Random Forest, modelo_final.pkl) — no de una fórmula heurística sobre este CSV.
+# Antes acá se calculaba un nivel_riesgo con una fórmula propia (cantidad +
+# mortales*5 + graves*2), lo cual generaba dos criterios de "riesgo" distintos
+# conviviendo en el sistema: si un hotspot no tenía contexto en hotspots_contexto.csv,
+# el backend se quedaba con este valor heurístico en vez del valor del modelo, sin
+# avisar. Se eliminó esa fórmula para que exista una sola fuente de verdad (el modelo).
+NIVEL_PLACEHOLDER = 'bajo'
 
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
@@ -32,10 +31,10 @@ for _, row in df.iterrows():
     """, (
         int(row['cluster']), row['latitud'], row['longitud'],
         int(row['cantidad_siniestros']), int(row['mortales']), int(row['graves']),
-        row['nivel_riesgo'], row['longitud'], row['latitud']
+        NIVEL_PLACEHOLDER, row['longitud'], row['latitud']
     ))
 
 conn.commit()
-print(f"{len(df)} hotspots cargados en la base de datos")
+print(f"{len(df)} hotspots cargados en la base de datos (nivel_riesgo real se calcula en vivo en /hotspots)")
 cur.close()
 conn.close()
