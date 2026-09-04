@@ -13,7 +13,7 @@ import {
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
-  API_URL, CLAVE_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
+  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
@@ -46,7 +46,18 @@ function App() {
   const [busqueda, setBusqueda] = useState('')
   const [paso, setPaso] = useState('idle')
   const [ubicacionReporte, setUbicacionReporte] = useState(null)
-  const [reportes, setReportes] = useState(() => cargarDeLocalStorage(CLAVE_REPORTES, []))
+  const [reportes, setReportes] = useState([])
+  const [autorId] = useState(() => {
+    // Id de dispositivo, no de usuario: no hay login en el sistema. Sirve solo
+    // para que "Borrar mis reportes" borre los del dispositivo que los creo,
+    // no los de otro usuario (ver nota en backend/main.py, _asegurar_tabla_reportes).
+    let id = cargarDeLocalStorage(CLAVE_AUTOR_ID, null)
+    if (!id) {
+      id = crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      localStorage.setItem(CLAVE_AUTOR_ID, JSON.stringify(id))
+    }
+    return id
+  })
   const [favoritos, setFavoritos] = useState(() => cargarDeLocalStorage(CLAVE_FAVORITOS, { casa: null, trabajo: null }))
   const [miUbicacion, setMiUbicacion] = useState(null)
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false)
@@ -122,6 +133,28 @@ function App() {
     cargarHotspots()
   }, [])
 
+  const cargarReportes = () => {
+    fetch(`${API_URL}/reportes`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setReportes(data.map((r) => ({
+        id: r.id,
+        lat: r.lat,
+        lng: r.lng,
+        categoria: r.categoria,
+        autorId: r.autor_id,
+        hora: new Date(r.creado_en).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+      }))))
+      .catch(() => { /* backend caido: se mantienen los reportes que ya estaban cargados */ })
+  }
+
+  useEffect(() => {
+    cargarReportes()
+    // Reportes de otros usuarios pueden aparecer sin que este dispositivo haga nada:
+    // se refresca cada 30s para que el mapa los muestre sin recargar la pagina.
+    const id = setInterval(cargarReportes, 30000)
+    return () => clearInterval(id)
+  }, [])
+
   useEffect(() => {
     if (!backendError) return
     const id = setInterval(cargarHotspots, 5000)
@@ -135,7 +168,6 @@ function App() {
       .catch(() => setClima(null))
   }, [])
 
-  useEffect(() => { localStorage.setItem(CLAVE_REPORTES, JSON.stringify(reportes)) }, [reportes])
   useEffect(() => { localStorage.setItem(CLAVE_NIVELES, JSON.stringify([...nivelesActivos])) }, [nivelesActivos])
   useEffect(() => { localStorage.setItem(CLAVE_FAVORITOS, JSON.stringify(favoritos)) }, [favoritos])
 
@@ -242,20 +274,33 @@ function App() {
   }
 
   const confirmarReporte = (categoria) => {
-    // Date.now() se llama dentro de un event handler (onClick), no en el cuerpo del render.
-    const nuevo = {
-      id: Date.now(), lat: ubicacionReporte.lat, lng: ubicacionReporte.lng, categoria,
-      hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-    }
-    setReportes((prev) => [nuevo, ...prev])
+    const nuevo = { lat: ubicacionReporte.lat, lng: ubicacionReporte.lng, categoria, autor_id: autorId }
     setPaso('idle')
-    mostrarToast('Reporte enviado — gracias por sumar el dato')
+    fetch(`${API_URL}/reportes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nuevo),
+    })
+      .then((r) => { if (!r.ok) throw new Error('respuesta no ok'); return r.json() })
+      .then((creado) => {
+        setReportes((prev) => [{
+          id: creado.id,
+          lat: creado.lat,
+          lng: creado.lng,
+          categoria: creado.categoria,
+          autorId: creado.autor_id,
+          hora: new Date(creado.creado_en).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+        }, ...prev])
+        mostrarToast('Reporte enviado — gracias por sumar el dato')
+      })
+      .catch(() => mostrarToast('No se pudo enviar el reporte (¿backend caído?)'))
   }
 
   const borrarReportes = () => {
-    setReportes([])
+    fetch(`${API_URL}/reportes?autor_id=${encodeURIComponent(autorId)}`, { method: 'DELETE' })
+      .then(() => setReportes((prev) => prev.filter((r) => r.autorId !== autorId)))
+      .catch(() => mostrarToast('No se pudo borrar (¿backend caído?)'))
     setActividadAbierta(false)
-    mostrarToast('Reportes de esta sesión borrados')
   }
 
   const abrirPanelRuta = () => {
@@ -364,6 +409,11 @@ function App() {
       setRutaCargando(false)
     }
   }
+
+  const misReportes = useMemo(
+    () => reportes.filter((r) => r.autorId === autorId),
+    [reportes, autorId]
+  )
 
   const zonasAjustadas = useMemo(() => {
     return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
@@ -504,12 +554,12 @@ function App() {
   }
 
   const hayFiltrosApagados = nivelesActivos.size < Object.keys(NIVELES).length
-  const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && reportes.length === 0 && rutasCalculadas.length === 0
+  const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && misReportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
   if (modoViaje) textoTopbar = 'Modo Viaje · siguiendo tu ubicación'
   else if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
   else if (cargandoHotspots) textoTopbar = 'Conectando con el servidor de datos...'
-  else if (reportes.length > 0) textoTopbar = `${reportes.length} reporte${reportes.length > 1 ? 's' : ''} tuyo${reportes.length > 1 ? 's' : ''} · hace ${segundos}s`
+  else if (misReportes.length > 0) textoTopbar = `${misReportes.length} reporte${misReportes.length > 1 ? 's' : ''} tuyo${misReportes.length > 1 ? 's' : ''} · hace ${segundos}s`
   else if (mostrarAlerta) textoTopbar = `${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
   else textoTopbar = `${zonasFiltradas.length} zonas registradas · hace ${segundos}s`
 
@@ -535,8 +585,8 @@ function App() {
             </div>
           )}
           <div
-            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${reportes.length > 0 ? 'clickeable' : ''}`}
-            onClick={() => reportes.length > 0 && setActividadAbierta((v) => !v)}
+            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${misReportes.length > 0 ? 'clickeable' : ''}`}
+            onClick={() => misReportes.length > 0 && setActividadAbierta((v) => !v)}
           >
             <span className="status-dot" />
             {textoTopbar}
@@ -578,13 +628,13 @@ function App() {
         </div>
       )}
 
-      {actividadAbierta && reportes.length > 0 && (
+      {actividadAbierta && misReportes.length > 0 && (
         <div className="actividad-panel panel-enter hazard-edge">
           <div className="actividad-header">
             <span className="cercanas-title">Actividad reciente</span>
             <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad"><X size={14} /></button>
           </div>
-          {reportes.map((rep) => {
+          {misReportes.map((rep) => {
             const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
             return (
               <button key={rep.id} className="actividad-item" onClick={() => { setVuelo({ lat: rep.lat, lng: rep.lng, zoom: 16 }); setActividadAbierta(false) }}>
@@ -756,16 +806,22 @@ function App() {
           </MarkerClusterGroup>
           )}
 
-          {reportes.map((rep) => (
-            <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color: '#FFC933', fillColor: '#FFC933', fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">
-              <Popup>
-                <div className="popup-content">
-                  <span className="popup-nivel" style={{ color: '#FFC933' }}>Tu reporte · {rep.hora}</span>
-                  <strong>{CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label}</strong>
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
+          {reportes.map((rep) => {
+            // Reportes colaborativos: se distingue color entre los propios y los
+            // de otros usuarios para que se note a simple vista en el mapa, no
+            // solo abriendo el popup.
+            const color = rep.autorId === autorId ? '#FFC933' : '#B98CFF'
+            return (
+              <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color, fillColor: color, fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">
+                <Popup>
+                  <div className="popup-content">
+                    <span className="popup-nivel" style={{ color }}>{rep.autorId === autorId ? 'Tu reporte' : 'Reporte de otro usuario'} · {rep.hora}</span>
+                    <strong>{CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label}</strong>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            )
+          })}
 
           {miUbicacion && (
             <CircleMarker center={[miUbicacion.lat, miUbicacion.lng]} radius={7} pathOptions={{ color: '#4FA8E8', fillColor: '#4FA8E8', fillOpacity: 0.9, weight: 3 }} className="pulse-marker-yo">

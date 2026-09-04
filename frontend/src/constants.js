@@ -12,12 +12,12 @@ export const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 export const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 export const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
 export const API_URL = 'http://localhost:8000'
-export const CLAVE_REPORTES = 'motosafe_reportes'
 export const CLAVE_NIVELES = 'motosafe_niveles_activos'
 export const CLAVE_FAVORITOS = 'motosafe_favoritos'
 export const CLAVE_TEMA = 'motosafe_tema'
 export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
+export const CLAVE_AUTOR_ID = 'motosafe_autor_id'
 
 export const NIVELES = {
   bajo:    { label: 'Bajo',    color: '#3DDC84' },

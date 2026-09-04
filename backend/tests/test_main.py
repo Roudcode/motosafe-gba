@@ -8,6 +8,7 @@ estando corriendo. /predecir si usa el modelo real (modelo_final.pkl),
 porque eso es justamente lo que queremos verificar.
 """
 import time
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -224,3 +225,68 @@ def test_obtener_clima_actual_parsea_bien_una_respuesta_exitosa_de_open_meteo():
     assert clima == {"lluvia": "SI", "temperatura": 22.3, "humedad": 65.0}
     main._cache_clima['datos'] = None
     main._cache_clima['timestamp'] = 0.0
+
+
+def _mock_db_reportes(fetchone_valor=None, fetchall_valor=None, rowcount=0):
+    """Mock de conexion/cursor para los endpoints de reportes colaborativos.
+    A diferencia de _mock_db (que solo mockea fetchall para /hotspots), esta
+    tabla usa fetchone (POST), fetchall (GET) y rowcount (DELETE)."""
+    cursor = MagicMock()
+    cursor.fetchone.return_value = fetchone_valor
+    cursor.fetchall.return_value = fetchall_valor or []
+    cursor.rowcount = rowcount
+    conexion = MagicMock()
+    conexion.cursor.return_value = cursor
+    return conexion
+
+
+def test_crear_reporte_devuelve_la_fila_creada():
+    fila_creada = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "pavimento",
+        "autor_id": "dispositivo-abc", "creado_en": "2026-09-04T12:00:00+00:00",
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchone_valor=fila_creada)):
+        r = client.post("/reportes", json={
+            "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": "dispositivo-abc",
+        })
+    assert r.status_code == 201
+    assert r.json()["categoria"] == "pavimento"
+
+
+def test_crear_reporte_rechaza_categoria_invalida():
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes()):
+        r = client.post("/reportes", json={
+            "lat": -34.6, "lng": -58.4, "categoria": "categoria-inventada", "autor_id": "dispositivo-abc",
+        })
+    assert r.status_code == 422
+
+
+def test_listar_reportes_excluye_los_vencidos_segun_su_categoria():
+    """Un 'corte' vence a las 12hs; uno de hace 2 dias no debe aparecer en la
+    respuesta aunque siga en la base. Un 'pavimento' de la misma antiguedad
+    (vence a los 30 dias) si tiene que aparecer."""
+    ahora = datetime.now(timezone.utc)
+    corte_vencido = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "corte",
+        "autor_id": "a", "creado_en": ahora - timedelta(days=2),
+    }
+    pavimento_vigente = {
+        "id": 2, "lat": -34.6, "lng": -58.4, "categoria": "pavimento",
+        "autor_id": "b", "creado_en": ahora - timedelta(days=2),
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchall_valor=[pavimento_vigente, corte_vencido])):
+        r = client.get("/reportes")
+    assert r.status_code == 200
+    ids = [f["id"] for f in r.json()]
+    assert ids == [2]
+
+
+def test_borrar_mis_reportes_solo_afecta_al_autor_pedido():
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(rowcount=3)) as mock_connect:
+        r = client.request("DELETE", "/reportes", params={"autor_id": "dispositivo-abc"})
+    assert r.status_code == 200
+    assert r.json() == {"eliminados": 3}
+    cursor_usado = mock_connect.return_value.cursor.return_value
+    cursor_usado.execute.assert_any_call(
+        "DELETE FROM reportes_colaborativos WHERE autor_id = %s", ("dispositivo-abc",)
+    )

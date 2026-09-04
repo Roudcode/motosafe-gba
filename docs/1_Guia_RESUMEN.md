@@ -65,7 +65,8 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 - **La hora y el día son iguales para las 430 zonas en cada pedido** (la hora actual del servidor). Esto significa que buena parte de la variación de riesgo entre zonas viene de su comuna/vía/contraparte típica, no de un patrón horario propio de cada lugar. Es una limitación real, no un error.
 - **40% de las edades de víctimas son estimadas** (mediana), no datos reales — el dataset original solo tiene edad para el 60% de los casos de moto.
 - **El "quién" que usa el backend para predecir es el promedio histórico de cada zona**, no la persona real que está mirando el mapa en ese momento.
-- **Reportes y filtros del usuario viven en su propio navegador** (localStorage), no en una base de datos compartida — no hay componente colaborativo real todavía entre usuarios distintos.
+- **Los reportes ahora son colaborativos de verdad**: se guardan en la base (tabla `reportes_colaborativos`) y los ve cualquier usuario, no solo quien los creó. Cada categoría tiene su propia vigencia (un corte vence en 12hs, un pozo en el pavimento en 30 días) — pasado ese tiempo dejan de aparecer en el mapa aunque sigan en la base como histórico.
+- **Los filtros de nivel, favoritos y tema siguen viviendo en el navegador de cada usuario** (localStorage) — eso sí es preferencia individual, no dato colaborativo, y no tendría sentido compartirlo entre usuarios distintos.
 - **Alcance geográfico: solo CABA.** El conurbano bonaerense no tiene un dataset geolocalizado equivalente disponible públicamente (se buscó y no se encontró).
 
 ---

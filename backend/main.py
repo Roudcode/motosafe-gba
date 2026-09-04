@@ -1,7 +1,8 @@
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,6 +63,34 @@ CACHE_CLIMA_TTL_SEGUNDOS = 600  # 10 minutos: evita repetir la llamada externa e
 # último respaldo si la API en vivo no responde y todavía no hay nada en cache.
 _CLIMA_FALLBACK = {'lluvia': 'NO', 'temperatura': 17.6, 'humedad': 72.1}
 _cache_clima = {'datos': None, 'timestamp': 0.0}
+
+
+# --- Reportes colaborativos ---
+# Antes vivian solo en el localStorage de cada navegador (ver docs/1_Guia_RESUMEN.md):
+# cada usuario veia unicamente sus propios reportes, sin componente colaborativo real.
+# Ahora se guardan en la base y se comparten entre todos los usuarios; calcularAjuste
+# en el frontend ya sumaba reportes cercanos al nivel de riesgo de una zona, y ese
+# calculo gana sentido real recien cuando "cercanos" incluye reportes de otra gente,
+# no solo los propios.
+#
+# No hay autenticacion en el sistema, asi que la nocion de "mio" es un id aleatorio
+# que el frontend genera una vez y guarda en su propio localStorage (autor_id). No es
+# una identidad real ni evita que alguien mande reportes con cualquier autor_id: solo
+# alcanza para que el boton "Borrar mis reportes" borre los del dispositivo que los
+# creo, sin pedirle al usuario que se registre para algo tan simple como marcar un
+# pozo en la calle.
+#
+# La vigencia es distinta por categoria porque no todos los reportes envejecen igual:
+# un corte de calle deja de ser cierto en horas, un pozo en el pavimento sigue ahi
+# semanas.
+CATEGORIAS_REPORTE_VALIDAS = ('pavimento', 'corte', 'iluminacion', 'inseguro')
+VIGENCIA_HORAS_POR_CATEGORIA = {
+    'corte': 12,           # cortes/desvios: casi siempre se resuelven en el dia
+    'inseguro': 24 * 7,    # percepcion de inseguridad: vale refrescarla cada semana
+    'pavimento': 24 * 30,  # pozos/pavimento roto: tarda semanas o meses en arreglarse
+    'iluminacion': 24 * 30,
+}
+VIGENCIA_HORAS_DEFAULT = 24 * 7
 
 
 def obtener_clima_actual():
@@ -275,3 +304,93 @@ def predecir_gravedad(contexto: ContextoSiniestro):
         "probabilidades": dict(zip(clases, [round(float(p), 3) for p in probabilidades])),
         "clima_usado": clima,
     }
+
+
+def _asegurar_tabla_reportes(conn):
+    """
+    CREATE TABLE IF NOT EXISTS en vez de una migracion aparte: el proyecto no tiene
+    herramienta de migraciones (ver cargar_hotspots.py, que asume la tabla de
+    hotspots ya creada a mano), y para una tabla tan simple agregar una es mas
+    ceremonia que valor. Se ejecuta al principio de cada endpoint que toca la
+    tabla, es barato en Postgres cuando ya existe, y el sistema funciona igual
+    en un clone limpio sin pasos manuales de setup adicionales.
+    """
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS reportes_colaborativos (
+            id SERIAL PRIMARY KEY,
+            lat DOUBLE PRECISION NOT NULL,
+            lng DOUBLE PRECISION NOT NULL,
+            categoria VARCHAR(30) NOT NULL,
+            autor_id VARCHAR(50) NOT NULL,
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
+    conn.commit()
+    cur.close()
+
+
+class ReporteNuevo(BaseModel):
+    lat: float
+    lng: float
+    categoria: Literal['pavimento', 'corte', 'iluminacion', 'inseguro']
+    autor_id: str
+
+
+@app.post("/reportes", status_code=201)
+def crear_reporte(reporte: ReporteNuevo):
+    conn = psycopg2.connect(DATABASE_URL)
+    _asegurar_tabla_reportes(conn)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        INSERT INTO reportes_colaborativos (lat, lng, categoria, autor_id)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id, lat, lng, categoria, autor_id, creado_en
+    """, (reporte.lat, reporte.lng, reporte.categoria, reporte.autor_id))
+    fila = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return fila
+
+
+@app.get("/reportes")
+def listar_reportes():
+    """
+    Devuelve los reportes de TODOS los usuarios (esto es lo colaborativo), filtrados
+    por vigencia segun su categoria: un reporte vencido no se borra de la base (queda
+    como historico), simplemente deja de aparecer en el mapa y de sumar al ajuste de
+    riesgo de su zona.
+    """
+    conn = psycopg2.connect(DATABASE_URL)
+    _asegurar_tabla_reportes(conn)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("SELECT id, lat, lng, categoria, autor_id, creado_en FROM reportes_colaborativos ORDER BY creado_en DESC")
+    filas = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    ahora = datetime.now(timezone.utc)
+    vigentes = []
+    for fila in filas:
+        vigencia_horas = VIGENCIA_HORAS_POR_CATEGORIA.get(fila['categoria'], VIGENCIA_HORAS_DEFAULT)
+        edad_horas = (ahora - fila['creado_en']).total_seconds() / 3600
+        if edad_horas <= vigencia_horas:
+            vigentes.append(fila)
+    return vigentes
+
+
+@app.delete("/reportes")
+def borrar_mis_reportes(autor_id: str):
+    """Borra solo los reportes de ese autor_id (ver nota sobre autor_id mas arriba:
+    no es autenticacion real, es lo minimo para que 'borrar mis reportes' borre los
+    del dispositivo que los creo y no los de otro usuario)."""
+    conn = psycopg2.connect(DATABASE_URL)
+    _asegurar_tabla_reportes(conn)
+    cur = conn.cursor()
+    cur.execute("DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,))
+    eliminados = cur.rowcount
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"eliminados": eliminados}
