@@ -136,6 +136,5 @@ motosafe-gba/
 ## 7. Lo que falta, con honestidad
 
 1. **Conurbano bonaerense** — sigue sin resolverse. Alcance real: CABA.
-2. **Persistencia compartida** de reportes y clima en la base de datos (hoy es solo local del navegador de cada usuario).
-3. **La limitación de "hora/día iguales para todas las zonas"** — se podría refinar pidiéndole al modelo predicciones por franja horaria específica en vez de solo "ahora".
-4. Documentado, no resuelto: el modelo predice mejor "leve" que "grave"/"mortal" por separado — es una limitación real de las variables disponibles (falta velocidad, uso de casco, alcohol — datos que el dataset del gobierno no tiene).
+2. **La limitación de "hora/día iguales para todas las zonas"** — se podría refinar pidiéndole al modelo predicciones por franja horaria específica en vez de solo "ahora".
+3. Documentado, no resuelto: el modelo predice mejor "leve" que "grave"/"mortal" por separado — es una limitación real de las variables disponibles (falta velocidad, uso de casco, alcohol — datos que el dataset del gobierno no tiene).
