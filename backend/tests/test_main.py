@@ -7,6 +7,7 @@ mockeando psycopg2.connect, asi el test es rapido y no depende de Docker
 estando corriendo. /predecir si usa el modelo real (modelo_final.pkl),
 porque eso es justamente lo que queremos verificar.
 """
+import time
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -116,3 +117,110 @@ def test_nivel_desde_probabilidades_umbrales():
     assert main.nivel_desde_probabilidades({"MORTAL": 0.0, "GRAVE": 0.45}) == "alto"
     assert main.nivel_desde_probabilidades({"MORTAL": 0.0, "GRAVE": 0.25}) == "medio"
     assert main.nivel_desde_probabilidades({"MORTAL": 0.0, "GRAVE": 0.0}) == "bajo"
+
+
+def test_predecir_devuelve_clima_usado():
+    """El modelo ahora usa clima como variable real: la respuesta tiene que reportar
+    qué clima se usó (en vivo o fallback), no solo la predicción."""
+    payload = {
+        "hora": 20,
+        "dia_semana": "Friday",
+        "comuna": "1",
+        "tipo_de_via": "AVENIDA",
+        "contraparte": "AUTO",
+        "edad_victima": 30,
+        "sexo_victima": "M",
+    }
+    r = client.post("/predecir", json=payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert "clima_usado" in data
+    assert set(data["clima_usado"].keys()) == {"lluvia", "temperatura", "humedad"}
+    assert data["clima_usado"]["lluvia"] in ("SI", "NO")
+
+
+def test_predecir_acepta_clima_explicito_para_simular_escenarios():
+    """Si se pasa clima explícito (ej. 'y si llueve'), se usa ese en vez del clima
+    en vivo, y la respuesta lo refleja tal cual se mandó."""
+    payload = {
+        "hora": 20,
+        "dia_semana": "Friday",
+        "comuna": "1",
+        "tipo_de_via": "AVENIDA",
+        "contraparte": "AUTO",
+        "edad_victima": 30,
+        "sexo_victima": "M",
+        "lluvia": "SI",
+        "temperatura": 12.0,
+        "humedad": 90.0,
+    }
+    r = client.post("/predecir", json=payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["clima_usado"] == {"lluvia": "SI", "temperatura": 12.0, "humedad": 90.0}
+
+
+def test_hotspots_incluye_clima_en_cada_hotspot():
+    fila_db = {
+        "id": 1, "cluster": 0, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_siniestros": 50, "mortales": 1, "graves": 3, "nivel_riesgo": "bajo",
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])):
+        r = client.get("/hotspots")
+    assert r.status_code == 200
+    hotspot = r.json()[0]
+    assert "clima" in hotspot
+    assert set(hotspot["clima"].keys()) == {"lluvia", "temperatura", "humedad"}
+
+
+def test_obtener_clima_actual_usa_fallback_historico_si_la_api_falla_y_no_hay_cache():
+    """Degradación controlada, primer nivel: sin cache todavía y la API no responde
+    (timeout, host caído, lo que sea) -> promedio histórico usado en el entrenamiento,
+    nunca una excepción hacia el caller."""
+    main._cache_clima['datos'] = None
+    main._cache_clima['timestamp'] = 0.0
+    with patch("main.httpx.get", side_effect=Exception("timeout simulado")):
+        clima = main.obtener_clima_actual()
+    assert clima == main._CLIMA_FALLBACK
+
+
+def test_obtener_clima_actual_usa_ultimo_cache_si_la_api_falla_pero_hay_dato_previo():
+    """Degradación controlada, segundo nivel: si ya hay un dato en cache (aunque esté
+    vencido) y la API falla, se prefiere ese dato por sobre el promedio histórico."""
+    dato_previo = {"lluvia": "SI", "temperatura": 15.0, "humedad": 88.0}
+    main._cache_clima['datos'] = dato_previo
+    main._cache_clima['timestamp'] = 0.0  # vencido a propósito (hace mucho tiempo)
+    with patch("main.httpx.get", side_effect=Exception("timeout simulado")):
+        clima = main.obtener_clima_actual()
+    assert clima == dato_previo
+    main._cache_clima['datos'] = None
+    main._cache_clima['timestamp'] = 0.0
+
+
+def test_obtener_clima_actual_usa_cache_vigente_sin_llamar_a_la_api():
+    """Dentro de la ventana de 10 minutos no se debe llamar a la API de nuevo."""
+    dato_cacheado = {"lluvia": "NO", "temperatura": 20.0, "humedad": 60.0}
+    main._cache_clima['datos'] = dato_cacheado
+    main._cache_clima['timestamp'] = time.monotonic()
+    with patch("main.httpx.get") as mock_get:
+        clima = main.obtener_clima_actual()
+    mock_get.assert_not_called()
+    assert clima == dato_cacheado
+    main._cache_clima['datos'] = None
+    main._cache_clima['timestamp'] = 0.0
+
+
+def test_obtener_clima_actual_parsea_bien_una_respuesta_exitosa_de_open_meteo():
+    """Camino feliz: la API responde ok, se cachea y se devuelve el dato parseado."""
+    main._cache_clima['datos'] = None
+    main._cache_clima['timestamp'] = 0.0
+    respuesta_mock = MagicMock()
+    respuesta_mock.json.return_value = {
+        "current": {"precipitation": 0.5, "temperature_2m": 22.3, "relative_humidity_2m": 65}
+    }
+    respuesta_mock.raise_for_status.return_value = None
+    with patch("main.httpx.get", return_value=respuesta_mock):
+        clima = main.obtener_clima_actual()
+    assert clima == {"lluvia": "SI", "temperatura": 22.3, "humedad": 65.0}
+    main._cache_clima['datos'] = None
+    main._cache_clima['timestamp'] = 0.0
