@@ -527,8 +527,15 @@ function App() {
     return normalizado.indexOf(Math.min(...normalizado))
   }, [rutasConScore, idxMasRapida])
 
+  const corredoresFiltrados = useMemo(
+    () => corredores.filter((c) => nivelesActivos.has(c.nivel_riesgo)),
+    [corredores, nivelesActivos]
+  )
+
   const conteos = Object.keys(NIVELES).reduce((acc, n) => {
-    acc[n] = zonasAjustadas.filter((z) => z.ajuste.nivel === n).length
+    acc[n] = capaMapa === 'corredores'
+      ? corredores.filter((c) => c.nivel_riesgo === n).length
+      : zonasAjustadas.filter((z) => z.ajuste.nivel === n).length
     return acc
   }, {})
 
@@ -793,7 +800,7 @@ function App() {
 
           {capaMapa === 'heatmap' && <CapaCalor zonas={zonasFiltradas} activa={capaMapa === 'heatmap'} />}
 
-          {capaMapa === 'corredores' && corredores.map((c) => (
+          {capaMapa === 'corredores' && corredoresFiltrados.map((c) => (
             <Polyline
               key={c.id}
               positions={c.geometria}
@@ -806,7 +813,7 @@ function App() {
               <Popup>
                 <div className="popup-content">
                   <span className="popup-nivel" style={{ color: NIVELES[c.nivel_riesgo]?.color }}>{NIVELES[c.nivel_riesgo]?.label}</span>
-                  <strong>{c.calle}</strong>
+                  <strong>{c.calle}{c.tramos_totales > 1 ? ` — tramo ${c.tramo}/${c.tramos_totales}` : ''}</strong>
                   <span>{c.cantidad_siniestros} siniestros históricos · {c.mortales} mortales · {c.graves} graves</span>
                 </div>
               </Popup>

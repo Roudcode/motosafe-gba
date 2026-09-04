@@ -6,6 +6,15 @@ sola vez (analogo a como se generan los hotspots), sin red: solo agrupa datos
 que ya estan en el repo. El resultado (data/corredores_candidatos.csv) despues
 se le pasa a notebooks/fetch_corredores_geometria.py, que si necesita red (pega
 a OSRM) y por eso lo corre el usuario en su propia maquina.
+
+v2: cada calle larga se parte en sub-tramos (hasta 8, segun cuantos siniestros
+tenga) en vez de agregar toda la avenida en un solo perfil. La primera version
+agregaba por avenida entera y el contexto tipico (comuna/tipo de via/contraparte
+mas frecuente) terminaba siendo casi el mismo para las 131 calles -- 95% caia
+en nivel "alto" porque la moda de "contraparte" daba AUTO en el 100% de los
+casos, y se perdia toda la variacion real que si existe a lo largo de una
+avenida de 20km como Av. Gral. Paz. Partir en tramos devuelve esa variacion:
+cada tramo tiene su propio perfil y su propio nivel de riesgo.
 """
 import re
 import pandas as pd
@@ -53,43 +62,80 @@ con_calle = motos.dropna(subset=['calle', 'latitud_siniestro', 'longitud_siniest
 print(f'Siniestros con calle identificable: {len(con_calle)} de {len(motos)}')
 
 UMBRAL_MIN_SINIESTROS = 30
+SINIESTROS_POR_TRAMO_OBJETIVO = 40
+MAX_TRAMOS_POR_CALLE = 8
 
-def punto_extremo(grupo):
-    """Los dos puntos mas alejados entre si del grupo (aproximacion planar,
-    suficiente para elegir extremos de una avenida dentro de CABA)."""
-    lat = grupo['latitud_siniestro'].to_numpy()
-    lon = grupo['longitud_siniestro'].to_numpy()
+
+def punto_mas_lejano(lat, lon):
+    """Los dos puntos mas alejados entre si de un conjunto (aproximacion
+    planar, suficiente para elegir extremos dentro de CABA)."""
     if len(lat) == 1:
-        return lat[0], lon[0], lat[0], lon[0]
-    # distancias en grados (no hace falta haversine exacto solo para elegir el par mas lejano)
+        return 0, 0
     dlat = lat[:, None] - lat[None, :]
     dlon = (lon[:, None] - lon[None, :]) * np.cos(np.radians(lat.mean()))
     dist2 = dlat ** 2 + dlon ** 2
     i, j = np.unravel_index(np.argmax(dist2), dist2.shape)
-    return lat[i], lon[i], lat[j], lon[j]
+    return i, j
+
+
+def stats_de_grupo(grupo):
+    return {
+        'cantidad_siniestros': len(grupo),
+        'mortales': int((grupo['gravedad_siniestro'] == 'MORTAL').sum()),
+        'graves': int((grupo['gravedad_siniestro'] == 'GRAVE').sum()),
+        'comuna_moda': grupo['comuna'].mode().iloc[0] if not grupo['comuna'].mode().empty else None,
+        'tipo_via_moda': grupo['tipo_de_via_siniestro'].mode().iloc[0] if not grupo['tipo_de_via_siniestro'].mode().empty else 'AVENIDA',
+        'contraparte_moda': grupo['contraparte_siniestro'].mode().iloc[0] if not grupo['contraparte_siniestro'].mode().empty else 'AUTO',
+        'edad_promedio': round(float(grupo['edad_victima'].mean()), 1),
+        'sexo_moda': grupo['sexo_victima'].mode().iloc[0] if not grupo['sexo_victima'].mode().empty else 'SD',
+    }
+
 
 filas = []
 for calle, grupo in con_calle.groupby('calle'):
     cantidad = len(grupo)
     if cantidad < UMBRAL_MIN_SINIESTROS:
         continue
-    mortales = int((grupo['gravedad_siniestro'] == 'MORTAL').sum())
-    graves = int((grupo['gravedad_siniestro'] == 'GRAVE').sum())
-    lat_a, lng_a, lat_b, lng_b = punto_extremo(grupo)
-    filas.append({
-        'calle': calle,
-        'cantidad_siniestros': cantidad,
-        'mortales': mortales,
-        'graves': graves,
-        'comuna_moda': grupo['comuna'].mode().iloc[0] if not grupo['comuna'].mode().empty else None,
-        'tipo_via_moda': grupo['tipo_de_via_siniestro'].mode().iloc[0] if not grupo['tipo_de_via_siniestro'].mode().empty else 'AVENIDA',
-        'contraparte_moda': grupo['contraparte_siniestro'].mode().iloc[0] if not grupo['contraparte_siniestro'].mode().empty else 'AUTO',
-        'edad_promedio': round(float(grupo['edad_victima'].mean()), 1),
-        'sexo_moda': grupo['sexo_victima'].mode().iloc[0] if not grupo['sexo_victima'].mode().empty else 'SD',
-        'lat_a': lat_a, 'lng_a': lng_a, 'lat_b': lat_b, 'lng_b': lng_b,
-    })
 
-candidatos = pd.DataFrame(filas).sort_values('cantidad_siniestros', ascending=False)
+    lat = grupo['latitud_siniestro'].to_numpy()
+    lon = grupo['longitud_siniestro'].to_numpy()
+    n_tramos = max(1, min(MAX_TRAMOS_POR_CALLE, cantidad // SINIESTROS_POR_TRAMO_OBJETIVO))
+
+    if n_tramos == 1:
+        i, j = punto_mas_lejano(lat, lon)
+        stats = stats_de_grupo(grupo)
+        stats.update({
+            'calle': calle, 'tramo': 1, 'tramos_totales': 1,
+            'lat_a': lat[i], 'lng_a': lon[i], 'lat_b': lat[j], 'lng_b': lon[j],
+        })
+        filas.append(stats)
+        continue
+
+    # Se proyectan los puntos sobre el eje que une los dos extremos de TODA la
+    # calle, se ordenan por esa proyeccion (de punta a punta de la avenida) y
+    # se parte en n_tramos contiguos: cada tramo es un pedazo real y continuo
+    # de la calle, no una muestra aleatoria de puntos.
+    i, j = punto_mas_lejano(lat, lon)
+    eje_lat, eje_lon = lat[j] - lat[i], (lon[j] - lon[i]) * np.cos(np.radians(lat.mean()))
+    norma2 = eje_lat ** 2 + eje_lon ** 2
+    t = ((lat - lat[i]) * eje_lat + (lon - lon[i]) * eje_lon * np.cos(np.radians(lat.mean()))) / norma2
+    orden = np.argsort(t)
+
+    grupo_ordenado = grupo.iloc[orden].reset_index(drop=True)
+    lat_ordenado = lat[orden]
+    lon_ordenado = lon[orden]
+
+    for num_tramo, idxs in enumerate(np.array_split(np.arange(len(grupo_ordenado)), n_tramos), start=1):
+        sub = grupo_ordenado.iloc[idxs]
+        stats = stats_de_grupo(sub)
+        stats.update({
+            'calle': calle, 'tramo': num_tramo, 'tramos_totales': n_tramos,
+            'lat_a': lat_ordenado[idxs[0]], 'lng_a': lon_ordenado[idxs[0]],
+            'lat_b': lat_ordenado[idxs[-1]], 'lng_b': lon_ordenado[idxs[-1]],
+        })
+        filas.append(stats)
+
+candidatos = pd.DataFrame(filas).sort_values(['cantidad_siniestros'], ascending=False)
 candidatos.to_csv(f"{BASE}/data/corredores_candidatos.csv", index=False)
-print(f'{len(candidatos)} calles candidatas a corredor (>= {UMBRAL_MIN_SINIESTROS} siniestros), guardadas en data/corredores_candidatos.csv')
-print(candidatos[['calle', 'cantidad_siniestros', 'mortales', 'graves']].head(15).to_string(index=False))
+print(f'{len(candidatos)} tramos de corredor generados (de {candidatos["calle"].nunique()} calles con >= {UMBRAL_MIN_SINIESTROS} siniestros)')
+print(candidatos[['calle', 'tramo', 'tramos_totales', 'cantidad_siniestros', 'mortales', 'graves', 'contraparte_moda']].head(20).to_string(index=False))

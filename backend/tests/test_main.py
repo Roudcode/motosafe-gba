@@ -314,3 +314,52 @@ def test_corredores_devuelve_lista_vacia_sin_reventar_si_no_hay_datos():
         r = client.get("/corredores")
     assert r.status_code == 200
     assert r.json() == []
+
+
+def test_corredores_diferencia_niveles_entre_si_no_todos_iguales():
+    """
+    Los corredores son, por construccion, solo avenidas transitadas (>=30
+    siniestros): su riesgo absoluto cae en un rango angosto y los cortes fijos
+    de nivel_desde_probabilidades (calibrados para el rango completo de los 430
+    hotspots) los metia casi a todos en 'alto'. Este test verifica que el nivel
+    relativo (percentiles entre los propios corredores del pedido) realmente
+    diferencia: con corredores de perfiles bien distintos, tienen que aparecer
+    al menos dos niveles distintos, y el de mayor probabilidad de MORTAL/GRAVE
+    no puede terminar en un nivel mas bajo que el de menor probabilidad.
+    """
+    perfiles = [
+        {"comuna_moda": str(i), "tipo_via_moda": tv, "contraparte_moda": cp, "sexo_moda": sx, "edad_promedio": edad}
+        for i, (tv, cp, sx, edad) in enumerate([
+            ("CALLE", "BICICLETA", "F", 20.0),
+            ("CALLE", "PEATON", "F", 22.0),
+            ("AVENIDA", "AUTO", "M", 30.0),
+            ("AVENIDA", "AUTO", "M", 33.0),
+            ("AVENIDA", "AUTO", "M", 35.0),
+            ("AVENIDA", "CAMION", "M", 40.0),
+            ("AV. GRAL. PAZ", "AUTO", "M", 45.0),
+            ("AV. GRAL. PAZ", "CAMION", "M", 50.0),
+        ], start=1)
+    ]
+    filas_db = [
+        {
+            "id": i, "calle": f"CALLE {i}", "geometria": json.dumps([[-34.6, -58.5], [-34.5, -58.46]]),
+            "cantidad_siniestros": 50, "mortales": 1, "graves": 5, **perfil,
+        }
+        for i, perfil in enumerate(perfiles, start=1)
+    ]
+    with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
+        r = client.get("/corredores")
+    assert r.status_code == 200
+    corredores = r.json()
+
+    niveles_presentes = {c["nivel_riesgo"] for c in corredores}
+    assert len(niveles_presentes) >= 2, f"todos los corredores quedaron en el mismo nivel: {niveles_presentes}"
+
+    def score(c):
+        p = c["prediccion_modelo"]
+        return 2 * p.get("MORTAL", 0) + p.get("GRAVE", 0)
+
+    orden_niveles = ["bajo", "medio", "alto", "critico"]
+    mas_riesgoso = max(corredores, key=score)
+    menos_riesgoso = min(corredores, key=score)
+    assert orden_niveles.index(mas_riesgoso["nivel_riesgo"]) >= orden_niveles.index(menos_riesgoso["nivel_riesgo"])

@@ -12,6 +12,7 @@ import psycopg2.extras
 from dotenv import load_dotenv
 import httpx
 import joblib
+import numpy as np
 import pandas as pd
 
 load_dotenv()
@@ -412,7 +413,7 @@ def obtener_corredores():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
-        SELECT id, calle, geometria, cantidad_siniestros, mortales, graves,
+        SELECT id, calle, tramo, tramos_totales, geometria, cantidad_siniestros, mortales, graves,
                comuna_moda, tipo_via_moda, contraparte_moda, edad_promedio, sexo_moda
         FROM corredores_riesgo
         ORDER BY cantidad_siniestros DESC
@@ -447,9 +448,33 @@ def obtener_corredores():
     matriz_probabilidades = modelo_final.predict_proba(fila_alineada)
     clases = modelo_final.classes_.tolist()
 
+    # Los corredores son, por construccion, solo avenidas con muchos siniestros
+    # (ya se filtraron a partir de 30 en notebooks/identificar_corredores.py), asi
+    # que su riesgo absoluto cae en un rango mucho mas angosto que el de los 430
+    # hotspots (que incluyen tambien esquinas tranquilas con pocos casos). Usar
+    # los mismos cortes absolutos de nivel_desde_probabilidades ahi casi todo cae
+    # en "alto" — se probo (ver commit) y con eso el 95% de los corredores
+    # quedaba en el mismo nivel, sin distinguir ninguno de otro. Por eso el nivel
+    # de un corredor es relativo a los demas corredores de este mismo pedido
+    # (percentiles), no un corte absoluto: sigue siendo 100% la probabilidad real
+    # del modelo, solo cambia como se traduce a las 4 categorias visuales.
+    idx_mortal = clases.index('MORTAL')
+    idx_grave = clases.index('GRAVE')
+    score = 2 * matriz_probabilidades[:, idx_mortal] + matriz_probabilidades[:, idx_grave]
+    p25, p75, p95 = np.percentile(score, [25, 75, 95])
+
+    def nivel_relativo(s):
+        if s >= p95:
+            return 'critico'
+        if s >= p75:
+            return 'alto'
+        if s >= p25:
+            return 'medio'
+        return 'bajo'
+
     for i, c in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
-        c['nivel_riesgo'] = nivel_desde_probabilidades(probs)
+        c['nivel_riesgo'] = nivel_relativo(score[i])
         c['prediccion_modelo'] = probs
         c['geometria'] = json.loads(c['geometria'])
 

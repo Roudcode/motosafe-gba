@@ -28,6 +28,8 @@ cur.execute("""
     CREATE TABLE IF NOT EXISTS corredores_riesgo (
         id SERIAL PRIMARY KEY,
         calle VARCHAR(200) NOT NULL,
+        tramo INTEGER NOT NULL DEFAULT 1,
+        tramos_totales INTEGER NOT NULL DEFAULT 1,
         geometria TEXT NOT NULL,
         cantidad_siniestros INTEGER NOT NULL,
         mortales INTEGER NOT NULL,
@@ -47,11 +49,12 @@ for _, row in df.iterrows():
     geometria = json.loads(row['geometria'])
     cur.execute("""
         INSERT INTO corredores_riesgo
-            (calle, geometria, cantidad_siniestros, mortales, graves,
+            (calle, tramo, tramos_totales, geometria, cantidad_siniestros, mortales, graves,
              comuna_moda, tipo_via_moda, contraparte_moda, edad_promedio, sexo_moda)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
-        row['calle'], json.dumps(geometria), int(row['cantidad_siniestros']),
+        row['calle'], int(row['tramo']), int(row['tramos_totales']),
+        json.dumps(geometria), int(row['cantidad_siniestros']),
         int(row['mortales']), int(row['graves']),
         str(row['comuna_moda']), row['tipo_via_moda'], row['contraparte_moda'],
         float(row['edad_promedio']), row['sexo_moda'],
