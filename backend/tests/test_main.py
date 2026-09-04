@@ -7,6 +7,7 @@ mockeando psycopg2.connect, asi el test es rapido y no depende de Docker
 estando corriendo. /predecir si usa el modelo real (modelo_final.pkl),
 porque eso es justamente lo que queremos verificar.
 """
+import json
 import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
@@ -290,3 +291,26 @@ def test_borrar_mis_reportes_solo_afecta_al_autor_pedido():
     cursor_usado.execute.assert_any_call(
         "DELETE FROM reportes_colaborativos WHERE autor_id = %s", ("dispositivo-abc",)
     )
+
+
+def test_corredores_devuelve_nivel_de_riesgo_y_geometria_parseada():
+    fila_db = {
+        "id": 1, "calle": "PAZ, GRAL. AV.", "geometria": json.dumps([[-34.6, -58.5], [-34.5, -58.46]]),
+        "cantidad_siniestros": 1119, "mortales": 23, "graves": 70,
+        "comuna_moda": "12", "tipo_via_moda": "AV. GRAL. PAZ", "contraparte_moda": "AUTO",
+        "edad_promedio": 34.3, "sexo_moda": "M",
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])):
+        r = client.get("/corredores")
+    assert r.status_code == 200
+    corredor = r.json()[0]
+    assert corredor["nivel_riesgo"] in ("bajo", "medio", "alto", "critico")
+    assert "prediccion_modelo" in corredor
+    assert corredor["geometria"] == [[-34.6, -58.5], [-34.5, -58.46]]
+
+
+def test_corredores_devuelve_lista_vacia_sin_reventar_si_no_hay_datos():
+    with patch("main.psycopg2.connect", return_value=_mock_db([])):
+        r = client.get("/corredores")
+    assert r.status_code == 200
+    assert r.json() == []

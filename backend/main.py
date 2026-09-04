@@ -1,4 +1,5 @@
 import os
+import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -394,3 +395,62 @@ def borrar_mis_reportes(autor_id: str):
     cur.close()
     conn.close()
     return {"eliminados": eliminados}
+
+
+@app.get("/corredores")
+def obtener_corredores():
+    """
+    Corredores de riesgo: calles completas (no zonas puntuales) con muchos
+    siniestros a lo largo de su extension, como Av. Gral. Paz o Av. Rivadavia.
+    Se precalcularon una sola vez offline (notebooks/identificar_corredores.py +
+    fetch_corredores_geometria.py, que le pide a OSRM la geometria real de cada
+    avenida) — la tabla trae calle, geometria y el perfil tipico de esa calle
+    (comuna/tipo de via/contraparte mas frecuente, edad promedio, sexo mas
+    frecuente); el nivel de riesgo, como en /hotspots, se calcula en vivo con
+    el modelo entrenado, no se guarda precalculado.
+    """
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT id, calle, geometria, cantidad_siniestros, mortales, graves,
+               comuna_moda, tipo_via_moda, contraparte_moda, edad_promedio, sexo_moda
+        FROM corredores_riesgo
+        ORDER BY cantidad_siniestros DESC
+    """)
+    resultado = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    if not resultado:
+        return []
+
+    ahora = datetime.now()
+    hora_actual = ahora.hour
+    dia_actual = ahora.strftime('%A')
+    clima_actual = obtener_clima_actual()
+
+    filas = pd.DataFrame({
+        'hora': hora_actual,
+        'edad_victima': [c['edad_promedio'] for c in resultado],
+        'edad_desconocida': 0,
+        'temperatura': clima_actual['temperatura'],
+        'humedad': clima_actual['humedad'],
+        'dia_semana': dia_actual,
+        'comuna': [c['comuna_moda'] for c in resultado],
+        'tipo_de_via_siniestro': [c['tipo_via_moda'] for c in resultado],
+        'contraparte_siniestro': [c['contraparte_moda'] for c in resultado],
+        'sexo_victima': [c['sexo_moda'] for c in resultado],
+        'lluvia': clima_actual['lluvia'],
+    })
+    fila_codificada = pd.get_dummies(filas)
+    fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
+    matriz_probabilidades = modelo_final.predict_proba(fila_alineada)
+    clases = modelo_final.classes_.tolist()
+
+    for i, c in enumerate(resultado):
+        probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
+        c['nivel_riesgo'] = nivel_desde_probabilidades(probs)
+        c['prediccion_modelo'] = probs
+        c['geometria'] = json.loads(c['geometria'])
+
+    return resultado

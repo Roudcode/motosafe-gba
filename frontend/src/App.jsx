@@ -13,7 +13,7 @@ import {
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
-  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
+  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
@@ -34,6 +34,7 @@ const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B
 
 function App() {
   const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
+  const [corredores, setCorredores] = useState([])
   const [cargandoHotspots, setCargandoHotspots] = useState(true)
   const [primeraVezListo, setPrimeraVezListo] = useState(false)
   const [backendError, setBackendError] = useState(false)
@@ -131,6 +132,17 @@ function App() {
     // Fetch de datos al montar: uso canonico de useEffect (sincronizar con un sistema externo).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarHotspots()
+  }, [])
+
+  useEffect(() => {
+    // Corredores de riesgo (calles completas, precalculadas offline): se cargan
+    // una sola vez al montar, igual que los hotspots. No hacen falta reintentos
+    // agresivos como con /hotspots porque esta capa es secundaria (arranca en
+    // 'clusters') y el usuario la ve recien si cambia de vista.
+    fetch(`${API_URL}/corredores`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setCorredores)
+      .catch(() => {})
   }, [])
 
   const cargarReportes = () => {
@@ -578,7 +590,7 @@ function App() {
         </div>
         <div className="topbar-right">
           <ThemeToggle tema={tema} onCambiar={toggleTema} />
-          <CapaMapaToggle capa={capaMapa} onCambiar={() => setCapaMapa((c) => (c === 'clusters' ? 'heatmap' : 'clusters'))} />
+          <CapaMapaToggle capa={capaMapa} onCambiar={() => setCapaMapa(siguienteCapaMapa)} />
           {climaInfo && (
             <div className="clima-badge" title={climaInfo.label}>
               <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
@@ -780,6 +792,26 @@ function App() {
           )}
 
           {capaMapa === 'heatmap' && <CapaCalor zonas={zonasFiltradas} activa={capaMapa === 'heatmap'} />}
+
+          {capaMapa === 'corredores' && corredores.map((c) => (
+            <Polyline
+              key={c.id}
+              positions={c.geometria}
+              pathOptions={{
+                color: NIVELES[c.nivel_riesgo]?.color || NIVELES.bajo.color,
+                weight: 5,
+                opacity: 0.75,
+              }}
+            >
+              <Popup>
+                <div className="popup-content">
+                  <span className="popup-nivel" style={{ color: NIVELES[c.nivel_riesgo]?.color }}>{NIVELES[c.nivel_riesgo]?.label}</span>
+                  <strong>{c.calle}</strong>
+                  <span>{c.cantidad_siniestros} siniestros históricos · {c.mortales} mortales · {c.graves} graves</span>
+                </div>
+              </Popup>
+            </Polyline>
+          ))}
 
           {capaMapa === 'clusters' && (
           <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
