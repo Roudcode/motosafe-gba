@@ -137,6 +137,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .capa-toggle:hover { color: #F2793B; border-color: #F2793B; transform: scale(1.08); }
 
+.capa-inseguridad-toggle.activa {
+  background: #FF3B3B; border-color: #FF3B3B; color: #14171A;
+}
+.capa-inseguridad-toggle.activa:hover { color: #14171A; border-color: #FF6B6B; }
+
 .toast {
   position: absolute; top: 62px; left: 50%; transform: translateX(-50%); z-index: 1002;
   background: var(--surface-solid); border: 1px solid var(--verde); color: var(--text);
@@ -419,6 +424,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   padding: 14px 16px; backdrop-filter: blur(6px); font-size: 13px;
   display: flex; flex-direction: column; gap: 6px; min-width: 170px; overflow: hidden;
 }
+
+/* La leyenda de inseguridad se apila arriba de la principal (misma columna,
+   no al lado) cuando esa capa esta prendida, para no superponerse. */
+.legend-inseguridad { bottom: 210px; border-color: #FF3B3B; }
 .legend-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .legend-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 4px; }
 .legend-title em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.6; }

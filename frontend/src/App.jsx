@@ -13,7 +13,8 @@ import {
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
-  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa, ETIQUETA_CAPA_MAPA,
+  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa,
+  CLAVE_CAPA_INSEGURIDAD, siguienteCapaInseguridad, INFO_CAPA_INSEGURIDAD,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
@@ -23,6 +24,7 @@ import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
 import { CapaMapaToggle } from './components/CapaMapaToggle'
+import { CapaInseguridadToggle } from './components/CapaInseguridadToggle'
 import { CapaCalor } from './components/CapaCalor'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
 
@@ -42,6 +44,7 @@ function App() {
   const [backendError, setBackendError] = useState(false)
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
+  const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
     () => new Set(cargarDeLocalStorage(CLAVE_NIVELES, Object.keys(NIVELES)))
@@ -207,6 +210,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(CLAVE_CAPA_MAPA, JSON.stringify(capaMapa))
   }, [capaMapa])
+
+  useEffect(() => {
+    localStorage.setItem(CLAVE_CAPA_INSEGURIDAD, JSON.stringify(capaInseguridad))
+  }, [capaInseguridad])
 
   useEffect(() => {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
@@ -559,14 +566,15 @@ function App() {
   )
 
   const conteos = Object.keys(NIVELES).reduce((acc, n) => {
-    const fuente = {
-      corredores,
-      inseguridad_general: inseguridadGeneral,
-      inseguridad_moto: inseguridadMoto,
-    }[capaMapa]
-    acc[n] = fuente
-      ? fuente.filter((x) => x.nivel_riesgo === n).length
+    acc[n] = capaMapa === 'corredores'
+      ? corredores.filter((c) => c.nivel_riesgo === n).length
       : zonasAjustadas.filter((z) => z.ajuste.nivel === n).length
+    return acc
+  }, {})
+
+  const fuenteInseguridad = capaInseguridad === 'moto' ? inseguridadMoto : inseguridadGeneral
+  const conteosInseguridad = Object.keys(NIVELES).reduce((acc, n) => {
+    acc[n] = fuenteInseguridad.filter((h) => h.nivel_riesgo === n).length
     return acc
   }, {})
 
@@ -629,6 +637,7 @@ function App() {
         <div className="topbar-right">
           <ThemeToggle tema={tema} onCambiar={toggleTema} />
           <CapaMapaToggle capa={capaMapa} onCambiar={() => setCapaMapa(siguienteCapaMapa)} />
+          <CapaInseguridadToggle capa={capaInseguridad} onCambiar={() => setCapaInseguridad(siguienteCapaInseguridad)} />
           {climaInfo && (
             <div className="clima-badge" title={climaInfo.label}>
               <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
@@ -851,8 +860,8 @@ function App() {
             </Polyline>
           ))}
 
-          {(capaMapa === 'inseguridad_general' || capaMapa === 'inseguridad_moto') &&
-            (capaMapa === 'inseguridad_general' ? inseguridadGeneralFiltrada : inseguridadMotoFiltrada).map((h) => (
+          {capaInseguridad !== 'apagado' &&
+            (capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada).map((h) => (
               <CircleMarker
                 key={h.id}
                 center={[h.latitud, h.longitud]}
@@ -1033,7 +1042,7 @@ function App() {
 
       <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
         <div className="legend-header">
-          <span className="legend-title">{ETIQUETA_CAPA_MAPA[capaMapa]} <em>(tocá para filtrar)</em></span>
+          <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
           {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
         </div>
         {Object.entries(NIVELES).map(([key, val]) => (
@@ -1044,6 +1053,21 @@ function App() {
           </button>
         ))}
       </div>
+
+      {capaInseguridad !== 'apagado' && (
+        <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
+          <div className="legend-header">
+            <span className="legend-title">{INFO_CAPA_INSEGURIDAD[capaInseguridad].label} <em>(datos GCBA)</em></span>
+          </div>
+          {Object.entries(NIVELES).map(([key, val]) => (
+            <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
+              <span className="legend-swatch" style={{ background: val.color }} />
+              {val.label}
+              <span className="legend-count">{conteosInseguridad[key]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {!rutaAbierta && rutasCalculadas.length === 0 && (
         <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}><Compass size={16} /> <span>Trazar ruta</span></button>

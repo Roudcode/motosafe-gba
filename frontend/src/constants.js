@@ -17,6 +17,7 @@ export const CLAVE_FAVORITOS = 'motosafe_favoritos'
 export const CLAVE_TEMA = 'motosafe_tema'
 export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
+export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
 export const CLAVE_AUTOR_ID = 'motosafe_autor_id'
 
 export const NIVELES = {
@@ -39,27 +40,31 @@ export const CATEGORIAS_REPORTE = [
 // (densidad) -> corredores (calles completas). Vive acá, no en el componente
 // del botón, porque react-refresh exige que un archivo de componente solo
 // exporte componentes.
-export const ORDEN_CAPAS_MAPA = ['clusters', 'heatmap', 'corredores', 'inseguridad_general', 'inseguridad_moto']
+export const ORDEN_CAPAS_MAPA = ['clusters', 'heatmap', 'corredores']
 export const INFO_CAPA_MAPA = {
   clusters: { siguienteLabel: 'Cambiar a mapa de calor' },
   heatmap: { siguienteLabel: 'Cambiar a corredores de riesgo' },
-  corredores: { siguienteLabel: 'Cambiar a inseguridad (robos, hurtos)' },
-  inseguridad_general: { siguienteLabel: 'Cambiar a inseguridad con moto' },
-  inseguridad_moto: { siguienteLabel: 'Cambiar a vista de zonas' },
-}
-
-// Etiquetas y color base de cada capa, para el indicador de capa activa y las
-// leyendas. Las dos de inseguridad usan datos reales de delitos del GCBA
-// (no siniestros de moto), por eso tienen su propio label explicativo.
-export const ETIQUETA_CAPA_MAPA = {
-  clusters: 'Zonas de riesgo (siniestros de moto)',
-  heatmap: 'Mapa de calor (siniestros de moto)',
-  corredores: 'Corredores de riesgo (siniestros de moto)',
-  inseguridad_general: 'Inseguridad (robos, hurtos, lesiones)',
-  inseguridad_moto: 'Inseguridad con moto (robos)',
+  corredores: { siguienteLabel: 'Cambiar a vista de zonas' },
 }
 
 export function siguienteCapaMapa(capa) {
   const idx = ORDEN_CAPAS_MAPA.indexOf(capa)
   return ORDEN_CAPAS_MAPA[(idx + 1) % ORDEN_CAPAS_MAPA.length]
+}
+
+// Capa de inseguridad (delitos reales del GCBA -- robos, hurtos, lesiones --
+// no siniestros de moto): botón propio, separado del de arriba, para que no
+// queden 5 vistas distintas mezcladas en un solo ícono que cicla. Es una capa
+// que se prende/apaga y se superpone a lo que ya se esté viendo (clusters,
+// heatmap o corredores), no reemplaza la vista.
+export const ORDEN_CAPAS_INSEGURIDAD = ['apagado', 'general', 'moto']
+export const INFO_CAPA_INSEGURIDAD = {
+  apagado: { label: 'Inseguridad', siguienteLabel: 'Mostrar inseguridad (robos, hurtos, lesiones)' },
+  general: { label: 'Inseguridad: todo delito', siguienteLabel: 'Cambiar a inseguridad con moto (robos)' },
+  moto: { label: 'Inseguridad: con moto (robos)', siguienteLabel: 'Ocultar capa de inseguridad' },
+}
+
+export function siguienteCapaInseguridad(capa) {
+  const idx = ORDEN_CAPAS_INSEGURIDAD.indexOf(capa)
+  return ORDEN_CAPAS_INSEGURIDAD[(idx + 1) % ORDEN_CAPAS_INSEGURIDAD.length]
 }
