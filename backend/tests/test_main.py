@@ -320,7 +320,7 @@ def test_corredores_diferencia_niveles_entre_si_no_todos_iguales():
     """
     Los corredores son, por construccion, solo avenidas transitadas (>=30
     siniestros): su riesgo absoluto cae en un rango angosto y los cortes fijos
-    de nivel_desde_probabilidades (calibrados para el rango completo de los 412
+    de nivel_desde_probabilidades (calibrados para el rango completo de los 740
     hotspots) los metia casi a todos en 'alto'. Este test verifica que el nivel
     relativo (percentiles entre los propios corredores del pedido) realmente
     diferencia: con corredores de perfiles bien distintos, tienen que aparecer

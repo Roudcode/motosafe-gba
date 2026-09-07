@@ -44,7 +44,7 @@ Un servidor es, en esencia, un programa que queda "escuchando" pedidos y respond
 
 ### ¿Qué es una "base de datos"?
 
-Es un sistema organizado para guardar información de forma que se pueda buscar y consultar rápido, como una biblioteca con fichas ordenadas en vez de libros tirados en el piso. En este proyecto, la base de datos guarda los 412 puntos de riesgo del mapa (ubicación, cantidad de siniestros históricos, etc.).
+Es un sistema organizado para guardar información de forma que se pueda buscar y consultar rápido, como una biblioteca con fichas ordenadas en vez de libros tirados en el piso. En este proyecto, la base de datos guarda los 740 puntos de riesgo del mapa (ubicación, cantidad de siniestros históricos, etc.).
 
 ### ¿Qué es una "API"?
 
@@ -82,9 +82,11 @@ Estos datos, tal como los entrega el gobierno, tienen errores típicos de cualqu
 
 ### Fase 4 — Encontrar los puntos de riesgo real (clustering)
 
-Con los 23.343 siniestros de motociclistas ya limpios, se usó un algoritmo llamado DBSCAN para encontrar **agrupaciones geográficas reales** — es decir, esquinas o tramos de avenida donde los siniestros no son casualidad aislada, sino que se repiten una y otra vez en el mismo lugar. El primer intento agrupó "demasiado" (toda la ciudad en un solo grupo gigante, por un error de calibración), pero ajustando los parámetros se llegó a 412 zonas de riesgo reales y bien definidas.
+Con los 23.343 siniestros de motociclistas ya limpios, se usó un algoritmo llamado DBSCAN para encontrar **agrupaciones geográficas reales** — es decir, esquinas o tramos de avenida donde los siniestros no son casualidad aislada, sino que se repiten una y otra vez en el mismo lugar. El primer intento agrupó "demasiado" (toda la ciudad en un solo grupo gigante, por un error de calibración), pero ajustando los parámetros se llegó a zonas de riesgo reales y bien definidas.
 
-Esta calibración se revisó más adelante con un barrido sistemático (probando 60 combinaciones de radio y cantidad mínima de siniestros por zona) en vez de quedarse con el primer ajuste manual que funcionó. El resultado: con radio de 100 metros y mínimo 12 siniestros por zona, la cobertura sube de 32.1% a 49.9% de los siniestros históricos (antes, dos de cada tres siniestros quedaban "aislados", sin zona asignada), sin volver a caer en el problema de fusionar toda la ciudad en un cluster gigante. Todavía queda poco más de la mitad de los siniestros sin zona — subir la cobertura mucho más empieza a fusionar zonas que en la realidad son distintas, así que es un límite consciente, no una falla pendiente de arreglar.
+Esta calibración se revisó más adelante con un barrido sistemático (probando 60 combinaciones de radio y cantidad mínima de siniestros por zona) en vez de quedarse con el primer ajuste manual que funcionó. El resultado: con radio de 100 metros y mínimo 12 siniestros por zona, la cobertura subió de 32.1% a 49.9% de los siniestros históricos, sin volver a caer en el problema de fusionar toda la ciudad en un cluster gigante — pero seguía quedando más de la mitad de los siniestros sin zona.
+
+Después de esa primera vuelta se probó un algoritmo distinto, HDBSCAN, que en vez de usar un único radio fijo para toda la ciudad se adapta a la densidad local de cada zona (una esquina con siniestros muy pegados entre sí y un tramo de avenida con siniestros más dispersos pueden formar zonas igual de válidas, cada una con su propia "escala"). Se evaluó igual que DBSCAN, chequeando en cada combinación de parámetros el tamaño del cluster más grande como porcentaje del total (para descartar el mismo riesgo de "blob" que motivó la calibración anterior). Con `min_cluster_size=12` (mismo piso de siniestros reales por zona que antes, ahora garantizado de forma nativa por el algoritmo, sin post-proceso) y `min_samples=3`, se llegó a **740 zonas de riesgo, con una cobertura del 75.6%** de los siniestros históricos, y con el cluster más grande ocupando apenas 0.41% del total (más chico incluso que el 0.73% de la versión con DBSCAN). Es la configuración final: mejor cobertura y, según esta misma medida de seguridad, más conservadora que la anterior.
 
 ### Fase 5 — Entrenar el modelo predictivo
 
@@ -94,11 +96,11 @@ El mejor resultado fue el Random Forest que incluye edad y sexo de la víctima �
 
 ### Fase 6 — Conectar todo: el mapa ahora usa el modelo real
 
-Finalmente, se conectó el modelo entrenado al servidor de datos, de forma que cada vez que el mapa pide "dame las zonas de riesgo", el servidor le pregunta al modelo real —en el momento, con la hora y el día actuales— qué probabilidad de gravedad tiene cada una de las 412 zonas, y pinta el mapa con ese resultado. Ya no es un color fijo inventado: es la salida en vivo de una Inteligencia Artificial entrenada con datos reales.
+Finalmente, se conectó el modelo entrenado al servidor de datos, de forma que cada vez que el mapa pide "dame las zonas de riesgo", el servidor le pregunta al modelo real —en el momento, con la hora y el día actuales— qué probabilidad de gravedad tiene cada una de las 740 zonas, y pinta el mapa con ese resultado. Ya no es un color fijo inventado: es la salida en vivo de una Inteligencia Artificial entrenada con datos reales.
 
 ### Fase 7 — Corredores de riesgo (avenidas completas, no solo puntos)
 
-Los 412 hotspots son puntos aislados, pero el riesgo real de una avenida no se vive punto por punto: se vive como un tramo completo. Se agregó una segunda forma de ver el mapa donde, en vez de círculos sueltos, avenidas enteras (9 de Julio, Rivadavia, Corrientes, etc.) se pintan de punta a punta según un score de riesgo calculado sobre todos los siniestros que caen dentro de un radio de esa avenida. Esto se sirve desde un endpoint nuevo del backend (`/corredores`) y se puede alternar en el mapa junto con la vista de clusters y el mapa de calor.
+Los 740 hotspots son puntos aislados, pero el riesgo real de una avenida no se vive punto por punto: se vive como un tramo completo. Se agregó una segunda forma de ver el mapa donde, en vez de círculos sueltos, avenidas enteras (9 de Julio, Rivadavia, Corrientes, etc.) se pintan de punta a punta según un score de riesgo calculado sobre todos los siniestros que caen dentro de un radio de esa avenida. Esto se sirve desde un endpoint nuevo del backend (`/corredores`) y se puede alternar en el mapa junto con la vista de clusters y el mapa de calor.
 
 ### Fase 8 — Reportes colaborativos reales (dejaron de vivir solo en tu navegador)
 
@@ -106,7 +108,7 @@ Los reportes que un usuario manda desde la app (un pozo, falta de luz, un corte)
 
 ### Fase 9 — El eje de inseguridad: un segundo tipo de riesgo, aparte del siniestro vial
 
-Hasta acá todo el riesgo calculado era de siniestralidad vial (choques, caídas). Pero para un motociclista real, la inseguridad (robos, arrebatos) es un riesgo igual de concreto y de naturaleza distinta. Se incorporó un dataset público de delitos de la Ciudad de Buenos Aires (1.387.622 delitos registrados), del cual se aplicó el mismo proceso de clustering (DBSCAN) que se usó para los siniestros, pero recalibrado — porque los delitos se concentran de forma distinta en el mapa que los choques, y usar los mismos parámetros hubiera generado hotspots mal formados. De ese proceso salieron 435 hotspots de inseguridad: 303 de delito general y 132 específicamente de robos con moto, guardados como dos capas independientes (no una es subconjunto filtrado de la otra en la interfaz, aunque en los datos sí lo sea, porque un usuario puede querer ver un panorama general o específicamente el patrón de robos a motociclistas, y mezclar ambos en el mapa solo duplicaría puntos sobre los mismos hechos).
+Hasta acá todo el riesgo calculado era de siniestralidad vial (choques, caídas). Pero para un motociclista real, la inseguridad (robos, arrebatos) es un riesgo igual de concreto y de naturaleza distinta. Se incorporó un dataset público de delitos de la Ciudad de Buenos Aires (1.387.622 delitos registrados), del cual se aplicó el mismo proceso de clustering (DBSCAN, no HDBSCAN — ver la nota más abajo sobre por qué siguen siendo dos algoritmos distintos) que se usó originalmente para los siniestros, pero recalibrado — porque los delitos se concentran de forma distinta en el mapa que los choques, y usar los mismos parámetros hubiera generado hotspots mal formados. De ese proceso salieron 435 hotspots de inseguridad: 303 de delito general y 132 específicamente de robos con moto, guardados como dos capas independientes (no una es subconjunto filtrado de la otra en la interfaz, aunque en los datos sí lo sea, porque un usuario puede querer ver un panorama general o específicamente el patrón de robos a motociclistas, y mezclar ambos en el mapa solo duplicaría puntos sobre los mismos hechos).
 
 Además, se armó un índice de inseguridad por comuna, pensado como una capa de contexto adicional (a diferencia de los hotspots, que son puntuales y salen de clustering, el índice es una foto por comuna completa, calculada una sola vez y actualizada manualmente cuando el dataset de delitos se refresca, no en vivo como las predicciones del modelo de siniestros).
 
@@ -128,10 +130,10 @@ Imaginate un restaurante:
 
 - **El frontend (lo que ves en el navegador)** es el salón del restaurante y el menú: la parte con la que interactuás directamente, donde ves el mapa, tocás botones, escribís direcciones.
 - **El backend (el servidor de datos)** es la cocina: no lo ves directamente, pero es quien recibe tu pedido ("quiero ver las zonas de riesgo"), lo procesa, y te devuelve el resultado.
-- **La base de datos** es la despensa: donde están guardados los ingredientes base (los 412 puntos de riesgo, su ubicación, su historial).
+- **La base de datos** es la despensa: donde están guardados los ingredientes base (los 740 puntos de riesgo, su ubicación, su historial).
 - **El modelo de Machine Learning** es el chef con experiencia: alguien que, después de haber visto miles de platos servidos antes (los 23.343 siniestros históricos), sabe estimar "con esta combinación de ingredientes, este plato probablemente sale así de bueno o malo" — sin tener que consultar un libro de recetas fijas, porque aprendió el patrón con la práctica.
 
-Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend) el menú del día. La cocina va a la despensa (base de datos), saca los 412 ingredientes base, y para cada uno le pregunta al chef (modelo) "con este ingrediente, en este momento del día, ¿qué tan bien va a salir?". El chef responde con su estimación, y la cocina arma el plato final (el color de cada zona) que el salón te muestra en el mapa.
+Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend) el menú del día. La cocina va a la despensa (base de datos), saca los 740 ingredientes base, y para cada uno le pregunta al chef (modelo) "con este ingrediente, en este momento del día, ¿qué tan bien va a salir?". El chef responde con su estimación, y la cocina arma el plato final (el color de cada zona) que el salón te muestra en el mapa.
 
 ---
 
@@ -140,7 +142,7 @@ Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend)
 | Programa | Qué es, en criollo | Para qué se usa acá |
 |---|---|---|
 | **Docker Desktop** | Un programa que te deja correr "cajas" con software ya preparado adentro, sin instalar ese software directo en tu Windows. | Levanta la base de datos sin tener que instalar PostgreSQL a mano. |
-| **PostgreSQL + PostGIS** | Un sistema de base de datos, con un agregado (PostGIS) que sabe manejar coordenadas geográficas de forma eficiente. | Guarda los 412 puntos de riesgo con su ubicación exacta. |
+| **PostgreSQL + PostGIS** | Un sistema de base de datos, con un agregado (PostGIS) que sabe manejar coordenadas geográficas de forma eficiente. | Guarda los 740 puntos de riesgo con su ubicación exacta. |
 | **Python** | Un lenguaje de programación, uno de los más usados para análisis de datos e Inteligencia Artificial. | El lenguaje en el que está escrito todo el análisis, el modelo, y el servidor de datos. |
 | **Node.js** | Un entorno que permite correr JavaScript (otro lenguaje de programación) fuera del navegador. | Necesario para construir y probar la parte visual (el mapa). |
 | **Visual Studio Code (VS Code)** | Un editor de texto especializado en escribir código, con ayudas visuales (colores, sugerencias). | Donde escribiste y modificaste todos los archivos del proyecto. |
@@ -166,7 +168,7 @@ Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend)
 └──────────────────┘
           │
           ├──────────────► Le pregunta a la base de datos:
-          │                "¿cuáles son los 412 puntos de riesgo?"
+          │                "¿cuáles son los 740 puntos de riesgo?"
           │
           └──────────────► Para cada uno, le pregunta al modelo entrenado:
                             "con este contexto y la hora de ahora,
@@ -198,7 +200,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 
 - Los 65.818 siniestros descargados del gobierno son datos oficiales, no inventados.
 - Los 23.343 casos de motociclistas usados para entrenar el modelo son reales.
-- Los 412 puntos de riesgo en el mapa salen de un análisis matemático real (DBSCAN, con parámetros elegidos tras un barrido sistemático, no a mano) sobre esos datos, no fueron puestos a mano.
+- Los 740 puntos de riesgo en el mapa salen de un análisis matemático real (HDBSCAN, con parámetros elegidos tras comparar contra DBSCAN en un barrido sistemático, no a mano) sobre esos datos, no fueron puestos a mano.
 - El modelo que predice cada nivel de riesgo fue entrenado de verdad con esos 23.343 casos, y evaluado correctamente para ver qué tan bien predice.
 - Las predicciones que ves ahora mismo en el mapa son la respuesta real de ese modelo, calculada en el momento — no son un color fijo escrito en el código.
 - El clima que aparece arriba es el clima real de Buenos Aires en este instante.
@@ -207,7 +209,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 
 ### Lo que es una simplificación consciente (no un engaño, una decisión de alcance):
 
-- **Cobertura de hotspots del 49.9%, no del 100%**: poco más de la mitad de los siniestros históricos de moto quedan "aislados", sin caer dentro de ningún hotspot. Es un trade-off consciente entre cobertura y precisión geográfica (agrandar el radio de búsqueda para subir la cobertura empieza a fusionar zonas distintas en una sola, algo que se verificó empíricamente probando 60 combinaciones de parámetros), no una falla pendiente.
+- **Cobertura de hotspots del 75.6%, no del 100%**: casi un cuarto de los siniestros históricos de moto (24.4%) quedan "aislados", sin caer dentro de ningún hotspot — casos demasiado dispersos como para formar una zona compacta bajo cualquier calibración razonable. Es una mejora real frente al 49.9% que daba la calibración anterior con DBSCAN, lograda al pasar a HDBSCAN, pero sigue siendo un trade-off consciente entre cobertura y precisión geográfica: forzar coberturas más altas todavía empieza a arriesgar el mismo problema de fusionar zonas distintas en una sola que ya se había descartado antes, verificado en ambos casos chequeando el tamaño del cluster más grande como % del total.
 - **El modelo prioriza detectar casos graves y mortales por sobre la precisión general, a propósito**: se probaron varias configuraciones del Random Forest contra un holdout temporal real (2025, nunca visto durante el ajuste) y se eligió una (`class_weight="balanced_subsample"`, hojas mínimas de 5 en vez de 1) que casi duplica la detección de casos graves y mortales a cambio de una accuracy general más baja y más falsas alarmas en casos leves. Para una app de seguridad vial es la decisión correcta, pero es una decisión de producto explícita, no la que un ajuste automático ciego hubiera elegido (de hecho, un ajuste automático por validación cruzada encontró una configuración que rendía mejor en el propio período de entrenamiento pero mucho peor contra datos futuros reales — sobreajuste puro).
 - **Alcance geográfico**: el proyecto cubre solo la Ciudad de Buenos Aires (CABA). No se encontraron datos públicos y geolocalizados equivalentes para el resto del Gran Buenos Aires, a pesar de haberlos buscado.
 - **El modelo usa el "perfil típico" de cada zona, no la situación exacta del momento**: cuando el sistema calcula el riesgo de una zona, usa la hora actual (correcto) pero el tipo de contraparte, edad y sexo "más comunes" en el historial de esa zona (una aproximación razonable, pero no la situación exacta de la persona que está mirando el mapa ahora mismo).
@@ -232,7 +234,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 | **Dataset** | Un conjunto de datos, generalmente organizado como una tabla (filas y columnas). |
 | **Limpieza de datos** | El proceso de corregir errores, inconsistencias y datos faltantes antes de usarlos. |
 | **Clustering / Agrupamiento** | Técnica para encontrar grupos de puntos que están cerca entre sí. |
-| **DBSCAN** | El algoritmo específico de clustering usado para encontrar los 412 hotspots. |
+| **HDBSCAN** | El algoritmo específico de clustering usado para encontrar los 740 hotspots de siniestro. A diferencia de DBSCAN (que usa un radio fijo), se adapta a la densidad local de cada zona. |
 | **Random Forest / XGBoost** | Dos algoritmos distintos de Machine Learning, ambos usados y comparados en este proyecto. |
 | **Hotspot** | Una zona donde se repiten siniestros con más frecuencia de lo normal. |
 | **API** | La forma en que dos programas se comunican entre sí, con reglas fijas de qué se puede pedir. |
@@ -243,7 +245,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 | **Servidor** | Un programa que queda esperando pedidos y respondiendo con información. |
 | **Localhost** | Una forma de decir "esta misma computadora" — no es internet, es tu propia PC. |
 | **Índice de inseguridad** | Un valor por comuna que resume qué tan inseguro es un área en general, calculado una vez sobre el dataset de delitos y actualizado manualmente, no en vivo. |
-| **Hotspot de inseguridad** | Una zona donde se repiten delitos con más frecuencia de lo normal, encontrada con el mismo método (DBSCAN) que los hotspots de siniestros, pero recalibrado para este dataset. |
+| **Hotspot de inseguridad** | Una zona donde se repiten delitos con más frecuencia de lo normal, encontrada con DBSCAN (el método que también se usaba originalmente para los hotspots de siniestros, antes de pasar esos a HDBSCAN), recalibrado para este dataset. |
 | **Score de ruta / desglose** | El número total de riesgo que suma una opción de ruta, siempre mostrado junto con cuánto de ese total corresponde a siniestro y cuánto a inseguridad, para no ocultar de qué tipo es el riesgo. |
 | **Percentil (para nivel de riesgo)** | La posición relativa de un valor dentro de su propio dataset (por ejemplo, "está en el percentil 95" significa que es más alto que el 95% de los demás casos). Se usa para definir los cortes entre bajo/medio/alto/crítico dentro de cada eje de riesgo. |
 

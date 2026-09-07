@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Identifica "corredores de riesgo": calles con muchos siniestros a lo largo de su
-extension, en vez de zonas puntuales (los 412 hotspots de DBSCAN). Se corre una
+extension, en vez de zonas puntuales (los 740 hotspots de HDBSCAN). Se corre una
 sola vez (analogo a como se generan los hotspots), sin red: solo agrupa datos
 que ya estan en el repo. El resultado (data/corredores_candidatos.csv) despues
 se le pasa a notebooks/fetch_corredores_geometria.py, que si necesita red (pega

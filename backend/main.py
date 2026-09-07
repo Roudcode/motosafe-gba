@@ -74,7 +74,7 @@ OPEN_METEO_URL = os.getenv('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1
 LATITUD_CABA = -34.61
 LONGITUD_CABA = -58.44
 CACHE_CLIMA_TTL_SEGUNDOS = 600  # 10 minutos: evita repetir la llamada externa en cada
-                                 # pedido a /hotspots (que ya procesa 412 hotspots por request)
+                                 # pedido a /hotspots (que ya procesa 740 hotspots por request)
 
 # Promedio histórico 2019-2026 usado en el entrenamiento (ver clima_historico.csv):
 # último respaldo si la API en vivo no responde y todavía no hay nada en cache.
@@ -219,14 +219,14 @@ def obtener_hotspots():
     dia_actual = ahora.strftime('%A')
     clima_actual = obtener_clima_actual()
 
-    # Vectorizado: se arman las filas de los 412 hotspots de una sola vez y se
+    # Vectorizado: se arman las filas de los 740 hotspots de una sola vez y se
     # predice todo el lote junto (un solo pd.get_dummies + un solo predict_proba),
     # en vez de un loop en Python armando un DataFrame de una fila por hotspot.
     # Esto es lo que hacía que el endpoint tardara 15-20 segundos: no era el modelo
-    # en si (un RandomForest predice un lote de 412 filas en milisegundos), era el
-    # overhead de pandas (crear DataFrame, get_dummies, reindex) repetido 412 veces
+    # en si (un RandomForest predice un lote de 740 filas en milisegundos), era el
+    # overhead de pandas (crear DataFrame, get_dummies, reindex) repetido 740 veces
     # en Python puro, mas el filtro lineal sobre contexto_hotspots en cada vuelta.
-    # El clima es el mismo para las 412 filas (una sola ciudad, un solo momento),
+    # El clima es el mismo para las 740 filas (una sola ciudad, un solo momento),
     # así que se pide una vez (con cache) y no por hotspot.
     columnas_contexto = ['cluster', 'comuna_moda', 'tipo_via_moda', 'contraparte_moda', 'edad_promedio', 'sexo_moda']
     contexto = pd.DataFrame({'cluster': [h['cluster'] for h in resultado]}).merge(
@@ -469,7 +469,7 @@ def obtener_corredores():
 
     # Los corredores son, por construccion, solo avenidas con muchos siniestros
     # (ya se filtraron a partir de 30 en notebooks/identificar_corredores.py), asi
-    # que su riesgo absoluto cae en un rango mucho mas angosto que el de los 412
+    # que su riesgo absoluto cae en un rango mucho mas angosto que el de los 740
     # hotspots (que incluyen tambien esquinas tranquilas con pocos casos). Usar
     # los mismos cortes absolutos de nivel_desde_probabilidades ahi casi todo cae
     # en "alto" — se probo (ver commit) y con eso el 95% de los corredores

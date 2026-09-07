@@ -180,6 +180,28 @@ docs/           Documentación del proyecto (resultados, extensiones futuras)
 - No hay acceso a la base de datos Postgres del usuario desde este entorno de trabajo en la nube: la carga real de los nuevos hotspots a la base (`cargar_hotspots.py`) y la verificación visual en el mapa quedan pendientes de que el usuario las corra en su propia máquina.
 
 **Próximos pasos**
-- Correr `cargar_hotspots.py` (opción 2 de `tareas.bat`) para recargar los 412 hotspots nuevos en la base local, y confirmar visualmente en el mapa.
 - Actualizar la tesis formal con estos hallazgos (validación temporal, trade-off de recall vs. accuracy, barrido de clustering) cuando llegue el momento de retomarla.
-- Evaluar si vale la pena repetir el mismo barrido de parámetros para los hotspots de inseguridad (delito general y robos con moto), que todavía usan la calibración manual original.
+
+### 07/09/2026 (continuación 2) — De DBSCAN a HDBSCAN para los hotspots de siniestro: 412 → 740 zonas, 49.9% → 75.6% de cobertura
+
+**Tareas realizadas**
+- A partir de la pregunta directa de si se podía conseguir más zonas y cubrir más siniestros, se evaluó `sklearn.cluster.HDBSCAN` como alternativa a DBSCAN para el clustering de siniestros de moto (no para los hotspots de inseguridad, que siguen con DBSCAN sin cambios).
+- Un primer barrido en grilla con `cluster_selection_epsilon` fijo tardó más de 120 segundos sin terminar ni una combinación; se abandonó ese parámetro y se probaron combinaciones sueltas de `min_cluster_size` x `min_samples` sin él, cada una en 17-23 segundos.
+- Se aplicó a cada combinación el mismo chequeo de "riesgo de blob" usado para calibrar DBSCAN (tamaño del cluster más grande como % del total). Con `min_cluster_size=12` (mismo piso de 12 siniestros reales por zona que antes, ya garantizado de forma nativa por HDBSCAN) y `min_samples=3`, el resultado fue 740 hotspots, cobertura del 75.6% (antes 412 hotspots, 49.9%), con el cluster más grande en 0.41% del total — más chico que el 0.73% de la versión DBSCAN, es decir, mejor cobertura y a la vez más seguro.
+- Se reescribió `notebooks/reclusterizar_hotspots.py` para usar HDBSCAN. El post-filtro de fragmentos que hacía falta con DBSCAN se eliminó: HDBSCAN garantiza nativamente que ningún cluster resultante tenga menos de `min_cluster_size` miembros, así que ya no hace falta ese paso.
+- Se regeneraron `motos_con_clusters.csv`, `hotspots_moto_caba.csv`, `hotspots_contexto.csv` y `modelo_final.pkl` (el modelo no cambió de configuración, solo se reentrenó con las mismas variables — el clustering no es un input del modelo, solo de los hotspots que se despliegan en el mapa). Los 24 tests de backend siguen pasando.
+- Se actualizaron los comentarios en código (`backend/main.py`, `backend/tests/test_main.py`, `notebooks/identificar_corredores.py`) y ambas Guías (RESUMEN y DETALLADA) con los números y el método nuevo.
+
+**Decisiones de diseño y su justificación**
+- Se eligió HDBSCAN sobre seguir ajustando DBSCAN porque el problema de fondo de DBSCAN es que usa un radio fijo (eps) para toda la ciudad: agrandarlo para cubrir zonas de baja densidad arriesga fusionar clusters en zonas densas (el efecto "blob" ya descartado en la calibración anterior). HDBSCAN se adapta a la densidad local de cada zona, así que puede encontrar zonas chicas y compactas donde hay pocos siniestros dispersos sin arriesgar ese efecto donde los siniestros están muy concentrados.
+- Se descartó la grilla de búsqueda con `cluster_selection_epsilon` fijo (no terminó en 120 segundos) en vez de forzarla con timeouts más largos: los llamados simples sin ese parámetro ya daban resultados sólidos en menos de 25 segundos cada uno, así que insistir con la versión más lenta no aportaba nada que la más simple no diera.
+- Se mantiene el trade-off de cobertura vs. precisión geográfica como una decisión consciente, no un objetivo de "llegar al 100%": el 24.4% de siniestros que quedan aislados corresponde a casos genuinamente dispersos, sin vecinos cercanos suficientes como para formar una zona compacta bajo ningún parámetro razonable — forzar más cobertura ahí significaría volver a arriesgar el efecto "blob" que ya se descartó dos veces.
+
+**Obstáculos encontrados y cómo se resolvieron**
+- El paquete `hdbscan` de PyPI (standalone) no está instalado; se usó `sklearn.cluster.HDBSCAN` (parte de scikit-learn 1.7.2, ya instalado), que expone la misma funcionalidad sin agregar una dependencia nueva.
+- Igual que con la carga de hotspots de la sesión anterior, este entorno de trabajo en la nube no tiene acceso a la base Postgres del usuario: la recarga real de los 740 hotspots nuevos (`cargar_hotspots.py`) y la verificación visual en el mapa quedan pendientes de correrse en la máquina del usuario.
+
+**Próximos pasos**
+- Correr `cargar_hotspots.py` (opción 2 de `tareas.bat`) para recargar los 740 hotspots nuevos en la base local, y confirmar visualmente en el mapa que las zonas nuevas tienen sentido geográfico (no hay clusters alargados ni fusionados).
+- Actualizar la tesis formal con este hallazgo (cambio de algoritmo de clustering, cobertura final) cuando llegue el momento de retomarla.
+- Evaluar si vale la pena repetir esta misma comparación DBSCAN vs. HDBSCAN para los hotspots de inseguridad (delito general y robos con moto), que todavía usan la calibración manual original con DBSCAN.
