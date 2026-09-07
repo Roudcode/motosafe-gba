@@ -357,6 +357,7 @@ function App() {
     setZonaSeleccionada(null)
     setActividadAbierta(false)
     setStatsAbierto(false)
+    setCapasAbiertas(false)
     setRutasCalculadas([])
     setRutaError(null)
   }
@@ -715,7 +716,7 @@ function App() {
           )}
           <div
             className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${misReportes.length > 0 ? 'clickeable' : ''}`}
-            onClick={() => misReportes.length > 0 && setActividadAbierta((v) => !v)}
+            onClick={() => { if (misReportes.length > 0) { setActividadAbierta((v) => !v); setCapasAbiertas(false) } }}
           >
             <span className="status-dot" />
             {textoTopbar}
@@ -990,7 +991,7 @@ function App() {
                     nivelData: zona.ajuste.nivel,
                   }}
                   className={zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}
-                  eventHandlers={{ click: () => setZonaSeleccionada(zona) }}
+                  eventHandlers={{ click: () => { setZonaSeleccionada(zona); setCapasAbiertas(false) } }}
                 />
               )
             })}
@@ -1135,7 +1136,7 @@ function App() {
         </div>
       )}
 
-      {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && !statsAbierto && (
+      {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && !statsAbierto && !capasAbiertas && (
         <div className="cercanas-panel panel-enter hazard-edge" style={{ animationDelay: '0.15s' }}>
           <span className="cercanas-title">Zonas cercanas {miUbicacion ? '· a vos' : '· al centro del GBA'}</span>
           {cargandoHotspots && <p className="cercanas-empty">Cargando...</p>}
@@ -1197,7 +1198,7 @@ function App() {
                 <Box size={15} /> Vista inclinada {vistaNavegacion ? '· activa' : ''}
               </button>
             )}
-            <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false) }}>
+            <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
               <BarChart3 size={15} /> Estadísticas
             </button>
           </div>
