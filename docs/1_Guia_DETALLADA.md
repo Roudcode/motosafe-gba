@@ -94,6 +94,30 @@ El mejor resultado fue el Random Forest que incluye edad y sexo de la víctima �
 
 Finalmente, se conectó el modelo entrenado al servidor de datos, de forma que cada vez que el mapa pide "dame las zonas de riesgo", el servidor le pregunta al modelo real —en el momento, con la hora y el día actuales— qué probabilidad de gravedad tiene cada una de las 430 zonas, y pinta el mapa con ese resultado. Ya no es un color fijo inventado: es la salida en vivo de una Inteligencia Artificial entrenada con datos reales.
 
+### Fase 7 — Corredores de riesgo (avenidas completas, no solo puntos)
+
+Los 430 hotspots son puntos aislados, pero el riesgo real de una avenida no se vive punto por punto: se vive como un tramo completo. Se agregó una segunda forma de ver el mapa donde, en vez de círculos sueltos, avenidas enteras (9 de Julio, Rivadavia, Corrientes, etc.) se pintan de punta a punta según un score de riesgo calculado sobre todos los siniestros que caen dentro de un radio de esa avenida. Esto se sirve desde un endpoint nuevo del backend (`/corredores`) y se puede alternar en el mapa junto con la vista de clusters y el mapa de calor.
+
+### Fase 8 — Reportes colaborativos reales (dejaron de vivir solo en tu navegador)
+
+Los reportes que un usuario manda desde la app (un pozo, falta de luz, un corte) dejaron de guardarse solo en la memoria del navegador de quien los carga: ahora se guardan en la base de datos del backend (`POST /reportes`), así que cualquiera que abra la app los ve, no solo quien los reportó. Cada reporte tiene una categoría con una vigencia distinta según qué tan rápido deja de ser útil esa información (un corte de calle vence en 12 horas, un problema de iluminación o pavimento tarda 30 días en vencer) — pasado ese tiempo, el reporte se descarta solo. Mientras un reporte está vigente, se muestra cada vez más transparente a medida que envejece, así se distingue de un vistazo un reporte fresco de uno que ya casi vence.
+
+### Fase 9 — El eje de inseguridad: un segundo tipo de riesgo, aparte del siniestro vial
+
+Hasta acá todo el riesgo calculado era de siniestralidad vial (choques, caídas). Pero para un motociclista real, la inseguridad (robos, arrebatos) es un riesgo igual de concreto y de naturaleza distinta. Se incorporó un dataset público de delitos de la Ciudad de Buenos Aires (1.387.622 delitos registrados), del cual se aplicó el mismo proceso de clustering (DBSCAN) que se usó para los siniestros, pero recalibrado — porque los delitos se concentran de forma distinta en el mapa que los choques, y usar los mismos parámetros hubiera generado hotspots mal formados. De ese proceso salieron 435 hotspots de inseguridad: 303 de delito general y 132 específicamente de robos con moto, guardados como dos capas independientes (no una es subconjunto filtrado de la otra en la interfaz, aunque en los datos sí lo sea, porque un usuario puede querer ver un panorama general o específicamente el patrón de robos a motociclistas, y mezclar ambos en el mapa solo duplicaría puntos sobre los mismos hechos).
+
+Además, se armó un índice de inseguridad por comuna, pensado como una capa de contexto adicional (a diferencia de los hotspots, que son puntuales y salen de clustering, el índice es una foto por comuna completa, calculada una sola vez y actualizada manualmente cuando el dataset de delitos se refresca, no en vivo como las predicciones del modelo de siniestros).
+
+### Fase 10 — Integrar inseguridad a lo que ya importaba: rutas y alertas en viaje
+
+Tener el dato de inseguridad en el mapa no alcanzaba si el cálculo de ruta y las alertas en tiempo real lo seguían ignorando. Se unificó el modelo de riesgo: cada zona (sea de siniestro o de inseguridad) ya usa la misma escala ordinal de severidad (bajo/medio/alto/crítico, calculada por percentiles dentro de su propio dataset), así que sumar sus pesos para armar un score total de ruta es matemáticamente razonable — sumar cantidades crudas de siniestros y delitos no lo hubiera sido, porque son magnitudes de naturaleza distinta.
+
+Con esa base, cada opción de ruta ahora muestra un score total, pero siempre desglosado: cuántas zonas de siniestro cruza y cuántas de inseguridad, por separado, además del nivel más grave que atraviesa. Fusionar todo en un solo número sin mostrar el desglose hubiera ocultado información importante para la decisión del usuario (no es lo mismo una ruta con mucho riesgo de choque que una con mucho riesgo de robo). Las alertas en viaje también se diferenciaron: si te acercás a una zona de siniestro suena una alerta de riesgo vial, si te acercás a una zona de inseguridad suena una alerta distinta, con ícono y patrón de vibración propios.
+
+### Fase 11 — Un panel único para controlar qué se ve en el mapa
+
+Con dos ejes de riesgo (siniestro e inseguridad) y tres formas de ver el de siniestro (clusters, mapa de calor, corredores), la interfaz empezaba a acumular botones sueltos sin una lógica clara. Se rediseñó como un único "Panel de Capas": un lado controla qué vista de fondo se usa para siniestros, el otro controla si se muestra inseguridad y con qué dataset (apagada, delito general, o robos con moto — mutuamente excluyentes, no combinables). La capa de inseguridad se dibuja con una paleta de violeta/magenta deliberadamente distinta de la paleta verde-amarillo-naranja-rojo de siniestros, para que se distinga de un vistazo incluso superpuesta a las otras capas, y cuando está activa el resto del mapa se atenúa (baja de opacidad) para que la capa recién activada quede en primer plano visual. También se agregó agrupamiento por zoom (clustering de marcadores) a la capa de inseguridad, que hasta ese momento dibujaba cada punto individual sin importar qué tan alejado estuvieras — algo que la vista de clusters de siniestros ya tenía resuelto desde antes.
+
 ---
 
 ## Parte 4 — Cómo se conecta todo, explicado con una analogía
@@ -155,6 +179,8 @@ Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend)
           y se lo devuelve al navegador, que pinta el mapa.
 ```
 
+El mismo backend expone hoy más pedidos posibles que "dame las zonas de riesgo": entre otros, `/corredores` (avenidas completas con score de riesgo), `/hotspots-inseguridad` (los 435 hotspots de delitos), y `/reportes` (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga).
+
 Además, el navegador también le habla directamente a tres servicios externos, que no son parte de tu proyecto sino aplicaciones gratuitas de terceros que se usan como piezas:
 - **Open-Meteo**: te da el clima real del momento.
 - **OSRM**: calcula rutas reales siguiendo las calles.
@@ -174,13 +200,17 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 - El modelo que predice cada nivel de riesgo fue entrenado de verdad con esos 23.343 casos, y evaluado correctamente para ver qué tan bien predice.
 - Las predicciones que ves ahora mismo en el mapa son la respuesta real de ese modelo, calculada en el momento — no son un color fijo escrito en el código.
 - El clima que aparece arriba es el clima real de Buenos Aires en este instante.
+- Los 435 hotspots de inseguridad (303 de delito general y 132 de robos con moto) salen del mismo proceso real de clustering (DBSCAN), aplicado sobre 1.387.622 delitos oficiales de la Ciudad, recalibrado para este dataset porque los delitos se agrupan geográficamente distinto que los siniestros.
+- El score de riesgo de cada ruta suma de verdad ambos ejes (siniestro e inseguridad) y siempre lo muestra desglosado por tipo, no es una etiqueta decorativa: la suma es válida porque ambos ejes ya están en la misma escala ordinal de severidad calculada por percentiles.
 
 ### Lo que es una simplificación consciente (no un engaño, una decisión de alcance):
 
 - **Alcance geográfico**: el proyecto cubre solo la Ciudad de Buenos Aires (CABA). No se encontraron datos públicos y geolocalizados equivalentes para el resto del Gran Buenos Aires, a pesar de haberlos buscado.
 - **El modelo usa el "perfil típico" de cada zona, no la situación exacta del momento**: cuando el sistema calcula el riesgo de una zona, usa la hora actual (correcto) pero el tipo de contraparte, edad y sexo "más comunes" en el historial de esa zona (una aproximación razonable, pero no la situación exacta de la persona que está mirando el mapa ahora mismo).
 - **Un 40% de las edades de víctimas usadas para entrenar el modelo son estimadas**, no reales — esa información faltaba en un 40% de los registros originales del gobierno, y en vez de descartar esos casos se completó con un valor promedio, dejando marcado cuáles eran estimados.
-- **Los reportes que mandás desde la app, y tus filtros elegidos, se guardan solo en tu propia computadora** (en la memoria del navegador), no en un servidor compartido.
+- **El índice de inseguridad por comuna no es un cálculo en vivo**: a diferencia de las predicciones de siniestro (que se recalculan en cada pedido con la hora actual) o de los hotspots (que salen de clustering sobre datos ya cargados), el índice se actualiza manualmente cuando se refresca el dataset de delitos, algo que hoy ocurre una vez al año porque así se publica el dataset oficial. Esto está explícito en la interfaz, no oculto.
+- **Los hotspots de "delito general" y de "robos con moto" son capas separadas y mutuamente excluyentes en el mapa, no combinables**: es una decisión de diseño (mostrar ambas juntas duplicaría puntos sobre los mismos hechos, porque el robo con moto es un subconjunto del delito general), no una limitación técnica evaluada a fondo contra otras alternativas de presentación.
+- **Tus filtros elegidos en el mapa se guardan solo en tu propia computadora** (en la memoria del navegador). Los reportes que mandás sí dejaron de ser así: desde que se conectaron al backend, se guardan en la base de datos y los ve cualquiera que abra la app, no solo quien los cargó.
 
 ---
 
@@ -208,6 +238,10 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 | **Terminal / Consola** | Ventana donde escribís comandos de texto para darle instrucciones a la computadora. |
 | **Servidor** | Un programa que queda esperando pedidos y respondiendo con información. |
 | **Localhost** | Una forma de decir "esta misma computadora" — no es internet, es tu propia PC. |
+| **Índice de inseguridad** | Un valor por comuna que resume qué tan inseguro es un área en general, calculado una vez sobre el dataset de delitos y actualizado manualmente, no en vivo. |
+| **Hotspot de inseguridad** | Una zona donde se repiten delitos con más frecuencia de lo normal, encontrada con el mismo método (DBSCAN) que los hotspots de siniestros, pero recalibrado para este dataset. |
+| **Score de ruta / desglose** | El número total de riesgo que suma una opción de ruta, siempre mostrado junto con cuánto de ese total corresponde a siniestro y cuánto a inseguridad, para no ocultar de qué tipo es el riesgo. |
+| **Percentil (para nivel de riesgo)** | La posición relativa de un valor dentro de su propio dataset (por ejemplo, "está en el percentil 95" significa que es más alto que el 95% de los demás casos). Se usa para definir los cortes entre bajo/medio/alto/crítico dentro de cada eje de riesgo. |
 
 ---
 
@@ -224,3 +258,6 @@ No necesariamente — fue entrenado con datos hasta 2025. Si cambian los patrone
 
 **¿Qué pasa si quiero agregar el conurbano bonaerense más adelante?**
 Habría que encontrar un dataset con la misma estructura para la Provincia de Buenos Aires, y repetir el mismo proceso de limpieza, clustering y entrenamiento que se hizo para CABA.
+
+**¿La capa de inseguridad se actualiza en vivo como la de siniestros?**
+No de la misma forma. Los hotspots de inseguridad y el índice por comuna salen de un dataset de delitos que el gobierno publica con periodicidad anual, así que se recalculan cuando ese dataset se refresca, no en cada pedido al mapa como sí ocurre con las predicciones del modelo de siniestros. Esto queda explícito en el panel de capas de la aplicación.

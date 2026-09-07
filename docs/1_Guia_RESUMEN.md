@@ -6,9 +6,9 @@ Este documento explica qué es el proyecto, cómo está armado hoy, y qué de to
 
 ## 1. Qué es MotoSafe GBA, en una frase
 
-Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por distintas zonas de CABA, combinando un modelo de Machine Learning entrenado con datos reales de siniestros, clima en tiempo real, y reportes de los propios usuarios.
+Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por distintas zonas de CABA, combinando un modelo de Machine Learning entrenado con datos reales de siniestros, clima en tiempo real, reportes de los propios usuarios, y un segundo eje de riesgo (inseguridad: delitos reales del GCBA) que ahora también entra en el cálculo de la ruta más segura y en las alertas en viaje, no solo en el mapa.
 
-**Estado real a esta altura:** ya no es una maqueta. El mapa muestra predicciones calculadas en vivo por un modelo entrenado con 23.343 siniestros reales — no una regla inventada.
+**Estado real a esta altura:** ya no es una maqueta. El mapa muestra predicciones calculadas en vivo por un modelo entrenado con 23.343 siniestros reales (que ahora también incluye el índice de inseguridad de cada comuna como variable) — no una regla inventada. Además de los hotspots puntuales, la app tiene una vista de corredores (avenidas completas con score de riesgo) y una capa de inseguridad histórica con sus propios hotspots (delito general y robos con moto, calculados con DBSCAN igual que los de siniestros).
 
 ---
 
@@ -60,6 +60,8 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 - El modelo Random Forest, entrenado con esos 23.343 casos, evaluado con F1-score y matriz de confusión (no accuracy, que hubiera mentido por el desbalance de clases).
 - Las predicciones que ves en el mapa: son la salida real del modelo, no un número fijo.
 - El clima (Open-Meteo) y las rutas (OSRM): servicios externos reales, no simulados.
+- Los 435 hotspots de inseguridad (303 de delito general + 132 de robos con moto), identificados con el mismo DBSCAN que los de siniestros, sobre 1.387.622 delitos reales descargados de data.buenosaires.gob.ar.
+- El score de riesgo de cada ruta ahora suma siniestros e inseguridad de verdad (no es cosmético): la ruta "más segura" y las alertas en viaje consideran las dos fuentes, con desglose visible de cuánto aporta cada una.
 
 ### Simplificación consciente, documentada:
 - **La hora y el día son iguales para las 430 zonas en cada pedido** (la hora actual del servidor). Esto significa que buena parte de la variación de riesgo entre zonas viene de su comuna/vía/contraparte típica, no de un patrón horario propio de cada lugar. Es una limitación real, no un error.
@@ -68,6 +70,8 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 - **Los reportes ahora son colaborativos de verdad**: se guardan en la base (tabla `reportes_colaborativos`) y los ve cualquier usuario, no solo quien los creó. Cada categoría tiene su propia vigencia (un corte vence en 12hs, un pozo en el pavimento en 30 días) — pasado ese tiempo dejan de aparecer en el mapa aunque sigan en la base como histórico.
 - **Los filtros de nivel, favoritos y tema siguen viviendo en el navegador de cada usuario** (localStorage) — eso sí es preferencia individual, no dato colaborativo, y no tendría sentido compartirlo entre usuarios distintos.
 - **Alcance geográfico: solo CABA.** El conurbano bonaerense no tiene un dataset geolocalizado equivalente disponible públicamente (se buscó y no se encontró).
+- **El índice de inseguridad es histórico y anual, no en vivo**: se calcula una vez sobre los últimos 3 años completos de delitos por comuna, y se actualiza a mano cuando el GCBA publica el año siguiente — a diferencia del clima o de la hora, que sí son en vivo en cada predicción. Esto está explícito en la interfaz (panel de Capas) para que no se confunda con un dato en tiempo real.
+- **Siniestros e inseguridad no se fusionan en un único número inventado**: se suman porque ambos ya están en la misma escala ordinal (percentiles calculados dentro de cada dataset por separado), pero se muestran siempre desglosados — no hay una ponderación arbitraria entre "cuánto pesa un choque contra cuánto pesa un robo", porque no hay datos que la justifiquen.
 
 ---
 
@@ -93,24 +97,34 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 ```
 motosafe-gba/
 ├── backend/
-│   ├── venv/                    → librerías Python de este proyecto
-│   ├── main.py                  → la API (endpoints /hotspots, /predecir)
-│   ├── cargar_hotspots.py       → script que cargó los 430 hotspots a la base
-│   ├── modelo_final.pkl         → el modelo entrenado (Random Forest)
-│   ├── columnas_modelo.pkl      → el orden de columnas que el modelo necesita
-│   └── hotspots_contexto.csv    → comuna/vía/contraparte típica por zona
+│   ├── venv/                        → librerías Python de este proyecto
+│   ├── main.py                      → la API (hotspots, corredores, hotspots-inseguridad, predecir, reportes)
+│   ├── cargar_hotspots.py           → script que cargó los 430 hotspots a la base
+│   ├── cargar_corredores.py         → carga la tabla de corredores de riesgo
+│   ├── cargar_hotspots_inseguridad.py → carga la tabla de hotspots de inseguridad
+│   ├── modelo_final.pkl             → el modelo entrenado (Random Forest, con índice de inseguridad)
+│   ├── columnas_modelo.pkl          → el orden de columnas que el modelo necesita
+│   ├── hotspots_contexto.csv        → comuna/vía/contraparte típica por zona
+│   ├── indice_inseguridad_comuna.csv → índice de inseguridad por comuna (0-1)
+│   └── tests/test_main.py           → 24 tests de la API
 ├── frontend/
 │   └── src/
-│       ├── App.jsx              → toda la lógica e interfaz
-│       └── App.css              → estilos
+│       ├── App.jsx                  → lógica e interfaz principal
+│       ├── App.css                  → estilos
+│       ├── constants.js             → umbrales, paletas, catálogos fijos
+│       ├── components/              → CapasPanel, CapaCalor, Onboarding, etc.
+│       └── utils/                   → geoRiesgo.js, tiempo.js, ui.js
 ├── notebooks/
-│   └── 01_eda_hotspots_moto.ipynb  → todo el análisis: limpieza, clustering, modelos
-├── data/                        → CSV pesados, NO se suben a GitHub
-│   ├── motos_limpio.csv
-│   ├── motos_con_clusters.csv
-│   ├── hotspots_moto_caba.csv
-│   ├── hotspots_contexto.csv
-│   ├── modelo_final.pkl (copia)
+│   ├── 01_eda_hotspots_moto.ipynb   → limpieza, clustering y modelos originales
+│   ├── fetch_delitos_caba.py        → descarga delitos de CABA (correr a mano, necesita internet real)
+│   ├── construir_indice_inseguridad.py → arma el índice de inseguridad por comuna
+│   ├── identificar_hotspots_inseguridad.py → DBSCAN sobre delitos (general y con moto)
+│   └── reentrenar_modelo.py         → reproduce el entrenamiento sumando el índice de inseguridad
+├── data/                            → CSV pesados, NO se suben a GitHub
+│   ├── motos_limpio.csv / motos_con_clusters.csv / hotspots_moto_caba.csv
+│   ├── delitos_caba.csv             → 1.387.622 delitos, 2016-2025
+│   ├── hotspots_inseguridad_general.csv / _moto.csv
+│   ├── indice_inseguridad_comuna.csv
 │   └── siniestros_viales_hechos.csv / victimas.csv (los originales del gobierno)
 ├── docker-compose.yml
 ├── requirements.txt
@@ -130,11 +144,17 @@ motosafe-gba/
 | One-hot encoding | Convertir una categoría de texto ("AUTO", "MOTO") en columnas de 0/1 que un modelo pueda usar |
 | Hardcodeado | Un valor escrito fijo en el código en vez de venir de una base de datos o cálculo real |
 | localStorage | Memoria del propio navegador — lo que se guarda ahí no viaja a ningún servidor |
+| Índice de inseguridad | Número (0-1) por comuna, calculado sobre los últimos 3 años de delitos del GCBA; entra al modelo como una variable numérica más |
+| Hotspot de inseguridad | Zona con delitos concentrados, encontrada con DBSCAN sobre el dataset de delitos (igual método que los hotspots de siniestros, dataset distinto) |
+| Score de ruta / desglose | El puntaje de riesgo de una ruta trazada, que suma siniestros e inseguridad cruzados pero siempre muestra cuánto aporta cada eje por separado |
+| Percentil (para nivel de riesgo) | El nivel bajo/medio/alto/crítico de cada zona no es un umbral fijo, es relativo: se calcula según en qué percentil (25/75/95) cae esa zona dentro de su propio dataset |
 
 ---
 
 ## 7. Lo que falta, con honestidad
 
-1. **Conurbano bonaerense** — sigue sin resolverse. Alcance real: CABA.
+1. **Conurbano bonaerense** — sigue sin resolverse. Alcance real: CABA, tanto para siniestros como para inseguridad.
 2. **La limitación de "hora/día iguales para todas las zonas"** — se podría refinar pidiéndole al modelo predicciones por franja horaria específica en vez de solo "ahora".
 3. Documentado, no resuelto: el modelo predice mejor "leve" que "grave"/"mortal" por separado — es una limitación real de las variables disponibles (falta velocidad, uso de casco, alcohol — datos que el dataset del gobierno no tiene).
+4. **El índice de inseguridad se actualiza a mano, una vez al año** — no hay una API en vivo del GCBA para delitos, así que no se puede automatizar como el clima.
+5. **La capa de inseguridad general y la de robos con moto son excluyentes en el mapa** (no se pueden ver juntas): se decidió así porque se superponen bastante y mostrarlas a la vez solo duplicaría puntos sobre el mismo hecho, pero no está evaluado a fondo si convendría una tercera vista combinada.

@@ -121,3 +121,41 @@ frontend/       App React (mapa, rutas, reportes)
 notebooks/      Análisis exploratorio, clustering, entrenamiento del modelo
 docs/           Documentación del proyecto (resultados, extensiones futuras)
 ```
+
+
+## Bitácora de desarrollo
+
+> Registro semanal exigido por la cátedra a partir de la Entrega 2 (criterio
+> "Registro del Proceso" del Proyecto Final). Arranca en esta entrada: el
+> desarrollo previo a esta fecha está documentado igual, paso a paso, en el
+> historial de commits de Git (`git log`), pero no en este formato narrativo.
+> De acá en adelante, cada sesión de trabajo relevante suma una entrada.
+
+### 07/09/2026 — Inseguridad (delitos) integrada de punta a punta, y rediseño del panel de capas
+
+**Tareas realizadas**
+- Descarga y normalización de 10 años de delitos de CABA (`fetch_delitos_caba.py`, 1.387.622 registros, data.buenosaires.gob.ar).
+- Índice de inseguridad por comuna (`construir_indice_inseguridad.py`), sumado como variable numérica al modelo Random Forest y reentrenado (`reentrenar_modelo.py`), validado contra dos variantes descartadas antes de adoptar la definitiva.
+- Clustering DBSCAN de hotspots de inseguridad, dos variantes (`identificar_hotspots_inseguridad.py`): delito general (303 zonas) y robos con moto (132 zonas), calibrado con `min_samples` distinto para cada uno.
+- Endpoint `GET /hotspots-inseguridad` y tabla `hotspots_inseguridad` (`cargar_hotspots_inseguridad.py`).
+- Capa de inseguridad en el mapa, primero como toggle independiente y después integrada de verdad al motor de ruteo y a las alertas en viaje (antes solo afectaban a los siniestros de moto).
+- Reportes colaborativos con antigüedad relativa ("hace 12 min") y opacidad que decae según la vigencia de cada categoría.
+- Panel único de "Capas del mapa" reemplazando dos botones que ciclaban estados sin mostrar las opciones de entrada.
+- Diferenciación visual completa de la capa de inseguridad: paleta violeta/magenta propia, forma de cluster distinta (squircle punteado), agrupamiento por zoom propio, atenuación del fondo cuando está activa.
+- Corrección de un choque de paneles (el de Capas tapaba el de detalle de zona).
+
+**Decisiones de diseño y su justificación**
+- No fusionar siniestros y delito en un score único inventado: no hay base empírica para ponderar uno contra el otro. Sí es válido sumarlos, porque los dos ya están normalizados a la misma escala ordinal (percentiles calculados dentro de cada dataset por separado), no son magnitudes crudas distintas.
+- Se descartó la variante del modelo que sumaba `indice_inseguridad_moto` como columna aparte: perdía recall en MORTAL, que es la prioridad explícita del proyecto por sobre precision en GRAVE (ver `nivel_desde_probabilidades` en `backend/main.py`).
+- Paleta y forma de cluster distintas para inseguridad en vez de reusar las de siniestros, después de que una primera versión (mismos colores, mismo estilo de punto) generó confusión visual real, reportada por el usuario.
+- Panel único de capas en vez de dos botones que ciclaban estados: ciclar no es descubrible (hay que tocar para enterarte de qué opciones existen); un panel con todas las opciones visibles de entrada sí lo es.
+
+**Obstáculos encontrados y cómo se resolvieron**
+- `data.buenosaires.gob.ar` está bloqueado por el firewall del entorno de trabajo en la nube usado en esta sesión: el script de descarga se armó para correrlo a mano desde la PC, no de forma automática.
+- El panel de Capas nuevo tapaba el panel de detalle de zona (mismo rincón de pantalla, mayor prioridad de apilado): se resolvió cerrando el panel de Capas automáticamente al abrir cualquier otro panel de esa zona de la pantalla, siguiendo el mismo patrón que ya usaba el resto de la app.
+- DBSCAN con el mismo radio que ya funcionaba para siniestros de moto (60m) volvía a encadenar todo en un cluster gigante al aplicarlo a delito general, por la distinta densidad de puntos entre datasets; se recalibró `min_samples` por separado para cada uno (10 para moto, 100 para delito general), verificado con barridos empíricos.
+
+**Próximos pasos**
+- Actualizar la tesis formal (Capítulos 3, 4 y 6) con todo este contenido — se pospuso a propósito hasta terminar el desarrollo, para no reescribir dos veces.
+- Evaluar si conviene declustering dependiente de zoom más agresivo también en la vista de clusters de siniestros.
+- Seguir esta bitácora semana a semana de acá en más.
