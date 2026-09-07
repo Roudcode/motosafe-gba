@@ -403,3 +403,30 @@ def test_predecir_usa_el_indice_de_inseguridad_de_la_comuna():
     r_segura = client.post("/predecir", json={**payload_base, "comuna": comuna_mas_segura})
     assert r_insegura.status_code == 200
     assert r_segura.status_code == 200
+
+
+def test_hotspots_inseguridad_devuelve_lo_que_hay_en_la_base():
+    filas_db = [
+        {
+            "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+            "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+            "nivel_riesgo": "alto",
+        },
+    ]
+    with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
+        r = client.get("/hotspots-inseguridad")
+    assert r.status_code == 200
+    datos = r.json()
+    assert len(datos) == 1
+    assert datos[0]["nivel_riesgo"] == "alto"
+    assert datos[0]["cantidad_delitos"] == 120
+
+
+def test_hotspots_inseguridad_acepta_tipo_moto():
+    with patch("main.psycopg2.connect", return_value=_mock_db([])):
+        r_general = client.get("/hotspots-inseguridad")
+        r_moto = client.get("/hotspots-inseguridad?tipo=moto")
+        r_invalido = client.get("/hotspots-inseguridad?tipo=lo-que-sea")
+    assert r_general.status_code == 200
+    assert r_moto.status_code == 200
+    assert r_invalido.status_code == 422  # Literal["general", "moto"] rechaza cualquier otro valor

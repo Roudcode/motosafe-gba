@@ -498,3 +498,32 @@ def obtener_corredores():
         c['geometria'] = json.loads(c['geometria'])
 
     return resultado
+
+
+@app.get("/hotspots-inseguridad")
+def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
+    """
+    Zonas con mayor densidad de delitos reales (robos, hurtos, lesiones,
+    amenazas, homicidios — no siniestros de moto), segun el dataset de Delitos
+    del GCBA (ver notebooks/identificar_hotspots_inseguridad.py). Es una capa
+    aparte de /hotspots y /corredores: esos predicen severidad de un siniestro
+    con el modelo entrenado; esto es densidad historica de inseguridad, no
+    pasa por el modelo ni depende del clima o la hora actual — el nivel de
+    riesgo ya viene calculado (percentiles relativos DENTRO de cada tipo, ver
+    cargar_hotspots_inseguridad.py) y no cambia entre un pedido y el siguiente.
+
+    tipo=general: todo delito salvo infracciones de transito.
+    tipo=moto: delitos con uso de moto (en la practica, robos).
+    """
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT id, cluster, latitud, longitud, cantidad_delitos, comuna_moda, tipo_delito_moda, nivel_riesgo
+        FROM hotspots_inseguridad
+        WHERE tipo = %s
+        ORDER BY cantidad_delitos DESC
+    """, (tipo,))
+    resultado = cur.fetchall()
+    cur.close()
+    conn.close()
+    return resultado

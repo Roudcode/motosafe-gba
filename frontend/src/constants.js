@@ -39,11 +39,24 @@ export const CATEGORIAS_REPORTE = [
 // (densidad) -> corredores (calles completas). Vive acá, no en el componente
 // del botón, porque react-refresh exige que un archivo de componente solo
 // exporte componentes.
-export const ORDEN_CAPAS_MAPA = ['clusters', 'heatmap', 'corredores']
+export const ORDEN_CAPAS_MAPA = ['clusters', 'heatmap', 'corredores', 'inseguridad_general', 'inseguridad_moto']
 export const INFO_CAPA_MAPA = {
   clusters: { siguienteLabel: 'Cambiar a mapa de calor' },
   heatmap: { siguienteLabel: 'Cambiar a corredores de riesgo' },
-  corredores: { siguienteLabel: 'Cambiar a vista de zonas' },
+  corredores: { siguienteLabel: 'Cambiar a inseguridad (robos, hurtos)' },
+  inseguridad_general: { siguienteLabel: 'Cambiar a inseguridad con moto' },
+  inseguridad_moto: { siguienteLabel: 'Cambiar a vista de zonas' },
+}
+
+// Etiquetas y color base de cada capa, para el indicador de capa activa y las
+// leyendas. Las dos de inseguridad usan datos reales de delitos del GCBA
+// (no siniestros de moto), por eso tienen su propio label explicativo.
+export const ETIQUETA_CAPA_MAPA = {
+  clusters: 'Zonas de riesgo (siniestros de moto)',
+  heatmap: 'Mapa de calor (siniestros de moto)',
+  corredores: 'Corredores de riesgo (siniestros de moto)',
+  inseguridad_general: 'Inseguridad (robos, hurtos, lesiones)',
+  inseguridad_moto: 'Inseguridad con moto (robos)',
 }
 
 export function siguienteCapaMapa(capa) {

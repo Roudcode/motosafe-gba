@@ -53,6 +53,31 @@ porque el segundo necesita internet real:
 2. `python notebooks/fetch_corredores_geometria.py` — le pide a OSRM la geometría real
    de cada calle candidata y genera `data/corredores_riesgo.csv`.
 
+Cargar los hotspots de inseguridad (delitos reales del GCBA — robos, hurtos, lesiones,
+etc. — no siniestros de moto; dos capas independientes, "general" y "con moto"):
+
+```
+python cargar_hotspots_inseguridad.py
+```
+
+Requiere `data/hotspots_inseguridad_general.csv` y `data/hotspots_inseguridad_moto.csv`.
+Se generan en dos pasos, ninguno necesita red (parten de `data/delitos_caba.csv`, que sí
+la necesita — ver más abajo):
+
+1. `python notebooks/fetch_delitos_caba.py` — descarga el dataset de Delitos de CABA
+   (data.buenosaires.gob.ar, un CSV por año 2016-2025) y genera `data/delitos_caba.csv`.
+   Necesita internet real, se corre una sola vez y de nuevo cuando el GCBA publique el
+   año siguiente.
+2. `python notebooks/identificar_hotspots_inseguridad.py` — agrupa los delitos por
+   densidad geográfica (DBSCAN, misma metodología que los hotspots de moto) y genera
+   los dos CSV de arriba.
+
+Igual que `corredores_riesgo`, la tabla `hotspots_inseguridad` se autocrea al correr
+`cargar_hotspots_inseguridad.py`, no hace falta crearla a mano. A diferencia de
+`/hotspots` y `/corredores`, `GET /hotspots-inseguridad` no pasa por el modelo
+entrenado ni depende del clima: el nivel de riesgo es densidad histórica de delitos,
+calculado una sola vez al cargar la tabla.
+
 Levantar la API:
 
 ```

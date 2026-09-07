@@ -13,7 +13,7 @@ import {
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
-  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa,
+  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa, ETIQUETA_CAPA_MAPA,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
@@ -35,6 +35,8 @@ const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B
 function App() {
   const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
   const [corredores, setCorredores] = useState([])
+  const [inseguridadGeneral, setInseguridadGeneral] = useState([])
+  const [inseguridadMoto, setInseguridadMoto] = useState([])
   const [cargandoHotspots, setCargandoHotspots] = useState(true)
   const [primeraVezListo, setPrimeraVezListo] = useState(false)
   const [backendError, setBackendError] = useState(false)
@@ -142,6 +144,21 @@ function App() {
     fetch(`${API_URL}/corredores`)
       .then((r) => (r.ok ? r.json() : []))
       .then(setCorredores)
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    // Hotspots de inseguridad (delitos reales del GCBA, no siniestros de moto):
+    // dos capas independientes (general / con moto), precalculadas offline
+    // igual que corredores. Se cargan una sola vez al montar; son secundarias,
+    // el usuario las ve si cambia de capa.
+    fetch(`${API_URL}/hotspots-inseguridad?tipo=general`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setInseguridadGeneral)
+      .catch(() => {})
+    fetch(`${API_URL}/hotspots-inseguridad?tipo=moto`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setInseguridadMoto)
       .catch(() => {})
   }, [])
 
@@ -532,9 +549,23 @@ function App() {
     [corredores, nivelesActivos]
   )
 
+  const inseguridadGeneralFiltrada = useMemo(
+    () => inseguridadGeneral.filter((h) => nivelesActivos.has(h.nivel_riesgo)),
+    [inseguridadGeneral, nivelesActivos]
+  )
+  const inseguridadMotoFiltrada = useMemo(
+    () => inseguridadMoto.filter((h) => nivelesActivos.has(h.nivel_riesgo)),
+    [inseguridadMoto, nivelesActivos]
+  )
+
   const conteos = Object.keys(NIVELES).reduce((acc, n) => {
-    acc[n] = capaMapa === 'corredores'
-      ? corredores.filter((c) => c.nivel_riesgo === n).length
+    const fuente = {
+      corredores,
+      inseguridad_general: inseguridadGeneral,
+      inseguridad_moto: inseguridadMoto,
+    }[capaMapa]
+    acc[n] = fuente
+      ? fuente.filter((x) => x.nivel_riesgo === n).length
       : zonasAjustadas.filter((z) => z.ajuste.nivel === n).length
     return acc
   }, {})
@@ -820,6 +851,31 @@ function App() {
             </Polyline>
           ))}
 
+          {(capaMapa === 'inseguridad_general' || capaMapa === 'inseguridad_moto') &&
+            (capaMapa === 'inseguridad_general' ? inseguridadGeneralFiltrada : inseguridadMotoFiltrada).map((h) => (
+              <CircleMarker
+                key={h.id}
+                center={[h.latitud, h.longitud]}
+                radius={h.nivel_riesgo === 'critico' ? 12 : h.nivel_riesgo === 'alto' ? 9 : 6}
+                pathOptions={{
+                  color: NIVELES[h.nivel_riesgo]?.color || NIVELES.bajo.color,
+                  fillColor: NIVELES[h.nivel_riesgo]?.color || NIVELES.bajo.color,
+                  fillOpacity: 0.55,
+                  weight: 2,
+                  dashArray: '3, 3',
+                }}
+                className={h.nivel_riesgo === 'critico' ? 'pulse-marker' : ''}
+              >
+                <Popup>
+                  <div className="popup-content">
+                    <span className="popup-nivel" style={{ color: NIVELES[h.nivel_riesgo]?.color }}>{NIVELES[h.nivel_riesgo]?.label}</span>
+                    <strong>{h.cantidad_delitos} delitos históricos ({h.tipo_delito_moda || 'varios'})</strong>
+                    <span>Comuna {h.comuna_moda} · datos oficiales del GCBA, últimos 3 años</span>
+                  </div>
+                </Popup>
+              </CircleMarker>
+          ))}
+
           {capaMapa === 'clusters' && (
           <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
             {zonasFiltradas.map((zona) => {
@@ -977,7 +1033,7 @@ function App() {
 
       <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
         <div className="legend-header">
-          <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
+          <span className="legend-title">{ETIQUETA_CAPA_MAPA[capaMapa]} <em>(tocá para filtrar)</em></span>
           {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
         </div>
         {Object.entries(NIVELES).map(([key, val]) => (
