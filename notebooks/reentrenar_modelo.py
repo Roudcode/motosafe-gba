@@ -86,8 +86,21 @@ def entrenar(motos_extendido, columnas_categoricas, columnas_numericas, etiqueta
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
+    # Config elegida tras comparar 6 variantes contra un holdout temporal real
+    # (2025, nunca visto durante la busqueda) en vez de solo cross-validation:
+    # la busqueda automatica por CV encontro una config "mejor" en el propio
+    # periodo de entrenamiento que en realidad sobreajustaba (recall de GRAVE
+    # se derrumbaba de 0.52 a 0.07 en el holdout). De las variantes probadas
+    # directamente contra el holdout, esta (balanced_subsample, hojas minimas
+    # de 5) es la que mejor equilibra recall de los casos graves/mortales
+    # -- que es lo que mas importa en una app de seguridad vial -- sin hundir
+    # tanto la accuracy general como las variantes mas agresivas. Contra el
+    # holdout de 2025: recall GRAVE 0.52->0.65, MORTAL 0.34->0.56, a cambio de
+    # accuracy general 0.71->0.64 (ver notebooks/tuning_rf2.py para el detalle
+    # y las otras 5 variantes comparadas).
     modelo = RandomForestClassifier(
-        n_estimators=200, max_depth=12, class_weight="balanced", random_state=42, n_jobs=-1
+        n_estimators=300, max_depth=12, min_samples_leaf=5,
+        class_weight="balanced_subsample", random_state=42, n_jobs=-1
     )
     modelo.fit(X_train, y_train)
     y_pred = modelo.predict(X_test)

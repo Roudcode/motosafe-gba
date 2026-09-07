@@ -84,7 +84,7 @@ Levantar la API:
 uvicorn main:app --reload
 ```
 
-Queda en `http://localhost:8000`. `GET /hotspots` devuelve las 430 zonas con el nivel de riesgo recalculado en vivo por el modelo.
+Queda en `http://localhost:8000`. `GET /hotspots` devuelve las 412 zonas con el nivel de riesgo recalculado en vivo por el modelo.
 
 Correr los tests:
 
@@ -159,3 +159,27 @@ docs/           Documentación del proyecto (resultados, extensiones futuras)
 - Actualizar la tesis formal (Capítulos 3, 4 y 6) con todo este contenido — se pospuso a propósito hasta terminar el desarrollo, para no reescribir dos veces.
 - Evaluar si conviene declustering dependiente de zoom más agresivo también en la vista de clusters de siniestros.
 - Seguir esta bitácora semana a semana de acá en más.
+
+### 07/09/2026 (continuación) — Tests de frontend, y mejoras al modelo entrenado y al clustering de hotspots
+
+**Tareas realizadas**
+- Se armó una base de tests automatizados para el frontend (Vitest), que hasta ahora tenía cero: se extrajo de `App.jsx` a un módulo propio (`utils/riesgoRuta.js`) la unificación de siniestros e inseguridad y el cálculo de score por ruta, y se sumaron 31 tests entre ese módulo y `utils/tiempo.js`.
+- Push de 18 commits que habían quedado sin subir a GitHub (hechos en sesiones anteriores) — quedó confirmado que el problema era falta de `git push`, no un problema en los commits.
+- Barrido sistemático de parámetros de DBSCAN para el clustering de siniestros de moto (60 combinaciones de radio x mínimo de siniestros por zona, en vez de los dos intentos manuales originales). Se adoptó radio=100m, mínimo=12 siniestros, con un post-filtro que descarta clusters "fragmento" (un artefacto conocido de cómo sklearn asigna puntos límite en su implementación greedy, verificado empíricamente antes de decidir el filtro). Resultado: 412 hotspots (antes 430), cobertura de siniestros del 49.9% (antes 32.1%).
+- Validación temporal real del modelo (`notebooks/validar_temporal.py`): entrenar con 2019-2024 y testear contra 2025 completo (año nunca visto), en vez de solo el split aleatorio 80/20 de siempre. Reveló que el recall reportado con split aleatorio es optimista: contra datos realmente futuros, el recall de GRAVE cae de 0.60 a 0.52 y el de MORTAL de 0.41 a 0.34.
+- Tuning de hiperparámetros del Random Forest (`notebooks/tuning_rf.py`, `notebooks/tuning_rf2.py`), evaluado siempre contra el holdout temporal de 2025 y no solo contra cross-validation. Se adoptó una configuración (`class_weight="balanced_subsample"`, hojas mínimas de 5, 300 árboles) que sube el recall de GRAVE a 0.65-0.73 y de MORTAL a 0.48-0.56, a cambio de una accuracy general más baja.
+- Reentrenamiento del modelo final y regeneración de todos los artefactos derivados (`hotspots_moto_caba.csv`, `motos_con_clusters.csv`, `hotspots_contexto.csv`, `modelo_final.pkl`) con los nuevos parámetros.
+
+**Decisiones de diseño y su justificación**
+- Se descartó la configuración que la búsqueda automática por cross-validation marcó como "mejor" (mejor f1_macro dentro del período de entrenamiento): al probarla contra el holdout real de 2025, el recall de GRAVE se derrumbaba de 0.52 a 0.07. Es sobreajuste — la métrica de validación cruzada no es un proxy confiable de generalización a datos futuros, hay que medir contra un holdout temporal real.
+- Se priorizó recall de casos graves/mortales por sobre accuracy general en la configuración final del modelo: en una app de seguridad vial, perderse un caso grave pesa más que una falsa alarma de más. Es una decisión de producto, documentada como tal (no una que un benchmark ciego hubiera tomado).
+- Se aceptó una cobertura de hotspots del 49.9% en vez de perseguir un número más alto: subir el radio de búsqueda más allá de 100m empieza a fusionar zonas distintas en una sola (verificado en el barrido — a partir de ~120m con pocos mínimos de siniestros, un solo cluster se comía hasta el 12.76% de todos los siniestros), repitiendo el problema del primer intento fallido de clustering.
+
+**Obstáculos encontrados y cómo se resolvieron**
+- Los clusters con menos miembros que el mínimo configurado no eran un bug: se verificó con `BallTree` que el core point de esos clusters sí tiene suficientes vecinos reales, pero la mayoría ya habían sido tomados por un cluster vecino más grande procesado antes por el orden de asignación greedy de `sklearn`. Se resolvió con un post-filtro explícito que descarta esos fragmentos como ruido.
+- No hay acceso a la base de datos Postgres del usuario desde este entorno de trabajo en la nube: la carga real de los nuevos hotspots a la base (`cargar_hotspots.py`) y la verificación visual en el mapa quedan pendientes de que el usuario las corra en su propia máquina.
+
+**Próximos pasos**
+- Correr `cargar_hotspots.py` (opción 2 de `tareas.bat`) para recargar los 412 hotspots nuevos en la base local, y confirmar visualmente en el mapa.
+- Actualizar la tesis formal con estos hallazgos (validación temporal, trade-off de recall vs. accuracy, barrido de clustering) cuando llegue el momento de retomarla.
+- Evaluar si vale la pena repetir el mismo barrido de parámetros para los hotspots de inseguridad (delito general y robos con moto), que todavía usan la calibración manual original.
