@@ -6,13 +6,17 @@
 // Se agrega/saca del mapa según `activa`, sin tocar ni desmontar el resto de
 // las capas (clusters, rutas, etc.) — es aditiva, no reemplaza nada del
 // render existente.
+//
+// `atenuada`: cuando la capa de inseguridad está prendida encima, el calor de
+// siniestros se atenúa en vez de competir con ella en la misma jerarquía
+// visual (mismo criterio que aplica a clusters/corredores, ver App.jsx).
 
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet.heat'
 
-export function CapaCalor({ zonas, activa }) {
+export function CapaCalor({ zonas, activa, atenuada }) {
   const map = useMap()
   const capaRef = useRef(null)
 
@@ -30,6 +34,12 @@ export function CapaCalor({ zonas, activa }) {
       if (capaRef.current) map.removeLayer(capaRef.current)
     }
   }, [activa, zonas, map])
+
+  useEffect(() => {
+    if (capaRef.current?._canvas) {
+      capaRef.current._canvas.style.opacity = atenuada ? 0.4 : 1
+    }
+  }, [atenuada, activa, zonas])
 
   return null
 }

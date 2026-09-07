@@ -15,12 +15,12 @@ import {
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
-  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD,
+  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR,
   VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import { formatearAntiguedad, opacidadPorAntiguedad, esReciente } from './utils/tiempo'
-import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
+import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster, crearIconoClusterInseguridad } from './utils/ui'
 import { cargarDeLocalStorage } from './utils/storage'
 import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, EscalaMapa } from './components/MapaControles'
 import { LoadingScreen } from './components/LoadingScreen'
@@ -677,6 +677,11 @@ function App() {
 
   const climaInfo = clima ? iconoClima(clima.weathercode) : null
 
+  // Cuando la capa de inseguridad esta prendida, el fondo (clusters/calor/
+  // corredores) se atenua para que la capa recien activada quede como
+  // protagonista en vez de competir en igualdad de jerarquia visual.
+  const atenuarFondo = capaInseguridad !== 'apagado' ? 0.4 : 1
+
   return (
     <div className="app">
       <LoadingScreen visible={!primeraVezListo} />
@@ -911,7 +916,7 @@ function App() {
             </CircleMarker>
           )}
 
-          {capaMapa === 'heatmap' && <CapaCalor zonas={zonasFiltradas} activa={capaMapa === 'heatmap'} />}
+          {capaMapa === 'heatmap' && <CapaCalor zonas={zonasFiltradas} activa={capaMapa === 'heatmap'} atenuada={atenuarFondo < 1} />}
 
           {capaMapa === 'corredores' && corredoresFiltrados.map((c) => (
             <Polyline
@@ -920,7 +925,7 @@ function App() {
               pathOptions={{
                 color: NIVELES[c.nivel_riesgo]?.color || NIVELES.bajo.color,
                 weight: 5,
-                opacity: 0.75,
+                opacity: 0.75 * atenuarFondo,
               }}
             >
               <Popup>
@@ -933,33 +938,36 @@ function App() {
             </Polyline>
           ))}
 
-          {capaInseguridad !== 'apagado' &&
-            (capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada).map((h) => (
+          {capaInseguridad !== 'apagado' && (
+          <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoClusterInseguridad} maxClusterRadius={60}>
+            {(capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada).map((h) => (
               <CircleMarker
                 key={h.id}
                 center={[h.latitud, h.longitud]}
-                radius={h.nivel_riesgo === 'critico' ? 12 : h.nivel_riesgo === 'alto' ? 9 : 6}
+                radius={h.nivel_riesgo === 'critico' ? 15 : h.nivel_riesgo === 'alto' ? 12 : 9}
                 pathOptions={{
-                  color: NIVELES[h.nivel_riesgo]?.color || NIVELES.bajo.color,
-                  fillColor: NIVELES[h.nivel_riesgo]?.color || NIVELES.bajo.color,
-                  fillOpacity: 0.55,
-                  weight: 2,
-                  dashArray: '3, 3',
+                  color: NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] || NIVELES_INSEGURIDAD_COLOR.bajo,
+                  fillColor: NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] || NIVELES_INSEGURIDAD_COLOR.bajo,
+                  fillOpacity: 0.4,
+                  weight: 1,
+                  nivelData: h.nivel_riesgo,
                 }}
                 className={h.nivel_riesgo === 'critico' ? 'pulse-marker' : ''}
               >
                 <Popup>
                   <div className="popup-content">
-                    <span className="popup-nivel" style={{ color: NIVELES[h.nivel_riesgo]?.color }}>{NIVELES[h.nivel_riesgo]?.label}</span>
+                    <span className="popup-nivel" style={{ color: NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] }}>{NIVELES[h.nivel_riesgo]?.label}</span>
                     <strong>{h.cantidad_delitos} delitos históricos ({h.tipo_delito_moda || 'varios'})</strong>
                     <span>Comuna {h.comuna_moda} · datos oficiales del GCBA, últimos 3 años</span>
                   </div>
                 </Popup>
               </CircleMarker>
-          ))}
+            ))}
+          </MarkerClusterGroup>
+          )}
 
           {capaMapa === 'clusters' && (
-          <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoCluster} maxClusterRadius={55}>
+          <MarkerClusterGroup chunkedLoading iconCreateFunction={(cluster) => crearIconoCluster(cluster, atenuarFondo)} maxClusterRadius={55}>
             {zonasFiltradas.map((zona) => {
               const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
               const resaltada = zonaResaltada === zona.id
@@ -971,7 +979,8 @@ function App() {
                   pathOptions={{
                     color: cruzada ? '#4FA8E8' : resaltada ? '#4FA8E8' : NIVELES[zona.ajuste.nivel].color,
                     fillColor: NIVELES[zona.ajuste.nivel].color,
-                    fillOpacity: 0.75,
+                    fillOpacity: 0.75 * atenuarFondo,
+                    opacity: atenuarFondo,
                     weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
                     nivelData: zona.ajuste.nivel,
                   }}
@@ -1154,7 +1163,7 @@ function App() {
           </div>
           {Object.entries(NIVELES).map(([key, val]) => (
             <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
-              <span className="legend-swatch" style={{ background: val.color }} />
+              <span className="legend-swatch" style={{ background: NIVELES_INSEGURIDAD_COLOR[key] }} />
               {val.label}
               <span className="legend-count">{conteosInseguridad[key]}</span>
             </button>

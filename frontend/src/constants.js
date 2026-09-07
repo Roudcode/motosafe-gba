@@ -41,6 +41,18 @@ export const NIVELES = {
   critico: { label: 'Crítico', color: '#FF3B3B' },
 }
 
+// Paleta propia para la capa de inseguridad (delitos), deliberadamente distinta
+// de NIVELES (verde/amarillo/naranja/rojo, que ya es "el color de siniestros" en
+// toda la app): violeta -> magenta, mismo orden ordinal de severidad, para que
+// se lea como otra fuente de datos de un vistazo y no se confunda con clusters
+// o corredores cuando estan las dos capas prendidas a la vez.
+export const NIVELES_INSEGURIDAD_COLOR = {
+  bajo: '#D9A6FF',
+  medio: '#B266FF',
+  alto: '#9B30FF',
+  critico: '#FF2E92',
+}
+
 export const CODIGOS_LLUVIA = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]
 
 export const CATEGORIAS_REPORTE = [

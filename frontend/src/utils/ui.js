@@ -6,7 +6,7 @@ import {
   Sun, CloudSun, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning, Thermometer,
   Flag, Navigation, RefreshCw, ArrowLeft, ArrowRight, Undo2, ArrowUp,
 } from 'lucide-react'
-import { NIVELES } from '../constants'
+import { NIVELES, NIVELES_INSEGURIDAD_COLOR } from '../constants'
 
 export function iconoClima(code) {
   if (code === 0) return { Icon: Sun, label: 'Despejado' }
@@ -65,33 +65,60 @@ export function iconoManiobra(paso) {
 // tema claro/oscuro: son fijos porque el fondo de la burbuja siempre es el color
 // de riesgo, que es el mismo en los dos temas).
 const TEXTO_SOBRE_NIVEL = { bajo: '#0F1A14', medio: '#1F1A05', alto: '#2A1204', critico: '#FCEAEA' }
+const TEXTO_SOBRE_NIVEL_INSEGURIDAD = { bajo: '#2A0F3D', medio: '#2A0F3D', alto: '#FDF0FF', critico: '#FDF0FF' }
 
-export function crearIconoCluster(cluster) {
-  const count = cluster.getChildCount()
-  const hijos = cluster.getAllChildMarkers()
-
-  // El relleno del cluster refleja el nivel de riesgo dominante entre sus hotspots,
-  // no solo si "hay o no" un caso crítico adentro (como era antes). Si al menos un
-  // 15% de los hotspots del cluster son críticos, el cluster entero se pinta crítico
-  // — la misma lógica de "priorizar no subestimar" que ya se usa en los umbrales del
-  // modelo (backend/main.py: nivel_desde_probabilidades). Si no, se usa el nivel más
-  // frecuente entre los hotspots agrupados.
+// Nivel dominante entre los hotspots agrupados en un cluster: si al menos un
+// 15% son críticos, el cluster entero se pinta crítico (misma lógica de
+// "priorizar no subestimar" que los umbrales del modelo en backend/main.py,
+// nivel_desde_probabilidades); si no, se usa el nivel más frecuente. Comparte
+// esta lógica el cluster de siniestros y el de inseguridad, solo cambia la
+// paleta de color con la que se dibuja.
+function nivelDominanteDe(hijos) {
   const conteoPorNivel = { bajo: 0, medio: 0, alto: 0, critico: 0 }
   hijos.forEach((m) => {
     const nivel = m.options.nivelData
     if (conteoPorNivel[nivel] !== undefined) conteoPorNivel[nivel] += 1
   })
+  const count = hijos.length
   const propCritico = count > 0 ? conteoPorNivel.critico / count : 0
-  const nivelDominante = propCritico >= 0.15
+  return propCritico >= 0.15
     ? 'critico'
     : Object.entries(conteoPorNivel).sort((a, b) => b[1] - a[1])[0][0]
+}
 
-  const color = NIVELES[nivelDominante].color
-  const colorTexto = TEXTO_SOBRE_NIVEL[nivelDominante]
+function burbujaClusterHtml({ count, nivelDominante, colorPorNivel, textoPorNivel, size, opacidad, claseForma }) {
+  const color = colorPorNivel[nivelDominante]
+  const colorTexto = textoPorNivel[nivelDominante]
+  return `<div class="cluster-bubble ${claseForma || ''} ${nivelDominante === 'critico' ? 'cluster-critico' : ''}" style="width:${size}px;height:${size}px;line-height:${size}px;background:${color}E6;border-color:${color};color:${colorTexto};opacity:${opacidad};">${count}</div>`
+}
+
+// opacidad: se usa para atenuar los clusters de siniestros cuando la capa de
+// inseguridad esta prendida encima (ver App.jsx, atenuarFondo), asi la capa
+// que el usuario acaba de activar queda como protagonista en vez de competir
+// en igualdad de jerarquia visual con lo que ya estaba.
+export function crearIconoCluster(cluster, opacidad = 1) {
+  const count = cluster.getChildCount()
+  const nivelDominante = nivelDominanteDe(cluster.getAllChildMarkers())
   const size = count < 10 ? 34 : count < 30 ? 42 : 50
-
+  const colorPorNivel = Object.fromEntries(Object.entries(NIVELES).map(([k, v]) => [k, v.color]))
   return L.divIcon({
-    html: `<div class="cluster-bubble ${nivelDominante === 'critico' ? 'cluster-critico' : ''}" style="width:${size}px;height:${size}px;line-height:${size}px;background:${color}E6;border-color:${color};color:${colorTexto};">${count}</div>`,
+    html: burbujaClusterHtml({ count, nivelDominante, colorPorNivel, textoPorNivel: TEXTO_SOBRE_NIVEL, size, opacidad, claseForma: '' }),
+    className: 'cluster-icon-wrapper',
+    iconSize: L.point(size, size),
+  })
+}
+
+// Paleta violeta/magenta (NIVELES_INSEGURIDAD_COLOR) y forma de burbuja distinta
+// (cluster-bubble-inseguridad, ver App.css) para que un cluster de inseguridad
+// no se confunda con uno de siniestros ni siquiera de reojo. Nunca se atenúa
+// (siempre opacidad 1): es la capa que el usuario prendió a proposito, la que
+// se atenúa es el fondo, no ella.
+export function crearIconoClusterInseguridad(cluster) {
+  const count = cluster.getChildCount()
+  const nivelDominante = nivelDominanteDe(cluster.getAllChildMarkers())
+  const size = count < 10 ? 30 : count < 30 ? 38 : 46
+  return L.divIcon({
+    html: burbujaClusterHtml({ count, nivelDominante, colorPorNivel: NIVELES_INSEGURIDAD_COLOR, textoPorNivel: TEXTO_SOBRE_NIVEL_INSEGURIDAD, size, opacidad: 1, claseForma: 'cluster-bubble-inseguridad' }),
     className: 'cluster-icon-wrapper',
     iconSize: L.point(size, size),
   })
