@@ -2,7 +2,7 @@
 
 Mapa de riesgo para motociclistas en CABA, construido sobre un modelo de Machine Learning (Random Forest) entrenado con datos reales de siniestralidad vial (2019-2025, data.buenosaires.gob.ar). Proyecto Final de Ingeniería en Informática — Universidad del Salvador.
 
-Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + Leaflet. El detalle de la metodología (limpieza de datos, clustering DBSCAN, comparación de modelos, umbrales de riesgo) está documentado en `notebooks/01_eda_hotspots_moto.ipynb` y en `docs/`.
+Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + Leaflet. El detalle de la metodología (limpieza de datos, clustering HDBSCAN de siniestros y DBSCAN de inseguridad, comparación de modelos, umbrales de riesgo) está documentado en `notebooks/01_eda_hotspots_moto.ipynb` y en `docs/`.
 
 ## Requisitos
 
@@ -30,7 +30,7 @@ venv\Scripts\activate          # Windows
 pip install -r ../requirements.txt
 ```
 
-Copiar `.env.example` a `.env` en `backend/` (o en la raíz, según corresponda) y completar `DATABASE_URL` si difiere del default de `docker-compose.yml`.
+Copiar `.env.example` a `.env` en `backend/` (o en la raíz, según corresponda) y completar `DATABASE_URL` si difiere del default de `docker-compose.yml`. `OPEN_METEO_BASE_URL` y `CORS_ALLOWED_ORIGINS` ya vienen con un default que funciona en desarrollo local, no hace falta tocarlos. `TOMTOM_API_KEY` es opcional: sin ella el backend arranca igual, pero la capa de tráfico en vivo (`/trafico/tiles`) y el cálculo de rutas (`/rutas`) no van a funcionar (ver [tomtom.com/developer](https://developer.tomtom.com) para sacar una key gratuita).
 
 Cargar los hotspots en la base (una sola vez, o cada vez que se regeneren los datos):
 
@@ -84,7 +84,7 @@ Levantar la API:
 uvicorn main:app --reload
 ```
 
-Queda en `http://localhost:8000`. `GET /hotspots` devuelve las 412 zonas con el nivel de riesgo recalculado en vivo por el modelo.
+Queda en `http://localhost:8000`. `GET /hotspots` devuelve las 740 zonas con el nivel de riesgo recalculado en vivo por el modelo.
 
 Correr los tests:
 
@@ -100,7 +100,7 @@ npm install
 npm run dev
 ```
 
-Queda en `http://localhost:5173`. Necesita el backend corriendo en `localhost:8000` (CORS ya configurado para `localhost:5173`/`5174`).
+Queda en `http://localhost:5173`. Necesita el backend corriendo en `localhost:8000` (CORS ya configurado para `localhost:5173`/`5174`). Si el backend corre en otra URL (por ejemplo, ya hosteado), copiar `frontend/.env.example` a `frontend/.env` y completar `VITE_API_URL`.
 
 ## Artefactos del modelo
 
@@ -182,25 +182,29 @@ docs/           Documentación del proyecto (resultados, extensiones futuras)
 **Próximos pasos**
 - Actualizar la tesis formal con estos hallazgos (validación temporal, trade-off de recall vs. accuracy, barrido de clustering) cuando llegue el momento de retomarla.
 
-### 07/09/2026 (continuación 4) — Prework antes de hostear: version de scikit-learn, y URLs/CORS parametrizables
-
-Arrancamos a preparar el sistema para salir de "solo corre en mi maquina" antes de elegir un hosting real, en vez de arrastrar estos temas y encontrarlos recien al desplegar.
+### 07/09/2026 (continuación 2) — De DBSCAN a HDBSCAN para los hotspots de siniestro: 412 → 740 zonas, 49.9% → 75.6% de cobertura
 
 **Tareas realizadas**
-- Se detecto (por un warning al levantar el backend) que el modelo se habia entrenado con scikit-learn 1.7.2 en este entorno de trabajo, mientras que `requirements.txt` fija 1.5.2 (la version real instalada en la maquina del usuario). Se bajo scikit-learn a 1.5.2 en este entorno tambien y se reentreno el modelo con esa version -- mismas metricas (el entrenamiento no cambia, solo el binario serializado), cero warnings de version al cargarlo ahora.
-- `API_URL` en el frontend (`constants.js`) ahora lee `VITE_API_URL` si esta definida (variable de entorno de Vite, se inyecta en build time), con `http://localhost:8000` como default para seguir andando igual en desarrollo local sin tocar nada. Se agrego `frontend/.env.example` documentandolo.
-- CORS en el backend (`main.py`) ahora lee `CORS_ALLOWED_ORIGINS` (lista separada por coma) en vez de tener los dos puertos de Vite hardcodeados, con el mismo default de siempre si la variable no esta. Documentado en `.env.example`.
+- A partir de la pregunta directa de si se podía conseguir más zonas y cubrir más siniestros, se evaluó `sklearn.cluster.HDBSCAN` como alternativa a DBSCAN para el clustering de siniestros de moto (no para los hotspots de inseguridad, que siguen con DBSCAN sin cambios).
+- Un primer barrido en grilla con `cluster_selection_epsilon` fijo tardó más de 120 segundos sin terminar ni una combinación; se abandonó ese parámetro y se probaron combinaciones sueltas de `min_cluster_size` x `min_samples` sin él, cada una en 17-23 segundos.
+- Se aplicó a cada combinación el mismo chequeo de "riesgo de blob" usado para calibrar DBSCAN (tamaño del cluster más grande como % del total). Con `min_cluster_size=12` (mismo piso de 12 siniestros reales por zona que antes, ya garantizado de forma nativa por HDBSCAN) y `min_samples=3`, el resultado fue 740 hotspots, cobertura del 75.6% (antes 412 hotspots, 49.9%), con el cluster más grande en 0.41% del total — más chico que el 0.73% de la versión DBSCAN, es decir, mejor cobertura y a la vez más seguro.
+- Se reescribió `notebooks/reclusterizar_hotspots.py` para usar HDBSCAN. El post-filtro de fragmentos que hacía falta con DBSCAN se eliminó: HDBSCAN garantiza nativamente que ningún cluster resultante tenga menos de `min_cluster_size` miembros, así que ya no hace falta ese paso.
+- Se regeneraron `motos_con_clusters.csv`, `hotspots_moto_caba.csv`, `hotspots_contexto.csv` y `modelo_final.pkl` (el modelo no cambió de configuración, solo se reentrenó con las mismas variables — el clustering no es un input del modelo, solo de los hotspots que se despliegan en el mapa). Los 24 tests de backend siguen pasando.
+- Se actualizaron los comentarios en código (`backend/main.py`, `backend/tests/test_main.py`, `notebooks/identificar_corredores.py`) y ambas Guías (RESUMEN y DETALLADA) con los números y el método nuevo.
 
-**Decisiones de diseño y su justificacion**
-- Se reentreno el modelo para bajarlo a la version de scikit-learn de `requirements.txt` (1.5.2), no se subio `requirements.txt` a 1.7.2: la version 1.5.2 es la que ya esta probada en la maquina real del usuario, cambiar el pin del proyecto para acomodar este entorno de trabajo hubiera sido al reves de como debe ser la relacion entre ambos.
-- Variables de entorno con default de desarrollo en ambos casos (frontend y backend): local sigue funcionando exactamente igual sin que el usuario tenga que crear nada nuevo, y el deploy real solo necesita definir dos variables (`VITE_API_URL` y `CORS_ALLOWED_ORIGINS`) sin tocar codigo.
+**Decisiones de diseño y su justificación**
+- Se eligió HDBSCAN sobre seguir ajustando DBSCAN porque el problema de fondo de DBSCAN es que usa un radio fijo (eps) para toda la ciudad: agrandarlo para cubrir zonas de baja densidad arriesga fusionar clusters en zonas densas (el efecto "blob" ya descartado en la calibración anterior). HDBSCAN se adapta a la densidad local de cada zona, así que puede encontrar zonas chicas y compactas donde hay pocos siniestros dispersos sin arriesgar ese efecto donde los siniestros están muy concentrados.
+- Se descartó la grilla de búsqueda con `cluster_selection_epsilon` fijo (no terminó en 120 segundos) en vez de forzarla con timeouts más largos: los llamados simples sin ese parámetro ya daban resultados sólidos en menos de 25 segundos cada uno, así que insistir con la versión más lenta no aportaba nada que la más simple no diera.
+- Se mantiene el trade-off de cobertura vs. precisión geográfica como una decisión consciente, no un objetivo de "llegar al 100%": el 24.4% de siniestros que quedan aislados corresponde a casos genuinamente dispersos, sin vecinos cercanos suficientes como para formar una zona compacta bajo ningún parámetro razonable — forzar más cobertura ahí significaría volver a arriesgar el efecto "blob" que ya se descartó dos veces.
 
-**Pendiente antes de hostear (todavia no resuelto)**
-- OSRM: el calculo de ruta usa el servidor de demo publico (`router.project-osrm.org`), pensado para pruebas, no para produccion -- sin garantia de disponibilidad ni limite de uso documentado. Antes de exponer la app publicamente hace falta evaluar alternativas (OSRM propio vs. un servicio de ruteo con free tier confiable) con el mismo criterio que se uso para elegir TomTom, no de apuro.
+**Obstáculos encontrados y cómo se resolvieron**
+- El paquete `hdbscan` de PyPI (standalone) no está instalado; se usó `sklearn.cluster.HDBSCAN` (parte de scikit-learn 1.7.2, ya instalado), que expone la misma funcionalidad sin agregar una dependencia nueva.
+- Igual que con la carga de hotspots de la sesión anterior, este entorno de trabajo en la nube no tiene acceso a la base Postgres del usuario: la recarga real de los 740 hotspots nuevos (`cargar_hotspots.py`) y la verificación visual en el mapa quedan pendientes de correrse en la máquina del usuario.
 
-**Proximos pasos**
-- Evaluar opciones de reemplazo/respaldo para OSRM antes de hostear.
-- Recien despues, evaluar el hosting en si (backend + Postgres/PostGIS + frontend).
+**Próximos pasos**
+- Correr `cargar_hotspots.py` (opción 2 de `tareas.bat`) para recargar los 740 hotspots nuevos en la base local, y confirmar visualmente en el mapa que las zonas nuevas tienen sentido geográfico (no hay clusters alargados ni fusionados).
+- Actualizar la tesis formal con este hallazgo (cambio de algoritmo de clustering, cobertura final) cuando llegue el momento de retomarla.
+- Evaluar si vale la pena repetir esta misma comparación DBSCAN vs. HDBSCAN para los hotspots de inseguridad (delito general y robos con moto), que todavía usan la calibración manual original con DBSCAN.
 
 ### 07/09/2026 (continuación 3) — Tráfico en vivo (TomTom): capa visual de congestión y ETA real en la Ruta Rápida
 
@@ -226,29 +230,25 @@ Arrancamos a preparar el sistema para salir de "solo corre en mi maquina" antes 
 - Confirmar visualmente que la capa de tráfico se ve razonable sobre CABA (colores de congestión coherentes con la hora del día) y que el "X min con tráfico" aparece en la Ruta Rápida.
 - Si con el uso real se ve que la cuota gratuita empieza a ajustar (poco probable al volumen de este proyecto), subir el TTL de cache de tiles de 120s a algo mayor es el primer ajuste, antes de considerar un plan pago.
 
-### 07/09/2026 (continuación 2) — De DBSCAN a HDBSCAN para los hotspots de siniestro: 412 → 740 zonas, 49.9% → 75.6% de cobertura
+### 07/09/2026 (continuación 4) — Prework antes de hostear: version de scikit-learn, y URLs/CORS parametrizables
+
+Arrancamos a preparar el sistema para salir de "solo corre en mi maquina" antes de elegir un hosting real, en vez de arrastrar estos temas y encontrarlos recien al desplegar.
 
 **Tareas realizadas**
-- A partir de la pregunta directa de si se podía conseguir más zonas y cubrir más siniestros, se evaluó `sklearn.cluster.HDBSCAN` como alternativa a DBSCAN para el clustering de siniestros de moto (no para los hotspots de inseguridad, que siguen con DBSCAN sin cambios).
-- Un primer barrido en grilla con `cluster_selection_epsilon` fijo tardó más de 120 segundos sin terminar ni una combinación; se abandonó ese parámetro y se probaron combinaciones sueltas de `min_cluster_size` x `min_samples` sin él, cada una en 17-23 segundos.
-- Se aplicó a cada combinación el mismo chequeo de "riesgo de blob" usado para calibrar DBSCAN (tamaño del cluster más grande como % del total). Con `min_cluster_size=12` (mismo piso de 12 siniestros reales por zona que antes, ya garantizado de forma nativa por HDBSCAN) y `min_samples=3`, el resultado fue 740 hotspots, cobertura del 75.6% (antes 412 hotspots, 49.9%), con el cluster más grande en 0.41% del total — más chico que el 0.73% de la versión DBSCAN, es decir, mejor cobertura y a la vez más seguro.
-- Se reescribió `notebooks/reclusterizar_hotspots.py` para usar HDBSCAN. El post-filtro de fragmentos que hacía falta con DBSCAN se eliminó: HDBSCAN garantiza nativamente que ningún cluster resultante tenga menos de `min_cluster_size` miembros, así que ya no hace falta ese paso.
-- Se regeneraron `motos_con_clusters.csv`, `hotspots_moto_caba.csv`, `hotspots_contexto.csv` y `modelo_final.pkl` (el modelo no cambió de configuración, solo se reentrenó con las mismas variables — el clustering no es un input del modelo, solo de los hotspots que se despliegan en el mapa). Los 24 tests de backend siguen pasando.
-- Se actualizaron los comentarios en código (`backend/main.py`, `backend/tests/test_main.py`, `notebooks/identificar_corredores.py`) y ambas Guías (RESUMEN y DETALLADA) con los números y el método nuevo.
+- Se detecto (por un warning al levantar el backend) que el modelo se habia entrenado con scikit-learn 1.7.2 en este entorno de trabajo, mientras que `requirements.txt` fija 1.5.2 (la version real instalada en la maquina del usuario). Se bajo scikit-learn a 1.5.2 en este entorno tambien y se reentreno el modelo con esa version -- mismas metricas (el entrenamiento no cambia, solo el binario serializado), cero warnings de version al cargarlo ahora.
+- `API_URL` en el frontend (`constants.js`) ahora lee `VITE_API_URL` si esta definida (variable de entorno de Vite, se inyecta en build time), con `http://localhost:8000` como default para seguir andando igual en desarrollo local sin tocar nada. Se agrego `frontend/.env.example` documentandolo.
+- CORS en el backend (`main.py`) ahora lee `CORS_ALLOWED_ORIGINS` (lista separada por coma) en vez de tener los dos puertos de Vite hardcodeados, con el mismo default de siempre si la variable no esta. Documentado en `.env.example`.
 
-**Decisiones de diseño y su justificación**
-- Se eligió HDBSCAN sobre seguir ajustando DBSCAN porque el problema de fondo de DBSCAN es que usa un radio fijo (eps) para toda la ciudad: agrandarlo para cubrir zonas de baja densidad arriesga fusionar clusters en zonas densas (el efecto "blob" ya descartado en la calibración anterior). HDBSCAN se adapta a la densidad local de cada zona, así que puede encontrar zonas chicas y compactas donde hay pocos siniestros dispersos sin arriesgar ese efecto donde los siniestros están muy concentrados.
-- Se descartó la grilla de búsqueda con `cluster_selection_epsilon` fijo (no terminó en 120 segundos) en vez de forzarla con timeouts más largos: los llamados simples sin ese parámetro ya daban resultados sólidos en menos de 25 segundos cada uno, así que insistir con la versión más lenta no aportaba nada que la más simple no diera.
-- Se mantiene el trade-off de cobertura vs. precisión geográfica como una decisión consciente, no un objetivo de "llegar al 100%": el 24.4% de siniestros que quedan aislados corresponde a casos genuinamente dispersos, sin vecinos cercanos suficientes como para formar una zona compacta bajo ningún parámetro razonable — forzar más cobertura ahí significaría volver a arriesgar el efecto "blob" que ya se descartó dos veces.
+**Decisiones de diseño y su justificacion**
+- Se reentreno el modelo para bajarlo a la version de scikit-learn de `requirements.txt` (1.5.2), no se subio `requirements.txt` a 1.7.2: la version 1.5.2 es la que ya esta probada en la maquina real del usuario, cambiar el pin del proyecto para acomodar este entorno de trabajo hubiera sido al reves de como debe ser la relacion entre ambos.
+- Variables de entorno con default de desarrollo en ambos casos (frontend y backend): local sigue funcionando exactamente igual sin que el usuario tenga que crear nada nuevo, y el deploy real solo necesita definir dos variables (`VITE_API_URL` y `CORS_ALLOWED_ORIGINS`) sin tocar codigo.
 
-**Obstáculos encontrados y cómo se resolvieron**
-- El paquete `hdbscan` de PyPI (standalone) no está instalado; se usó `sklearn.cluster.HDBSCAN` (parte de scikit-learn 1.7.2, ya instalado), que expone la misma funcionalidad sin agregar una dependencia nueva.
-- Igual que con la carga de hotspots de la sesión anterior, este entorno de trabajo en la nube no tiene acceso a la base Postgres del usuario: la recarga real de los 740 hotspots nuevos (`cargar_hotspots.py`) y la verificación visual en el mapa quedan pendientes de correrse en la máquina del usuario.
+**Pendiente antes de hostear (todavia no resuelto)**
+- OSRM: el calculo de ruta usa el servidor de demo publico (`router.project-osrm.org`), pensado para pruebas, no para produccion -- sin garantia de disponibilidad ni limite de uso documentado. Antes de exponer la app publicamente hace falta evaluar alternativas (OSRM propio vs. un servicio de ruteo con free tier confiable) con el mismo criterio que se uso para elegir TomTom, no de apuro.
 
-**Próximos pasos**
-- Correr `cargar_hotspots.py` (opción 2 de `tareas.bat`) para recargar los 740 hotspots nuevos en la base local, y confirmar visualmente en el mapa que las zonas nuevas tienen sentido geográfico (no hay clusters alargados ni fusionados).
-- Actualizar la tesis formal con este hallazgo (cambio de algoritmo de clustering, cobertura final) cuando llegue el momento de retomarla.
-- Evaluar si vale la pena repetir esta misma comparación DBSCAN vs. HDBSCAN para los hotspots de inseguridad (delito general y robos con moto), que todavía usan la calibración manual original con DBSCAN.
+**Proximos pasos**
+- Evaluar opciones de reemplazo/respaldo para OSRM antes de hostear.
+- Recien despues, evaluar el hosting en si (backend + Postgres/PostGIS + frontend).
 
 ### 07/09/2026 (continuación 5) — OSRM fuera, TomTom Routing API adentro: cálculo de ruta propio y sin depender de un servidor de demo
 

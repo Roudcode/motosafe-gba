@@ -32,11 +32,11 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
    (clima real)               │  (Random Forest,      │
           │                    │  modelo_final.pkl)    │
           ▼                  └───────────────────┘
-   OSRM (rutas reales)                  ▲
+   Nominatim (direcciones)              ▲
           │                            │
           ▼                  ┌───────────────────┐
-   Nominatim (direcciones)   │  hotspots_contexto.csv │
-                              │  (comuna/vía/contra-   │
+   Backend → TomTom          │  hotspots_contexto.csv │
+   (rutas + tráfico vivo)    │  (comuna/vía/contra-   │
                               │  parte típica por zona)│
                               └───────────────────┘
 ```
@@ -59,8 +59,8 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 - Los 740 hotspots, identificados con HDBSCAN (min_cluster_size=12, min_samples=3) tras evaluar también DBSCAN con un barrido sistemático de parámetros (eps 40-120m x min_samples 6-15, que llegó a 412 hotspots/49.9% de cobertura como mejor punto seguro). HDBSCAN no usa un radio fijo, así que se adapta a la densidad local de cada zona en vez de forzar un único radio para toda la ciudad, y esto permitió llegar al 75.6% de cobertura de los siniestros históricos sin arriesgar el efecto de "blob" (el cluster más grande queda en 0.41% del total, más seguro incluso que el 0.73% de la versión DBSCAN).
 - El modelo Random Forest, entrenado con esos 23.343 casos, evaluado con F1-score y matriz de confusión (no accuracy, que hubiera mentido por el desbalance de clases), y además validado con un split temporal real (entrenar con 2019-2024, testear contra 2025 completo, nunca visto), no solo con el split aleatorio habitual.
 - Las predicciones que ves en el mapa: son la salida real del modelo, no un número fijo.
-- El clima (Open-Meteo) y las rutas (OSRM): servicios externos reales, no simulados.
-- Los 435 hotspots de inseguridad (303 de delito general + 132 de robos con moto), identificados con el mismo DBSCAN que los de siniestros, sobre 1.387.622 delitos reales descargados de data.buenosaires.gob.ar.
+- El clima (Open-Meteo), la geocodificación de direcciones (Nominatim) y el cálculo de rutas con tráfico en vivo (TomTom, vía el backend): servicios externos reales, no simulados.
+- Los 435 hotspots de inseguridad (303 de delito general + 132 de robos con moto), identificados con DBSCAN (los de siniestros usan HDBSCAN, ver más arriba), sobre 1.387.622 delitos reales descargados de data.buenosaires.gob.ar.
 - El score de riesgo de cada ruta ahora suma siniestros e inseguridad de verdad (no es cosmético): la ruta "más segura" y las alertas en viaje consideran las dos fuentes, con desglose visible de cuánto aporta cada una.
 
 ### Simplificación consciente, documentada:

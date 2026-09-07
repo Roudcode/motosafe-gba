@@ -122,6 +122,14 @@ Con esa base, cada opción de ruta ahora muestra un score total, pero siempre de
 
 Con dos ejes de riesgo (siniestro e inseguridad) y tres formas de ver el de siniestro (clusters, mapa de calor, corredores), la interfaz empezaba a acumular botones sueltos sin una lógica clara. Se rediseñó como un único "Panel de Capas": un lado controla qué vista de fondo se usa para siniestros, el otro controla si se muestra inseguridad y con qué dataset (apagada, delito general, o robos con moto — mutuamente excluyentes, no combinables). La capa de inseguridad se dibuja con una paleta de violeta/magenta deliberadamente distinta de la paleta verde-amarillo-naranja-rojo de siniestros, para que se distinga de un vistazo incluso superpuesta a las otras capas, y cuando está activa el resto del mapa se atenúa (baja de opacidad) para que la capa recién activada quede en primer plano visual. También se agregó agrupamiento por zoom (clustering de marcadores) a la capa de inseguridad, que hasta ese momento dibujaba cada punto individual sin importar qué tan alejado estuvieras — algo que la vista de clusters de siniestros ya tenía resuelto desde antes.
 
+### Fase 12 — Tráfico en vivo y rutas reales con TomTom (reemplazando al servidor de pruebas OSRM)
+
+Hasta acá, el trazado de la ruta en el mapa (qué calles seguir para ir de un punto a otro) salía de OSRM, un servicio gratuito y público, pero pensado explícitamente para pruebas: no da ninguna garantía de que vaya a estar disponible ni de cuánto se puede usar antes de que empiece a fallar. Servía perfecto mientras el proyecto se probaba en una sola computadora, pero no era algo sobre lo que construir una app real.
+
+Se sumó una cuenta propia en TomTom (una empresa que, entre otras cosas, vende exactamente este tipo de servicio: calcular rutas y saber qué tan congestionada está cada calle en este momento) y se migró a ella en dos pasos. Primero se agregó una capa visual opcional en el mapa que muestra, con líneas de color, qué tan lento está el tránsito en cada calle ahora mismo (igual que en Google Maps o Waze) — una capa que el usuario prende o apaga a gusto, sin afectar nada del cálculo de riesgo. Después se reemplazó el cálculo de ruta en sí: en vez de pedirle el trazado a OSRM y por separado un tiempo estimado a TomTom (que podían no coincidir del todo, porque cada uno elige sus propias calles), ahora un único pedido a TomTom trae el trazado, las alternativas, el tiempo de viaje con y sin tráfico en vivo, y las indicaciones de manejo (doblar en tal calle, entrar a la rotonda, etc.) todo junto y consistente entre sí.
+
+Un detalle de diseño importante: la clave de acceso a TomTom nunca llega al navegador. Todos los pedidos pasan primero por el backend propio, que es quien de verdad le habla a TomTom — si la clave viajara hasta el navegador, cualquiera podría copiarla desde ahí y gastar la cuota gratuita del proyecto.
+
 ---
 
 ## Parte 4 — Cómo se conecta todo, explicado con una analogía
@@ -185,10 +193,11 @@ Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend)
 
 El mismo backend expone hoy más pedidos posibles que "dame las zonas de riesgo": entre otros, `/corredores` (avenidas completas con score de riesgo), `/hotspots-inseguridad` (los 435 hotspots de delitos), y `/reportes` (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga).
 
-Además, el navegador también le habla directamente a tres servicios externos, que no son parte de tu proyecto sino aplicaciones gratuitas de terceros que se usan como piezas:
+Además, el navegador le habla directamente a dos servicios externos, aplicaciones gratuitas de terceros que se usan como piezas:
 - **Open-Meteo**: te da el clima real del momento.
-- **OSRM**: calcula rutas reales siguiendo las calles.
 - **Nominatim**: convierte una dirección escrita ("Av. Rivadavia 1200") en coordenadas.
+
+El cálculo de ruta y el tráfico en vivo (TomTom) son distintos: no se le habla directo desde el navegador, sino que el backend hace ese pedido por vos (ver Fase 12) — así la clave de acceso a TomTom nunca queda expuesta en el navegador.
 
 ---
 
@@ -206,6 +215,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 - El clima que aparece arriba es el clima real de Buenos Aires en este instante.
 - Los 435 hotspots de inseguridad (303 de delito general y 132 de robos con moto) salen del mismo proceso real de clustering (DBSCAN), aplicado sobre 1.387.622 delitos oficiales de la Ciudad, recalibrado para este dataset porque los delitos se agrupan geográficamente distinto que los siniestros.
 - El score de riesgo de cada ruta suma de verdad ambos ejes (siniestro e inseguridad) y siempre lo muestra desglosado por tipo, no es una etiqueta decorativa: la suma es válida porque ambos ejes ya están en la misma escala ordinal de severidad calculada por percentiles.
+- El trazado de cada ruta, sus alternativas, el tiempo con tráfico en vivo y la capa de congestión que se ve en el mapa salen de la Routing API real de TomTom, no de una estimación fija — se actualizan en cada pedido.
 
 ### Lo que es una simplificación consciente (no un engaño, una decisión de alcance):
 
