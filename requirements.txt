@@ -6,6 +6,7 @@ sqlalchemy==2.0.35
 geoalchemy2==0.15.2
 psycopg2-binary==2.9.9
 python-dotenv==1.0.1
+slowapi==0.1.10
 
 # Datos y modelado
 pandas==2.2.3

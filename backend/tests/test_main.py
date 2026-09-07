@@ -242,22 +242,33 @@ def _mock_db_reportes(fetchone_valor=None, fetchall_valor=None, rowcount=0):
 
 
 def test_crear_reporte_devuelve_la_fila_creada():
+    autor_id = "11111111-2222-4333-8444-555555555555"
     fila_creada = {
         "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "pavimento",
-        "autor_id": "dispositivo-abc", "creado_en": "2026-09-04T12:00:00+00:00",
+        "autor_id": autor_id, "creado_en": "2026-09-04T12:00:00+00:00",
     }
     with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchone_valor=fila_creada)):
         r = client.post("/reportes", json={
-            "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": "dispositivo-abc",
+            "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": autor_id,
         })
     assert r.status_code == 201
     assert r.json()["categoria"] == "pavimento"
 
 
 def test_crear_reporte_rechaza_categoria_invalida():
+    autor_id = "11111111-2222-4333-8444-555555555555"
     with patch("main.psycopg2.connect", return_value=_mock_db_reportes()):
         r = client.post("/reportes", json={
-            "lat": -34.6, "lng": -58.4, "categoria": "categoria-inventada", "autor_id": "dispositivo-abc",
+            "lat": -34.6, "lng": -58.4, "categoria": "categoria-inventada", "autor_id": autor_id,
+        })
+    assert r.status_code == 422
+
+
+def test_crear_reporte_rechaza_autor_id_no_uuid():
+    """autor_id ya no acepta cualquier string -- ver ReporteNuevo.validar_autor_id."""
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes()):
+        r = client.post("/reportes", json={
+            "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": "dispositivo-abc",
         })
     assert r.status_code == 422
 
@@ -283,14 +294,20 @@ def test_listar_reportes_excluye_los_vencidos_segun_su_categoria():
 
 
 def test_borrar_mis_reportes_solo_afecta_al_autor_pedido():
+    autor_id = "11111111-2222-4333-8444-555555555555"
     with patch("main.psycopg2.connect", return_value=_mock_db_reportes(rowcount=3)) as mock_connect:
-        r = client.request("DELETE", "/reportes", params={"autor_id": "dispositivo-abc"})
+        r = client.request("DELETE", "/reportes", params={"autor_id": autor_id})
     assert r.status_code == 200
     assert r.json() == {"eliminados": 3}
     cursor_usado = mock_connect.return_value.cursor.return_value
     cursor_usado.execute.assert_any_call(
-        "DELETE FROM reportes_colaborativos WHERE autor_id = %s", ("dispositivo-abc",)
+        "DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,)
     )
+
+
+def test_borrar_mis_reportes_rechaza_autor_id_no_uuid():
+    r = client.request("DELETE", "/reportes", params={"autor_id": "dispositivo-abc"})
+    assert r.status_code == 422
 
 
 def test_corredores_devuelve_nivel_de_riesgo_y_geometria_parseada():
@@ -430,3 +447,106 @@ def test_hotspots_inseguridad_acepta_tipo_moto():
     assert r_general.status_code == 200
     assert r_moto.status_code == 200
     assert r_invalido.status_code == 422  # Literal["general", "moto"] rechaza cualquier otro valor
+
+
+def _fake_respuesta_tomtom(travel_seg=600, sin_trafico_seg=480, largo_m=3200):
+    """Arma una respuesta minima pero realista de la Routing API de TomTom (una sola
+    ruta, dos puntos, una instruccion de giro), suficiente para probar el mapeo
+    completo que hace calcular_rutas sin depender del servicio real."""
+    respuesta = MagicMock()
+    respuesta.raise_for_status.return_value = None
+    respuesta.json.return_value = {
+        "routes": [
+            {
+                "summary": {
+                    "lengthInMeters": largo_m,
+                    "travelTimeInSeconds": travel_seg,
+                    "noTrafficTravelTimeInSeconds": sin_trafico_seg,
+                },
+                "legs": [
+                    {
+                        "points": [
+                            {"latitude": -34.60, "longitude": -58.45},
+                            {"latitude": -34.61, "longitude": -58.44},
+                        ]
+                    }
+                ],
+                "guidance": {
+                    "instructions": [
+                        {
+                            "maneuver": "TURN_LEFT",
+                            "street": "Av. Corrientes",
+                            "point": {"latitude": -34.605, "longitude": -58.445},
+                        }
+                    ]
+                },
+            }
+        ]
+    }
+    return respuesta
+
+
+def test_calcular_rutas_devuelve_ruta_bien_formada_con_eta_de_trafico():
+    """Flujo completo de /rutas: pedido -> TomTom (mockeado) -> traduccion de
+    maniobras -> contrato RutaOut que espera el frontend (coords, km, min,
+    eta_trafico desglosado, pasos con tipo/modificador ya traducidos de TomTom
+    a la convencion heredada de OSRM)."""
+    with patch("main.TOMTOM_API_KEY", "clave-de-prueba"), \
+         patch("main.httpx.get", return_value=_fake_respuesta_tomtom()) as mock_get:
+        r = client.get("/rutas", params={
+            "origen_lat": -34.60, "origen_lng": -58.45,
+            "destino_lat": -34.61, "destino_lng": -58.44,
+        })
+    assert r.status_code == 200
+    mock_get.assert_called_once()
+    rutas = r.json()
+    assert len(rutas) == 1
+    ruta = rutas[0]
+
+    assert ruta["coords"] == [[-34.60, -58.45], [-34.61, -58.44]]
+    assert ruta["km"] == 3.2
+    # "min" usa el tiempo SIN trafico (referencia), no el tiempo con trafico en vivo.
+    assert ruta["min"] == 8
+
+    assert ruta["eta_trafico"] == {
+        "con_trafico_min": 10, "sin_trafico_min": 8, "diferencia_min": 2,
+    }
+
+    assert len(ruta["pasos"]) == 1
+    paso = ruta["pasos"][0]
+    assert paso["tipo"] == "turn"
+    assert paso["modificador"] == "left"
+    assert paso["calle"] == "Av. Corrientes"
+
+
+def test_calcular_rutas_sin_api_key_devuelve_503():
+    with patch("main.TOMTOM_API_KEY", None):
+        r = client.get("/rutas", params={
+            "origen_lat": -34.60, "origen_lng": -58.45,
+            "destino_lat": -34.61, "destino_lng": -58.44,
+        })
+    assert r.status_code == 503
+
+
+def test_calcular_rutas_si_tomtom_falla_devuelve_502():
+    import httpx as httpx_real
+    with patch("main.TOMTOM_API_KEY", "clave-de-prueba"), \
+         patch("main.httpx.get", side_effect=httpx_real.ConnectError("timeout simulado")):
+        r = client.get("/rutas", params={
+            "origen_lat": -34.60, "origen_lng": -58.45,
+            "destino_lat": -34.61, "destino_lng": -58.44,
+        })
+    assert r.status_code == 502
+
+
+def test_calcular_rutas_sin_resultados_devuelve_404():
+    respuesta = MagicMock()
+    respuesta.raise_for_status.return_value = None
+    respuesta.json.return_value = {"routes": []}
+    with patch("main.TOMTOM_API_KEY", "clave-de-prueba"), \
+         patch("main.httpx.get", return_value=respuesta):
+        r = client.get("/rutas", params={
+            "origen_lat": -34.60, "origen_lng": -58.45,
+            "destino_lat": -34.61, "destino_lng": -58.44,
+        })
+    assert r.status_code == 404

@@ -4,11 +4,16 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
-from fastapi import FastAPI, HTTPException, Response
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request, Response
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from pydantic import BaseModel, field_validator
+import uuid
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
 import psycopg2.extras
+import queue
 from dotenv import load_dotenv
 import httpx
 import joblib
@@ -18,12 +23,55 @@ import pandas as pd
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 
+# Pool de conexiones a Postgres: antes cada endpoint abria y cerraba su propia
+# conexion (psycopg2.connect por pedido), que funciona pero no escala -- cada
+# conexion nueva implica un handshake TCP + auth completo. Este pool reutiliza
+# conexiones ya abiertas en vez de una nueva por pedido (hasta 10 en simultaneo,
+# de sobra para el volumen esperado de este proyecto).
+#
+# Implementacion propia en vez de psycopg2.pool.SimpleConnectionPool a proposito:
+# llama a psycopg2.connect() de la misma forma que antes (no a un metodo interno
+# de otra clase), asi los tests que mockean main.psycopg2.connect (ver
+# tests/test_main.py) siguen funcionando sin cambios. Ademas es lazy (no abre
+# ninguna conexion real al importar el modulo), lo que mantiene valido correr
+# pytest sin la base de datos levantada.
+class _PoolConexiones:
+    def __init__(self, maxsize=10):
+        self._libres = queue.LifoQueue(maxsize=maxsize)
+
+    def getconn(self):
+        while True:
+            try:
+                conn = self._libres.get_nowait()
+            except queue.Empty:
+                return psycopg2.connect(DATABASE_URL)
+            if not conn.closed:
+                return conn
+
+    def putconn(self, conn):
+        try:
+            self._libres.put_nowait(conn)
+        except queue.Full:
+            conn.close()
+
+
+_pool_conexiones = _PoolConexiones()
+
 # Rutas absolutas basadas en la ubicación de este archivo: el backend siempre
 # encuentra sus artefactos sin importar desde qué directorio se lo ejecute
 # (antes eran rutas relativas, y solo funcionaban si se corría parado en backend/).
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI()
+
+# Rate limiting por IP en los tres endpoints con costo real: computo del modelo
+# (/predecir), escritura en base (/reportes POST) y llamada a un servicio externo
+# pago (/rutas, via TomTom). Limite conservador pensado para no afectar el uso
+# normal de una sola persona navegando el mapa, solo cortar abuso obvio (scripts,
+# refresh en loop) antes de que impacte la cuota de TomTom o la base de datos.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Origenes permitidos por CORS, separados por coma en la variable de entorno
 # CORS_ALLOWED_ORIGINS (ver .env.example). Sin esa variable, quedan los dos
@@ -213,7 +261,7 @@ def raiz():
 
 @app.get("/hotspots")
 def obtener_hotspots():
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = _pool_conexiones.getconn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
         SELECT id, cluster, latitud, longitud, cantidad_siniestros, mortales, graves, nivel_riesgo
@@ -222,7 +270,7 @@ def obtener_hotspots():
     """)
     resultado = cur.fetchall()
     cur.close()
-    conn.close()
+    _pool_conexiones.putconn(conn)
 
     ahora = datetime.now()
     hora_actual = ahora.hour
@@ -302,7 +350,8 @@ class ContextoSiniestro(BaseModel):
 
 
 @app.post("/predecir")
-def predecir_gravedad(contexto: ContextoSiniestro):
+@limiter.limit("30/minute")
+def predecir_gravedad(request: Request, contexto: ContextoSiniestro):
     if contexto.lluvia is not None and contexto.temperatura is not None and contexto.humedad is not None:
         clima = {'lluvia': contexto.lluvia, 'temperatura': contexto.temperatura, 'humedad': contexto.humedad}
     else:
@@ -364,12 +413,27 @@ class ReporteNuevo(BaseModel):
     lat: float
     lng: float
     categoria: Literal['pavimento', 'corte', 'iluminacion', 'inseguro']
+    # No es autenticacion de usuario -- es un identificador de dispositivo (UUID v4
+    # generado por el frontend la primera vez que se abre la app y persistido en
+    # localStorage, ver frontend/src/App.jsx -- estado autorId). Sirve para que 'borrar mis
+    # reportes' borre los del dispositivo que los creo y no los de otro. Se valida el
+    # formato UUID para que no sirva mandar un valor corto y adivinable a mano.
     autor_id: str
+
+    @field_validator('autor_id')
+    @classmethod
+    def validar_autor_id(cls, valor):
+        try:
+            uuid.UUID(valor)
+        except (ValueError, AttributeError, TypeError):
+            raise ValueError('autor_id debe ser un UUID valido')
+        return valor
 
 
 @app.post("/reportes", status_code=201)
-def crear_reporte(reporte: ReporteNuevo):
-    conn = psycopg2.connect(DATABASE_URL)
+@limiter.limit("20/minute")
+def crear_reporte(request: Request, reporte: ReporteNuevo):
+    conn = _pool_conexiones.getconn()
     _asegurar_tabla_reportes(conn)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
@@ -380,7 +444,7 @@ def crear_reporte(reporte: ReporteNuevo):
     fila = cur.fetchone()
     conn.commit()
     cur.close()
-    conn.close()
+    _pool_conexiones.putconn(conn)
     return fila
 
 
@@ -392,13 +456,13 @@ def listar_reportes():
     como historico), simplemente deja de aparecer en el mapa y de sumar al ajuste de
     riesgo de su zona.
     """
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = _pool_conexiones.getconn()
     _asegurar_tabla_reportes(conn)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("SELECT id, lat, lng, categoria, autor_id, creado_en FROM reportes_colaborativos ORDER BY creado_en DESC")
     filas = cur.fetchall()
     cur.close()
-    conn.close()
+    _pool_conexiones.putconn(conn)
 
     ahora = datetime.now(timezone.utc)
     vigentes = []
@@ -415,14 +479,18 @@ def borrar_mis_reportes(autor_id: str):
     """Borra solo los reportes de ese autor_id (ver nota sobre autor_id mas arriba:
     no es autenticacion real, es lo minimo para que 'borrar mis reportes' borre los
     del dispositivo que los creo y no los de otro usuario)."""
-    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        uuid.UUID(autor_id)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(status_code=422, detail="autor_id debe ser un UUID valido")
+    conn = _pool_conexiones.getconn()
     _asegurar_tabla_reportes(conn)
     cur = conn.cursor()
     cur.execute("DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,))
     eliminados = cur.rowcount
     conn.commit()
     cur.close()
-    conn.close()
+    _pool_conexiones.putconn(conn)
     return {"eliminados": eliminados}
 
 
@@ -438,7 +506,7 @@ def obtener_corredores():
     frecuente); el nivel de riesgo, como en /hotspots, se calcula en vivo con
     el modelo entrenado, no se guarda precalculado.
     """
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = _pool_conexiones.getconn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
         SELECT id, calle, tramo, tramos_totales, geometria, cantidad_siniestros, mortales, graves,
@@ -448,7 +516,7 @@ def obtener_corredores():
     """)
     resultado = cur.fetchall()
     cur.close()
-    conn.close()
+    _pool_conexiones.putconn(conn)
 
     if not resultado:
         return []
@@ -525,7 +593,7 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
     tipo=general: todo delito salvo infracciones de transito.
     tipo=moto: delitos con uso de moto (en la practica, robos).
     """
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = _pool_conexiones.getconn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
         SELECT id, cluster, latitud, longitud, cantidad_delitos, comuna_moda, tipo_delito_moda, nivel_riesgo
@@ -535,7 +603,7 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
     """, (tipo,))
     resultado = cur.fetchall()
     cur.close()
-    conn.close()
+    _pool_conexiones.putconn(conn)
     return resultado
 
 
@@ -679,8 +747,10 @@ class RutaOut(BaseModel):
 
 
 @app.get("/rutas", response_model=list[RutaOut])
+@limiter.limit("20/minute")
 def calcular_rutas(
-    origen_lat: float, origen_lng: float, destino_lat: float, destino_lng: float, alternativas: int = 2
+    request: Request, origen_lat: float, origen_lng: float, destino_lat: float, destino_lng: float,
+    alternativas: int = 2
 ):
     """
     Reemplaza al servidor de demo publico de OSRM (router.project-osrm.org):

@@ -24,7 +24,7 @@ import {
 } from './utils/riesgoRuta'
 import { formatearAntiguedad, opacidadPorAntiguedad, esReciente } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster, crearIconoClusterInseguridad } from './utils/ui'
-import { cargarDeLocalStorage } from './utils/storage'
+import { cargarDeLocalStorage, generarUuidV4Fallback } from './utils/storage'
 import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, EscalaMapa } from './components/MapaControles'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
@@ -79,7 +79,7 @@ function App() {
     // no los de otro usuario (ver nota en backend/main.py, _asegurar_tabla_reportes).
     let id = cargarDeLocalStorage(CLAVE_AUTOR_ID, null)
     if (!id) {
-      id = crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      id = crypto.randomUUID ? crypto.randomUUID() : generarUuidV4Fallback()
       localStorage.setItem(CLAVE_AUTOR_ID, JSON.stringify(id))
     }
     return id
