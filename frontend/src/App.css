@@ -436,6 +436,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .badge-segura { background: rgba(61,220,132,0.15); color: var(--verde); }
 .badge-equilibrada { background: rgba(255,140,66,0.15); color: var(--naranja); }
 .ruta-opcion-datos { font-size: 12px; color: var(--text-soft); }
+.ruta-opcion-trafico { display: inline-flex; align-items: center; gap: 2px; color: var(--azul); }
 .ruta-opcion-riesgo { display: flex; align-items: center; gap: 4px; font-size: 11px; }
 .ruta-opcion-riesgo.ok { color: var(--verde); }
 .ruta-opcion-riesgo.warn { color: var(--naranja); }

@@ -15,7 +15,7 @@ import {
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
-  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR,
+  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO,
   VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar } from './utils/geoRiesgo'
@@ -50,6 +50,11 @@ function App() {
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
   const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
+  // Tráfico en vivo (TomTom): apagado por default -- no todos tienen la API key
+  // configurada en el backend, y aunque la tengan, no queremos gastar cuota
+  // gratuita para usuarios que nunca miraron esta capa.
+  const [capaTrafico, setCapaTrafico] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_TRAFICO, false))
+  const [traficoNoDisponible, setTraficoNoDisponible] = useState(false)
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
     () => new Set(cargarDeLocalStorage(CLAVE_NIVELES, Object.keys(NIVELES)))
@@ -229,6 +234,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(CLAVE_CAPA_INSEGURIDAD, JSON.stringify(capaInseguridad))
   }, [capaInseguridad])
+
+  useEffect(() => {
+    localStorage.setItem(CLAVE_CAPA_TRAFICO, JSON.stringify(capaTrafico))
+  }, [capaTrafico])
 
   useEffect(() => {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
@@ -456,6 +465,21 @@ function App() {
       setRutasCalculadas(rutas)
       setRutaSeleccionada(0)
       setPasoActual(1)
+
+      // Tiempo con tráfico en vivo (TomTom) para la ruta más rápida: no bloquea
+      // el resultado principal, se completa un instante después y solo si el
+      // backend tiene la API key configurada (ver backend/main.py /trafico/eta).
+      // No reemplaza r.min (el tiempo de OSRM sobre la ruta dibujada): TomTom
+      // calcula su propio trazado puertas adentro, así que se muestra como un
+      // dato aparte, nunca pisando el de la ruta que se ve en el mapa.
+      const idxRapida = rutas.reduce((best, r, i) => (r.min < rutas[best].min ? i : best), 0)
+      fetch(`${API_URL}/trafico/eta?origen_lat=${a.lat}&origen_lng=${a.lng}&destino_lat=${b.lat}&destino_lng=${b.lng}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((eta) => {
+          if (!eta) return
+          setRutasCalculadas((prev) => prev.map((r, i) => (i === idxRapida ? { ...r, etaTrafico: eta } : r)))
+        })
+        .catch(() => {})
     } catch {
       setRutaError('No se pudo calcular la ruta (servidor de demo caído o sin conexión). Probá de nuevo.')
     } finally {
@@ -700,6 +724,11 @@ function App() {
           onCambiarCapaMapa={setCapaMapa}
           capaInseguridad={capaInseguridad}
           onCambiarCapaInseguridad={setCapaInseguridad}
+          capaTrafico={capaTrafico}
+          onCambiarCapaTrafico={(v) => {
+            if (v && traficoNoDisponible) { mostrarToast('Tráfico en vivo no disponible ahora'); return }
+            setCapaTrafico(v)
+          }}
           onCerrar={() => setCapasAbiertas(false)}
         />
       )}
@@ -861,6 +890,17 @@ function App() {
           className="map"
         >
           <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {capaTrafico && (
+            <TileLayer
+              url={`${API_URL}/trafico/tiles/{z}/{x}/{y}.png`}
+              opacity={0.75}
+              updateWhenZooming={false}
+              eventHandlers={{
+                tileerror: () => setTraficoNoDisponible(true),
+                tileload: () => setTraficoNoDisponible(false),
+              }}
+            />
+          )}
           <ControlesZoom />
           <EscalaMapa />
           <VueloControlado destino={vuelo} />
@@ -1029,7 +1069,14 @@ function App() {
                 {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> segura</span>}
                 {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada"><Scale size={10} /> equilibrada</span>}
               </span>
-              <span className="ruta-opcion-datos">{r.km} km · {r.min} min</span>
+              <span className="ruta-opcion-datos">
+                {r.km} km · {r.min} min
+                {r.etaTrafico && (
+                  <span className="ruta-opcion-trafico" title="Tiempo estimado con tráfico en vivo (TomTom) -- puede variar del trazado exacto de esta ruta">
+                    {' '}· <Zap size={10} /> {r.etaTrafico.con_trafico_min} min con tráfico
+                  </span>
+                )}
+              </span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
                 {r.riesgo === 0
                   ? <><CircleCheck size={12} /> sin cruces</>

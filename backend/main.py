@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
@@ -527,3 +527,129 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
     cur.close()
     conn.close()
     return resultado
+
+
+# --- Trafico en vivo (TomTom) ---
+# Dos features distintas, ambas opcionales: si no hay TOMTOM_API_KEY configurada
+# (variable de entorno, ver .env.example), los endpoints devuelven 503 y el
+# frontend simplemente no ofrece la capa/dato -- el resto de la app funciona
+# igual, esto nunca es una dependencia dura.
+#
+# Todo pasa por el backend (nunca se llama a TomTom directo desde el navegador):
+# si la key viajara al frontend, cualquiera podria copiarsela desde las devtools
+# y gastar la cuota gratuita del proyecto en minutos. El backend es quien la usa
+# y la mantiene fuera de git (.env esta en .gitignore).
+TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY')
+TOMTOM_TRAFFIC_TILE_URL = 'https://api.tomtom.com/traffic/map/4/tile/flow/{style}/{z}/{x}/{y}.png'
+TOMTOM_ROUTING_URL = 'https://api.tomtom.com/routing/1/calculateRoute/{origen}:{destino}/json'
+
+# Cache en memoria simple (no Redis: un solo proceso, volumen de proyecto de
+# tesis, no hace falta mas). El limite de entradas es una salvaguarda contra
+# crecimiento sin fin en un server de larga duracion, no una necesidad real al
+# volumen esperado de uso.
+CACHE_TILES_TTL_SEGUNDOS = 120  # el trafico real no cambia mas rapido que esto
+CACHE_TILES_MAX_ENTRADAS = 500
+_cache_tiles_trafico = {}
+
+CACHE_ETA_TTL_SEGUNDOS = 60
+CACHE_ETA_MAX_ENTRADAS = 200
+_cache_eta_trafico = {}
+
+
+@app.get("/trafico/tiles/{z}/{x}/{y}.png")
+def tile_trafico(z: int, x: int, y: int):
+    """
+    Proxy de los tiles raster de flujo de trafico en vivo de TomTom (estilo
+    relative0-dark, pensado para el mapa oscuro de la app: colorea cada calle
+    segun que tan lenta esta respecto a su velocidad libre, no la velocidad
+    absoluta). Se usa igual que cualquier tile de OpenStreetMap, con el mismo
+    esquema z/x/y, asi que del lado del frontend es un TileLayer mas.
+
+    Cache de 120s por tile: varios usuarios mirando la misma zona de CABA en la
+    misma ventana de 2 minutos comparten el mismo pedido a TomTom en vez de
+    generar uno nuevo por persona/reload -- protege la cuota gratuita mensual
+    (200.000 tiles) de un uso descuidado, no porque haga falta para el volumen
+    real esperado de este proyecto.
+    """
+    if not TOMTOM_API_KEY:
+        raise HTTPException(status_code=503, detail="TOMTOM_API_KEY no configurada")
+
+    clave = (z, x, y)
+    ahora = time.monotonic()
+    cacheado = _cache_tiles_trafico.get(clave)
+    if cacheado and (ahora - cacheado[1]) < CACHE_TILES_TTL_SEGUNDOS:
+        return Response(content=cacheado[0], media_type="image/png")
+
+    try:
+        respuesta = httpx.get(
+            TOMTOM_TRAFFIC_TILE_URL.format(style="relative0-dark", z=z, x=x, y=y),
+            params={"key": TOMTOM_API_KEY},
+            timeout=5.0,
+        )
+        respuesta.raise_for_status()
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="No se pudo obtener el tile de trafico de TomTom")
+
+    if len(_cache_tiles_trafico) > CACHE_TILES_MAX_ENTRADAS:
+        _cache_tiles_trafico.clear()
+    _cache_tiles_trafico[clave] = (respuesta.content, ahora)
+    return Response(content=respuesta.content, media_type="image/png")
+
+
+class EtaTraficoOut(BaseModel):
+    con_trafico_min: int
+    sin_trafico_min: int
+    diferencia_min: int
+
+
+@app.get("/trafico/eta", response_model=EtaTraficoOut)
+def eta_con_trafico(origen_lat: float, origen_lng: float, destino_lat: float, destino_lng: float):
+    """
+    Tiempo de viaje real con trafico en vivo (TomTom Routing API) entre dos
+    puntos, para mostrar como dato complementario junto al tiempo que ya
+    calcula OSRM sobre la ruta que se dibuja en el mapa.
+
+    Importante -- por que es un dato aparte y no un reemplazo: TomTom calcula
+    su propia ruta puertas adentro para estimar este tiempo, y esa ruta no es
+    necesariamente identica a la que traza OSRM (pueden variar en que calles
+    eligen). Mezclar "el tiempo de la ruta de TomTom" con "el trazado de OSRM"
+    seria mostrar un dato que no corresponde exactamente a lo que se ve
+    dibujado. Por eso el frontend lo etiqueta explicitamente como "con trafico
+    en vivo (TomTom)", nunca pisa el tiempo de la ruta trazada.
+
+    Cache de 60s por par origen/destino (redondeado a ~11m de precision) como
+    salvaguarda basica contra clicks repetidos accidentales, no por necesidad
+    real de volumen.
+    """
+    if not TOMTOM_API_KEY:
+        raise HTTPException(status_code=503, detail="TOMTOM_API_KEY no configurada")
+
+    clave = (round(origen_lat, 4), round(origen_lng, 4), round(destino_lat, 4), round(destino_lng, 4))
+    ahora = time.monotonic()
+    cacheado = _cache_eta_trafico.get(clave)
+    if cacheado and (ahora - cacheado[1]) < CACHE_ETA_TTL_SEGUNDOS:
+        return cacheado[0]
+
+    try:
+        respuesta = httpx.get(
+            TOMTOM_ROUTING_URL.format(origen=f"{origen_lat},{origen_lng}", destino=f"{destino_lat},{destino_lng}"),
+            params={"key": TOMTOM_API_KEY, "traffic": "true", "computeTravelTimeFor": "all"},
+            timeout=6.0,
+        )
+        respuesta.raise_for_status()
+        resumen = respuesta.json()["routes"][0]["summary"]
+    except (httpx.HTTPError, KeyError, IndexError, ValueError):
+        raise HTTPException(status_code=502, detail="No se pudo calcular el tiempo con trafico de TomTom")
+
+    con_trafico_min = round(resumen["travelTimeInSeconds"] / 60)
+    sin_trafico_min = round(resumen.get("noTrafficTravelTimeInSeconds", resumen["travelTimeInSeconds"]) / 60)
+    salida = EtaTraficoOut(
+        con_trafico_min=con_trafico_min,
+        sin_trafico_min=sin_trafico_min,
+        diferencia_min=con_trafico_min - sin_trafico_min,
+    )
+
+    if len(_cache_eta_trafico) > CACHE_ETA_MAX_ENTRADAS:
+        _cache_eta_trafico.clear()
+    _cache_eta_trafico[clave] = (salida, ahora)
+    return salida

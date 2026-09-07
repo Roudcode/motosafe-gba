@@ -182,6 +182,30 @@ docs/           Documentación del proyecto (resultados, extensiones futuras)
 **Próximos pasos**
 - Actualizar la tesis formal con estos hallazgos (validación temporal, trade-off de recall vs. accuracy, barrido de clustering) cuando llegue el momento de retomarla.
 
+### 07/09/2026 (continuación 3) — Tráfico en vivo (TomTom): capa visual de congestión y ETA real en la Ruta Rápida
+
+**Tareas realizadas**
+- Antes de escribir código se evaluó viabilidad real: cobertura de datos de TomTom en Buenos Aires (confirmada — TomTom publica un Traffic Index propio de la ciudad), límites de cuota gratuita (200.000 tiles/mes en Traffic Flow API, 20.000 requests/mes en Routing API) y comportamiento al agotarla (corta con error 429, no cobra automático sin plan pago explícito). Con el volumen esperado de un proyecto de tesis, ambas cuotas quedan varios órdenes de magnitud por debajo del límite.
+- Se creó una cuenta y un proyecto en el portal de desarrolladores de TomTom, con una API key que cubre Traffic Flow API y Routing API.
+- Se agregaron dos endpoints nuevos al backend (`backend/main.py`): `GET /trafico/tiles/{z}/{x}/{y}.png` (proxy de los tiles raster de flujo de tráfico, estilo `relative0-dark`) y `GET /trafico/eta` (tiempo de viaje con tráfico en vivo vía TomTom Routing API, con `computeTravelTimeFor=all` para tener también el tiempo sin tráfico de referencia). Ambos con cache en memoria (120s tiles, 60s ETA) como salvaguarda contra uso descuidado, y ambos devuelven 503 sin romper el resto de la app si `TOMTOM_API_KEY` no está configurada.
+- En el frontend: nuevo toggle "Tráfico en vivo" en el panel de capas (`CapasPanel.jsx`), independiente de las demás capas (se puede combinar con cualquiera). Al activarlo se agrega un `TileLayer` que apunta al proxy del backend, nunca directo a TomTom.
+- La Ruta Rápida ahora muestra, además del tiempo de OSRM sobre el trazado dibujado, un dato aparte "X min con tráfico" (TomTom), explícitamente etiquetado como algo complementario, no un reemplazo. Se completa después de mostrarse la ruta (no bloquea el resultado principal) y desaparece en silencio si el backend no tiene la key configurada.
+- Se agregó `TOMTOM_API_KEY` a `.env.example` como plantilla, confirmando que `.env` real sigue fuera de git.
+
+**Decisiones de diseño y su justificación**
+- Todo pasa por el backend, nunca se llama a TomTom directo desde el navegador: si la key viajara al frontend, cualquiera podría copiarla desde las devtools y agotar la cuota gratuita del proyecto en minutos.
+- El tiempo con tráfico de TomTom se muestra como un dato aparte del tiempo de OSRM, no lo reemplaza: TomTom calcula su propio trazado puertas adentro para estimar ese tiempo, que no es necesariamente idéntico al que dibuja OSRM en el mapa. Mezclarlos sería mostrar un número que no corresponde exactamente al trazado visible — se prefirió ser explícito ("con tráfico en vivo") antes que impreciso.
+- No se metió tráfico dentro del score de riesgo de la Ruta Segura: congestión y probabilidad de siniestro grave son ejes distintos (a veces hasta inversos — menos velocidad por tráfico puede significar choques más leves), mezclarlos diluiría el score que es el diferencial real de la tesis.
+- Tiles raster (PNG) en vez de vector tiles (protobuf): mismo dato, integración trivial con un `TileLayer` de Leaflet ya existente, sin agregar una librería nueva para decodificar vector tiles. Para el volumen y el objetivo de este proyecto, la complejidad extra de vector tiles no se traduce en ningún beneficio real.
+
+**Obstáculos encontrados y cómo se resolvieron**
+- Ninguno relevante: la documentación oficial de TomTom (Traffic Flow raster tiles, Routing API v1) tenía los formatos de URL y campos de respuesta necesarios, se integró directo contra la API real sin necesidad de prueba y error.
+
+**Próximos pasos**
+- Cargar la API key real de TomTom en `backend/.env` (`TOMTOM_API_KEY=...`) y probar ambas features en el mapa real.
+- Confirmar visualmente que la capa de tráfico se ve razonable sobre CABA (colores de congestión coherentes con la hora del día) y que el "X min con tráfico" aparece en la Ruta Rápida.
+- Si con el uso real se ve que la cuota gratuita empieza a ajustar (poco probable al volumen de este proyecto), subir el TTL de cache de tiles de 120s a algo mayor es el primer ajuste, antes de considerar un plan pago.
+
 ### 07/09/2026 (continuación 2) — De DBSCAN a HDBSCAN para los hotspots de siniestro: 412 → 740 zonas, 49.9% → 75.6% de cobertura
 
 **Tareas realizadas**

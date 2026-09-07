@@ -2,7 +2,7 @@
 // definiciones de niveles de riesgo y catálogos fijos (categorías de reporte).
 // Se separan de App.jsx para que estén en un solo lugar y no mezcladas con lógica de UI.
 
-import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route } from 'lucide-react'
+import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route, Zap } from 'lucide-react'
 
 export const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
 export const UMBRAL_CRUCE_KM = 0.6
@@ -32,6 +32,7 @@ export const CLAVE_TEMA = 'motosafe_tema'
 export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
 export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
+export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
 export const CLAVE_AUTOR_ID = 'motosafe_autor_id'
 
 export const NIVELES = {
