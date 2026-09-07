@@ -570,6 +570,10 @@ function App() {
       const cruces = zonasCruzadasPorRuta[i] || []
       const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
       const crucesInseguridad = cruces.filter((z) => z.tipoRiesgo === 'inseguridad')
+      const nivelMaximo = cruces.reduce(
+        (peor, z) => (ORDEN_NIVELES.indexOf(z.nivel) > ORDEN_NIVELES.indexOf(peor) ? z.nivel : peor),
+        'bajo'
+      )
       return {
         ...r,
         riesgo: cruces.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
@@ -577,6 +581,7 @@ function App() {
         riesgoInseguridad: crucesInseguridad.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
         cantSiniestros: crucesSiniestro.length,
         cantInseguridad: crucesInseguridad.length,
+        nivelMaximo,
       }
     })
   }, [rutasCalculadas, zonasCruzadasPorRuta])
@@ -1055,12 +1060,15 @@ function App() {
               </span>
               <span className="ruta-opcion-datos">{r.km} km · {r.min} min</span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
-                {r.riesgo === 0 ? <><CircleCheck size={12} /> sin cruces</> : <><TriangleAlert size={12} /> riesgo {r.riesgo} pts</>}
+                {r.riesgo === 0
+                  ? <><CircleCheck size={12} /> sin cruces</>
+                  : <><TriangleAlert size={12} /> riesgo {NIVELES[r.nivelMaximo]?.label.toLowerCase()}</>}
               </span>
               {r.riesgo > 0 && (
                 <span className="ruta-opcion-desglose">
-                  {r.cantSiniestros > 0 && <span className="desglose-item desglose-siniestro"><Siren size={11} /> {r.cantSiniestros}</span>}
-                  {r.cantInseguridad > 0 && <span className="desglose-item desglose-inseguridad"><ShieldAlert size={11} /> {r.cantInseguridad}</span>}
+                  {r.cantSiniestros > 0 && <span className="desglose-item desglose-siniestro" title={`${r.cantSiniestros} zonas de siniestro cruzadas`}><Siren size={11} /> {r.cantSiniestros}</span>}
+                  {r.cantInseguridad > 0 && <span className="desglose-item desglose-inseguridad" title={`${r.cantInseguridad} zonas de inseguridad cruzadas`}><ShieldAlert size={11} /> {r.cantInseguridad}</span>}
+                  <span className="desglose-pts" title="Puntaje interno: suma de severidad de cada zona cruzada">{r.riesgo} pts</span>
                 </span>
               )}
             </button>
