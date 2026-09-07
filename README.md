@@ -182,6 +182,26 @@ docs/           Documentación del proyecto (resultados, extensiones futuras)
 **Próximos pasos**
 - Actualizar la tesis formal con estos hallazgos (validación temporal, trade-off de recall vs. accuracy, barrido de clustering) cuando llegue el momento de retomarla.
 
+### 07/09/2026 (continuación 4) — Prework antes de hostear: version de scikit-learn, y URLs/CORS parametrizables
+
+Arrancamos a preparar el sistema para salir de "solo corre en mi maquina" antes de elegir un hosting real, en vez de arrastrar estos temas y encontrarlos recien al desplegar.
+
+**Tareas realizadas**
+- Se detecto (por un warning al levantar el backend) que el modelo se habia entrenado con scikit-learn 1.7.2 en este entorno de trabajo, mientras que `requirements.txt` fija 1.5.2 (la version real instalada en la maquina del usuario). Se bajo scikit-learn a 1.5.2 en este entorno tambien y se reentreno el modelo con esa version -- mismas metricas (el entrenamiento no cambia, solo el binario serializado), cero warnings de version al cargarlo ahora.
+- `API_URL` en el frontend (`constants.js`) ahora lee `VITE_API_URL` si esta definida (variable de entorno de Vite, se inyecta en build time), con `http://localhost:8000` como default para seguir andando igual en desarrollo local sin tocar nada. Se agrego `frontend/.env.example` documentandolo.
+- CORS en el backend (`main.py`) ahora lee `CORS_ALLOWED_ORIGINS` (lista separada por coma) en vez de tener los dos puertos de Vite hardcodeados, con el mismo default de siempre si la variable no esta. Documentado en `.env.example`.
+
+**Decisiones de diseño y su justificacion**
+- Se reentreno el modelo para bajarlo a la version de scikit-learn de `requirements.txt` (1.5.2), no se subio `requirements.txt` a 1.7.2: la version 1.5.2 es la que ya esta probada en la maquina real del usuario, cambiar el pin del proyecto para acomodar este entorno de trabajo hubiera sido al reves de como debe ser la relacion entre ambos.
+- Variables de entorno con default de desarrollo en ambos casos (frontend y backend): local sigue funcionando exactamente igual sin que el usuario tenga que crear nada nuevo, y el deploy real solo necesita definir dos variables (`VITE_API_URL` y `CORS_ALLOWED_ORIGINS`) sin tocar codigo.
+
+**Pendiente antes de hostear (todavia no resuelto)**
+- OSRM: el calculo de ruta usa el servidor de demo publico (`router.project-osrm.org`), pensado para pruebas, no para produccion -- sin garantia de disponibilidad ni limite de uso documentado. Antes de exponer la app publicamente hace falta evaluar alternativas (OSRM propio vs. un servicio de ruteo con free tier confiable) con el mismo criterio que se uso para elegir TomTom, no de apuro.
+
+**Proximos pasos**
+- Evaluar opciones de reemplazo/respaldo para OSRM antes de hostear.
+- Recien despues, evaluar el hosting en si (backend + Postgres/PostGIS + frontend).
+
 ### 07/09/2026 (continuación 3) — Tráfico en vivo (TomTom): capa visual de congestión y ETA real en la Ruta Rápida
 
 **Tareas realizadas**

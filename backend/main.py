@@ -25,9 +25,19 @@ BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI()
 
+# Origenes permitidos por CORS, separados por coma en la variable de entorno
+# CORS_ALLOWED_ORIGINS (ver .env.example). Sin esa variable, quedan los dos
+# puertos de desarrollo local de Vite -- en un deploy real hay que definirla
+# con el dominio publico real del frontend, o el navegador bloquea los
+# pedidos aunque el backend responda bien.
+_origenes_default = "http://localhost:5173,http://localhost:5174"
+CORS_ALLOWED_ORIGINS = [
+    origen.strip() for origen in os.getenv("CORS_ALLOWED_ORIGINS", _origenes_default).split(",") if origen.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
