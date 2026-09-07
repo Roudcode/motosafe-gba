@@ -405,6 +405,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-opcion-riesgo.ok { color: var(--verde); }
 .ruta-opcion-riesgo.warn { color: var(--naranja); }
 .ruta-opcion-riesgo.alto { color: var(--rojo); }
+.ruta-opcion-desglose { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.desglose-item { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--text-dimmer); }
+.desglose-siniestro { color: var(--naranja); }
+.desglose-inseguridad { color: #FF3B7F; }
+.ruta-resumen-icono { color: var(--text-dimmer); flex-shrink: 0; }
 .ruta-sin-alternativa { font-size: 11px; color: var(--text-dimmer); margin-top: 4px; font-style: italic; }
 .ruta-resumen-detalle { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); max-height: 160px; overflow-y: auto; }
 .ruta-resumen-mas { font-size: 11px; color: var(--text-dimmer); margin-top: 6px; font-style: italic; }

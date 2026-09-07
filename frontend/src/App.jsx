@@ -9,14 +9,17 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
+  Siren, ShieldAlert,
 } from 'lucide-react'
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa,
   CLAVE_CAPA_INSEGURIDAD, siguienteCapaInseguridad, INFO_CAPA_INSEGURIDAD,
+  VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
+import { formatearAntiguedad, opacidadPorAntiguedad, esReciente } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster } from './utils/ui'
 import { cargarDeLocalStorage } from './utils/storage'
 import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, EscalaMapa } from './components/MapaControles'
@@ -96,6 +99,15 @@ function App() {
   const [zonasAlertadas, setZonasAlertadas] = useState(new Set())
   const [alertaViaje, setAlertaViaje] = useState(null)
 
+  // Ahora "real" (no segundos desde el montaje): se usa para calcular antiguedad
+  // y opacidad de los reportes colaborativos, se refresca cada 30s (alcanza para
+  // el nivel de granularidad de "hace X min" que mostramos).
+  const [horaActual, setHoraActual] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setHoraActual(Date.now()), 30000)
+    return () => clearInterval(id)
+  }, [])
+
   const mostrarToast = (texto) => {
     setToast(texto)
     setTimeout(() => setToast(null), 2200)
@@ -174,7 +186,7 @@ function App() {
         lng: r.lng,
         categoria: r.categoria,
         autorId: r.autor_id,
-        hora: new Date(r.creado_en).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+        creadoEn: r.creado_en,
       }))))
       .catch(() => { /* backend caido: se mantienen los reportes que ya estaban cargados */ })
   }
@@ -325,7 +337,7 @@ function App() {
           lng: creado.lng,
           categoria: creado.categoria,
           autorId: creado.autor_id,
-          hora: new Date(creado.creado_en).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+          creadoEn: creado.creado_en,
         }, ...prev])
         mostrarToast('Reporte enviado — gracias por sumar el dato')
       })
@@ -455,10 +467,42 @@ function App() {
     return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
   }, [ZONAS_RIESGO, clima, reportes])
 
+  // Unifica los dos ejes de riesgo (siniestros de moto predichos por el modelo e
+  // inseguridad historica del GCBA) en un solo listado con la misma forma
+  // (lat/lng/nivel/tipoRiesgo), para que el cruce con rutas y las alertas en
+  // viaje no tengan que conocer la diferencia entre ambos. nivel ya viene en la
+  // misma escala ordinal en los tres casos (percentiles calculados dentro de cada
+  // dataset), asi que sumar PESO_RIESGO entre tipos es valido.
+  const zonasInseguridadUnificadas = useMemo(() => [
+    ...inseguridadGeneral.map((h) => ({
+      id: `insg-general-${h.id}`,
+      lat: h.latitud,
+      lng: h.longitud,
+      nivel: h.nivel_riesgo,
+      tipoRiesgo: 'inseguridad',
+      subtipoInseguridad: 'general',
+      nombre: `Zona de inseguridad: ${h.cantidad_delitos} delitos (${h.tipo_delito_moda || 'varios'})`,
+    })),
+    ...inseguridadMoto.map((h) => ({
+      id: `insg-moto-${h.id}`,
+      lat: h.latitud,
+      lng: h.longitud,
+      nivel: h.nivel_riesgo,
+      tipoRiesgo: 'inseguridad',
+      subtipoInseguridad: 'moto',
+      nombre: `Zona de robos con moto: ${h.cantidad_delitos} hechos`,
+    })),
+  ], [inseguridadGeneral, inseguridadMoto])
+
+  const zonasRiesgoTodas = useMemo(() => [
+    ...zonasAjustadas.map((z) => ({ ...z, nivel: z.ajuste.nivel, tipoRiesgo: 'siniestro' })),
+    ...zonasInseguridadUnificadas,
+  ], [zonasAjustadas, zonasInseguridadUnificadas])
+
   useEffect(() => {
-    if (!modoViaje || !miUbicacion || zonasAjustadas.length === 0) return
-    const candidatas = zonasAjustadas.filter(
-      (z) => (z.ajuste.nivel === 'alto' || z.ajuste.nivel === 'critico')
+    if (!modoViaje || !miUbicacion || zonasRiesgoTodas.length === 0) return
+    const candidatas = zonasRiesgoTodas.filter(
+      (z) => (z.nivel === 'alto' || z.nivel === 'critico')
         && !zonasAlertadas.has(z.id)
         && distanciaKm(miUbicacion, z) <= UMBRAL_ALERTA_KM
     )
@@ -468,12 +512,12 @@ function App() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAlertaViaje(zona)
       setZonasAlertadas((prev) => new Set(prev).add(zona.id))
-      if (navigator.vibrate) navigator.vibrate([250, 100, 250])
+      if (navigator.vibrate) navigator.vibrate(zona.tipoRiesgo === 'inseguridad' ? [200, 80, 200, 80, 200] : [250, 100, 250])
       reproducirBeep()
       setTimeout(() => setAlertaViaje(null), 6000)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [miUbicacion, modoViaje, zonasAjustadas])
+  }, [miUbicacion, modoViaje, zonasRiesgoTodas])
 
   useEffect(() => {
     if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
@@ -507,8 +551,8 @@ function App() {
   }, [busqueda])
 
   const zonasCruzadasPorRuta = useMemo(() => {
-    return rutasCalculadas.map((r) => zonasAjustadas.filter((z) => distanciaAPolilinea(z, r.coords) <= UMBRAL_CRUCE_KM))
-  }, [rutasCalculadas, zonasAjustadas])
+    return rutasCalculadas.map((r) => zonasRiesgoTodas.filter((z) => distanciaAPolilinea(z, r.coords) <= UMBRAL_CRUCE_KM))
+  }, [rutasCalculadas, zonasRiesgoTodas])
   const zonasCruzadasActual = useMemo(
     () => zonasCruzadasPorRuta[rutaSeleccionada] || [],
     [zonasCruzadasPorRuta, rutaSeleccionada]
@@ -516,15 +560,24 @@ function App() {
 
   const zonasCruzadasOrdenadas = useMemo(() => {
     return [...zonasCruzadasActual].sort(
-      (a, b) => ORDEN_NIVELES.indexOf(b.ajuste.nivel) - ORDEN_NIVELES.indexOf(a.ajuste.nivel)
+      (a, b) => ORDEN_NIVELES.indexOf(b.nivel) - ORDEN_NIVELES.indexOf(a.nivel)
     )
   }, [zonasCruzadasActual])
 
   const rutasConScore = useMemo(() => {
-    return rutasCalculadas.map((r, i) => ({
-      ...r,
-      riesgo: (zonasCruzadasPorRuta[i] || []).reduce((acc, z) => acc + PESO_RIESGO[z.ajuste.nivel], 0),
-    }))
+    return rutasCalculadas.map((r, i) => {
+      const cruces = zonasCruzadasPorRuta[i] || []
+      const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
+      const crucesInseguridad = cruces.filter((z) => z.tipoRiesgo === 'inseguridad')
+      return {
+        ...r,
+        riesgo: cruces.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
+        riesgoSiniestros: crucesSiniestro.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
+        riesgoInseguridad: crucesInseguridad.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
+        cantSiniestros: crucesSiniestro.length,
+        cantInseguridad: crucesInseguridad.length,
+      }
+    })
   }, [rutasCalculadas, zonasCruzadasPorRuta])
 
   const idxMasRapida = useMemo(() => {
@@ -674,8 +727,11 @@ function App() {
       })()}
 
       {alertaViaje && (
-        <div className={`alerta-viaje panel-enter ${alertaViaje.ajuste.nivel === 'critico' ? 'critica' : 'alta'}`}>
-          <span className="alerta-viaje-cabecera"><TriangleAlert size={16} /> Te acercás a una zona de riesgo {NIVELES[alertaViaje.ajuste.nivel].label.toUpperCase()}</span>
+        <div className={`alerta-viaje panel-enter ${alertaViaje.nivel === 'critico' ? 'critica' : 'alta'}`}>
+          <span className="alerta-viaje-cabecera">
+            {alertaViaje.tipoRiesgo === 'inseguridad' ? <ShieldAlert size={16} /> : <Siren size={16} />}
+            {' '}Te acercás a una zona de {alertaViaje.tipoRiesgo === 'inseguridad' ? 'inseguridad' : 'riesgo de siniestro'} {NIVELES[alertaViaje.nivel].label.toUpperCase()}
+          </span>
           <span className="alerta-viaje-detalle">{alertaViaje.nombre}</span>
         </div>
       )}
@@ -700,7 +756,7 @@ function App() {
                 <span className="actividad-icon">{cat?.Icon && <cat.Icon size={15} />}</span>
                 <span className="actividad-texto">
                   <span className="actividad-label">{cat?.label}</span>
-                  <span className="actividad-hora">{rep.hora}</span>
+                  <span className="actividad-hora">{formatearAntiguedad(rep.creadoEn, horaActual)}</span>
                 </span>
               </button>
             )
@@ -913,13 +969,25 @@ function App() {
           {reportes.map((rep) => {
             // Reportes colaborativos: se distingue color entre los propios y los
             // de otros usuarios para que se note a simple vista en el mapa, no
-            // solo abriendo el popup.
+            // solo abriendo el popup. Ademas se atenua con la antiguedad (estilo
+            // Waze: recien creado, solido y pulsando; cerca de vencer, casi
+            // transparente y sin pulso), usando la misma vigencia por categoria
+            // que ya aplica el backend para dejar de devolverlo del todo.
             const color = rep.autorId === autorId ? '#FFC933' : '#B98CFF'
+            const vigenciaHoras = VIGENCIA_HORAS_POR_CATEGORIA[rep.categoria] || VIGENCIA_HORAS_DEFAULT
+            const opacidad = opacidadPorAntiguedad(rep.creadoEn, vigenciaHoras, horaActual)
+            const reciente = esReciente(rep.creadoEn, horaActual)
             return (
-              <CircleMarker key={rep.id} center={[rep.lat, rep.lng]} radius={8} pathOptions={{ color, fillColor: color, fillOpacity: 0.7, weight: 2 }} className="pulse-marker-report">
+              <CircleMarker
+                key={rep.id}
+                center={[rep.lat, rep.lng]}
+                radius={8}
+                pathOptions={{ color, fillColor: color, fillOpacity: 0.7 * opacidad, opacity: opacidad, weight: 2 }}
+                className={reciente ? 'pulse-marker-report' : ''}
+              >
                 <Popup>
                   <div className="popup-content">
-                    <span className="popup-nivel" style={{ color }}>{rep.autorId === autorId ? 'Tu reporte' : 'Reporte de otro usuario'} · {rep.hora}</span>
+                    <span className="popup-nivel" style={{ color }}>{rep.autorId === autorId ? 'Tu reporte' : 'Reporte de otro usuario'} · {formatearAntiguedad(rep.creadoEn, horaActual)}</span>
                     <strong>{CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label}</strong>
                   </div>
                 </Popup>
@@ -961,8 +1029,14 @@ function App() {
               </span>
               <span className="ruta-opcion-datos">{r.km} km · {r.min} min</span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
-                {r.riesgo === 0 ? <><CircleCheck size={12} /> sin cruces</> : <><TriangleAlert size={12} /> riesgo {r.riesgo} pts · cruza {zonasCruzadasPorRuta[i].length}</>}
+                {r.riesgo === 0 ? <><CircleCheck size={12} /> sin cruces</> : <><TriangleAlert size={12} /> riesgo {r.riesgo} pts</>}
               </span>
+              {r.riesgo > 0 && (
+                <span className="ruta-opcion-desglose">
+                  {r.cantSiniestros > 0 && <span className="desglose-item desglose-siniestro"><Siren size={11} /> {r.cantSiniestros}</span>}
+                  {r.cantInseguridad > 0 && <span className="desglose-item desglose-inseguridad"><ShieldAlert size={11} /> {r.cantInseguridad}</span>}
+                </span>
+              )}
             </button>
           ))}
           {rutasConScore.length === 1 && (
@@ -972,7 +1046,9 @@ function App() {
             <div className="ruta-resumen-detalle">
               {zonasCruzadasOrdenadas.slice(0, 6).map((z) => (
                 <div key={z.id} className="ruta-resumen-item">
-                  <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />{z.nombre}
+                  <span className="cercanas-dot" style={{ background: NIVELES[z.nivel].color }} />
+                  {z.tipoRiesgo === 'inseguridad' ? <ShieldAlert size={11} className="ruta-resumen-icono" /> : <Siren size={11} className="ruta-resumen-icono" />}
+                  {z.nombre}
                 </div>
               ))}
               {zonasCruzadasOrdenadas.length > 6 && (
