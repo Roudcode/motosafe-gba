@@ -2,7 +2,7 @@
 
 Mapa de riesgo para motociclistas en CABA, construido sobre un modelo de Machine Learning (Random Forest) entrenado con datos reales de siniestralidad vial (2019-2025, data.buenosaires.gob.ar). Proyecto Final de Ingeniería en Informática — Universidad del Salvador.
 
-Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + Leaflet. El detalle de la metodología (limpieza de datos, clustering HDBSCAN de siniestros y DBSCAN de inseguridad, comparación de modelos, umbrales de riesgo) está documentado en `notebooks/01_eda_hotspots_moto.ipynb` y en `docs/`.
+Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + Leaflet. El detalle de la metodología (limpieza de datos, clustering HDBSCAN (siniestros y robos con moto) y DBSCAN (delito general), comparación de modelos, umbrales de riesgo) está documentado en `notebooks/01_eda_hotspots_moto.ipynb` y en `docs/`.
 
 ## Requisitos
 
@@ -272,3 +272,25 @@ Arrancamos a preparar el sistema para salir de "solo corre en mi maquina" antes 
 - Probar `/rutas` de punta a punta en la máquina del usuario: reiniciar el backend, calcular una ruta en el mapa y confirmar que aparecen el trazado, el tiempo con tráfico y los pasos de navegación con sentido.
 - Evaluar la vista de navegación 3D/con heading (mostrar la ruta con la orientación de avance, como Maps o Waze, al menos al comenzar un viaje) — pendiente de una decisión técnica sobre el enfoque (rotación completa del mapa vs. solo el ícono de ubicación).
 - Avanzar con la evaluación de hosting real (backend + Postgres/PostGIS + frontend) una vez cerrado el punto anterior.
+
+### 07/09/2026 (continuación 6) — Panel de capas: opción de apagar la vista de fondo, y segunda vuelta de HDBSCAN para robos con moto
+
+**Tareas realizadas**
+- Se sumó una opción "Apagada" al grupo "Vista de fondo" del Panel de Capas (`constants.js`, `OPCIONES_CAPA_MAPA`): hasta ahora ese grupo era el único de los tres sin forma de desactivarse del todo, a diferencia de Inseguridad y Tráfico. Sin cambios en la lógica de renderizado: como cada capa ya se dibuja con un chequeo puntual (`capaMapa === 'clusters'`, etc.), agregar el valor `'apagado'` alcanza para que ninguna coincida.
+- A partir de la pregunta de si valía la pena aplicarle a los hotspots de inseguridad el mismo tratamiento que a los de siniestro (DBSCAN → HDBSCAN), se midió primero la cobertura real de cada uno, que no estaba documentada con un número exacto: delito general 29.2%, robos con moto apenas 14.1%.
+- Se corrió un barrido de HDBSCAN sobre robos con moto (~16 mil casos, tamaño similar al de los siniestros de moto): con `min_cluster_size=12, min_samples=2` la cobertura subió a 74.3% (más del quíntuple), con el cluster más grande en 0.79% del total (más seguro que el 3% que toleraba la calibración DBSCAN anterior). Se actualizó `notebooks/identificar_hotspots_inseguridad.py` para usar HDBSCAN en esta capa y se regeneró `data/hotspots_inseguridad_moto.csv` (132 → 502 hotspots).
+- Delito general (411.704 casos, ~18 veces más denso) no se migró: HDBSCAN no llegó a terminar ni una combinación en el entorno de trabajo de esta sesión, ni esperando varios minutos con distintos parámetros. Se dejó un script aparte (`notebooks/sweep_hdbscan_inseguridad_general.py`) para evaluarlo sin apuro en una máquina con más tiempo/CPU disponible, sin tocar la calibración actual mientras tanto.
+- Se actualizaron las Guías del proyecto (`docs/1_Guia_DETALLADA.md`, sumando una Fase 13; `docs/1_Guia_RESUMEN.md`) y los `.docx` correspondientes con los números nuevos (435 → 805 hotspots de inseguridad totales) y la metodología mixta (DBSCAN para delito general, HDBSCAN para robos con moto).
+
+**Decisiones de diseño y su justificación**
+- Se migró robos con moto y no delito general en esta vuelta, en vez de esperar a poder hacer las dos juntas: el tamaño de cada dataset es lo que determina si HDBSCAN es viable de evaluar interactivamente (16 mil casos sí, 412 mil no en este entorno), y no había motivo para demorar una mejora ya confirmada y de bajísimo riesgo (no toca el modelo entrenado, no rompe el contrato de la API) esperando a resolver la otra.
+- Se dejó un script de barrido aparte para delito general en vez de insistir con parámetros más agresivos en el mismo entorno: ya se había probado con `min_cluster_size` de hasta 500 sin terminar en 170 segundos, así que seguir intentando ahí no iba a dar una respuesta distinta.
+
+**Obstáculos encontrados y cómo se resolvieron**
+- Los primeros intentos de correr HDBSCAN en background (`nohup ... &` + `disown`) para no bloquear la sesión mientras se probaba con el dataset grande terminaron matando el proceso apenas terminaba el comando que lo lanzaba: el entorno de trabajo en la nube usado en esta sesión no sostiene procesos en segundo plano entre llamadas. Se resolvió corriendo cada prueba en primer plano con `timeout`, dentro del límite de tiempo disponible por llamada.
+- Igual que con los hotspots de siniestro, no hay acceso a la base Postgres del usuario desde este entorno: la recarga real de los 502 hotspots nuevos de robos con moto (`cargar_hotspots_inseguridad.py`) y la verificación visual en el mapa quedan pendientes de correrse en la máquina del usuario.
+
+**Próximos pasos**
+- Correr `cargar_hotspots_inseguridad.py` en la máquina del usuario para recargar los hotspots de robos con moto en la base local, y confirmar visualmente que las zonas nuevas tienen sentido geográfico.
+- Correr `notebooks/sweep_hdbscan_inseguridad_general.py` sin apuro (puede tardar varios minutos) para decidir si delito general también conviene migrarlo a HDBSCAN.
+- Seguir con la vista de navegación 3D/heading y la evaluación de hosting real, en el orden que ya se había definido.

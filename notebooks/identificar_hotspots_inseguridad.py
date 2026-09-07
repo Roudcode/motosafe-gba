@@ -1,32 +1,41 @@
 # -*- coding: utf-8 -*-
 """
-Hotspots de inseguridad (robos, hurtos, lesiones, amenazas, homicidios), misma
-metodologia que los hotspots de siniestros de moto (01_eda_hotspots_moto.ipynb,
-seccion 2): DBSCAN con distancia haversine, eps=60m (~una cuadra). No usa el
-indice de inseguridad por comuna (ese es demasiado grueso -- 15 valores -- para
-andar como capa propia en el mapa); esto agrupa los delitos reales, punto por
-punto, igual que se hizo con los siniestros.
+Hotspots de inseguridad (robos, hurtos, lesiones, amenazas, homicidios).
+
+Dos variantes, con metodologia distinta para cada una desde la migracion a
+HDBSCAN de los siniestros de moto (ver README.md, bitacora, "De DBSCAN a
+HDBSCAN"):
+
+  - MOTO: delitos con uso_moto=SI (en la practica, 100% categoria Robo -- el
+    GCBA no distingue si la moto fue el medio del robo o el objeto robado).
+    Se evaluo un barrido de min_cluster_size x min_samples con HDBSCAN, igual
+    criterio que se uso para los siniestros de moto (mismo chequeo de "riesgo
+    de blob": tamano del cluster mas grande como % del total). Con
+    min_cluster_size=12 (mismo piso que siniestros: todo hotspot mostrado
+    tiene al menos 12 casos reales) y min_samples=2, el resultado fue 502
+    hotspots, cobertura del 74.3% -- un salto enorme frente al 14.1% que daba
+    la calibracion anterior con DBSCAN (eps=60m, min_samples=10), con el
+    cluster mas grande en 0.79% del total (mas seguro que el <3% que toleraba
+    la version DBSCAN). El dataset de robos con moto (~16mil casos) es de
+    tamano similar al de siniestros de moto (~23mil), lo que explica que la
+    misma metodologia haya dado una mejora comparable.
+
+  - GENERAL: todo delito salvo "Vialidad" (que es infraccion de transito, no
+    inseguridad). Se mantiene DBSCAN (eps=60m, min_samples=100 -- los datos
+    son ~18x mas densos que los siniestros de moto, así que el min_samples
+    tambien escala): HDBSCAN no pudo evaluarse en el entorno de trabajo en la
+    nube usado para esta migracion por timeout (mas de 411 mil puntos, la
+    construccion del arbol de expansion minima de HDBSCAN no termino en 3
+    minutos ni con distintos parametros) -- queda pendiente de evaluar en una
+    maquina con mas tiempo/CPU disponible (ver
+    notebooks/sweep_hdbscan_inseguridad_general.py, pensado para correrse en
+    background y sin apuro). Cobertura actual: 29.2% (303 hotspots), cluster
+    mas grande <3% del total (chequeado, sin encadenamiento).
 
 Se corre sobre data/delitos_caba.csv (ya descargado por fetch_delitos_caba.py),
 tomando la misma ventana de los ultimos 3 anios completos que usa el indice de
 inseguridad (2023-2025), para que la capa refleje el presente y no un promedio
 de una decada. No necesita red.
-
-Dos variantes, con min_samples elegido empiricamente para cada una (mismo eps,
-pero la densidad de datos es muy distinta y con un min_samples parejo una de
-las dos termina en un "cluster gigante" que fusiona media ciudad -- el mismo
-problema de "encadenamiento" que documenta 01_eda_hotspots_moto.ipynb con 300m
-de radio, aca aparece por exceso de puntos en vez de exceso de radio):
-
-  - GENERAL: todo delito salvo "Vialidad" (que es infraccion de transito, no
-    inseguridad). min_samples=100 (los datos son ~18x mas densos que los
-    siniestros de moto, así que el min_samples tambien escala) -> ~300
-    hotspots, cluster mas grande <3% del total (chequeado, sin encadenamiento).
-
-  - MOTO: delitos con uso_moto=SI (en la practica, 100% categoria Robo -- el
-    GCBA no distingue si la moto fue el medio del robo o el objeto robado).
-    min_samples=10, igual que los siniestros de moto (dataset mucho mas chico,
-    ~16mil casos, no hace falta escalar el min_samples).
 
 Salida: data/hotspots_inseguridad_general.csv y
 data/hotspots_inseguridad_moto.csv (cluster, latitud, longitud,
@@ -39,7 +48,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN, HDBSCAN
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA = BASE_DIR / "data"
@@ -48,15 +57,20 @@ EPS_METROS = 60
 EPS_RAD = EPS_METROS / 6371000
 ANIOS_VENTANA = 3
 
+# MOTO (HDBSCAN) -- ver docstring de arriba para el resultado del barrido.
+MOTO_MIN_CLUSTER_SIZE = 12
+MOTO_MIN_SAMPLES = 2
 
-def clusterizar(df, min_samples, etiqueta):
-    coords_rad = np.radians(df[["latitud", "longitud"]].values)
-    db = DBSCAN(eps=EPS_RAD, min_samples=min_samples, metric="haversine", algorithm="ball_tree").fit(coords_rad)
+# GENERAL (DBSCAN, sin cambios -- ver docstring).
+GENERAL_MIN_SAMPLES = 100
+
+
+def _resumir(df, labels, etiqueta):
     df = df.copy()
-    df["cluster"] = db.labels_
+    df["cluster"] = labels
 
-    n_clusters = len(set(db.labels_)) - (1 if -1 in db.labels_ else 0)
-    n_ruido = int((db.labels_ == -1).sum())
+    n_clusters = len(set(labels) - {-1})
+    n_ruido = int((labels == -1).sum())
     print(f"[{etiqueta}] {n_clusters} hotspots, {n_ruido} aislados de {len(df)} ({n_ruido/len(df)*100:.1f}%)")
 
     resumen = df[df["cluster"] != -1].groupby("cluster").agg(
@@ -68,10 +82,26 @@ def clusterizar(df, min_samples, etiqueta):
     ).reset_index().sort_values("cantidad_delitos", ascending=False)
 
     tamano_mayor = resumen["cantidad_delitos"].max() if len(resumen) else 0
-    if tamano_mayor / len(df) > 0.10:
+    if tamano_mayor / len(df) > 0.03:
         print(f"  ADVERTENCIA: el cluster mas grande tiene {tamano_mayor/len(df)*100:.1f}% del total -- "
-              f"posible encadenamiento, revisar min_samples antes de usar esta salida.")
+              f"posible encadenamiento, revisar parametros antes de usar esta salida.")
     return resumen
+
+
+def clusterizar_dbscan(df, min_samples, etiqueta):
+    coords_rad = np.radians(df[["latitud", "longitud"]].values)
+    db = DBSCAN(eps=EPS_RAD, min_samples=min_samples, metric="haversine", algorithm="ball_tree").fit(coords_rad)
+    return _resumir(df, db.labels_, etiqueta)
+
+
+def clusterizar_hdbscan(df, min_cluster_size, min_samples, etiqueta):
+    coords_rad = np.radians(df[["latitud", "longitud"]].values)
+    hd = HDBSCAN(
+        min_cluster_size=min_cluster_size, min_samples=min_samples, metric="haversine", algorithm="ball_tree"
+    ).fit(coords_rad)
+    # A diferencia de DBSCAN, HDBSCAN ya garantiza que todo cluster no ruido
+    # tiene al menos min_cluster_size miembros: no hace falta post-filtro.
+    return _resumir(df, hd.labels_, etiqueta)
 
 
 def main():
@@ -84,11 +114,13 @@ def main():
     print(f"Ventana usada: {anios_incluidos} ({len(ventana)} delitos con coordenadas)")
 
     general = ventana[ventana["tipo_delito"] != "Vialidad"].copy()
-    resumen_general = clusterizar(general, min_samples=100, etiqueta="GENERAL")
+    resumen_general = clusterizar_dbscan(general, min_samples=GENERAL_MIN_SAMPLES, etiqueta="GENERAL")
     resumen_general.to_csv(DATA / "hotspots_inseguridad_general.csv", index=False)
 
     moto = ventana[ventana["uso_moto"] == "SI"].copy()
-    resumen_moto = clusterizar(moto, min_samples=10, etiqueta="MOTO")
+    resumen_moto = clusterizar_hdbscan(
+        moto, min_cluster_size=MOTO_MIN_CLUSTER_SIZE, min_samples=MOTO_MIN_SAMPLES, etiqueta="MOTO"
+    )
     resumen_moto.to_csv(DATA / "hotspots_inseguridad_moto.csv", index=False)
 
     print(f"\nGuardado: {len(resumen_general)} hotspots generales, {len(resumen_moto)} hotspots de robos con moto")

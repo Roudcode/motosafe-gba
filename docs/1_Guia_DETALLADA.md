@@ -108,7 +108,7 @@ Los reportes que un usuario manda desde la app (un pozo, falta de luz, un corte)
 
 ### Fase 9 — El eje de inseguridad: un segundo tipo de riesgo, aparte del siniestro vial
 
-Hasta acá todo el riesgo calculado era de siniestralidad vial (choques, caídas). Pero para un motociclista real, la inseguridad (robos, arrebatos) es un riesgo igual de concreto y de naturaleza distinta. Se incorporó un dataset público de delitos de la Ciudad de Buenos Aires (1.387.622 delitos registrados), del cual se aplicó el mismo proceso de clustering (DBSCAN, no HDBSCAN — ver la nota más abajo sobre por qué siguen siendo dos algoritmos distintos) que se usó originalmente para los siniestros, pero recalibrado — porque los delitos se concentran de forma distinta en el mapa que los choques, y usar los mismos parámetros hubiera generado hotspots mal formados. De ese proceso salieron 435 hotspots de inseguridad: 303 de delito general y 132 específicamente de robos con moto, guardados como dos capas independientes (no una es subconjunto filtrado de la otra en la interfaz, aunque en los datos sí lo sea, porque un usuario puede querer ver un panorama general o específicamente el patrón de robos a motociclistas, y mezclar ambos en el mapa solo duplicaría puntos sobre los mismos hechos).
+Hasta acá todo el riesgo calculado era de siniestralidad vial (choques, caídas). Pero para un motociclista real, la inseguridad (robos, arrebatos) es un riesgo igual de concreto y de naturaleza distinta. Se incorporó un dataset público de delitos de la Ciudad de Buenos Aires (1.387.622 delitos registrados), del cual se aplicó el mismo proceso de clustering que se usó originalmente para los siniestros, pero recalibrado — porque los delitos se concentran de forma distinta en el mapa que los choques, y usar los mismos parámetros hubiera generado hotspots mal formados. De ese proceso salieron 805 hotspots de inseguridad: 303 de delito general (DBSCAN) y 502 de robos con moto (HDBSCAN, después de una segunda vuelta de calibración — ver la nota más abajo), guardados como dos capas independientes (no una es subconjunto filtrado de la otra en la interfaz, aunque en los datos sí lo sea, porque un usuario puede querer ver un panorama general o específicamente el patrón de robos a motociclistas, y mezclar ambos en el mapa solo duplicaría puntos sobre los mismos hechos).
 
 Además, se armó un índice de inseguridad por comuna, pensado como una capa de contexto adicional (a diferencia de los hotspots, que son puntuales y salen de clustering, el índice es una foto por comuna completa, calculada una sola vez y actualizada manualmente cuando el dataset de delitos se refresca, no en vivo como las predicciones del modelo de siniestros).
 
@@ -129,6 +129,14 @@ Hasta acá, el trazado de la ruta en el mapa (qué calles seguir para ir de un p
 Se sumó una cuenta propia en TomTom (una empresa que, entre otras cosas, vende exactamente este tipo de servicio: calcular rutas y saber qué tan congestionada está cada calle en este momento) y se migró a ella en dos pasos. Primero se agregó una capa visual opcional en el mapa que muestra, con líneas de color, qué tan lento está el tránsito en cada calle ahora mismo (igual que en Google Maps o Waze) — una capa que el usuario prende o apaga a gusto, sin afectar nada del cálculo de riesgo. Después se reemplazó el cálculo de ruta en sí: en vez de pedirle el trazado a OSRM y por separado un tiempo estimado a TomTom (que podían no coincidir del todo, porque cada uno elige sus propias calles), ahora un único pedido a TomTom trae el trazado, las alternativas, el tiempo de viaje con y sin tráfico en vivo, y las indicaciones de manejo (doblar en tal calle, entrar a la rotonda, etc.) todo junto y consistente entre sí.
 
 Un detalle de diseño importante: la clave de acceso a TomTom nunca llega al navegador. Todos los pedidos pasan primero por el backend propio, que es quien de verdad le habla a TomTom — si la clave viajara hasta el navegador, cualquiera podría copiarla desde ahí y gastar la cuota gratuita del proyecto.
+
+### Fase 13 — Segunda vuelta de calibración: HDBSCAN también para los hotspots de robos con moto
+
+Después de pasar los hotspots de siniestro a HDBSCAN (Fase 4), quedó la duda de si convenía hacer lo mismo con los dos hotspots de inseguridad (delito general y robos con moto), que seguían con la calibración manual original de DBSCAN, sin el barrido sistemático que sí se le hizo a los de siniestros.
+
+Antes de tocar nada se midió la cobertura real de cada uno (algo que no estaba documentado con un número exacto hasta ese momento): delito general venía en 29.2%, pero robos con moto en apenas 14.1% — bastante bajo. Se probó un barrido de HDBSCAN sobre robos con moto (un dataset de unos 16 mil casos, tamaño parecido al de los siniestros de moto) y el resultado fue contundente: 74.3% de cobertura, más del quíntuple de lo que daba DBSCAN, con el cluster más grande en apenas 0.79% del total (más seguro que el 3% que toleraba la calibración anterior). Se actualizó `notebooks/identificar_hotspots_inseguridad.py` para usar HDBSCAN ahí.
+
+Con delito general fue distinto: es un dataset mucho más grande (más de 400 mil casos, casi 20 veces más denso que robos con moto), y HDBSCAN no llegó a terminar ni una sola combinación en el entorno de trabajo usado para esta migración, ni esperando varios minutos. Es probable que en una computadora normal sí termine, solo que tardando más de lo razonable para probarlo a mano varias veces seguidas, así que se dejó armado un script aparte (`notebooks/sweep_hdbscan_inseguridad_general.py`) para correrlo una sola vez, sin apuro, y decidir después si vale la pena migrar esa capa también. Por ahora delito general sigue con DBSCAN.
 
 ---
 
@@ -191,7 +199,7 @@ Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend)
           y se lo devuelve al navegador, que pinta el mapa.
 ```
 
-El mismo backend expone hoy más pedidos posibles que "dame las zonas de riesgo": entre otros, `/corredores` (avenidas completas con score de riesgo), `/hotspots-inseguridad` (los 435 hotspots de delitos), y `/reportes` (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga).
+El mismo backend expone hoy más pedidos posibles que "dame las zonas de riesgo": entre otros, `/corredores` (avenidas completas con score de riesgo), `/hotspots-inseguridad` (los 805 hotspots de delitos), y `/reportes` (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga).
 
 Además, el navegador le habla directamente a dos servicios externos, aplicaciones gratuitas de terceros que se usan como piezas:
 - **Open-Meteo**: te da el clima real del momento.
@@ -213,7 +221,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 - El modelo que predice cada nivel de riesgo fue entrenado de verdad con esos 23.343 casos, y evaluado correctamente para ver qué tan bien predice.
 - Las predicciones que ves ahora mismo en el mapa son la respuesta real de ese modelo, calculada en el momento — no son un color fijo escrito en el código.
 - El clima que aparece arriba es el clima real de Buenos Aires en este instante.
-- Los 435 hotspots de inseguridad (303 de delito general y 132 de robos con moto) salen del mismo proceso real de clustering (DBSCAN), aplicado sobre 1.387.622 delitos oficiales de la Ciudad, recalibrado para este dataset porque los delitos se agrupan geográficamente distinto que los siniestros.
+- Los 805 hotspots de inseguridad (303 de delito general con DBSCAN, 502 de robos con moto con HDBSCAN) salen de un proceso real de clustering aplicado sobre delitos oficiales de la Ciudad, recalibrado para este dataset porque los delitos se agrupan geográficamente distinto que los siniestros.
 - El score de riesgo de cada ruta suma de verdad ambos ejes (siniestro e inseguridad) y siempre lo muestra desglosado por tipo, no es una etiqueta decorativa: la suma es válida porque ambos ejes ya están en la misma escala ordinal de severidad calculada por percentiles.
 - El trazado de cada ruta, sus alternativas, el tiempo con tráfico en vivo y la capa de congestión que se ve en el mapa salen de la Routing API real de TomTom, no de una estimación fija — se actualizan en cada pedido.
 
@@ -255,7 +263,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 | **Servidor** | Un programa que queda esperando pedidos y respondiendo con información. |
 | **Localhost** | Una forma de decir "esta misma computadora" — no es internet, es tu propia PC. |
 | **Índice de inseguridad** | Un valor por comuna que resume qué tan inseguro es un área en general, calculado una vez sobre el dataset de delitos y actualizado manualmente, no en vivo. |
-| **Hotspot de inseguridad** | Una zona donde se repiten delitos con más frecuencia de lo normal, encontrada con DBSCAN (el método que también se usaba originalmente para los hotspots de siniestros, antes de pasar esos a HDBSCAN), recalibrado para este dataset. |
+| **Hotspot de inseguridad** | Una zona donde se repiten delitos con más frecuencia de lo normal. Delito general usa DBSCAN; robos con moto pasó a HDBSCAN (mismo algoritmo que los siniestros) después de una segunda calibración, porque el dataset es de tamaño parecido al de siniestros y se beneficiaba de lo mismo. |
 | **Score de ruta / desglose** | El número total de riesgo que suma una opción de ruta, siempre mostrado junto con cuánto de ese total corresponde a siniestro y cuánto a inseguridad, para no ocultar de qué tipo es el riesgo. |
 | **Percentil (para nivel de riesgo)** | La posición relativa de un valor dentro de su propio dataset (por ejemplo, "está en el percentil 95" significa que es más alto que el 95% de los demás casos). Se usa para definir los cortes entre bajo/medio/alto/crítico dentro de cada eje de riesgo. |
 

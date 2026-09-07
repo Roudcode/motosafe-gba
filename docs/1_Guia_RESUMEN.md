@@ -60,7 +60,7 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 - El modelo Random Forest, entrenado con esos 23.343 casos, evaluado con F1-score y matriz de confusión (no accuracy, que hubiera mentido por el desbalance de clases), y además validado con un split temporal real (entrenar con 2019-2024, testear contra 2025 completo, nunca visto), no solo con el split aleatorio habitual.
 - Las predicciones que ves en el mapa: son la salida real del modelo, no un número fijo.
 - El clima (Open-Meteo), la geocodificación de direcciones (Nominatim) y el cálculo de rutas con tráfico en vivo (TomTom, vía el backend): servicios externos reales, no simulados.
-- Los 435 hotspots de inseguridad (303 de delito general + 132 de robos con moto), identificados con DBSCAN (los de siniestros usan HDBSCAN, ver más arriba), sobre 1.387.622 delitos reales descargados de data.buenosaires.gob.ar.
+- Los 805 hotspots de inseguridad (303 de delito general con DBSCAN + 502 de robos con moto con HDBSCAN, tras una segunda calibración que llevó su cobertura de 14.1% a 74.3%), sobre delitos reales descargados de data.buenosaires.gob.ar.
 - El score de riesgo de cada ruta ahora suma siniestros e inseguridad de verdad (no es cosmético): la ruta "más segura" y las alertas en viaje consideran las dos fuentes, con desglose visible de cuánto aporta cada una.
 
 ### Simplificación consciente, documentada:
