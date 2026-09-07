@@ -33,6 +33,10 @@ export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
 export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
 export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
+// TomTom (como Google Maps y Waze) no pinta el color de congestion por calle
+// a niveles de zoom muy alejados -- a esa escala seria ruido visual ilegible,
+// asi que recien se ve algo util a partir de este zoom (nivel de barrio/calle).
+export const UMBRAL_ZOOM_TRAFICO = 13
 export const CLAVE_AUTOR_ID = 'motosafe_autor_id'
 
 export const NIVELES = {

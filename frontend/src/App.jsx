@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Polyline, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMapEvents } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
@@ -15,7 +15,7 @@ import {
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
-  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO,
+  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
   VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar } from './utils/geoRiesgo'
@@ -39,6 +39,15 @@ import { useSegundosDesde } from './hooks/useSegundosDesde'
 // modelo en vez de al nivel ya traducido.
 const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B' }
 
+// Componente sin salida visual propia: solo escucha el zoom del mapa y lo
+// reporta hacia arriba. Vive fuera de App() porque useMapEvents necesita
+// estar dentro del <MapContainer>, y App() ya tiene demasiado adentro del
+// JSX del mapa como para meterle ademas la logica del hook ahi mismo.
+function RastreadorZoom({ onCambio }) {
+  useMapEvents({ zoomend: (e) => onCambio(e.target.getZoom()) })
+  return null
+}
+
 function App() {
   const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
   const [corredores, setCorredores] = useState([])
@@ -55,6 +64,7 @@ function App() {
   // gratuita para usuarios que nunca miraron esta capa.
   const [capaTrafico, setCapaTrafico] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_TRAFICO, false))
   const [traficoNoDisponible, setTraficoNoDisponible] = useState(false)
+  const [zoomActual, setZoomActual] = useState(11)
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
     () => new Set(cargarDeLocalStorage(CLAVE_NIVELES, Object.keys(NIVELES)))
@@ -770,6 +780,12 @@ function App() {
         </div>
       )}
 
+      {capaTrafico && !traficoNoDisponible && zoomActual < UMBRAL_ZOOM_TRAFICO && (
+        <div className="ruta-banner panel-enter">
+          <Zap size={14} /> Acercate para ver el tráfico en detalle
+        </div>
+      )}
+
       {actividadAbierta && misReportes.length > 0 && (
         <div className="actividad-panel panel-enter hazard-edge">
           <div className="actividad-header">
@@ -890,6 +906,7 @@ function App() {
           className="map"
         >
           <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <RastreadorZoom onCambio={setZoomActual} />
           {capaTrafico && (
             <TileLayer
               url={`${API_URL}/trafico/tiles/{z}/{x}/{y}.png`}
