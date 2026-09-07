@@ -2,7 +2,7 @@
 // definiciones de niveles de riesgo y catálogos fijos (categorías de reporte).
 // Se separan de App.jsx para que estén en un solo lugar y no mezcladas con lógica de UI.
 
-import { Construction, TrafficCone, LightbulbOff, ShieldAlert } from 'lucide-react'
+import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route } from 'lucide-react'
 
 export const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
 export const UMBRAL_CRUCE_KM = 0.6
@@ -50,35 +50,29 @@ export const CATEGORIAS_REPORTE = [
   { id: 'inseguro', label: 'Zona insegura', Icon: ShieldAlert },
 ]
 
-// Ciclo de vistas del mapa: clusters (zonas puntuales, default) -> heatmap
-// (densidad) -> corredores (calles completas). Vive acá, no en el componente
-// del botón, porque react-refresh exige que un archivo de componente solo
-// exporte componentes.
-export const ORDEN_CAPAS_MAPA = ['clusters', 'heatmap', 'corredores']
-export const INFO_CAPA_MAPA = {
-  clusters: { siguienteLabel: 'Cambiar a mapa de calor' },
-  heatmap: { siguienteLabel: 'Cambiar a corredores de riesgo' },
-  corredores: { siguienteLabel: 'Cambiar a vista de zonas' },
-}
+// Panel unico de capas: reemplaza los dos botones que ciclaban estados (uno
+// para vista de fondo, otro para inseguridad) por un panel con todas las
+// opciones visibles de entrada, con label y descripcion en vez de solo un
+// icono. Vive aca, no en el componente del panel, porque react-refresh exige
+// que un archivo de componente solo exporte componentes.
+//
+// Vista de fondo: excluyente (una sola a la vez, por eso son radio buttons
+// en el panel). Clusters es el default.
+export const OPCIONES_CAPA_MAPA = [
+  { id: 'clusters', label: 'Clusters de siniestros', desc: 'Zonas puntuales · predicción del modelo en vivo', Icon: CircleDot },
+  { id: 'heatmap', label: 'Mapa de calor', desc: 'Densidad de siniestros de moto', Icon: Flame },
+  { id: 'corredores', label: 'Corredores de riesgo', desc: 'Avenidas completas con score de riesgo', Icon: Route },
+]
 
-export function siguienteCapaMapa(capa) {
-  const idx = ORDEN_CAPAS_MAPA.indexOf(capa)
-  return ORDEN_CAPAS_MAPA[(idx + 1) % ORDEN_CAPAS_MAPA.length]
-}
-
-// Capa de inseguridad (delitos reales del GCBA -- robos, hurtos, lesiones --
-// no siniestros de moto): botón propio, separado del de arriba, para que no
-// queden 5 vistas distintas mezcladas en un solo ícono que cicla. Es una capa
-// que se prende/apaga y se superpone a lo que ya se esté viendo (clusters,
-// heatmap o corredores), no reemplaza la vista.
-export const ORDEN_CAPAS_INSEGURIDAD = ['apagado', 'general', 'moto']
-export const INFO_CAPA_INSEGURIDAD = {
-  apagado: { label: 'Inseguridad', siguienteLabel: 'Mostrar inseguridad (robos, hurtos, lesiones)' },
-  general: { label: 'Inseguridad: todo delito', siguienteLabel: 'Cambiar a inseguridad con moto (robos)' },
-  moto: { label: 'Inseguridad: con moto (robos)', siguienteLabel: 'Ocultar capa de inseguridad' },
-}
-
-export function siguienteCapaInseguridad(capa) {
-  const idx = ORDEN_CAPAS_INSEGURIDAD.indexOf(capa)
-  return ORDEN_CAPAS_INSEGURIDAD[(idx + 1) % ORDEN_CAPAS_INSEGURIDAD.length]
-}
+// Inseguridad (delitos reales del GCBA -- robos, hurtos, lesiones -- no
+// siniestros de moto): tambien excluyente entre si (general y moto se
+// superponen bastante, mostrar las dos juntas solo duplica puntos sobre el
+// mismo hecho), pero es un grupo aparte porque se apaga por default y es un
+// overlay sobre la vista de fondo, no la reemplaza. Aclaramos "historico" en
+// la descripcion porque, a diferencia de los siniestros, esto no se
+// actualiza en vivo -- ver construir_indice_inseguridad.py.
+export const OPCIONES_CAPA_INSEGURIDAD = [
+  { id: 'apagado', label: 'Apagada', desc: 'No se dibuja en el mapa', Icon: ShieldOff },
+  { id: 'general', label: 'Todo delito', desc: 'Histórico GCBA · se actualiza una vez al año', Icon: Shield },
+  { id: 'moto', label: 'Robos con moto', desc: 'Histórico GCBA · se actualiza una vez al año', Icon: ShieldAlert },
+]

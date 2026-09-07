@@ -9,13 +9,13 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
-  Siren, ShieldAlert,
+  Siren, ShieldAlert, Layers,
 } from 'lucide-react'
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
-  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE, siguienteCapaMapa,
-  CLAVE_CAPA_INSEGURIDAD, siguienteCapaInseguridad, INFO_CAPA_INSEGURIDAD,
+  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
+  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD,
   VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
 import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
@@ -26,8 +26,7 @@ import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, Escala
 import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
-import { CapaMapaToggle } from './components/CapaMapaToggle'
-import { CapaInseguridadToggle } from './components/CapaInseguridadToggle'
+import { CapasPanel } from './components/CapasPanel'
 import { CapaCalor } from './components/CapaCalor'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
 
@@ -77,6 +76,7 @@ function App() {
   const [actividadAbierta, setActividadAbierta] = useState(false)
   const [statsAbierto, setStatsAbierto] = useState(false)
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
+  const [capasAbiertas, setCapasAbiertas] = useState(false)
   const [toast, setToast] = useState(null)
   const segundos = useSegundosDesde()
 
@@ -241,10 +241,11 @@ function App() {
       if (statsAbierto) { setStatsAbierto(false); return }
       if (actividadAbierta) { setActividadAbierta(false); return }
       if (herramientasAbiertas) { setHerramientasAbiertas(false); return }
+      if (capasAbiertas) { setCapasAbiertas(false); return }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mostrarOnboarding, rutaAbierta, paso, zonaSeleccionada, statsAbierto, actividadAbierta, herramientasAbiertas])
+  }, [mostrarOnboarding, rutaAbierta, paso, zonaSeleccionada, statsAbierto, actividadAbierta, herramientasAbiertas, capasAbiertas])
 
   const toggleTema = () => setTema((t) => (t === 'dark' ? 'light' : 'dark'))
 
@@ -689,8 +690,14 @@ function App() {
         </div>
         <div className="topbar-right">
           <ThemeToggle tema={tema} onCambiar={toggleTema} />
-          <CapaMapaToggle capa={capaMapa} onCambiar={() => setCapaMapa(siguienteCapaMapa)} />
-          <CapaInseguridadToggle capa={capaInseguridad} onCambiar={() => setCapaInseguridad(siguienteCapaInseguridad)} />
+          <button
+            className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'clusters' ? 'capas-con-cambios' : ''}`}
+            onClick={() => setCapasAbiertas((v) => !v)}
+            aria-label="Capas del mapa"
+            title="Capas del mapa"
+          >
+            <Layers size={15} />
+          </button>
           {climaInfo && (
             <div className="clima-badge" title={climaInfo.label}>
               <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
@@ -705,6 +712,16 @@ function App() {
           </div>
         </div>
       </header>
+
+      {capasAbiertas && (
+        <CapasPanel
+          capaMapa={capaMapa}
+          onCambiarCapaMapa={setCapaMapa}
+          capaInseguridad={capaInseguridad}
+          onCambiarCapaInseguridad={setCapaInseguridad}
+          onCerrar={() => setCapasAbiertas(false)}
+        />
+      )}
 
       {toast && <div className="toast panel-enter">{toast}</div>}
 
@@ -1133,7 +1150,7 @@ function App() {
       {capaInseguridad !== 'apagado' && (
         <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
           <div className="legend-header">
-            <span className="legend-title">{INFO_CAPA_INSEGURIDAD[capaInseguridad].label} <em>(datos GCBA)</em></span>
+            <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
           </div>
           {Object.entries(NIVELES).map(([key, val]) => (
             <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
