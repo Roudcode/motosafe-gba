@@ -6,6 +6,7 @@ data/
 # generadas por la notebook a partir de data/, se regeneran corriendo la
 # seccion 6 de 01_eda_hotspots_moto.ipynb si el modelo se reentrena)
 !backend/hotspots_contexto.csv
+!backend/indice_inseguridad_comuna.csv
 
 # Python
 venv/

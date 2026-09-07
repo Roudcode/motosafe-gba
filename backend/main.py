@@ -51,6 +51,21 @@ _CONTEXTO_GENERICO = {
     'sexo': contexto_hotspots['sexo_moda'].mode().iloc[0],
 }
 
+# --- Indice de inseguridad por comuna (data/delitos_caba.csv del GCBA, ver
+# notebooks/construir_indice_inseguridad.py) — variable numerica del modelo desde
+# el reentreno que lo incorporo (ver notebooks/reentrenar_modelo.py). Es estatico
+# (se actualiza a mano una vez por anio, cuando el GCBA publica el siguiente), no
+# hace falta consultarlo en vivo por request como el clima: se carga una sola vez
+# al arrancar y se busca por comuna en cada prediccion.
+_indice_inseguridad_df = pd.read_csv(BASE_DIR / 'indice_inseguridad_comuna.csv')
+_indice_inseguridad_df['comuna'] = _indice_inseguridad_df['comuna'].astype(str)
+INDICE_INSEGURIDAD_POR_COMUNA = _indice_inseguridad_df.set_index('comuna')['indice_inseguridad'].to_dict()
+_INDICE_INSEGURIDAD_PROMEDIO = float(_indice_inseguridad_df['indice_inseguridad'].mean())
+
+
+def indice_inseguridad_de(comuna):
+    return INDICE_INSEGURIDAD_POR_COMUNA.get(str(comuna), _INDICE_INSEGURIDAD_PROMEDIO)
+
 # --- Clima en vivo (Open-Meteo) ---
 # El modelo se reentrenó con clima real como variable (ver notebooks/01_eda_hotspots_moto.ipynb,
 # sección 5.1): lluvia, temperatura y humedad. En producción esos tres valores salen de
@@ -148,6 +163,7 @@ def predecir_para_fila(comuna, tipo_via, hora, dia_semana, contraparte, edad, se
         'contraparte_siniestro': contraparte,
         'sexo_victima': sexo,
         'lluvia': clima['lluvia'],
+        'indice_inseguridad': indice_inseguridad_de(comuna),
     }])
     fila_codificada = pd.get_dummies(fila)
     fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
@@ -243,6 +259,7 @@ def obtener_hotspots():
         'contraparte_siniestro': contexto['contraparte_moda'],
         'sexo_victima': contexto['sexo_moda'],
         'lluvia': clima_actual['lluvia'],
+        'indice_inseguridad': contexto['comuna_moda'].map(INDICE_INSEGURIDAD_POR_COMUNA).fillna(_INDICE_INSEGURIDAD_PROMEDIO),
     })
     fila_codificada = pd.get_dummies(filas)
     fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
@@ -293,6 +310,7 @@ def predecir_gravedad(contexto: ContextoSiniestro):
         'contraparte_siniestro': contexto.contraparte,
         'sexo_victima': contexto.sexo_victima,
         'lluvia': clima['lluvia'],
+        'indice_inseguridad': indice_inseguridad_de(contexto.comuna),
     }])
     fila_codificada = pd.get_dummies(fila)
     fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
@@ -442,6 +460,7 @@ def obtener_corredores():
         'contraparte_siniestro': [c['contraparte_moda'] for c in resultado],
         'sexo_victima': [c['sexo_moda'] for c in resultado],
         'lluvia': clima_actual['lluvia'],
+        'indice_inseguridad': [indice_inseguridad_de(c['comuna_moda']) for c in resultado],
     })
     fila_codificada = pd.get_dummies(filas)
     fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)

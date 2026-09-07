@@ -363,3 +363,43 @@ def test_corredores_diferencia_niveles_entre_si_no_todos_iguales():
     mas_riesgoso = max(corredores, key=score)
     menos_riesgoso = min(corredores, key=score)
     assert orden_niveles.index(mas_riesgoso["nivel_riesgo"]) >= orden_niveles.index(menos_riesgoso["nivel_riesgo"])
+
+
+def test_indice_inseguridad_por_comuna_cargado_y_diferenciado():
+    """
+    El indice de inseguridad (data/delitos_caba.csv del GCBA, ver
+    notebooks/construir_indice_inseguridad.py) se carga una sola vez al arrancar
+    y se usa como variable numerica del modelo (ver notebooks/reentrenar_modelo.py).
+    Las 15 comunas de CABA tienen que estar presentes, con valores distintos entre
+    si (no todas con el mismo indice, que seria indicio de que el join fallo y
+    todo cayo al promedio de respaldo).
+    """
+    assert len(main.INDICE_INSEGURIDAD_POR_COMUNA) == 15
+    valores = set(main.INDICE_INSEGURIDAD_POR_COMUNA.values())
+    assert len(valores) > 1, "todas las comunas tienen el mismo indice, el join no diferencio nada"
+    assert all(0.0 <= v <= 1.0 for v in valores)
+
+    # Comuna inexistente: no debe reventar, cae al promedio de todas las comunas.
+    generico = main.indice_inseguridad_de("comuna-que-no-existe")
+    assert 0.0 <= generico <= 1.0
+
+
+def test_predecir_usa_el_indice_de_inseguridad_de_la_comuna():
+    """
+    Dos comunas con indice de inseguridad bien distinto (la mas alta vs. la mas
+    baja del dataset real) tienen que darle al modelo un input distinto en esa
+    columna — se verifica llamando directo a indice_inseguridad_de, que es lo que
+    alimenta /hotspots, /predecir y /corredores.
+    """
+    comuna_mas_insegura = max(main.INDICE_INSEGURIDAD_POR_COMUNA, key=main.INDICE_INSEGURIDAD_POR_COMUNA.get)
+    comuna_mas_segura = min(main.INDICE_INSEGURIDAD_POR_COMUNA, key=main.INDICE_INSEGURIDAD_POR_COMUNA.get)
+    assert main.indice_inseguridad_de(comuna_mas_insegura) > main.indice_inseguridad_de(comuna_mas_segura)
+
+    payload_base = {
+        "hora": 20, "dia_semana": "Friday", "tipo_de_via": "AVENIDA", "contraparte": "AUTO",
+        "lluvia": "NO", "temperatura": 18.0, "humedad": 60.0,
+    }
+    r_insegura = client.post("/predecir", json={**payload_base, "comuna": comuna_mas_insegura})
+    r_segura = client.post("/predecir", json={**payload_base, "comuna": comuna_mas_segura})
+    assert r_insegura.status_code == 200
+    assert r_segura.status_code == 200
