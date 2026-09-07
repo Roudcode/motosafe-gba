@@ -18,7 +18,10 @@ import {
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR,
   VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
-import { distanciaKm, distanciaAPolilinea, calcularAjuste, geocodificar } from './utils/geoRiesgo'
+import { distanciaKm, calcularAjuste, geocodificar } from './utils/geoRiesgo'
+import {
+  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
+} from './utils/riesgoRuta'
 import { formatearAntiguedad, opacidadPorAntiguedad, esReciente } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster, crearIconoClusterInseguridad } from './utils/ui'
 import { cargarDeLocalStorage } from './utils/storage'
@@ -469,37 +472,19 @@ function App() {
     return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
   }, [ZONAS_RIESGO, clima, reportes])
 
-  // Unifica los dos ejes de riesgo (siniestros de moto predichos por el modelo e
-  // inseguridad historica del GCBA) en un solo listado con la misma forma
-  // (lat/lng/nivel/tipoRiesgo), para que el cruce con rutas y las alertas en
-  // viaje no tengan que conocer la diferencia entre ambos. nivel ya viene en la
-  // misma escala ordinal en los tres casos (percentiles calculados dentro de cada
+  // La lógica de unificación de ejes de riesgo vive en utils/riesgoRuta.js
+  // (funciones puras, testeadas aparte). nivel ya viene en la misma escala
+  // ordinal en los tres casos (percentiles calculados dentro de cada
   // dataset), asi que sumar PESO_RIESGO entre tipos es valido.
-  const zonasInseguridadUnificadas = useMemo(() => [
-    ...inseguridadGeneral.map((h) => ({
-      id: `insg-general-${h.id}`,
-      lat: h.latitud,
-      lng: h.longitud,
-      nivel: h.nivel_riesgo,
-      tipoRiesgo: 'inseguridad',
-      subtipoInseguridad: 'general',
-      nombre: `Zona de inseguridad: ${h.cantidad_delitos} delitos (${h.tipo_delito_moda || 'varios'})`,
-    })),
-    ...inseguridadMoto.map((h) => ({
-      id: `insg-moto-${h.id}`,
-      lat: h.latitud,
-      lng: h.longitud,
-      nivel: h.nivel_riesgo,
-      tipoRiesgo: 'inseguridad',
-      subtipoInseguridad: 'moto',
-      nombre: `Zona de robos con moto: ${h.cantidad_delitos} hechos`,
-    })),
-  ], [inseguridadGeneral, inseguridadMoto])
+  const zonasInseguridadUnificadas = useMemo(
+    () => unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto),
+    [inseguridadGeneral, inseguridadMoto]
+  )
 
-  const zonasRiesgoTodas = useMemo(() => [
-    ...zonasAjustadas.map((z) => ({ ...z, nivel: z.ajuste.nivel, tipoRiesgo: 'siniestro' })),
-    ...zonasInseguridadUnificadas,
-  ], [zonasAjustadas, zonasInseguridadUnificadas])
+  const zonasRiesgoTodas = useMemo(
+    () => unificarZonasRiesgo(zonasAjustadas, zonasInseguridadUnificadas),
+    [zonasAjustadas, zonasInseguridadUnificadas]
+  )
 
   useEffect(() => {
     if (!modoViaje || !miUbicacion || zonasRiesgoTodas.length === 0) return
@@ -552,9 +537,10 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda])
 
-  const zonasCruzadasPorRuta = useMemo(() => {
-    return rutasCalculadas.map((r) => zonasRiesgoTodas.filter((z) => distanciaAPolilinea(z, r.coords) <= UMBRAL_CRUCE_KM))
-  }, [rutasCalculadas, zonasRiesgoTodas])
+  const zonasCruzadasPorRuta = useMemo(
+    () => calcularZonasCruzadasPorRuta(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
+    [rutasCalculadas, zonasRiesgoTodas]
+  )
   const zonasCruzadasActual = useMemo(
     () => zonasCruzadasPorRuta[rutaSeleccionada] || [],
     [zonasCruzadasPorRuta, rutaSeleccionada]
@@ -566,26 +552,10 @@ function App() {
     )
   }, [zonasCruzadasActual])
 
-  const rutasConScore = useMemo(() => {
-    return rutasCalculadas.map((r, i) => {
-      const cruces = zonasCruzadasPorRuta[i] || []
-      const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
-      const crucesInseguridad = cruces.filter((z) => z.tipoRiesgo === 'inseguridad')
-      const nivelMaximo = cruces.reduce(
-        (peor, z) => (ORDEN_NIVELES.indexOf(z.nivel) > ORDEN_NIVELES.indexOf(peor) ? z.nivel : peor),
-        'bajo'
-      )
-      return {
-        ...r,
-        riesgo: cruces.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
-        riesgoSiniestros: crucesSiniestro.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
-        riesgoInseguridad: crucesInseguridad.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
-        cantSiniestros: crucesSiniestro.length,
-        cantInseguridad: crucesInseguridad.length,
-        nivelMaximo,
-      }
-    })
-  }, [rutasCalculadas, zonasCruzadasPorRuta])
+  const rutasConScore = useMemo(
+    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta),
+    [rutasCalculadas, zonasCruzadasPorRuta]
+  )
 
   const idxMasRapida = useMemo(() => {
     if (rutasConScore.length === 0) return 0
