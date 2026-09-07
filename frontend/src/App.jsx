@@ -455,43 +455,42 @@ function App() {
   const calcularRuta = async (a, b) => {
     setRutaCargando(true); setRutaError(null)
     try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&alternatives=3&steps=true`
+      // Antes usaba el servidor de demo publico de OSRM (router.project-osrm.org),
+      // pensado solo para pruebas, sin garantia de disponibilidad. Ahora usa el
+      // backend propio, que a su vez llama a la Routing API de TomTom (misma
+      // cuenta/key que la capa de trafico en vivo) -- ver backend/main.py
+      // /rutas. Esto de paso resuelve el problema de que el trazado dibujado
+      // (antes de OSRM) y el tiempo con trafico (de TomTom) podian venir de
+      // rutas ligeramente distintas: ahora ambos salen del mismo calculo.
+      const url = `${API_URL}/rutas?origen_lat=${a.lat}&origen_lng=${a.lng}&destino_lat=${b.lat}&destino_lng=${b.lng}&alternativas=2`
       const res = await fetch(url)
-      if (!res.ok) throw new Error('OSRM respondió con error')
+      if (!res.ok) throw new Error('El backend respondió con error')
       const data = await res.json()
-      if (!data.routes || data.routes.length === 0) throw new Error('Sin ruta disponible')
-      const rutas = data.routes.map((r) => ({
-        coords: r.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
-        km: (r.distance / 1000).toFixed(1),
-        min: Math.round(r.duration / 60),
-        pasos: (r.legs?.[0]?.steps || []).map((s) => ({
-          tipo: s.maneuver.type,
-          modificador: s.maneuver.modifier,
-          calle: s.name || 'la vía',
-          lat: s.maneuver.location[1],
-          lng: s.maneuver.location[0],
+      if (!Array.isArray(data) || data.length === 0) throw new Error('Sin ruta disponible')
+      const rutas = data.map((r) => ({
+        coords: r.coords,
+        km: r.km,
+        min: r.min,
+        etaTrafico: r.eta_trafico
+          ? {
+              con_trafico_min: r.eta_trafico.con_trafico_min,
+              sin_trafico_min: r.eta_trafico.sin_trafico_min,
+              diferencia_min: r.eta_trafico.diferencia_min,
+            }
+          : null,
+        pasos: (r.pasos || []).map((p) => ({
+          tipo: p.tipo,
+          modificador: p.modificador,
+          calle: p.calle || 'la vía',
+          lat: p.lat,
+          lng: p.lng,
         })),
       }))
       setRutasCalculadas(rutas)
       setRutaSeleccionada(0)
       setPasoActual(1)
-
-      // Tiempo con tráfico en vivo (TomTom) para la ruta más rápida: no bloquea
-      // el resultado principal, se completa un instante después y solo si el
-      // backend tiene la API key configurada (ver backend/main.py /trafico/eta).
-      // No reemplaza r.min (el tiempo de OSRM sobre la ruta dibujada): TomTom
-      // calcula su propio trazado puertas adentro, así que se muestra como un
-      // dato aparte, nunca pisando el de la ruta que se ve en el mapa.
-      const idxRapida = rutas.reduce((best, r, i) => (r.min < rutas[best].min ? i : best), 0)
-      fetch(`${API_URL}/trafico/eta?origen_lat=${a.lat}&origen_lng=${a.lng}&destino_lat=${b.lat}&destino_lng=${b.lng}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((eta) => {
-          if (!eta) return
-          setRutasCalculadas((prev) => prev.map((r, i) => (i === idxRapida ? { ...r, etaTrafico: eta } : r)))
-        })
-        .catch(() => {})
     } catch {
-      setRutaError('No se pudo calcular la ruta (servidor de demo caído o sin conexión). Probá de nuevo.')
+      setRutaError('No se pudo calcular la ruta (revisá tu conexión o probá de nuevo en un momento).')
     } finally {
       setRutaCargando(false)
     }
@@ -1109,7 +1108,7 @@ function App() {
             </button>
           ))}
           {rutasConScore.length === 1 && (
-            <p className="ruta-sin-alternativa">OSRM no encontró una ruta alternativa razonable para este tramo.</p>
+            <p className="ruta-sin-alternativa">No encontramos una ruta alternativa razonable para este tramo.</p>
           )}
           {zonasCruzadasOrdenadas.length > 0 && (
             <div className="ruta-resumen-detalle">

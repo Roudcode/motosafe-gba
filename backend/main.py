@@ -605,6 +605,64 @@ def tile_trafico(z: int, x: int, y: int):
     _cache_tiles_trafico[clave] = (respuesta.content, ahora)
     return Response(content=respuesta.content, media_type="image/png")
 
+# Traduccion de codigos de maniobra de TomTom Routing API al formato que ya
+# espera el frontend (heredado del contrato de OSRM: tipo + modificador, ver
+# frontend/src/utils/ui.js -- textoManiobra/iconoManiobra). Se traduce en el
+# backend para no tocar nada de esa logica de UI, que ya esta probada.
+TOMTOM_MANIOBRA_A_OSRM = {
+    "ARRIVE": ("arrive", None),
+    "ARRIVE_LEFT": ("arrive", "left"),
+    "ARRIVE_RIGHT": ("arrive", "right"),
+    "DEPART": ("depart", None),
+    "STRAIGHT": ("turn", "straight"),
+    "KEEP_RIGHT": ("fork", "slight right"),
+    "BEAR_RIGHT": ("turn", "slight right"),
+    "TURN_RIGHT": ("turn", "right"),
+    "SHARP_RIGHT": ("turn", "sharp right"),
+    "KEEP_LEFT": ("fork", "slight left"),
+    "BEAR_LEFT": ("turn", "slight left"),
+    "TURN_LEFT": ("turn", "left"),
+    "SHARP_LEFT": ("turn", "sharp left"),
+    "MAKE_UTURN": ("turn", "uturn"),
+    "TRY_MAKE_UTURN": ("turn", "uturn"),
+    "ENTER_MOTORWAY": ("merge", "straight"),
+    "ENTER_FREEWAY": ("merge", "straight"),
+    "ENTER_HIGHWAY": ("merge", "straight"),
+    "TAKE_EXIT": ("end of road", "right"),
+    "MOTORWAY_EXIT_LEFT": ("end of road", "left"),
+    "MOTORWAY_EXIT_RIGHT": ("end of road", "right"),
+    "TAKE_FERRY": ("merge", "straight"),
+    "ROUNDABOUT_CROSS": ("roundabout", "straight"),
+    "ROUNDABOUT_RIGHT": ("roundabout", "right"),
+    "ROUNDABOUT_LEFT": ("roundabout", "left"),
+    "ROUNDABOUT_BACK": ("roundabout", "uturn"),
+    "FOLLOW": ("turn", "straight"),
+    "SWITCH_PARALLEL_ROAD": ("turn", "straight"),
+    "SWITCH_MAIN_ROAD": ("turn", "straight"),
+    "ENTRANCE_RAMP": ("merge", "straight"),
+    "WAYPOINT_LEFT": ("turn", "left"),
+    "WAYPOINT_RIGHT": ("turn", "right"),
+    "WAYPOINT_REACHED": ("turn", "straight"),
+    "WAYPOINT_APPROACH": ("turn", "straight"),
+    "AHEAD_KEEP_RIGHT": ("fork", "slight right"),
+    "AHEAD_RIGHT_TURN": ("turn", "right"),
+    "AHEAD_KEEP_LEFT": ("fork", "slight left"),
+    "AHEAD_LEFT_TURN": ("turn", "left"),
+    "AHEAD_UTURN": ("turn", "uturn"),
+    "AHEAD_EXIT": ("end of road", "right"),
+    "AHEAD_EXIT_RIGHT": ("end of road", "right"),
+    "AHEAD_EXIT_LEFT": ("end of road", "left"),
+    "AHEAD_TAKE_FERRY": ("merge", "straight"),
+}
+
+
+class PasoRutaOut(BaseModel):
+    tipo: str
+    modificador: str | None = None
+    calle: str | None = None
+    lat: float
+    lng: float
+
 
 class EtaTraficoOut(BaseModel):
     con_trafico_min: int
@@ -612,54 +670,97 @@ class EtaTraficoOut(BaseModel):
     diferencia_min: int
 
 
-@app.get("/trafico/eta", response_model=EtaTraficoOut)
-def eta_con_trafico(origen_lat: float, origen_lng: float, destino_lat: float, destino_lng: float):
+class RutaOut(BaseModel):
+    coords: list[list[float]]
+    km: float
+    min: int
+    eta_trafico: EtaTraficoOut | None = None
+    pasos: list[PasoRutaOut]
+
+
+@app.get("/rutas", response_model=list[RutaOut])
+def calcular_rutas(
+    origen_lat: float, origen_lng: float, destino_lat: float, destino_lng: float, alternativas: int = 2
+):
     """
-    Tiempo de viaje real con trafico en vivo (TomTom Routing API) entre dos
-    puntos, para mostrar como dato complementario junto al tiempo que ya
-    calcula OSRM sobre la ruta que se dibuja en el mapa.
+    Reemplaza al servidor de demo publico de OSRM (router.project-osrm.org):
+    ese servidor esta pensado solo para pruebas, sin garantia de
+    disponibilidad ni limite de uso documentado, no apto para produccion.
 
-    Importante -- por que es un dato aparte y no un reemplazo: TomTom calcula
-    su propia ruta puertas adentro para estimar este tiempo, y esa ruta no es
-    necesariamente identica a la que traza OSRM (pueden variar en que calles
-    eligen). Mezclar "el tiempo de la ruta de TomTom" con "el trazado de OSRM"
-    seria mostrar un dato que no corresponde exactamente a lo que se ve
-    dibujado. Por eso el frontend lo etiqueta explicitamente como "con trafico
-    en vivo (TomTom)", nunca pisa el tiempo de la ruta trazada.
+    Usa la Routing API de TomTom (la misma cuenta/key que ya se usa para el
+    trafico en vivo) para calcular la ruta, sus alternativas, la guia
+    turn-by-turn y el tiempo real con trafico en vivo, todo en un solo
+    pedido -- lo que de paso resuelve el problema que tenia el diseño anterior
+    de mezclar el trazado de OSRM con el tiempo de TomTom (dos rutas
+    calculadas por separado, no necesariamente identicas). Ahora el trazado y
+    el tiempo con trafico salen de la misma ruta.
 
-    Cache de 60s por par origen/destino (redondeado a ~11m de precision) como
-    salvaguarda basica contra clicks repetidos accidentales, no por necesidad
-    real de volumen.
+    "min" se completa con noTrafficTravelTimeInSeconds (tiempo de referencia,
+    sin trafico) para no romper la logica existente de comparacion entre
+    rutas (rapida/corta) que ya usa ese campo. El tiempo con trafico en vivo
+    va aparte en eta_trafico, igual que antes.
     """
     if not TOMTOM_API_KEY:
         raise HTTPException(status_code=503, detail="TOMTOM_API_KEY no configurada")
 
-    clave = (round(origen_lat, 4), round(origen_lng, 4), round(destino_lat, 4), round(destino_lng, 4))
-    ahora = time.monotonic()
-    cacheado = _cache_eta_trafico.get(clave)
-    if cacheado and (ahora - cacheado[1]) < CACHE_ETA_TTL_SEGUNDOS:
-        return cacheado[0]
-
     try:
         respuesta = httpx.get(
-            TOMTOM_ROUTING_URL.format(origen=f"{origen_lat},{origen_lng}", destino=f"{destino_lat},{destino_lng}"),
-            params={"key": TOMTOM_API_KEY, "traffic": "true", "computeTravelTimeFor": "all"},
-            timeout=6.0,
+            TOMTOM_ROUTING_URL.format(
+                origen=f"{origen_lat},{origen_lng}", destino=f"{destino_lat},{destino_lng}"
+            ),
+            params={
+                "key": TOMTOM_API_KEY,
+                "traffic": "true",
+                "computeTravelTimeFor": "all",
+                "maxAlternatives": max(0, min(alternativas, 5)),
+                "routeRepresentation": "polyline",
+                "instructionsType": "tagged",
+            },
+            timeout=8.0,
         )
         respuesta.raise_for_status()
-        resumen = respuesta.json()["routes"][0]["summary"]
+        rutas_tomtom = respuesta.json()["routes"]
     except (httpx.HTTPError, KeyError, IndexError, ValueError):
-        raise HTTPException(status_code=502, detail="No se pudo calcular el tiempo con trafico de TomTom")
+        raise HTTPException(status_code=502, detail="No se pudo calcular la ruta con TomTom")
 
-    con_trafico_min = round(resumen["travelTimeInSeconds"] / 60)
-    sin_trafico_min = round(resumen.get("noTrafficTravelTimeInSeconds", resumen["travelTimeInSeconds"]) / 60)
-    salida = EtaTraficoOut(
-        con_trafico_min=con_trafico_min,
-        sin_trafico_min=sin_trafico_min,
-        diferencia_min=con_trafico_min - sin_trafico_min,
-    )
+    if not rutas_tomtom:
+        raise HTTPException(status_code=404, detail="TomTom no encontro una ruta entre esos puntos")
 
-    if len(_cache_eta_trafico) > CACHE_ETA_MAX_ENTRADAS:
-        _cache_eta_trafico.clear()
-    _cache_eta_trafico[clave] = (salida, ahora)
+    salida = []
+    for ruta in rutas_tomtom:
+        pierna = ruta["legs"][0]
+        coords = [[p["latitude"], p["longitude"]] for p in pierna["points"]]
+        resumen = ruta["summary"]
+
+        con_trafico_min = round(resumen["travelTimeInSeconds"] / 60)
+        sin_trafico_seg = resumen.get("noTrafficTravelTimeInSeconds", resumen["travelTimeInSeconds"])
+        sin_trafico_min = round(sin_trafico_seg / 60)
+
+        pasos = []
+        for instr in ruta.get("guidance", {}).get("instructions", []):
+            tipo, modificador = TOMTOM_MANIOBRA_A_OSRM.get(instr.get("maneuver", ""), ("turn", "straight"))
+            pasos.append(
+                PasoRutaOut(
+                    tipo=tipo,
+                    modificador=modificador,
+                    calle=instr.get("street") or None,
+                    lat=instr["point"]["latitude"],
+                    lng=instr["point"]["longitude"],
+                )
+            )
+
+        salida.append(
+            RutaOut(
+                coords=coords,
+                km=round(resumen["lengthInMeters"] / 1000, 1),
+                min=sin_trafico_min,
+                eta_trafico=EtaTraficoOut(
+                    con_trafico_min=con_trafico_min,
+                    sin_trafico_min=sin_trafico_min,
+                    diferencia_min=con_trafico_min - sin_trafico_min,
+                ),
+                pasos=pasos,
+            )
+        )
+
     return salida

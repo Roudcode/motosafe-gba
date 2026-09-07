@@ -249,3 +249,26 @@ Arrancamos a preparar el sistema para salir de "solo corre en mi maquina" antes 
 - Correr `cargar_hotspots.py` (opción 2 de `tareas.bat`) para recargar los 740 hotspots nuevos en la base local, y confirmar visualmente en el mapa que las zonas nuevas tienen sentido geográfico (no hay clusters alargados ni fusionados).
 - Actualizar la tesis formal con este hallazgo (cambio de algoritmo de clustering, cobertura final) cuando llegue el momento de retomarla.
 - Evaluar si vale la pena repetir esta misma comparación DBSCAN vs. HDBSCAN para los hotspots de inseguridad (delito general y robos con moto), que todavía usan la calibración manual original con DBSCAN.
+
+### 07/09/2026 (continuación 5) — OSRM fuera, TomTom Routing API adentro: cálculo de ruta propio y sin depender de un servidor de demo
+
+**Tareas realizadas**
+- Se reemplazó el cálculo de ruta, que hasta ahora pegaba directo desde el navegador contra `router.project-osrm.org` (servidor de demo público de OSRM, pensado solo para pruebas, sin garantía de disponibilidad ni límite de uso documentado), por un endpoint propio del backend: `GET /rutas`.
+- El nuevo endpoint llama a la Routing API de TomTom (la misma cuenta y key que ya se usa para la capa de tráfico en vivo) con `traffic=true`, `computeTravelTimeFor=all`, `maxAlternatives`, `routeRepresentation=polyline` e `instructionsType=tagged`, y devuelve por cada ruta: el trazado (`coords`), distancia y tiempo de referencia sin tráfico (`km`, `min`), el tiempo con tráfico en vivo (`eta_trafico`) y la guía turn-by-turn ya traducida (`pasos`).
+- Se armó `TOMTOM_MANIOBRA_A_OSRM`, un diccionario que traduce cada código de maniobra de TomTom (43 códigos, de `ARRIVE` a `AHEAD_TAKE_FERRY`) al formato `(tipo, modificador)` que ya esperaba el frontend (heredado del contrato de OSRM). Esto permitió no tocar nada de `frontend/src/utils/ui.js` (`textoManiobra`, `iconoManiobra`): la traducción vive enteramente en el backend.
+- Se actualizó `calcularRuta` en `App.jsx` para pedir `${API_URL}/rutas?...` en vez de la URL de OSRM, y se sacó la llamada aparte a `/trafico/eta` (ya no hace falta: el mismo pedido a `/rutas` trae el tiempo con tráfico de la misma ruta que se dibuja).
+- Se eliminó el endpoint `/trafico/eta` del backend: su funcionalidad quedó subsumida en `/rutas`, mantenerlo hubiera sido código muerto.
+- Se corrió la suite completa: 24 tests de backend (pytest) y 31 de frontend (Vitest) siguen pasando sin cambios, más un build de producción (`npm run build`) limpio.
+
+**Decisiones de diseño y su justificación**
+- Este cambio resuelve de paso una limitación que había quedado señalada al integrar el tráfico en vivo: antes, el trazado de la ruta (OSRM) y el tiempo con tráfico (TomTom) salían de dos cálculos de ruta independientes, que no necesariamente elegían las mismas calles. Ahora ambos salen del mismo pedido a TomTom, así que el tiempo mostrado corresponde exactamente al trazado que se ve en el mapa.
+- Se mantuvo `min` (el tiempo de referencia, sin tráfico) como el campo que usa la lógica existente de comparación entre rutas (rápida/corta), para no tocar esa parte del código que ya funciona y está en uso. El tiempo con tráfico en vivo sigue yendo aparte, en `eta_trafico`, con el mismo criterio de "dato complementario, nunca reemplaza lo que se ve dibujado" que ya se había definido para la feature de tráfico.
+- Se probó la lógica del endpoint contra el código real (arma la URL, usa la key, procesa la respuesta esperada de TomTom) pero no se pudo hacer una prueba de punta a punta contra la API real de TomTom desde este entorno de trabajo en la nube: el acceso a internet de este entorno está restringido y no permite llegar a `api.tomtom.com`. La prueba real (pedir una ruta en el mapa y confirmar que aparece el trazado, el tiempo y la guía de pasos) queda pendiente de correr en la máquina del usuario, igual que con la carga de hotspots y la capa de tráfico en sesiones anteriores.
+
+**Obstáculos encontrados y cómo se resolvieron**
+- Al intentar levantar `uvicorn` para probar el endpoint end-to-end desde este entorno, faltaba el paquete instalado; se usó en cambio `fastapi.testclient.TestClient` para ejecutar el endpoint directamente en proceso, lo que alcanzó para confirmar que el código corre sin errores de sintaxis ni de lógica hasta el punto exacto del pedido HTTP a TomTom (que sí requiere salida a internet real).
+
+**Próximos pasos**
+- Probar `/rutas` de punta a punta en la máquina del usuario: reiniciar el backend, calcular una ruta en el mapa y confirmar que aparecen el trazado, el tiempo con tráfico y los pasos de navegación con sentido.
+- Evaluar la vista de navegación 3D/con heading (mostrar la ruta con la orientación de avance, como Maps o Waze, al menos al comenzar un viaje) — pendiente de una decisión técnica sobre el enfoque (rotación completa del mapa vs. solo el ícono de ubicación).
+- Avanzar con la evaluación de hosting real (backend + Postgres/PostGIS + frontend) una vez cerrado el punto anterior.
