@@ -66,10 +66,43 @@ export function calcularProgresoRuta(punto, coords) {
   }
 }
 
+// Distancia a un SEGMENTO de la polilinea (no a un vertice suelto): proyecta el
+// punto sobre la recta que forman a-b y clampea al rango [0,1] para no medir
+// mas alla de los extremos del segmento. Aproximacion plana (valida a la
+// escala de una calle/avenida, unos pocos km): convierte grados a km
+// localmente con un factor de longitud ajustado por la latitud (los
+// meridianos se acercan entre si al alejarse del ecuador).
+function distanciaAPuntoEnSegmento(punto, a, b) {
+  const latMedia = (a[0] + b[0]) / 2 * Math.PI / 180
+  const kmPorGradoLat = 111.32
+  const kmPorGradoLng = 111.32 * Math.cos(latMedia)
+  const ax = a[1] * kmPorGradoLng, ay = a[0] * kmPorGradoLat
+  const bx = b[1] * kmPorGradoLng, by = b[0] * kmPorGradoLat
+  const px = punto.lng * kmPorGradoLng, py = punto.lat * kmPorGradoLat
+  const dx = bx - ax, dy = by - ay
+  const largoCuadrado = dx * dx + dy * dy
+  let t = largoCuadrado > 0 ? ((px - ax) * dx + (py - ay) * dy) / largoCuadrado : 0
+  t = Math.max(0, Math.min(1, t))
+  const cx = ax + t * dx, cy = ay + t * dy
+  return Math.hypot(px - cx, py - cy)
+}
+
+// Distancia minima de un punto a la ruta completa, usada para detectar
+// desvios y disparar el reroute automatico (ver App.jsx). Antes media contra
+// cada VERTICE de la polilinea por separado: en un tramo largo y recto con
+// vertices espaciados (tipico de autopistas/avenidas anchas, donde TomTom no
+// necesita un vertice cada pocos metros porque no hay curvas), eso podia
+// marcar "desvio" a alguien que segui yendo derecho por la ruta correcta,
+// simplemente porque cayo lejos de los dos vertices mas cercanos aunque
+// estuviera literalmente sobre la calle entre ellos. Medir contra cada
+// SEGMENTO (no cada vertice) elimina ese falso positivo sin importar que tan
+// separados esten los vertices.
 export function distanciaAPolilinea(punto, coords) {
+  if (!coords || coords.length === 0) return Infinity
+  if (coords.length === 1) return distanciaKm(punto, { lat: coords[0][0], lng: coords[0][1] })
   let min = Infinity
-  for (const [lat, lng] of coords) {
-    const d = distanciaKm(punto, { lat, lng })
+  for (let i = 0; i < coords.length - 1; i++) {
+    const d = distanciaAPuntoEnSegmento(punto, coords[i], coords[i + 1])
     if (d < min) min = d
   }
   return min

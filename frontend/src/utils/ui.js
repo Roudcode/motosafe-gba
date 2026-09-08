@@ -32,6 +32,12 @@ export function reproducirBeep() {
     gain.gain.setValueAtTime(0.15, ctx.currentTime)
     osc.start()
     osc.stop(ctx.currentTime + 0.3)
+    // Sin este close(), cada cruce de zona de riesgo en un viaje largo deja
+    // un AudioContext abierto -- no se libera solo porque quede sin
+    // referencias (a diferencia de un objeto JS comun, un AudioContext
+    // mantiene un hilo/nodo de audio real hasta que se cierra), y los
+    // navegadores limitan la cantidad de contextos simultaneos.
+    osc.onended = () => { ctx.close().catch(() => {}) }
   } catch { /* silencioso si el navegador bloquea audio sin interacción previa */ }
 }
 

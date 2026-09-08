@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta } from './geoRiesgo'
+import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm } from './geoRiesgo'
 
 const FRANJA_MOTO = { desde: 19, hasta: 24 }
 const FRANJA_GENERAL = { desde: 17, hasta: 22 }
@@ -146,5 +146,54 @@ describe('calcularProgresoRuta', () => {
   it('devuelve ceros si no hay coords suficientes o falta el punto', () => {
     expect(calcularProgresoRuta(null, RUTA_RECTA).distanciaTotalKm).toBe(0)
     expect(calcularProgresoRuta({ lat: -34.6, lng: -58.4 }, [[-34.6, -58.4]]).distanciaTotalKm).toBe(0)
+  })
+})
+
+describe('distanciaAPolilinea', () => {
+  it('da 0 para un punto que esta exactamente sobre un vertice', () => {
+    const coords = [[-34.60, -58.40], [-34.50, -58.40]]
+    expect(distanciaAPolilinea({ lat: -34.60, lng: -58.40 }, coords)).toBeCloseTo(0, 6)
+  })
+
+  // Este es el caso que motivo el cambio de "distancia al vertice mas cercano"
+  // a "distancia al segmento mas cercano": en un tramo largo y recto (pocos
+  // vertices, tipico de una avenida/autopista sin curvas), un punto que sigue
+  // yendo derecho por la ruta correcta puede caer lejos de los DOS vertices
+  // que lo encierran aunque este literalmente sobre la calle entre ellos.
+  it('da ~0 para un punto sobre la mitad de un tramo largo, aunque este lejos de ambos vertices', () => {
+    // Tramo recto norte-sur de ~11 km (0.1 grado de latitud). El punto medio
+    // esta a ~5.5 km de cada vertice -- si se midiera contra vertices sueltos
+    // (la implementacion vieja) esto daria ~5.5 km de "desvio" y dispararia
+    // un reroute innecesario a alguien que nunca se fue de la ruta.
+    const coords = [[-34.60, -58.40], [-34.50, -58.40]]
+    const puntoMedio = { lat: -34.55, lng: -58.40 }
+    expect(distanciaAPolilinea(puntoMedio, coords)).toBeLessThan(0.01)
+  })
+
+  it('para un punto realmente desviado, la distancia se acerca a la distancia perpendicular real', () => {
+    const coords = [[-34.60, -58.40], [-34.50, -58.40]]
+    // ~1km al este del punto medio del tramo (a esta latitud, 1 grado de
+    // longitud son ~92 km, entonces 1km son unos 0.0109 grados).
+    const puntoDesviado = { lat: -34.55, lng: -58.40 + 0.0109 }
+    const d = distanciaAPolilinea(puntoDesviado, coords)
+    expect(d).toBeGreaterThan(0.9)
+    expect(d).toBeLessThan(1.1)
+  })
+
+  it('nunca es mayor que la distancia al vertice mas cercano (el segmento como maximo iguala eso)', () => {
+    const coords = [[-34.60, -58.40], [-34.55, -58.42], [-34.50, -58.40]]
+    const punto = { lat: -34.52, lng: -58.35 }
+    const dSegmento = distanciaAPolilinea(punto, coords)
+    const dVerticeMasCercano = Math.min(...coords.map(([lat, lng]) => distanciaKm(punto, { lat, lng })))
+    expect(dSegmento).toBeLessThanOrEqual(dVerticeMasCercano + 1e-9)
+  })
+
+  it('con una sola coordenada, devuelve la distancia directa a ese punto', () => {
+    const d = distanciaAPolilinea({ lat: -34.60, lng: -58.40 }, [[-34.61, -58.40]])
+    expect(d).toBeCloseTo(distanciaKm({ lat: -34.60, lng: -58.40 }, { lat: -34.61, lng: -58.40 }), 6)
+  })
+
+  it('sin coordenadas, devuelve Infinity', () => {
+    expect(distanciaAPolilinea({ lat: -34.60, lng: -58.40 }, [])).toBe(Infinity)
   })
 })
