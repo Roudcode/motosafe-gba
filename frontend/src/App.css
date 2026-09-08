@@ -842,10 +842,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      primero es el error seguro. */
   .searchbar, .ruta-form { top: calc(96px + var(--safe-top)); width: 88vw; }
   .toast, .capas-panel { top: calc(96px + var(--safe-top)); }
+  /* Mismo offset que el buscador -- se habían quedado en top:var(--y1)
+     (pensado para topbar de una sola línea) y por eso el cartel de "acercate
+     para ver el tráfico" quedaba tapando al buscador, y el cartel de "Doblá
+     a tal lado" tapaba el pill de estado de la topbar ("Modo Viaje ·
+     siguiendo tu ubicación") cuando la topbar se partía en dos líneas. */
+  .ruta-banner, .navegacion-panel, .alerta-viaje { top: calc(96px + var(--safe-top)); }
   .actividad-panel, .stats-panel { top: calc(96px + var(--safe-top)); right: 12px; width: 82vw; }
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
-  .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; width: 200px; max-height: 40vh; }
+  /* Antes 200px fijo en un ancho de pantalla real de ~390-430px -- quedaba
+     angosto para el contenido (el chip "Segura" se cortaba, badges y precios
+     se amontonaban) y encima con poco uso del ancho disponible, forzando más
+     scroll interno del necesario. De punta a punta (con el mismo margen que
+     el resto de los paneles) entra más por línea sin agrandar la tarjeta. */
+  .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); left: 12px; right: 12px; width: auto; max-height: 44vh; }
   /* "Opciones de ruta" era el panel más pesado en vertical (tarjeta por
      ruta + desglose de puntaje + lista de zonas cruzadas + botones): se
      achica todo lo que no es indispensable para decidir qué ruta tomar --

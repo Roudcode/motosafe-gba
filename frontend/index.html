@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- maximum-scale=1 + user-scalable=no: sin esto, el pinch-to-zoom del
+         navegador zoomeaba TODA la interfaz (botones, paneles, texto), no
+         solo el mapa -- lo que rompía el layout de los FABs/paneles fijos.
+         El zoom del mapa en si sigue andando igual porque maplibre-gl lo
+         maneja con sus propios gestos sobre el canvas, no con el zoom
+         nativo de la pagina. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#14171A" />
     <meta name="description" content="MotoSafe GBA — mapa de riesgo en vivo para motociclistas en CABA, calculado con un modelo de Machine Learning entrenado con siniestros viales reales." />
     <link rel="manifest" href="/manifest.json" />
