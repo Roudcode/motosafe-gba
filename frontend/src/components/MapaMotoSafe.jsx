@@ -95,15 +95,25 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
     if (!map.getSource(sourceId) || !map.isSourceLoaded(sourceId)) return
     const nuevos = {}
     const vistas = map.querySourceFeatures(sourceId)
+    // Cada feature se procesa en su propio try/catch: antes, si UNA sola
+    // feature rota (ej. un id que no matchea nada en el Map de props por
+    // string/number) tiraba una excepción sin capturar, el for..of entero se
+    // abortaba a mitad de camino y NINGÚN marcador se agregaba, ni de esa
+    // feature ni de las que faltaban recorrer -- silencioso en pantalla
+    // (sin ningún error visible salvo en la consola del navegador).
     for (const feature of vistas) {
-      const coords = feature.geometry.coordinates
-      const props = feature.properties
-      if (props.cluster) {
-        const id = `c${props.cluster_id}`
-        nuevos[id] = markersOnScreen[id] || crearMarkerCluster(coords, props)
-      } else {
-        const id = `p${props.id}`
-        nuevos[id] = markersOnScreen[id] || crearMarkerPunto(coords, props)
+      try {
+        const coords = feature.geometry.coordinates
+        const props = feature.properties
+        if (props.cluster) {
+          const id = `c${props.cluster_id}`
+          nuevos[id] = markersOnScreen[id] || crearMarkerCluster(coords, props)
+        } else {
+          const id = `p${props.id}`
+          nuevos[id] = markersOnScreen[id] || crearMarkerPunto(coords, props)
+        }
+      } catch (err) {
+        console.error(`[MapaMotoSafe] no se pudo armar un marcador de "${sourceId}"`, feature.properties, err)
       }
     }
     for (const id in markersOnScreen) {
@@ -339,7 +349,7 @@ export function MapaMotoSafe({
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capaMapa, zonasFiltradas, atenuarFondo, version])
 
   // --- cluster de siniestros (capaMapa === 'clusters') ----------------------
@@ -381,7 +391,7 @@ export function MapaMotoSafe({
       },
     })
     return limpiar
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capaMapa, zonasFiltradas, zonaResaltada, zonasCruzadasIds, atenuarFondo, version])
 
   // --- corredores de riesgo (capaMapa === 'corredores') ---------------------
@@ -441,7 +451,7 @@ export function MapaMotoSafe({
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capaMapa, corredoresFiltrados, atenuarFondo, version])
 
   // --- cluster de inseguridad (delitos GCBA) --------------------------------
@@ -487,7 +497,7 @@ export function MapaMotoSafe({
       },
     })
     return () => { popup?.remove(); limpiar() }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capaInseguridad, inseguridadFiltrada, version])
 
   // --- reportes colaborativos (no clusterizados) ----------------------------
@@ -519,7 +529,7 @@ export function MapaMotoSafe({
       return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
     })
     return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportes, autorId, horaActual, version])
 
   // --- rutas calculadas (polilíneas) ----------------------------------------
@@ -568,7 +578,7 @@ export function MapaMotoSafe({
     // No hace falta cleanup de listeners acá: se recrean solo cuando el layer
     // se recrea (rutasCalculadas pasa de 0 a >0), y el layer/source se limpian
     // arriba cuando rutasCalculadas vuelve a 0.
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rutasCalculadas, rutaSeleccionada, version])
 
   // --- origen / destino / mi ubicación (marcadores simples) -----------------
@@ -590,7 +600,7 @@ export function MapaMotoSafe({
       markers.push(new Marker({ element: el }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
     }
     return () => markers.forEach((m) => m.remove())
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [origenPunto, destinoPunto, miUbicacion, version])
 
   // --- vuelo a un punto (buscador, favoritos, "ver en mapa", etc.) ----------
