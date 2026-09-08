@@ -162,6 +162,15 @@ function App() {
 
   const [modoViaje, setModoViaje] = useState(false)
   const [vistaNavegacion, setVistaNavegacion] = useState(false)
+  // Waze/Maps dejan que uno se mueva por el mapa mientras navega (para ver
+  // qué hay más adelante, por ejemplo) y muestran un botón de "recentrar"
+  // en vez de forzar la cámara de vuelta -- antes acá la cámara se
+  // reencuadraba en la posición del GPS en CADA fix (cada 1-2s), así que
+  // cualquier intento de mover el mapa a mano quedaba pisado enseguida.
+  // true = la cámara sigue al GPS (comportamiento de siempre); false = el
+  // usuario paneó a mano y la cámara se queda quieta hasta que toque
+  // "recentrar".
+  const [siguiendoUbicacion, setSiguiendoUbicacion] = useState(true)
   const [watchId, setWatchId] = useState(null)
   const [zonasAlertadas, setZonasAlertadas] = useState(new Set())
   const [alertaViaje, setAlertaViaje] = useState(null)
@@ -203,20 +212,52 @@ function App() {
     if (!modoViaje) zoomNavegacionHechoRef.current = false
   }, [modoViaje])
 
+  // Al arrancar (o reiniciar) el viaje, la cámara vuelve a seguir al GPS --
+  // si el usuario había paneado a mano en un viaje anterior, eso no debe
+  // "heredarse" al viaje nuevo. El setState va en un setTimeout (no directo
+  // en el cuerpo del efecto) por la misma regla de lint que useSugerenciasDireccion.
+  useEffect(() => {
+    if (!modoViaje) return
+    const id = setTimeout(() => setSiguiendoUbicacion(true), 0)
+    return () => clearTimeout(id)
+  }, [modoViaje])
+
   // Seguimiento de cámara en 2D (norte arriba, sin inclinación). Cuando
   // vistaNavegacion está activa, es MapaMotoSafe quien controla la cámara
   // (centro + zoom + pitch + bearing juntos, ver ese componente) para que no
-  // compitan los dos por moverla al mismo tiempo.
+  // compitan los dos por moverla al mismo tiempo. siguiendoUbicacion en false
+  // significa que el usuario paneó el mapa a mano -- se deja de recentrar
+  // hasta que toque el botón de "recentrar" (ver recentrarUbicacion).
   useEffect(() => {
     const map = mapaRef.current
-    if (!modoViaje || !miUbicacion || !mapaListo || vistaNavegacion || !map) return
+    if (!modoViaje || !miUbicacion || !mapaListo || vistaNavegacion || !map || !siguiendoUbicacion) return
     if (!zoomNavegacionHechoRef.current) {
       zoomNavegacionHechoRef.current = true
       map.easeTo({ center: [miUbicacion.lng, miUbicacion.lat], zoom: ZOOM_NAVEGACION, duration: 1200 })
     } else {
       map.panTo([miUbicacion.lng, miUbicacion.lat], { animate: true, duration: 800 })
     }
-  }, [modoViaje, miUbicacion, mapaListo, vistaNavegacion])
+  }, [modoViaje, miUbicacion, mapaListo, vistaNavegacion, siguiendoUbicacion])
+
+  // Handler del botón "recentrar" (estilo Waze/Maps): retoma el seguimiento
+  // automático y fuerza un primer re-centrado inmediato (si no, con
+  // siguiendoUbicacion recién puesto en true, este mismo efecto esperaría al
+  // próximo fix de GPS para reaccionar).
+  const recentrarUbicacion = () => {
+    setSiguiendoUbicacion(true)
+    const map = mapaRef.current
+    if (map && miUbicacion) {
+      if (vistaNavegacion) return // MapaMotoSafe se encarga de esa cámara
+      map.easeTo({ center: [miUbicacion.lng, miUbicacion.lat], zoom: ZOOM_NAVEGACION, duration: 600 })
+    }
+  }
+
+  // Detecta que el usuario paneó el mapa a mano (arrastre real, no una
+  // animación programática de easeTo/panTo/flyTo) mientras está en modo
+  // viaje, y deja de seguir el GPS hasta que pida recentrar.
+  const manejarPaneoManual = () => {
+    if (modoViaje) setSiguiendoUbicacion(false)
+  }
 
   // Ahora "real" (no segundos desde el montaje): se usa para calcular antiguedad
   // y opacidad de los reportes colaborativos, se refresca cada 30s (alcanza para
@@ -1297,6 +1338,8 @@ function App() {
           vistaNavegacion={vistaNavegacion}
           rumboActual={rumboActual}
           progresoRutaIndice={progresoRuta?.indiceCercano ?? null}
+          siguiendoUbicacion={siguiendoUbicacion}
+          onPaneoManual={manejarPaneoManual}
         />
         {mapaListo && (
           <>
@@ -1404,6 +1447,15 @@ function App() {
             <Square size={12} /> Salir
           </button>
         </div>
+      )}
+
+      {/* Botón de recentrar (estilo Waze/Maps): aparece solo cuando el
+          usuario paneó el mapa a mano durante el viaje y la cámara dejó de
+          seguir al GPS -- ver siguiendoUbicacion más arriba. */}
+      {modoViaje && !siguiendoUbicacion && (
+        <button className="recenter-fab panel-enter" onClick={recentrarUbicacion} aria-label="Volver a mi ubicación">
+          <LocateFixed size={18} />
+        </button>
       )}
 
       {/* Velocímetro en vivo (mismo lugar que en Waze/Maps: círculo abajo a

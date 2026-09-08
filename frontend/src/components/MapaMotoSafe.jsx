@@ -232,6 +232,8 @@ export function MapaMotoSafe({
   vistaNavegacion,
   rumboActual,
   progresoRutaIndice,
+  siguiendoUbicacion,
+  onPaneoManual,
 }) {
   const contenedorRef = useRef(null)
   const mapRef = useRef(null)
@@ -252,11 +254,13 @@ export function MapaMotoSafe({
   const onClickMapaRef = useRef(onClickMapa)
   const onClickZonaRef = useRef(onClickZona)
   const onClickRutaRef = useRef(onClickRuta)
+  const onPaneoManualRef = useRef(onPaneoManual)
   useEffect(() => {
     campoActivoRef.current = campoActivo
     onClickMapaRef.current = onClickMapa
     onClickZonaRef.current = onClickZona
     onClickRutaRef.current = onClickRuta
+    onPaneoManualRef.current = onPaneoManual
   })
 
   // --- init del mapa (una sola vez) -----------------------------------------
@@ -293,6 +297,12 @@ export function MapaMotoSafe({
     map.on('click', (e) => {
       if (campoActivoRef.current) onClickMapaRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng })
     })
+    // 'dragstart' de maplibre solo lo dispara el handler de arrastre real
+    // (gesto del usuario) -- easeTo/panTo/flyTo programáticos (los que usa
+    // este mismo componente y App.jsx para seguir el GPS) no lo emiten, así
+    // que no hace falta distinguir "quién movió la cámara": si llegó este
+    // evento, fue la mano del usuario.
+    map.on('dragstart', () => onPaneoManualRef.current?.())
 
     // Sin cleanup que llame a map.remove(): con el guard de arriba, la
     // "limpieza fantasma" de StrictMode destruiría el único mapa real que
@@ -326,6 +336,11 @@ export function MapaMotoSafe({
     const map = mapRef.current
     if (!map || version === 0) return
     if (vistaNavegacion && miUbicacion) {
+      // siguiendoUbicacion en false = el usuario paneó a mano para mirar
+      // alrededor (ver onPaneoManual/dragstart más arriba): se deja la
+      // cámara donde la dejó, en vez de tironearla de vuelta en cada fix de
+      // GPS. Vuelve a seguir recién cuando toque "recentrar" en App.jsx.
+      if (!siguiendoUbicacion) return
       map.easeTo({
         center: [miUbicacion.lng, miUbicacion.lat],
         zoom: ZOOM_VISTA_INCLINADA,
@@ -337,7 +352,7 @@ export function MapaMotoSafe({
     } else {
       map.easeTo({ pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 }, duration: 700 })
     }
-  }, [vistaNavegacion, rumboActual, miUbicacion, version])
+  }, [vistaNavegacion, rumboActual, miUbicacion, version, siguiendoUbicacion])
 
   // --- edificios 3D, solo durante la navegación con vista inclinada --------
   // Es la "vuelta de rosca" visual: con el mapa plano (exploración, clusters,
