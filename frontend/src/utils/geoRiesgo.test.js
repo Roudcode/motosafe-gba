@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo } from './geoRiesgo'
+import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta } from './geoRiesgo'
 
 const FRANJA_MOTO = { desde: 19, hasta: 24 }
 const FRANJA_GENERAL = { desde: 17, hasta: 22 }
@@ -99,5 +99,52 @@ describe('calcularRumbo', () => {
     const rumbo = calcularRumbo({ lat: -34.60, lng: -58.40 }, { lat: -34.59, lng: -58.41 })
     expect(rumbo).toBeGreaterThanOrEqual(0)
     expect(rumbo).toBeLessThan(360)
+  })
+})
+
+describe('calcularProgresoRuta', () => {
+  // Polilínea recta norte-sur de 3 tramos iguales (cada uno ~1.11 km, un
+  // centésimo de grado de latitud en el ecuador de distancias).
+  const RUTA_RECTA = [
+    [-34.60, -58.40],
+    [-34.59, -58.40],
+    [-34.58, -58.40],
+    [-34.57, -58.40],
+  ]
+
+  it('en el punto de partida, la distancia recorrida es 0 y la restante es el total', () => {
+    const p = calcularProgresoRuta({ lat: -34.60, lng: -58.40 }, RUTA_RECTA)
+    expect(p.indiceCercano).toBe(0)
+    expect(p.distanciaRecorridaKm).toBeCloseTo(0, 3)
+    expect(p.distanciaRestanteKm).toBeCloseTo(p.distanciaTotalKm, 3)
+    expect(p.fraccionRecorrida).toBeCloseTo(0, 3)
+  })
+
+  it('en el punto de llegada, la distancia restante es 0', () => {
+    const p = calcularProgresoRuta({ lat: -34.57, lng: -58.40 }, RUTA_RECTA)
+    expect(p.indiceCercano).toBe(RUTA_RECTA.length - 1)
+    expect(p.distanciaRestanteKm).toBeCloseTo(0, 3)
+    expect(p.fraccionRecorrida).toBeCloseTo(1, 3)
+  })
+
+  it('en el vértice intermedio, la fracción recorrida refleja esa posición sobre 3 tramos iguales (1/3)', () => {
+    // RUTA_RECTA tiene 4 vértices (3 tramos iguales) -- el vértice de índice
+    // 1 no es la mitad del recorrido, es un tercio. La cuenta real (no la
+    // mitad "a ojo") es la que valida que el cálculo de tramos acumulados
+    // está bien, no solo el caso trivial de los extremos.
+    const p = calcularProgresoRuta({ lat: -34.59, lng: -58.40 }, RUTA_RECTA)
+    expect(p.indiceCercano).toBe(1)
+    expect(p.fraccionRecorrida).toBeCloseTo(1 / 3, 1)
+    expect(p.distanciaRestanteKm).toBeCloseTo(p.distanciaRecorridaKm * 2, 1)
+  })
+
+  it('recorrida + restante siempre suman el total', () => {
+    const p = calcularProgresoRuta({ lat: -34.583, lng: -58.401 }, RUTA_RECTA)
+    expect(p.distanciaRecorridaKm + p.distanciaRestanteKm).toBeCloseTo(p.distanciaTotalKm, 3)
+  })
+
+  it('devuelve ceros si no hay coords suficientes o falta el punto', () => {
+    expect(calcularProgresoRuta(null, RUTA_RECTA).distanciaTotalKm).toBe(0)
+    expect(calcularProgresoRuta({ lat: -34.6, lng: -58.4 }, [[-34.6, -58.4]]).distanciaTotalKm).toBe(0)
   })
 })

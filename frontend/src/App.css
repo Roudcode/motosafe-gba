@@ -176,8 +176,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .navegacion-icono { display: flex; color: var(--verde); }
 .navegacion-texto { display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
-.navegacion-texto strong { font-size: 14px; color: var(--text); }
-.navegacion-distancia { font-size: 11px; color: var(--verde); font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+.navegacion-texto strong { font-size: 15px; color: var(--text); }
+.navegacion-distancia { font-size: 12px; color: var(--verde); font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+.navegacion-siguiente { font-size: 10px; color: var(--text-dimmer); margin-top: 2px; }
 
 .alerta-viaje {
   position: absolute; top: 62px; left: 50%; transform: translateX(-50%); z-index: 1003;
@@ -459,10 +460,27 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .ruta-resumen-iniciar:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,220,132,0.45); }
-.ruta-resumen-iniciar.activo {
-  background: linear-gradient(135deg, var(--rojo), #D62E2E); box-shadow: 0 4px 16px rgba(255,59,59,0.3);
+
+/* Barra mínima de navegación activa (reemplaza a .ruta-resumen mientras hay
+   Modo Viaje). Abajo al centro, igual que la barra de ETA de Waze/Maps --
+   el próximo giro ya se ve arriba en .navegacion-panel, acá solo importa
+   cuánto falta y cómo cortar el viaje. */
+.nav-resumen-mini {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1001;
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(var(--surface-rgb),0.96); border: 1px solid var(--verde); border-radius: 14px;
+  padding: 10px 10px 10px 16px; backdrop-filter: blur(8px);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
 }
-.ruta-resumen-iniciar.activo:hover { box-shadow: 0 6px 20px rgba(255,59,59,0.4); }
+.nav-resumen-mini-datos { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; white-space: nowrap; }
+.nav-resumen-mini-sep { color: var(--text-dimmer); }
+.nav-resumen-mini-llegada { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-dim); font-weight: 400; margin-left: 4px; }
+.nav-resumen-mini-detener {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 10px; border: none; cursor: pointer; flex-shrink: 0;
+  background: rgba(255,59,59,0.15); color: var(--rojo);
+}
+.nav-resumen-mini-detener:hover { background: rgba(255,59,59,0.25); }
 
 .legend {
   position: absolute; bottom: 24px; left: 20px; z-index: 1000;
@@ -582,6 +600,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   50% { box-shadow: 0 0 0 10px rgba(79,168,232,0.12), 0 2px 10px rgba(0,0,0,0.45); }
   100% { box-shadow: 0 0 0 6px rgba(79,168,232,0.25), 0 2px 10px rgba(0,0,0,0.45); }
 }
+
+/* Atenuado de fondo durante la navegación (ver el efecto correspondiente en
+   MapaMotoSafe.jsx). !important porque los marcadores de cluster/punto traen
+   su propia opacidad inline (fillOpacity calculado en JS) -- sin esto la
+   clase nunca ganaría la cascada. */
+.mapa-en-navegacion .capa-fondo-nav { opacity: 0.15 !important; transition: opacity 0.4s ease; }
 
 .cluster-icon-wrapper { background: none; border: none; }
 .cluster-bubble {

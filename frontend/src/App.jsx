@@ -12,7 +12,7 @@ import {
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
 } from './constants'
-import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo } from './utils/geoRiesgo'
+import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta } from './utils/geoRiesgo'
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
 } from './utils/riesgoRuta'
@@ -143,6 +143,11 @@ function App() {
   const [watchId, setWatchId] = useState(null)
   const [zonasAlertadas, setZonasAlertadas] = useState(new Set())
   const [alertaViaje, setAlertaViaje] = useState(null)
+  // Velocidad real del GPS (m/s, la unidad nativa de coords.speed) -- se usa
+  // para estimar el tiempo restante de viaje con el ritmo actual en vez de
+  // repartir el tiempo total de la ruta en proporción a la distancia (que
+  // ignora que ya vas más lento o más rápido que el promedio calculado).
+  const [velocidadActual, setVelocidadActual] = useState(null)
 
   // Instancia real de maplibregl.Map, expuesta por MapaMotoSafe via onReady.
   // Reemplaza lo que antes hacían VueloControlado/SeguimientoEnVivo/
@@ -398,6 +403,13 @@ function App() {
           return
         }
         setMiUbicacion(punto)
+        // pos.coords.speed viene en m/s y es null en varios navegadores/con
+        // poca señal -- se ignora ese caso en vez de mostrar un ETA basado en
+        // 0 (que leería como "nunca llegás"), y calcularEtaInfo cae al
+        // reparto proporcional por distancia total como fallback.
+        if (pos.coords.speed != null && !Number.isNaN(pos.coords.speed) && pos.coords.speed > 0.5) {
+          setVelocidadActual(pos.coords.speed)
+        }
       },
       () => mostrarToast('No se pudo obtener tu ubicación en vivo'),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -415,6 +427,7 @@ function App() {
     setModoViaje(false)
     setVistaNavegacion(false)
     setRumboActual(0)
+    setVelocidadActual(null)
     setZonasAlertadas(new Set())
     setAlertaViaje(null)
     mostrarToast('Modo Viaje desactivado')
@@ -739,6 +752,37 @@ function App() {
     return normalizado.indexOf(Math.min(...normalizado))
   }, [rutasConScore, idxMasRapida])
 
+  // Progreso sobre la ruta seleccionada mientras se está navegando -- de acá
+  // sale la barra de "quedan X km / Y min, llegás a las Z" (ver
+  // .nav-resumen-mini más abajo). Antes la app solo sabía el km/min TOTAL de
+  // la ruta calculada al inicio; esto lo recalcula contra la posición GPS
+  // actual en cada fix.
+  const progresoRuta = useMemo(() => {
+    if (!modoViaje || !miUbicacion) return null
+    const ruta = rutasConScore[rutaSeleccionada]
+    if (!ruta?.coords) return null
+    return calcularProgresoRuta(miUbicacion, ruta.coords)
+  }, [modoViaje, miUbicacion, rutasConScore, rutaSeleccionada])
+
+  const etaInfo = useMemo(() => {
+    if (!progresoRuta) return null
+    const ruta = rutasConScore[rutaSeleccionada]
+    if (!ruta) return null
+    // Con velocidad GPS real disponible, el tiempo restante sale del ritmo
+    // actual (más fiel si vas parado en un semáforo o zafando de tráfico).
+    // Sin eso, repartimos el tiempo total de la ruta en proporción a la
+    // distancia que falta -- una aproximación razonable, no exacta.
+    const minRestante = velocidadActual
+      ? (progresoRuta.distanciaRestanteKm / (velocidadActual * 3.6)) * 60
+      : ruta.min * (1 - progresoRuta.fraccionRecorrida)
+    const llegada = new Date(Date.now() + minRestante * 60000)
+    return {
+      distanciaRestanteKm: progresoRuta.distanciaRestanteKm,
+      minRestante: Math.max(0, Math.round(minRestante)),
+      horaLlegada: llegada.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+    }
+  }, [progresoRuta, rutasConScore, rutaSeleccionada, velocidadActual])
+
   const corredoresFiltrados = useMemo(
     () => corredores.filter((c) => nivelesActivos.has(c.nivel_riesgo)),
     [corredores, nivelesActivos]
@@ -814,7 +858,14 @@ function App() {
   // Cuando la capa de inseguridad esta prendida, el fondo (clusters/calor/
   // corredores) se atenua para que la capa recien activada quede como
   // protagonista en vez de competir en igualdad de jerarquia visual.
-  const atenuarFondo = capaInseguridad !== 'apagado' ? 0.4 : 1
+  // Durante la navegación con vista inclinada, el mapa de fondo (heatmap,
+  // corredores) se atenúa fuerte -- no se apaga del todo para no perder la
+  // referencia de que ahí sigue habiendo zonas de riesgo, pero deja de
+  // competir visualmente con la ruta y el próximo giro, que es lo único que
+  // importa mientras se está manejando. Se multiplica en vez de reemplazar
+  // para no perder el atenuado ya existente entre capas (siniestros vs.
+  // inseguridad activa).
+  const atenuarFondo = (capaInseguridad !== 'apagado' ? 0.4 : 1) * (vistaNavegacion ? 0.1 : 1)
 
   return (
     <div className="app">
@@ -828,16 +879,22 @@ function App() {
           <span className="brand-badge">GBA</span>
         </div>
         <div className="topbar-right">
-          <ThemeToggle tema={tema} onCambiar={toggleTema} />
-          <button
-            className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'clusters' ? 'capas-con-cambios' : ''}`}
-            onClick={() => setCapasAbiertas((v) => !v)}
-            aria-label="Capas del mapa"
-            title="Capas del mapa"
-          >
-            <Layers size={15} />
-          </button>
-          {climaInfo && (
+          {/* En navegación se saca todo lo que no es la información de viaje
+              en sí -- tema, capas y clima son decisiones de exploración, no
+              algo que se toque manejando. Menos chrome arriba también le
+              deja más aire vertical a la tarjeta de próximo giro. */}
+          {!vistaNavegacion && <ThemeToggle tema={tema} onCambiar={toggleTema} />}
+          {!vistaNavegacion && (
+            <button
+              className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'clusters' ? 'capas-con-cambios' : ''}`}
+              onClick={() => setCapasAbiertas((v) => !v)}
+              aria-label="Capas del mapa"
+              title="Capas del mapa"
+            >
+              <Layers size={15} />
+            </button>
+          )}
+          {climaInfo && !vistaNavegacion && (
             <div className="clima-badge" title={climaInfo.label}>
               <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
             </div>
@@ -870,16 +927,26 @@ function App() {
       {toast && <div className="toast panel-enter">{toast}</div>}
 
       {modoViaje && rutasCalculadas.length > 0 && rutasCalculadas[rutaSeleccionada]?.pasos?.[pasoActual] && (() => {
-        const pasoActivo = rutasCalculadas[rutaSeleccionada].pasos[pasoActual]
+        const pasos = rutasCalculadas[rutaSeleccionada].pasos
+        const pasoActivo = pasos[pasoActual]
+        const pasoSiguiente = pasos[pasoActual + 1]
         const ManiobraIcon = iconoManiobra(pasoActivo)
         return (
           <div className="navegacion-panel panel-enter">
-            <span className="navegacion-icono"><ManiobraIcon size={22} /></span>
+            <span className="navegacion-icono"><ManiobraIcon size={24} /></span>
             <div className="navegacion-texto">
               <strong>{textoManiobra(pasoActivo)}</strong>
               {miUbicacion && (
                 <span className="navegacion-distancia">
                   {Math.round(distanciaKm(miUbicacion, pasoActivo) * 1000)} m
+                </span>
+              )}
+              {/* Preview del giro siguiente, más chico -- ayuda en cruces
+                  seguidos a no quedar "ciego" un paso adelante, que era el
+                  caso hasta ahora (solo se veía el giro inmediato). */}
+              {pasoSiguiente && (
+                <span className="navegacion-siguiente">
+                  Después: {textoManiobra(pasoSiguiente)}
                 </span>
               )}
             </div>
@@ -965,11 +1032,18 @@ function App() {
         </div>
       )}
 
-      <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
-        <span className="searchbar-icon"><Search size={13} /></span>
-        <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar zona o avenida" />
-        {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda"><X size={12} /></button>}
-      </div>
+      {/* Se oculta durante la navegación: no solo no hace falta buscar
+          mientras estás en camino, sino que en pantalla chica quedaba
+          asomando detrás de la tarjeta de "doblá acá" (se veía en las
+          capturas que mandaste) -- las dos ocupaban la misma franja
+          horizontal arriba. */}
+      {!vistaNavegacion && (
+        <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
+          <span className="searchbar-icon"><Search size={13} /></span>
+          <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar zona o avenida" />
+          {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda"><X size={12} /></button>}
+        </div>
+      )}
 
       {rutaAbierta && (
         <div className="ruta-form panel-enter hazard-edge">
@@ -1051,6 +1125,7 @@ function App() {
           miUbicacion={miUbicacion}
           vistaNavegacion={vistaNavegacion}
           rumboActual={rumboActual}
+          progresoRutaIndice={progresoRuta?.indiceCercano ?? null}
         />
         {mapaListo && (
           <>
@@ -1063,7 +1138,13 @@ function App() {
         )}
       </div>
 
-      {rutasCalculadas.length > 0 && (
+      {/* Panel completo de opciones de ruta: SOLO antes de arrancar a navegar.
+          Elegir entre rutas alternativas no tiene sentido una vez que ya
+          estás en camino -- ahí lo único que hace falta ver es el próximo
+          giro (navegacion-panel, arriba) y cuánto falta (nav-resumen-mini,
+          abajo). Tenerlo abierto durante la navegación era el problema de
+          clutter más visible de las capturas que mandaste. */}
+      {rutasCalculadas.length > 0 && !modoViaje && (
         <div className="ruta-resumen panel-enter hazard-edge">
           <div className="ruta-resumen-header">
             <span className="cercanas-title">Opciones de ruta</span>
@@ -1126,13 +1207,31 @@ function App() {
               )}
             </div>
           )}
-          <button className={`ruta-resumen-iniciar ${modoViaje ? 'activo' : ''}`} onClick={modoViaje ? desactivarModoViaje : iniciarNavegacionRuta}>
-            {modoViaje ? <><Square size={14} /> Detener navegación</> : <><Navigation size={15} /> Iniciar viaje</>}
+          <button className="ruta-resumen-iniciar" onClick={iniciarNavegacionRuta}>
+            <Navigation size={15} /> Iniciar viaje
           </button>
           <div className="ruta-resumen-acciones-finales">
             <button className="ruta-resumen-compartir" onClick={compartirRuta}><Share2 size={13} /> Compartir</button>
             <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
           </div>
+        </div>
+      )}
+
+      {/* Tira mínima de navegación activa: reemplaza al panel completo de
+          arriba mientras hay ruta + Modo Viaje. Es la barra de "cuánto
+          falta" que le faltaba a la app -- antes, una vez que arrancabas a
+          navegar, no había NINGÚN indicador de progreso del viaje. */}
+      {rutasCalculadas.length > 0 && modoViaje && (
+        <div className="nav-resumen-mini panel-enter">
+          <div className="nav-resumen-mini-datos">
+            <strong>{etaInfo ? etaInfo.distanciaRestanteKm.toFixed(1) : rutasConScore[rutaSeleccionada]?.km} km</strong>
+            <span className="nav-resumen-mini-sep">·</span>
+            <strong>{etaInfo ? etaInfo.minRestante : rutasConScore[rutaSeleccionada]?.min} min</strong>
+            {etaInfo && <span className="nav-resumen-mini-llegada">llegás {etaInfo.horaLlegada}</span>}
+          </div>
+          <button className="nav-resumen-mini-detener" onClick={desactivarModoViaje} aria-label="Detener navegación">
+            <Square size={13} />
+          </button>
         </div>
       )}
 
@@ -1189,21 +1288,23 @@ function App() {
         </div>
       )}
 
-      <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
-        <div className="legend-header">
-          <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
-          {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+      {!vistaNavegacion && (
+        <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
+          <div className="legend-header">
+            <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
+            {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+          </div>
+          {Object.entries(NIVELES).map(([key, val]) => (
+            <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
+              <span className="legend-swatch" style={{ background: val.color }} />
+              {val.label}
+              <span className="legend-count">{conteos[key]}</span>
+            </button>
+          ))}
         </div>
-        {Object.entries(NIVELES).map(([key, val]) => (
-          <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
-            <span className="legend-swatch" style={{ background: val.color }} />
-            {val.label}
-            <span className="legend-count">{conteos[key]}</span>
-          </button>
-        ))}
-      </div>
+      )}
 
-      {capaInseguridad !== 'apagado' && (
+      {capaInseguridad !== 'apagado' && !vistaNavegacion && (
         <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
           <div className="legend-header">
             <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>

@@ -29,6 +29,43 @@ export function calcularRumbo(a, b) {
   return (rumbo + 360) % 360
 }
 
+// Progreso sobre una ruta ya calculada: a qué distancia (en km) del punto
+// dado está cada vértice de la polilínea, cuál es el más cercano, y cuánto
+// falta para llegar al final desde ahí. Es la base de la barra de "X km · Y
+// min · llegás a las Z" que usan Waze/Maps durante la navegación -- antes de
+// esto la app solo sabía la distancia/tiempo TOTAL de la ruta, no cuánto iba
+// quedando a medida que se avanza. No usa la ruta real (grafo vial): aproxima
+// por el vértice más cercano de la polilínea ya devuelta por el backend, que
+// alcanza para una barra de progreso (no para recalcular giros).
+export function calcularProgresoRuta(punto, coords) {
+  if (!punto || !coords || coords.length < 2) {
+    return { indiceCercano: 0, distanciaTotalKm: 0, distanciaRecorridaKm: 0, distanciaRestanteKm: 0, fraccionRecorrida: 0 }
+  }
+  const acumulado = [0]
+  for (let i = 0; i < coords.length - 1; i++) {
+    const [lat1, lng1] = coords[i]
+    const [lat2, lng2] = coords[i + 1]
+    acumulado.push(acumulado[i] + distanciaKm({ lat: lat1, lng: lng1 }, { lat: lat2, lng: lng2 }))
+  }
+  const distanciaTotalKm = acumulado[acumulado.length - 1]
+  let indiceCercano = 0
+  let mejorDist = Infinity
+  for (let i = 0; i < coords.length; i++) {
+    const [lat, lng] = coords[i]
+    const d = distanciaKm(punto, { lat, lng })
+    if (d < mejorDist) { mejorDist = d; indiceCercano = i }
+  }
+  const distanciaRecorridaKm = acumulado[indiceCercano]
+  const distanciaRestanteKm = Math.max(0, distanciaTotalKm - distanciaRecorridaKm)
+  return {
+    indiceCercano,
+    distanciaTotalKm,
+    distanciaRecorridaKm,
+    distanciaRestanteKm,
+    fraccionRecorrida: distanciaTotalKm > 0 ? distanciaRecorridaKm / distanciaTotalKm : 0,
+  }
+}
+
 export function distanciaAPolilinea(punto, coords) {
   let min = Infinity
   for (const [lat, lng] of coords) {

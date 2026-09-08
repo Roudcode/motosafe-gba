@@ -157,7 +157,11 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
       { bajo: props.bajo, medio: props.medio, alto: props.alto, critico: props.critico },
       props.point_count
     )
-    const el = elementoDivIcono(html, size)
+    // 'capa-fondo-nav': clase que engancha con el atenuado global de
+    // navegación (ver .mapa-en-navegacion en App.css) -- así siniestros e
+    // inseguridad se atenúan igual sin que este helper genérico tenga que
+    // saber cuál de los dos es.
+    const el = elementoDivIcono(html, size, 'capa-fondo-nav')
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       const src = map.getSource(sourceId)
@@ -226,6 +230,7 @@ export function MapaMotoSafe({
   miUbicacion,
   vistaNavegacion,
   rumboActual,
+  progresoRutaIndice,
 }) {
   const contenedorRef = useRef(null)
   const mapRef = useRef(null)
@@ -370,6 +375,21 @@ export function MapaMotoSafe({
     }
   }, [vistaNavegacion, version, tema])
 
+  // --- atenuar el fondo mientras se navega ----------------------------------
+  // Clase en el contenedor del mapa que engancha con el CSS de App.css
+  // (.mapa-en-navegacion .capa-fondo-nav) para bajarle la opacidad a los
+  // clusters de siniestros/inseguridad durante la navegación con vista
+  // inclinada. No se desmontan (no hay que reconstruir el source cada vez
+  // que se activa/desactiva vistaNavegacion, que sería mucho más costoso),
+  // solo se atenúan visualmente -- lo mismo que ya hacía atenuarFondo para
+  // heatmap/corredores, pero vía clase porque estos son marcadores DOM, no
+  // paint properties de una layer nativa.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    map.getContainer().classList.toggle('mapa-en-navegacion', !!vistaNavegacion)
+  }, [vistaNavegacion])
+
   // --- tráfico en vivo (tiles raster propios, TomTom vía backend) ----------
   useEffect(() => {
     const map = mapRef.current
@@ -478,7 +498,7 @@ export function MapaMotoSafe({
           fillOpacity: 0.75 * atenuarFondo,
           weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
         })
-        el.className = zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''
+        el.className = `capa-fondo-nav ${zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}`
         return el
       },
       onClickPunto: (id) => {
@@ -574,7 +594,7 @@ export function MapaMotoSafe({
         const size = (h.nivel_riesgo === 'critico' ? 15 : h.nivel_riesgo === 'alto' ? 12 : 9) * 2
         const color = NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] || NIVELES_INSEGURIDAD_COLOR.bajo
         const el = elementoCirculo({ size, color, fillOpacity: 0.4, weight: 1 })
-        el.className = h.nivel_riesgo === 'critico' ? 'pulse-marker' : ''
+        el.className = `capa-fondo-nav ${h.nivel_riesgo === 'critico' ? 'pulse-marker' : ''}`
         return el
       },
       onClickPunto: (id, coords) => {
@@ -639,13 +659,35 @@ export function MapaMotoSafe({
       if (map.getSource(sourceId)) map.removeSource(sourceId)
       return
     }
-    const features = rutasCalculadas.map((r, i) => ({
-      type: 'Feature',
-      geometry: { type: 'LineString', coordinates: r.coords.map(([lat, lng]) => [lng, lat]) },
-      properties: { idx: i, seleccionada: i === rutaSeleccionada },
-    }))
+    const features = []
+    rutasCalculadas.forEach((r, i) => {
+      const esSeleccionada = i === rutaSeleccionada
+      const coordsLngLat = r.coords.map(([lat, lng]) => [lng, lat])
+      // Mientras se navega, la ruta seleccionada se corta en dos tramos: lo
+      // ya recorrido (atenuado) y lo que falta (destacado) -- el mismo
+      // truco visual de Waze/Maps para que de un vistazo se lea cuánto
+      // avanzaste, en vez de una sola línea pareja de punta a punta.
+      if (esSeleccionada && progresoRutaIndice != null && progresoRutaIndice > 0 && progresoRutaIndice < coordsLngLat.length - 1) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coordsLngLat.slice(0, progresoRutaIndice + 1) },
+          properties: { idx: i, seleccionada: true, recorrido: true },
+        })
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coordsLngLat.slice(progresoRutaIndice) },
+          properties: { idx: i, seleccionada: true, recorrido: false },
+        })
+      } else {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coordsLngLat },
+          properties: { idx: i, seleccionada: esSeleccionada, recorrido: false },
+        })
+      }
+    })
     // La ruta seleccionada se dibuja arriba: se ordenan las features para que
-    // quede última (MapLibre pinta en orden de aparición dentro del source).
+    // queden últimas (MapLibre pinta en orden de aparición dentro del source).
     features.sort((a, b) => Number(a.properties.seleccionada) - Number(b.properties.seleccionada))
 
     if (map.getSource(sourceId)) {
@@ -658,9 +700,9 @@ export function MapaMotoSafe({
         source: sourceId,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': ['case', ['get', 'seleccionada'], '#4FA8E8', '#6B7178'],
+          'line-color': ['case', ['get', 'recorrido'], '#3A4048', ['get', 'seleccionada'], '#4FA8E8', '#6B7178'],
           'line-width': ['case', ['get', 'seleccionada'], 5, 4],
-          'line-opacity': ['case', ['get', 'seleccionada'], 0.9, 0.45],
+          'line-opacity': ['case', ['get', 'recorrido'], 0.35, ['get', 'seleccionada'], 0.9, 0.45],
           'line-dasharray': ['case', ['get', 'seleccionada'], ['literal', [1, 0]], ['literal', [2, 2]]],
         },
       })
@@ -675,7 +717,7 @@ export function MapaMotoSafe({
     // se recrea (rutasCalculadas pasa de 0 a >0), y el layer/source se limpian
     // arriba cuando rutasCalculadas vuelve a 0.
      
-  }, [rutasCalculadas, rutaSeleccionada, version])
+  }, [rutasCalculadas, rutaSeleccionada, progresoRutaIndice, version])
 
   // --- origen / destino / mi ubicación (marcadores simples) -----------------
   useEffect(() => {
