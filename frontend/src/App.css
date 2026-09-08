@@ -782,10 +782,29 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 
 @media (max-width: 480px) {
+  /* La fila de arriba (marca + toggles + clima + estado) nunca entraba en un
+     ancho de celular real: no se veía en la PC porque ahi siempre sobra
+     espacio, pero en el celular el pill de estado quedaba directamente
+     cortado por el borde de la pantalla (ver captura real, "Ruta: 67.2 km ·
+     52 mi" sin el "n"). flex-wrap deja que lo que no entra baje a una
+     segunda línea en vez de desbordarse fuera de la vista. */
+  .topbar { flex-wrap: wrap; row-gap: 8px; }
+  /* width:100% para que, al bajar de línea, "justify-content: flex-end"
+     tenga TODO el ancho disponible para alinear contra -- sin esto, al
+     quedar sola en su propia línea de flex-wrap, la fila se pegaba contra
+     la izquierda en vez de mantenerse contra el borde derecho. */
+  .topbar-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; width: 100%; }
   .topbar-status { font-size: 11px; }
   .clima-badge { font-size: 11px; }
-  .searchbar, .ruta-form { top: calc(58px + var(--safe-top)); width: 88vw; }
-  .actividad-panel, .stats-panel { top: calc(58px + var(--safe-top)); right: 12px; width: 82vw; }
+  /* 96px y no 58px: con la fila de arriba pudiendo partirse en dos líneas
+     (ver .topbar más arriba), un offset pensado para una sola línea hacía
+     que el buscador/paneles de abajo quedaran tapados por la segunda línea
+     de badges cuando esta aparecía. De más da un poco de aire de sobra
+     cuando entra todo en una sola línea; de menos tapaba contenido -- el
+     primero es el error seguro. */
+  .searchbar, .ruta-form { top: calc(96px + var(--safe-top)); width: 88vw; }
+  .toast, .capas-panel { top: calc(96px + var(--safe-top)); }
+  .actividad-panel, .stats-panel { top: calc(96px + var(--safe-top)); right: 12px; width: 82vw; }
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
   .cercanas-panel, .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; width: 200px; max-height: 40vh; }
