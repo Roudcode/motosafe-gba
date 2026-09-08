@@ -800,8 +800,20 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .legend { bottom: calc(8px + var(--safe-bottom)); padding: 8px 10px; }
   .legend-inseguridad { bottom: calc(120px + var(--safe-bottom)); }
   .route-fab, .report-fab, .herramientas-stack { bottom: calc(8px + var(--safe-bottom)); }
-  .herramientas-stack { right: calc(76px + var(--safe-right)); }
-  .route-fab { right: calc(140px + var(--safe-right)); }
+  /* En vertical estos tres se apilan por "bottom" con el mismo right:24px, sin
+     pisarse. Acá, al compartir todos el mismo bottom, tienen que separarse por
+     "right" en cambio -- y los offsets viejos (76px / 140px) no dejaban lugar
+     real: report-fab (right:24, ~130px de ancho con ícono+texto) se extendía
+     hasta ~154px del borde, invadiendo por completo a herramientas-stack
+     (right:76, hasta 120px), el botón superpuesto que se veía en el celular.
+     Los tres se calculan ahora de derecha a izquierda con el ancho real de
+     cada uno más un margen, no un número que "quedaba bien" a ojo. */
+  .herramientas-stack { right: calc(168px + var(--safe-right)); }
+  /* 380px y no 226px: el menú de herramientas (herramientas-menu, 190px de
+     ancho) se abre hacia la izquierda del ícono, así que a 226px el "Trazar
+     ruta" quedaba tapado apenas se abría el menú -- otro caso del mismo
+     problema, no uno nuevo. */
+  .route-fab { right: calc(380px + var(--safe-right)); }
   .nav-resumen-mini, .velocimetro { bottom: calc(8px + var(--safe-bottom)); }
   .escala-mapa { display: none; }
 }
