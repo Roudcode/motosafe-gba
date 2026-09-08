@@ -28,7 +28,7 @@
 // este enfoque es muchísimo más simple y menos propenso a bugs sutiles que
 // diffear a mano.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, memo } from 'react'
 // maplibre-gl no tiene export default (solo exports nombrados) -- ver
 // node_modules/maplibre-gl/dist/maplibre-gl.mjs.
 import { Map as MapaLibre, Marker, Popup } from 'maplibre-gl'
@@ -199,7 +199,16 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
   }
 }
 
-export function MapaMotoSafe({
+// React.memo: App.jsx tiene un tick de reloj (useSegundosDesde, "hace Xs" en
+// la topbar) que lo hace re-renderizar cada segundo para siempre. Sin memo,
+// eso volvía a invocar este componente -- el más pesado de la app, dueño de
+// la instancia real de maplibre-gl -- una vez por segundo aunque ninguno de
+// sus props hubiera cambiado en absoluto. Para que memo realmente frene algo
+// hace falta que los props función que le pasa App.jsx sean estables entre
+// renders (useCallback ahí), no funciones inline nuevas en cada render --
+// ver clicMapa/onMapaReady/onTraficoEstadoCambio/onClickZonaMapa/
+// manejarPaneoManual en App.jsx.
+function MapaMotoSafeInner({
   tema,
   centro,
   zoomInicial,
@@ -883,3 +892,5 @@ export function MapaMotoSafe({
 
   return <div ref={contenedorRef} className="map" />
 }
+
+export const MapaMotoSafe = memo(MapaMotoSafeInner)

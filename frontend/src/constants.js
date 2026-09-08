@@ -67,6 +67,14 @@ export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
 // asi que recien se ve algo util a partir de este zoom (nivel de barrio/calle).
 export const UMBRAL_ZOOM_TRAFICO = 13
 export const CLAVE_AUTOR_ID = 'motosafe_autor_id'
+// Última respuesta buena de cada capa de riesgo, para tener algo que mostrar
+// si el celular se queda sin señal antes de que el backend responda (ver
+// cargarHotspots/cargarCorredores/cargarInseguridad en App.jsx) -- en vez de
+// una pantalla de "Conectando..." infinita cuando no hay con qué conectarse.
+export const CLAVE_CACHE_HOTSPOTS = 'motosafe_cache_hotspots'
+export const CLAVE_CACHE_CORREDORES = 'motosafe_cache_corredores'
+export const CLAVE_CACHE_INSEGURIDAD_GENERAL = 'motosafe_cache_inseguridad_general'
+export const CLAVE_CACHE_INSEGURIDAD_MOTO = 'motosafe_cache_inseguridad_moto'
 
 export const NIVELES = {
   bajo:    { label: 'Bajo',    color: '#3DDC84' },

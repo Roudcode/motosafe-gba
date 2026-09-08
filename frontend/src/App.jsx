@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import './App.css'
 
 import {
@@ -11,6 +11,7 @@ import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
+  CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
@@ -18,7 +19,7 @@ import {
 } from './utils/riesgoRuta'
 import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
-import { cargarDeLocalStorage, generarUuidV4Fallback } from './utils/storage'
+import { cargarDeLocalStorage, guardarEnLocalStorage, generarUuidV4Fallback } from './utils/storage'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -96,12 +97,18 @@ function EscalaMapa({ mapa }) {
 }
 
 function App() {
-  const [ZONAS_RIESGO, setZonasRiesgo] = useState([])
-  const [corredores, setCorredores] = useState([])
-  const [inseguridadGeneral, setInseguridadGeneral] = useState([])
-  const [inseguridadMoto, setInseguridadMoto] = useState([])
-  const [cargandoHotspots, setCargandoHotspots] = useState(true)
-  const [primeraVezListo, setPrimeraVezListo] = useState(false)
+  // Estado inicial desde la última respuesta buena guardada en localStorage
+  // (ver cargarHotspots/cargarCorredores/cargarInseguridad más abajo, que la
+  // renuevan en cada fetch exitoso) -- así, si el celular abre la app sin
+  // señal, aparece el último mapa de riesgo conocido en vez de una pantalla
+  // de carga infinita. Sigue intentando traer datos frescos en paralelo.
+  const [ZONAS_RIESGO, setZonasRiesgo] = useState(() => cargarDeLocalStorage(CLAVE_CACHE_HOTSPOTS, []))
+  const [corredores, setCorredores] = useState(() => cargarDeLocalStorage(CLAVE_CACHE_CORREDORES, []))
+  const [inseguridadGeneral, setInseguridadGeneral] = useState(() => cargarDeLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, []))
+  const [inseguridadMoto, setInseguridadMoto] = useState(() => cargarDeLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, []))
+  const hayHotspotsEnCache = ZONAS_RIESGO.length > 0
+  const [cargandoHotspots, setCargandoHotspots] = useState(!hayHotspotsEnCache)
+  const [primeraVezListo, setPrimeraVezListo] = useState(hayHotspotsEnCache)
   const [backendError, setBackendError] = useState(false)
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
@@ -261,9 +268,17 @@ function App() {
   // Detecta que el usuario paneó el mapa a mano (arrastre real, no una
   // animación programática de easeTo/panTo/flyTo) mientras está en modo
   // viaje, y deja de seguir el GPS hasta que pida recentrar.
-  const manejarPaneoManual = () => {
+  // useCallback (acá y en el resto de los callbacks que bajan a
+  // MapaMotoSafe): ese componente ahora está en React.memo (ver su export)
+  // para no volver a renderizar el mapa entero cada segundo por el tick de
+  // useSegundosDesde -- pero memo compara props por referencia, así que un
+  // callback recreado en cada render de App (como estaban antes, funciones
+  // inline sueltas) rompía el memo igual. La dependencia real es modoViaje;
+  // por eso esta función sí cambia de referencia cuando corresponde, pero ya
+  // no en cada tick del reloj.
+  const manejarPaneoManual = useCallback(() => {
     if (modoViaje) setSiguiendoUbicacion(false)
-  }
+  }, [modoViaje])
 
   // Ahora "real" (no segundos desde el montaje): se usa para calcular antiguedad
   // y opacidad de los reportes colaborativos, se refresca cada 30s (alcanza para
@@ -301,6 +316,7 @@ function App() {
           contextoEstimado: !!h.contexto_estimado,
         }))
         setZonasRiesgo(zonasFormateadas)
+        guardarEnLocalStorage(CLAVE_CACHE_HOTSPOTS, zonasFormateadas)
         setCargandoHotspots(false)
         setPrimeraVezListo(true)
         setBackendError(false)
@@ -324,7 +340,7 @@ function App() {
     // 'clusters') y el usuario la ve recien si cambia de vista.
     fetch(`${API_URL}/corredores`)
       .then((r) => (r.ok ? r.json() : []))
-      .then(setCorredores)
+      .then((data) => { setCorredores(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_CORREDORES, data) })
       .catch(() => {})
   }, [])
 
@@ -335,11 +351,11 @@ function App() {
     // el usuario las ve si cambia de capa.
     fetch(`${API_URL}/hotspots-inseguridad?tipo=general`)
       .then((r) => (r.ok ? r.json() : []))
-      .then(setInseguridadGeneral)
+      .then((data) => { setInseguridadGeneral(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, data) })
       .catch(() => {})
     fetch(`${API_URL}/hotspots-inseguridad?tipo=moto`)
       .then((r) => (r.ok ? r.json() : []))
-      .then(setInseguridadMoto)
+      .then((data) => { setInseguridadMoto(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, data) })
       .catch(() => {})
   }, [])
 
@@ -690,14 +706,21 @@ function App() {
     if (campo === 'origen') { setOrigenTexto(sug.label); setOrigenPunto({ lat: sug.lat, lng: sug.lng }); sugOrigen.limpiar() }
     else { setDestinoTexto(sug.label); setDestinoPunto({ lat: sug.lat, lng: sug.lng }); sugDestino.limpiar() }
   }
-  const clicMapa = (punto) => {
+  const clicMapa = useCallback((punto) => {
     if (campoActivo === 'origen') { setOrigenPunto(punto); setOrigenTexto('Punto marcado en el mapa'); setCampoActivo(null) }
     if (campoActivo === 'destino') { setDestinoPunto(punto); setDestinoTexto('Punto marcado en el mapa'); setCampoActivo(null) }
     // Para el reporte, a propósito NO se apaga campoActivo: mientras la
     // hojita de categorías sigue abierta, el usuario puede re-tocar el mapa
     // las veces que quiera para afinar el punto antes de confirmar.
     if (campoActivo === 'reporte') { setUbicacionReporte(punto); setVuelo({ ...punto, zoom: 15 }) }
-  }
+  }, [campoActivo])
+
+  // Mismo motivo que clicMapa/manejarPaneoManual más arriba: referencia
+  // estable para que MapaMotoSafe (en React.memo) no vuelva a renderizar el
+  // mapa por cada tick de segundos de la topbar.
+  const onMapaReady = useCallback((map) => { mapaRef.current = map; setMapaListo(true) }, [])
+  const onTraficoEstadoCambio = useCallback((disponible) => setTraficoNoDisponible(!disponible), [])
+  const onClickZonaMapa = useCallback((zona) => { setZonaSeleccionada(zona); setCapasAbiertas(false) }, [])
 
   const usarFavorito = (fav) => { setDestinoTexto(fav.texto); setDestinoPunto(fav.punto) }
   // Elegir una sugerencia de la barra de búsqueda de arriba abre "Trazar
@@ -1330,16 +1353,16 @@ function App() {
           centro={CENTRO_GBA}
           zoomInicial={11}
           onZoomChange={setZoomActual}
-          onReady={(map) => { mapaRef.current = map; setMapaListo(true) }}
+          onReady={onMapaReady}
           apiUrl={API_URL}
           capaTrafico={capaTrafico}
-          onTraficoEstado={(disponible) => setTraficoNoDisponible(!disponible)}
+          onTraficoEstado={onTraficoEstadoCambio}
           campoActivo={campoActivo}
           onClickMapa={clicMapa}
           zonasFiltradas={zonasFiltradas}
           zonaResaltada={zonaResaltada}
           zonasCruzadasIds={zonasCruzadasIds}
-          onClickZona={(zona) => { setZonaSeleccionada(zona); setCapasAbiertas(false) }}
+          onClickZona={onClickZonaMapa}
           atenuarFondo={atenuarFondo}
           capaMapa={capaMapa}
           corredoresFiltrados={corredoresFiltrados}

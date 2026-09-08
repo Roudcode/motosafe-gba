@@ -10,6 +10,18 @@ export function cargarDeLocalStorage(clave, porDefecto) {
   }
 }
 
+// Contraparte de cargarDeLocalStorage: guarda con el mismo fallback
+// silencioso (localStorage puede fallar por cuota llena o por estar en modo
+// privado/incógnito, y eso no debería romper la app -- en el peor caso
+// simplemente no queda cache para la próxima).
+export function guardarEnLocalStorage(clave, valor) {
+  try {
+    localStorage.setItem(clave, JSON.stringify(valor))
+  } catch {
+    /* sin cuota o localStorage no disponible: se sigue sin cache */
+  }
+}
+
 // Fallback de generación de UUID v4 para navegadores/contextos sin crypto.randomUUID
 // (esa API requiere contexto seguro: https o localhost). No es criptográficamente tan
 // fuerte como crypto.randomUUID, pero alcanza para un identificador de dispositivo que

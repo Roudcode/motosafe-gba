@@ -4,7 +4,6 @@
   "description": "Mapa de riesgo en vivo para motociclistas en CABA, con navegacion asistida y prediccion de zonas peligrosas.",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#14171A",
   "theme_color": "#14171A",
   "icons": [
