@@ -4,13 +4,13 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
-  Siren, ShieldAlert, Layers, Navigation, Square, Volume2, VolumeX, Gauge,
+  Siren, ShieldAlert, Layers, Navigation, Square, Gauge,
 } from 'lucide-react'
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
-  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO, CLAVE_VOZ,
+  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
@@ -99,11 +99,6 @@ function App() {
   // gratuita para usuarios que nunca miraron esta capa.
   const [capaTrafico, setCapaTrafico] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_TRAFICO, false))
   const [traficoNoDisponible, setTraficoNoDisponible] = useState(false)
-  // Guía por voz de las maniobras (Web Speech API, nativa del navegador --
-  // sin librerías ni claves nuevas). Activada por default: es lo que hace
-  // que la app sea usable manejando de verdad, sin tener que mirar la
-  // pantalla en cada giro. El toggle queda en "Herramientas".
-  const [vozActivada, setVozActivada] = useState(() => cargarDeLocalStorage(CLAVE_VOZ, true))
   const [zoomActual, setZoomActual] = useState(11)
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
@@ -334,10 +329,6 @@ function App() {
   useEffect(() => {
     localStorage.setItem(CLAVE_CAPA_TRAFICO, JSON.stringify(capaTrafico))
   }, [capaTrafico])
-
-  useEffect(() => {
-    localStorage.setItem(CLAVE_VOZ, JSON.stringify(vozActivada))
-  }, [vozActivada])
 
   useEffect(() => {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
@@ -708,38 +699,6 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [miUbicacion, modoViaje])
-
-  // --- guía por voz de las maniobras (Web Speech API) -----------------------
-  // Es el hueco más grande que tenía la app para el caso de uso real (andar
-  // en moto): sin audio, cada giro exige mirar la pantalla, que es
-  // exactamente lo que no se puede hacer manejando. ultimoPasoHabladoRef
-  // evita repetir el mismo aviso en cada re-render/fix de GPS que no
-  // adelantó el paso.
-  const ultimoPasoHabladoRef = useRef(-1)
-  // Un reroute automático (ver más abajo) resetea pasoActual a 1 igual que
-  // una ruta nueva -- sin esto, si el paso 1 de la ruta VIEJA ya se había
-  // hablado, la nueva instrucción del paso 1 de la ruta RECALCULADA se
-  // saltearía por tener el mismo índice.
-  useEffect(() => { ultimoPasoHabladoRef.current = -1 }, [rutasCalculadas])
-  useEffect(() => {
-    if (!modoViaje) { ultimoPasoHabladoRef.current = -1; return }
-    if (!vozActivada || !('speechSynthesis' in window)) return
-    const pasos = rutasCalculadas[rutaSeleccionada]?.pasos || []
-    const pasoActivo = pasos[pasoActual]
-    if (!pasoActivo || pasoActual === ultimoPasoHabladoRef.current) return
-    ultimoPasoHabladoRef.current = pasoActual
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(textoManiobra(pasoActivo))
-    utterance.lang = 'es-AR'
-    utterance.rate = 1
-    window.speechSynthesis.speak(utterance)
-  }, [modoViaje, vozActivada, pasoActual, rutasCalculadas, rutaSeleccionada])
-
-  // Si se desactiva la voz a mitad de una frase, corta ahí -- no tiene
-  // sentido que siga hablando después de que el usuario la apagó.
-  useEffect(() => {
-    if (!vozActivada && 'speechSynthesis' in window) window.speechSynthesis.cancel()
-  }, [vozActivada])
 
   // --- detección de desvío + reroute automático -----------------------------
   // Hasta ahora, si te equivocabas de calle en plena navegación, la ruta se
@@ -1445,9 +1404,6 @@ function App() {
                 <Box size={15} /> Vista inclinada {vistaNavegacion ? '· activa' : ''}
               </button>
             )}
-            <button className={vozActivada ? 'activo' : ''} onClick={() => setVozActivada((v) => !v)}>
-              {vozActivada ? <Volume2 size={15} /> : <VolumeX size={15} />} Guía por voz {vozActivada ? '· activa' : '· silenciada'}
-            </button>
             <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
               <BarChart3 size={15} /> Estadísticas
             </button>

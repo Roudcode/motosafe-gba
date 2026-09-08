@@ -45,16 +45,12 @@ export const VIGENCIA_HORAS_POR_CATEGORIA = {
 }
 export const VIGENCIA_HORAS_DEFAULT = 24 * 7
 export const BBOX_GBA = '-59.5,-33.9,-57.8,-35.3'
-// En desarrollo local, sin VITE_API_URL definida, usa una ruta relativa
-// ('/api') que el dev server de Vite reescribe hacia el backend
-// (ver server.proxy en vite.config.js). Esto hace que funcione igual desde
-// localhost o desde el celular en la misma red: el navegador siempre le
-// pega a su propio origen, nunca a un host hardcodeado. En un deploy real,
-// se define VITE_API_URL como variable de entorno del hosting apuntando a
-// la URL publica del backend -- Vite la inyecta en build time, no en
-// runtime, asi que un cambio de esta variable requiere un rebuild del
-// frontend.
-export const API_URL = import.meta.env.VITE_API_URL || '/api'
+// En desarrollo local, sin VITE_API_URL definida, apunta a localhost:8000
+// (el backend corriendo en tu maquina). En un deploy real, se define
+// VITE_API_URL como variable de entorno del hosting apuntando a la URL
+// publica del backend -- Vite la inyecta en build time, no en runtime, asi
+// que un cambio de esta variable requiere un rebuild del frontend.
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 export const CLAVE_NIVELES = 'motosafe_niveles_activos'
 export const CLAVE_FAVORITOS = 'motosafe_favoritos'
 export const CLAVE_TEMA = 'motosafe_tema'
@@ -62,7 +58,6 @@ export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
 export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
 export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
-export const CLAVE_VOZ = 'motosafe_voz_activada'
 // TomTom (como Google Maps y Waze) no pinta el color de congestion por calle
 // a niveles de zoom muy alejados -- a esa escala seria ruido visual ilegible,
 // asi que recien se ve algo util a partir de este zoom (nivel de barrio/calle).
