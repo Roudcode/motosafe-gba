@@ -20,6 +20,13 @@ export default defineConfig({
   server: {
     host: true,
     https: true,
+    // Vite bloquea por defecto cualquier Host header que no reconozca (para
+    // frenar ataques de DNS rebinding) -- eso incluye el hostname que arma
+    // un tunel temporal (cloudflared/ngrok) para probar desde el celular sin
+    // estar en la misma red que la PC. true == confiar en cualquier host;
+    // aceptable ahora porque este server solo corre en dev, en la PC de
+    // Rodo, nunca expuesto de forma permanente.
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
