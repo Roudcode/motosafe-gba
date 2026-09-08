@@ -67,10 +67,51 @@ export function calcularZonasCruzadasPorRuta(rutasCalculadas, zonasRiesgoTodas, 
 
 // Arma, para cada ruta, el score total (suma de PESO_RIESGO de todo lo que
 // cruza) desglosado por eje, más el nivel más grave que atraviesa
-// (nivelMaximo), que es lo que se muestra como etiqueta interpretable en vez
-// del puntaje crudo.
+// (nivelMaximo) y el nivel relativo a las demás alternativas de este mismo
+// pedido (nivelRelativo).
+//
+// nivelMaximo se guarda pero YA NO se usa para la etiqueta que ve el usuario:
+// en una ciudad densa, una ruta de pocos km cruza decenas de zonas de riesgo
+// de tres fuentes distintas (siniestros del modelo + inseguridad general +
+// inseguridad moto), cada una con su propio 5% "critico". Con esa cantidad de
+// cruces, la probabilidad de tocar AL MENOS UNA zona critica en algun punto
+// del trayecto es alta para practicamente cualquier ruta -- asi que "cruzo
+// una critica" deja de servir para comparar rutas entre si (mismo sintoma que
+// niveles_relativos_desde_matriz en el backend, un nivel mas arriba: ahi el
+// problema era "casi todo hotspot sale alto", aca es "casi toda ruta cruza
+// un hotspot alto"). Lo que de verdad le importa a quien elige es cual ruta
+// es MAS o MENOS riesgosa que las otras que se le estan ofreciendo para el
+// mismo viaje, no si tuvo la mala suerte de pasar a 30m de la unica zona
+// critica de todo el trayecto.
+//
+// nivelRelativo resuelve eso: ordena las rutas de este pedido por su score
+// total y ubica a cada una segun su posicion relativa (la de menor score es
+// 'bajo', la de mayor 'alto'), en vez de por un corte absoluto. Solo escala a
+// 'critico' cuando la peor ruta no es apenas la peor de un lote parejo, sino
+// que se destaca claramente MAL respecto a las otras opciones ofrecidas (se
+// compara contra el promedio de las DEMAS, sin contarse a si misma, para que
+// la comparacion no se diluya con el propio valor alto) -- ahi si vale la
+// alarma extra, en vez de simplemente "es la peor de tres opciones similares".
+function nivelRelativoEnLote(score, indice, scoresDelLote) {
+  if (score === 0) return 'bajo'
+  if (scoresDelLote.length <= 1) return score <= 4 ? 'medio' : 'alto'
+
+  const ordenados = [...scoresDelLote].sort((a, b) => a - b)
+  const rank = ordenados.indexOf(score)
+  const percentil = rank / (ordenados.length - 1)
+  const esLaPeorDelLote = score === ordenados[ordenados.length - 1]
+
+  const otros = scoresDelLote.filter((_, j) => j !== indice)
+  const promedioOtros = otros.length > 0 ? otros.reduce((acc, s) => acc + s, 0) / otros.length : 0
+
+  if (esLaPeorDelLote && promedioOtros > 0 && score >= promedioOtros * 1.4) return 'critico'
+  if (percentil >= 0.6) return 'alto'
+  if (percentil >= 0.3) return 'medio'
+  return 'bajo'
+}
+
 export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta) {
-  return rutasCalculadas.map((r, i) => {
+  const conScore = rutasCalculadas.map((r, i) => {
     const cruces = zonasCruzadasPorRuta[i] || []
     const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
     const crucesInseguridad = cruces.filter((z) => z.tipoRiesgo === 'inseguridad')
@@ -88,4 +129,7 @@ export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta) {
       nivelMaximo,
     }
   })
+
+  const scores = conScore.map((r) => r.riesgo)
+  return conScore.map((r, i) => ({ ...r, nivelRelativo: nivelRelativoEnLote(r.riesgo, i, scores) }))
 }

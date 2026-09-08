@@ -199,3 +199,53 @@ describe('calcularRutasConScore', () => {
     expect(ruta1.min).toBe(12)
   })
 })
+
+describe('calcularRutasConScore — nivelRelativo (comparativo entre alternativas, no absoluto)', () => {
+  // Reproduce el caso real reportado: las tres rutas cruzan igual alguna
+  // zona critica en algun punto (nivelMaximo = 'critico' para las tres, por
+  // eso antes las tres etiquetaban "riesgo critico" sin diferenciarse), pero
+  // sus scores totales son bien distintos entre si.
+  const zonaCritica = { id: 'z', nivel: 'critico', tipoRiesgo: 'inseguridad' }
+
+  it('con scores bien distintos, la de menor score sale "bajo" aunque las tres tengan nivelMaximo critico', () => {
+    const rutasSimplificadas = [
+      { min: 14, coords: [] },
+      { min: 14, coords: [] },
+      { min: 15, coords: [] },
+    ]
+    const crucesConScoresReales = [
+      Array(16).fill(zonaCritica), // 80 pts
+      Array(24).fill(zonaCritica), // 120 pts
+      Array(13).fill(zonaCritica), // 65 pts
+    ]
+    const rutas = calcularRutasConScore(rutasSimplificadas, crucesConScoresReales)
+    expect(rutas.every((r) => r.nivelMaximo === 'critico')).toBe(true) // el bug viejo: las tres tocan una critica
+    expect(rutas[2].nivelRelativo).toBe('bajo') // la de menor score (65) es la mas segura de las tres
+    expect(rutas[1].nivelRelativo).toBe('critico') // la de mayor score (120) esta bastante por encima del resto
+    expect(rutas[0].riesgo).toBeLessThan(rutas[1].riesgo)
+  })
+
+  it('con una sola ruta (sin alternativa para comparar), usa un umbral absoluto razonable', () => {
+    const [ruta1] = calcularRutasConScore([{ min: 10, coords: [] }], [[{ id: 'a', nivel: 'alto', tipoRiesgo: 'siniestro' }]])
+    expect(ruta1.nivelRelativo).toBe('medio')
+  })
+
+  it('score 0 siempre da nivelRelativo "bajo", tenga o no alternativas', () => {
+    const rutas = calcularRutasConScore(
+      [{ min: 12, coords: [] }, { min: 20, coords: [] }],
+      [[], [{ id: 'x', nivel: 'medio', tipoRiesgo: 'siniestro' }]]
+    )
+    expect(rutas[0].nivelRelativo).toBe('bajo')
+  })
+
+  it('con dos rutas de score parejo (diferencia menor al 40%), ninguna escala a critico solo por ser la peor de las dos', () => {
+    const rutas = calcularRutasConScore(
+      [{ min: 10, coords: [] }, { min: 11, coords: [] }],
+      [
+        [{ id: 'a', nivel: 'alto', tipoRiesgo: 'siniestro' }], // score 3
+        [{ id: 'b', nivel: 'alto', tipoRiesgo: 'siniestro' }, { id: 'c', nivel: 'bajo', tipoRiesgo: 'siniestro' }], // score 4 (33% mas, no alcanza el 40%)
+      ]
+    )
+    expect(rutas[1].nivelRelativo).not.toBe('critico')
+  })
+})

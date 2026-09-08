@@ -1290,10 +1290,10 @@ function App() {
                   </span>
                 )}
               </span>
-              <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : r.riesgo <= 3 ? 'warn' : 'alto'}`}>
+              <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : `nivel-${r.nivelRelativo}`}`}>
                 {r.riesgo === 0
                   ? <><CircleCheck size={12} /> sin cruces</>
-                  : <><TriangleAlert size={12} /> riesgo {NIVELES[r.nivelMaximo]?.label.toLowerCase()}</>}
+                  : <><TriangleAlert size={12} /> riesgo {NIVELES[r.nivelRelativo]?.label.toLowerCase()}</>}
               </span>
               {r.riesgo > 0 && (
                 <span className="ruta-opcion-desglose">

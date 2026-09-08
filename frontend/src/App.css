@@ -458,8 +458,13 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-opcion-trafico { display: inline-flex; align-items: center; gap: 2px; color: var(--azul); }
 .ruta-opcion-riesgo { display: flex; align-items: center; gap: 4px; font-size: 11px; }
 .ruta-opcion-riesgo.ok { color: var(--verde); }
-.ruta-opcion-riesgo.warn { color: var(--naranja); }
-.ruta-opcion-riesgo.alto { color: var(--rojo); }
+/* Mismos 4 colores que la leyenda de niveles del mapa (NIVELES en
+   constants.js), para que "riesgo medio" en una tarjeta de ruta se lea
+   exactamente igual que "Medio" en el filtro de zonas. */
+.ruta-opcion-riesgo.nivel-bajo { color: var(--verde); }
+.ruta-opcion-riesgo.nivel-medio { color: var(--amarillo); }
+.ruta-opcion-riesgo.nivel-alto { color: var(--naranja); }
+.ruta-opcion-riesgo.nivel-critico { color: var(--rojo); }
 .ruta-opcion-desglose { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .desglose-item { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--text-dimmer); }
 .desglose-siniestro { color: var(--naranja); }
