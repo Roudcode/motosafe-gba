@@ -719,7 +719,7 @@ export function MapaMotoSafe({
      
   }, [rutasCalculadas, rutaSeleccionada, progresoRutaIndice, version])
 
-  // --- origen / destino / mi ubicación (marcadores simples) -----------------
+  // --- origen / destino (marcadores simples y estáticos) --------------------
   useEffect(() => {
     const map = mapRef.current
     if (!map || version === 0) return
@@ -732,7 +732,31 @@ export function MapaMotoSafe({
       const el = elementoCirculo({ size: 16, color: '#FF3B3B', fillOpacity: 1, weight: 3 })
       markers.push(new Marker({ element: el }).setLngLat([destinoPunto.lng, destinoPunto.lat]).addTo(map))
     }
+    return () => markers.forEach((m) => m.remove())
+     
+  }, [origenPunto, destinoPunto, version])
+
+  // --- mi ubicación: marker persistente con movimiento animado --------------
+  // Antes este marker se destruía y se recreaba en CADA fix de GPS (cada
+  // pocos segundos vía watchPosition), lo que hacía que el puck "saltara" de
+  // punto a punto en vez de deslizarse como en Waze/Maps. Ahora el Marker
+  // vive en un ref y se recrea solo cuando cambia su estilo visual (puck de
+  // navegación vs. punto pulsante) o cuando aparece/desaparece la ubicación
+  // -- el desplazamiento entre fixes lo anima el efecto de abajo con
+  // requestAnimationFrame, sin tocar la instancia del marker.
+  const miUbicacionMarkerRef = useRef(null)
+  const miUbicacionMostradaRef = useRef(null)
+  const miUbicacionAnimRef = useRef(null)
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || version === 0) return
+    if (miUbicacionMarkerRef.current) {
+      miUbicacionMarkerRef.current.remove()
+      miUbicacionMarkerRef.current = null
+    }
     if (miUbicacion) {
+      let el
       if (vistaNavegacion) {
         // Puck direccional tipo Waze/Google Maps en vez del punto pulsante
         // genérico: en navegación importa ver hacia dónde se apunta, no solo
@@ -742,19 +766,57 @@ export function MapaMotoSafe({
         // arriba), la flecha va siempre apuntando hacia arriba -- si en
         // cambio se mostrara sin la vista inclinada, ahí sí haría falta
         // rotarla por rumboActual, porque el norte queda fijo arriba.
-        const el = document.createElement('div')
+        el = document.createElement('div')
         el.className = 'puck-navegacion'
         el.innerHTML = '<div class="puck-navegacion-flecha"></div>'
-        markers.push(new Marker({ element: el, rotationAlignment: 'viewport' }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
       } else {
-        const el = elementoCirculo({ size: 14, color: '#4FA8E8', fillOpacity: 0.9, weight: 3 })
+        el = elementoCirculo({ size: 14, color: '#4FA8E8', fillOpacity: 0.9, weight: 3 })
         el.className = 'pulse-marker-yo'
-        markers.push(new Marker({ element: el }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
       }
+      miUbicacionMarkerRef.current = new Marker({ element: el, rotationAlignment: 'viewport' })
+        .setLngLat([miUbicacion.lng, miUbicacion.lat])
+        .addTo(map)
+      miUbicacionMostradaRef.current = { lng: miUbicacion.lng, lat: miUbicacion.lat }
+    } else {
+      miUbicacionMostradaRef.current = null
     }
-    return () => markers.forEach((m) => m.remove())
-     
-  }, [origenPunto, destinoPunto, miUbicacion, vistaNavegacion, version])
+    return () => {
+      if (miUbicacionAnimRef.current) cancelAnimationFrame(miUbicacionAnimRef.current)
+      miUbicacionMarkerRef.current?.remove()
+      miUbicacionMarkerRef.current = null
+    }
+    // Se reconstruye solo por versión, por cambio del "modo" de puck o
+    // cuando la ubicación aparece/desaparece -- NO en cada coordenada nueva
+    // (eso lo maneja el efecto de animación de abajo).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vistaNavegacion, version, !!miUbicacion])
+
+  useEffect(() => {
+    const marker = miUbicacionMarkerRef.current
+    if (!marker || !miUbicacion) return
+    const desde = miUbicacionMostradaRef.current || { lng: miUbicacion.lng, lat: miUbicacion.lat }
+    const hasta = { lng: miUbicacion.lng, lat: miUbicacion.lat }
+    if (miUbicacionAnimRef.current) cancelAnimationFrame(miUbicacionAnimRef.current)
+    // 900ms es aproximadamente el intervalo típico entre fixes de
+    // watchPosition -- así el puck llega a la posición nueva justo cuando
+    // (o poco antes de) que llegue la siguiente, en vez de quedarse quieto
+    // esperando o de completar el salto instantáneamente.
+    const duracionMs = 900
+    const inicio = performance.now()
+    const paso = (ahora) => {
+      const t = Math.min(1, (ahora - inicio) / duracionMs)
+      const suavizado = 1 - (1 - t) * (1 - t) // ease-out
+      const lng = desde.lng + (hasta.lng - desde.lng) * suavizado
+      const lat = desde.lat + (hasta.lat - desde.lat) * suavizado
+      marker.setLngLat([lng, lat])
+      miUbicacionMostradaRef.current = { lng, lat }
+      miUbicacionAnimRef.current = t < 1 ? requestAnimationFrame(paso) : null
+    }
+    miUbicacionAnimRef.current = requestAnimationFrame(paso)
+    return () => {
+      if (miUbicacionAnimRef.current) cancelAnimationFrame(miUbicacionAnimRef.current)
+    }
+  }, [miUbicacion])
 
   // --- vuelo a un punto (buscador, favoritos, "ver en mapa", etc.) ----------
   // Lo dispara App.jsx via onReady exponiendo el mapa (ver App.jsx: efecto

@@ -482,6 +482,20 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .nav-resumen-mini-detener:hover { background: rgba(255,59,59,0.25); }
 
+/* Velocímetro: mismo lugar que Waze/Maps, círculo compacto abajo a la
+   izquierda, separado de la barra de ETA para no competir por espacio con
+   ella en pantallas chicas. */
+.velocimetro {
+  position: absolute; bottom: 24px; left: 20px; z-index: 1001;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(var(--surface-rgb),0.96); border: 2px solid var(--text); backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35); font-family: 'Space Grotesk', sans-serif;
+}
+.velocimetro-icono { display: none; }
+.velocimetro strong { font-size: 18px; line-height: 1; color: var(--text); }
+.velocimetro span { font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
 .legend {
   position: absolute; bottom: 24px; left: 20px; z-index: 1000;
   background: rgba(var(--surface-rgb),0.92); border: 1px solid var(--border); border-radius: 12px;
