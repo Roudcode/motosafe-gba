@@ -345,6 +345,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .searchbar input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; }
 .searchbar input::placeholder { color: var(--text-dimmer); }
 .searchbar-clear { display: flex; background: none; border: none; color: var(--text-dim); cursor: pointer; }
+/* El indent de 16px de .ruta-form-sugerencias es para no tapar el puntito
+   de color (origen/destino) de esa fila -- la searchbar no tiene ese
+   puntito, así que el dropdown va de punta a punta. */
+.searchbar-sugerencias { left: 0; right: 0; }
 
 .ruta-form {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1001;
@@ -443,18 +447,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .zoom-controls button:last-child { border-bottom: none; }
 .zoom-controls button:hover { background: rgba(var(--surface-rgb),0.7); }
 
-.cercanas-panel, .detalle-panel {
+.detalle-panel {
   position: absolute; top: var(--y3); right: calc(20px + var(--safe-right)); z-index: 1000; width: 230px;
   background: rgba(var(--surface-rgb),0.92); border: 1px solid var(--border); border-radius: 12px;
   padding: 14px; backdrop-filter: blur(6px); overflow: hidden;
 }
 .cercanas-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 8px; }
-.cercanas-empty { font-size: 12px; color: var(--text-dimmer); }
-.cercanas-item { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; color: var(--text); text-align: left; padding: 6px 0; cursor: pointer; font-family: 'Inter', sans-serif; }
-.cercanas-item:hover .cercanas-nombre { color: var(--azul); }
 .cercanas-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .cercanas-nombre { flex: 1; font-size: 12px; line-height: 1.3; }
-.cercanas-km { font-size: 11px; color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
 
 .detalle-cerrar { display: flex; background: none; border: none; color: var(--text-dim); cursor: pointer; }
 .detalle-panel .detalle-cerrar { position: absolute; top: 10px; right: 10px; }
@@ -611,24 +611,27 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .velocimetro strong { font-size: 18px; line-height: 1; color: var(--text); }
 .velocimetro span { font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
 
+/* Achicada a pedido de Rodo (era el elemento más grande de la esquina
+   inferior izquierda sin aportar tanto): menos padding, tipografía y
+   swatches más chicos, ancho mínimo más angosto. */
 .legend {
   position: absolute; bottom: var(--b1); left: calc(20px + var(--safe-left)); z-index: 1000;
-  background: rgba(var(--surface-rgb),0.92); border: 1px solid var(--border); border-radius: 12px;
-  padding: 14px 16px; backdrop-filter: blur(6px); font-size: 13px;
-  display: flex; flex-direction: column; gap: 6px; min-width: 170px; overflow: hidden;
+  background: rgba(var(--surface-rgb),0.92); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; backdrop-filter: blur(6px); font-size: 12px;
+  display: flex; flex-direction: column; gap: 3px; min-width: 140px; overflow: hidden;
 }
 
 /* La leyenda de inseguridad se apila arriba de la principal (misma columna,
    no al lado) cuando esa capa esta prendida, para no superponerse. */
-.legend-inseguridad { bottom: 210px; border-color: #FF3B3B; }
+.legend-inseguridad { bottom: 172px; border-color: #FF3B3B; }
 .legend-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.legend-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 4px; }
+.legend-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 3px; }
 .legend-title em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.6; }
-.legend-reset { background: none; border: none; color: var(--azul); font-size: 10px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
-.legend-item { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; padding: 2px 0; transition: opacity 0.15s ease; }
+.legend-reset { background: none; border: none; color: var(--azul); font-size: 9px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
+.legend-item { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px; padding: 1px 0; transition: opacity 0.15s ease; }
 .legend-item.inactive { opacity: 0.35; }
-.legend-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.legend-count { margin-left: auto; font-size: 11px; color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
+.legend-swatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-count { margin-left: auto; font-size: 10px; color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
 
 /* Botón "recentrar" estilo Waze/Maps: aparece solo mientras el usuario
    paneó el mapa a mano en Modo Viaje (ver siguiendoUbicacion en App.jsx).
@@ -810,7 +813,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-resumen-iniciar:active, .nav-resumen-mini-detener:active,
 .ruta-prioridad button:active, .favorito-chip:active:not(:disabled),
 .legend-item:active, .actividad-item:active, .stats-top-item:active,
-.cercanas-item:active, .capas-opcion:active, .herramientas-menu button:active,
+.capas-opcion:active, .herramientas-menu button:active,
 .report-options button:active:not(:disabled), .ruta-resumen-compartir:active,
 .ruta-resumen-nueva:active, .ruta-form-buscar:active:not(:disabled) {
   transform: scale(0.93);
@@ -842,7 +845,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .actividad-panel, .stats-panel { top: calc(96px + var(--safe-top)); right: 12px; width: 82vw; }
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
-  .cercanas-panel, .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; width: 200px; max-height: 40vh; }
+  .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; width: 200px; max-height: 40vh; }
+  /* "Opciones de ruta" era el panel más pesado en vertical (tarjeta por
+     ruta + desglose de puntaje + lista de zonas cruzadas + botones): se
+     achica todo lo que no es indispensable para decidir qué ruta tomar --
+     el desglose de puntaje interno (desglose-pts) no aporta nada a esa
+     decisión y la lista de zonas cruzadas se ve igual con menos alto,
+     scrolleando adentro en vez de empujar el resto del panel para abajo. */
+  .ruta-resumen { padding: 11px; }
+  .ruta-opcion { padding: 7px 9px; margin-bottom: 5px; }
+  .ruta-opcion-desglose { display: none; }
+  .ruta-prioridad { margin-bottom: 8px; }
+  .ruta-prioridad button { padding: 6px 4px; }
+  .ruta-resumen-detalle { max-height: 90px; }
   /* Sin tope de ancho, la leyenda crecía para que el título ("NIVEL DE
      RIESGO (tocá para filtrar)") entrara en una sola línea -- en un celular
      angosto eso la hacía invadir el panel de rutas/cercanas del otro lado
@@ -871,7 +886,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .topbar { padding-top: calc(8px + var(--safe-top)); padding-bottom: 8px; }
   .brand-name { font-size: 16px; }
   .searchbar, .ruta-form, .toast, .navegacion-panel, .alerta-viaje { top: calc(48px + var(--safe-top)); }
-  .capas-panel, .actividad-panel, .stats-panel, .cercanas-panel, .ruta-resumen, .detalle-panel {
+  .capas-panel, .actividad-panel, .stats-panel, .ruta-resumen, .detalle-panel {
     top: calc(48px + var(--safe-top)); max-height: calc(100vh - 70px); right: calc(12px + var(--safe-right));
   }
   .zoom-controls { top: calc(48px + var(--safe-top)); }
@@ -897,6 +912,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 
 @media (max-width: 768px) and (min-width: 481px) {
-  .cercanas-panel, .ruta-resumen, .detalle-panel, .actividad-panel, .stats-panel { width: 200px; }
+  .ruta-resumen, .detalle-panel, .actividad-panel, .stats-panel { width: 200px; }
   .searchbar, .ruta-form { width: 78vw; }
 }

@@ -152,6 +152,12 @@ function App() {
   const [destinoPunto, setDestinoPunto] = useState(null)
   const sugOrigen = useSugerenciasDireccion(origenTexto, !!origenPunto)
   const sugDestino = useSugerenciasDireccion(destinoTexto, !!destinoPunto)
+  // La barra de búsqueda de arriba filtraba zonas ya cargadas, pero no
+  // servía para buscar una dirección que no fuera ya una zona del dataset
+  // (una avenida cualquiera, por ejemplo) -- reusa el mismo geocoder que
+  // origen/destino para eso, y "elegir" una sugerencia la manda directo a
+  // Trazar ruta como destino (ver buscarComoDestino más abajo).
+  const sugBusqueda = useSugerenciasDireccion(busqueda, false)
   const [campoActivo, setCampoActivo] = useState(null)
   const [geocodificando, setGeocodificando] = useState(false)
   const [rutasCalculadas, setRutasCalculadas] = useState([])
@@ -694,6 +700,16 @@ function App() {
   }
 
   const usarFavorito = (fav) => { setDestinoTexto(fav.texto); setDestinoPunto(fav.punto) }
+  // Elegir una sugerencia de la barra de búsqueda de arriba abre "Trazar
+  // ruta" con ese resultado ya puesto de destino, en vez de solo centrar el
+  // mapa ahí -- lo que pidió Rodo (que buscar zona/avenida sirva para
+  // buscar el destino directamente).
+  const buscarComoDestino = (sug) => {
+    setDestinoTexto(sug.label)
+    setDestinoPunto({ lat: sug.lat, lng: sug.lng })
+    abrirPanelRuta()
+    setBusqueda('')
+  }
   const guardarFavorito = async (clave, label) => {
     let punto = destinoPunto
     if (!punto) {
@@ -1007,14 +1023,6 @@ function App() {
     return [...zonasAjustadas].sort((a, b) => (b.cantidad || 0) - (a.cantidad || 0)).slice(0, 5)
   }, [zonasAjustadas])
 
-  const referencia = miUbicacion || CENTRO_GBA
-  const cercanas = useMemo(() => {
-    return [...zonasFiltradas]
-      .map((z) => ({ ...z, distancia: distanciaKm(referencia, z) }))
-      .sort((a, b) => a.distancia - b.distancia)
-      .slice(0, 4)
-  }, [zonasFiltradas, referencia])
-
   const compartirRuta = async () => {
     const r = rutasConScore[rutaSeleccionada]
     const cruces = zonasCruzadasPorRuta[rutaSeleccionada]?.length || 0
@@ -1227,8 +1235,20 @@ function App() {
       {!vistaNavegacion && (
         <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
           <span className="searchbar-icon"><Search size={13} /></span>
-          <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar zona o avenida" />
+          <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
+          {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda"><X size={12} /></button>}
+          {sugBusqueda.sugerencias.length > 0 && (
+            <ul className="ruta-form-sugerencias searchbar-sugerencias">
+              {sugBusqueda.sugerencias.map((s, i) => (
+                <li key={i}>
+                  <button type="button" onMouseDown={() => buscarComoDestino(s)}>
+                    <Compass size={12} /> Ir a: {s.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -1505,21 +1525,6 @@ function App() {
               <p className="detalle-ajuste-motivo">Subió por: {zonaSeleccionada.ajuste.motivos.join(' + ')}</p>
             </div>
           )}
-        </div>
-      )}
-
-      {rutasCalculadas.length === 0 && !rutaAbierta && !zonaSeleccionada && !actividadAbierta && !statsAbierto && !capasAbiertas && (
-        <div className="cercanas-panel panel-enter hazard-edge" style={{ animationDelay: '0.15s' }}>
-          <span className="cercanas-title">Zonas cercanas {miUbicacion ? '· a vos' : '· al centro del GBA'}</span>
-          {cargandoHotspots && <p className="cercanas-empty">Cargando...</p>}
-          {!cargandoHotspots && cercanas.length === 0 && <p className="cercanas-empty">Sin resultados</p>}
-          {cercanas.map((z) => (
-            <button key={z.id} className="cercanas-item" onClick={() => setVuelo({ lat: z.lat, lng: z.lng, zoom: 15 })}>
-              <span className="cercanas-dot" style={{ background: NIVELES[z.ajuste.nivel].color }} />
-              <span className="cercanas-nombre">{z.nombre}</span>
-              <span className="cercanas-km">{z.distancia.toFixed(1)} km</span>
-            </button>
-          ))}
         </div>
       )}
 
