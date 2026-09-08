@@ -4,7 +4,7 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
-  Siren, ShieldAlert, Layers,
+  Siren, ShieldAlert, Layers, Navigation, Square,
 } from 'lucide-react'
 
 import {
@@ -370,18 +370,12 @@ function App() {
     )
   }
 
-  const toggleModoViaje = () => {
-    if (modoViaje) {
-      if (watchId != null) navigator.geolocation.clearWatch(watchId)
-      setWatchId(null)
-      setModoViaje(false)
-      setVistaNavegacion(false)
-      setRumboActual(0)
-      setZonasAlertadas(new Set())
-      setAlertaViaje(null)
-      mostrarToast('Modo Viaje desactivado')
-      return
-    }
+  // Arranca el seguimiento GPS. conVistaNavegacion=true es el camino que usa
+  // "Iniciar viaje" desde una ruta ya calculada: además de prender Modo Viaje,
+  // deja lista la cámara 3D de una sola vez, sin que el usuario tenga que ir
+  // a buscar el toggle de "Vista inclinada" por separado (que es justamente
+  // el problema de UX que se pidió resolver -- que la app se acomode sola).
+  const activarModoViaje = (conVistaNavegacion = false) => {
     if (!navigator.geolocation) { mostrarToast('Tu navegador no soporta geolocalización'); return }
     const id = navigator.geolocation.watchPosition(
       (pos) => {
@@ -411,7 +405,33 @@ function App() {
     setWatchId(id)
     setModoViaje(true)
     setZonasAlertadas(new Set())
-    mostrarToast('Modo Viaje activado')
+    if (conVistaNavegacion) setVistaNavegacion(true)
+    mostrarToast(conVistaNavegacion ? 'Navegación iniciada' : 'Modo Viaje activado')
+  }
+
+  const desactivarModoViaje = () => {
+    if (watchId != null) navigator.geolocation.clearWatch(watchId)
+    setWatchId(null)
+    setModoViaje(false)
+    setVistaNavegacion(false)
+    setRumboActual(0)
+    setZonasAlertadas(new Set())
+    setAlertaViaje(null)
+    mostrarToast('Modo Viaje desactivado')
+  }
+
+  const toggleModoViaje = () => {
+    if (modoViaje) { desactivarModoViaje(); return }
+    activarModoViaje(false)
+  }
+
+  // Acción de "Iniciar viaje" en el resumen de ruta: si ya está en Modo Viaje
+  // (por ejemplo lo prendió manualmente antes de trazar la ruta) solo suma la
+  // vista 3D; si no, arranca todo junto. Así "comenzar ruta" activa de una la
+  // experiencia completa en vez de pedirle al usuario que junte dos toggles.
+  const iniciarNavegacionRuta = () => {
+    if (modoViaje) { setVistaNavegacion(true); mostrarToast('Navegación iniciada'); return }
+    activarModoViaje(true)
   }
 
   const iniciarReporte = () => {
@@ -1106,6 +1126,9 @@ function App() {
               )}
             </div>
           )}
+          <button className={`ruta-resumen-iniciar ${modoViaje ? 'activo' : ''}`} onClick={modoViaje ? desactivarModoViaje : iniciarNavegacionRuta}>
+            {modoViaje ? <><Square size={14} /> Detener navegación</> : <><Navigation size={15} /> Iniciar viaje</>}
+          </button>
           <div className="ruta-resumen-acciones-finales">
             <button className="ruta-resumen-compartir" onClick={compartirRuta}><Share2 size={13} /> Compartir</button>
             <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>

@@ -333,6 +333,43 @@ export function MapaMotoSafe({
     }
   }, [vistaNavegacion, rumboActual, miUbicacion, version])
 
+  // --- edificios 3D, solo durante la navegación con vista inclinada --------
+  // Es la "vuelta de rosca" visual: con el mapa plano (exploración, clusters,
+  // mapa de calor) una capa de edificios extruidos solo agrega ruido, porque
+  // sin pitch no hay altura que apreciar. Durante la navegación sí suma la
+  // sensación de profundidad tipo Waze/Google Maps. La fuente 'openmaptiles'
+  // y la source-layer 'building' ya vienen incluidas en el estilo (mismo
+  // vector tileset que usan los clusters), así que alcanza con agregar la
+  // layer de extrusión -- no hace falta declarar una fuente nueva.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || version === 0) return
+    const layerId = 'edificios-3d-navegacion'
+    if (vistaNavegacion) {
+      if (!map.getLayer(layerId) && map.getSource('openmaptiles')) {
+        map.addLayer({
+          id: layerId,
+          type: 'fill-extrusion',
+          source: 'openmaptiles',
+          'source-layer': 'building',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': tema === 'light' ? '#C9CDD3' : '#3A4048',
+            'fill-extrusion-height': [
+              'interpolate', ['linear'], ['zoom'],
+              14, 0,
+              16, ['coalesce', ['get', 'render_height'], 8],
+            ],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+            'fill-extrusion-opacity': 0.75,
+          },
+        })
+      }
+    } else if (map.getLayer(layerId)) {
+      map.removeLayer(layerId)
+    }
+  }, [vistaNavegacion, version, tema])
+
   // --- tráfico en vivo (tiles raster propios, TomTom vía backend) ----------
   useEffect(() => {
     const map = mapRef.current
@@ -654,13 +691,28 @@ export function MapaMotoSafe({
       markers.push(new Marker({ element: el }).setLngLat([destinoPunto.lng, destinoPunto.lat]).addTo(map))
     }
     if (miUbicacion) {
-      const el = elementoCirculo({ size: 14, color: '#4FA8E8', fillOpacity: 0.9, weight: 3 })
-      el.className = 'pulse-marker-yo'
-      markers.push(new Marker({ element: el }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
+      if (vistaNavegacion) {
+        // Puck direccional tipo Waze/Google Maps en vez del punto pulsante
+        // genérico: en navegación importa ver hacia dónde se apunta, no solo
+        // dónde se está. El marker de MapLibre no rota con el bearing del
+        // mapa (queda fijo a la pantalla), y como la cámara ya gira para
+        // dejar el rumbo actual "arriba" (ver el efecto de cámara más
+        // arriba), la flecha va siempre apuntando hacia arriba -- si en
+        // cambio se mostrara sin la vista inclinada, ahí sí haría falta
+        // rotarla por rumboActual, porque el norte queda fijo arriba.
+        const el = document.createElement('div')
+        el.className = 'puck-navegacion'
+        el.innerHTML = '<div class="puck-navegacion-flecha"></div>'
+        markers.push(new Marker({ element: el, rotationAlignment: 'viewport' }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
+      } else {
+        const el = elementoCirculo({ size: 14, color: '#4FA8E8', fillOpacity: 0.9, weight: 3 })
+        el.className = 'pulse-marker-yo'
+        markers.push(new Marker({ element: el }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
+      }
     }
     return () => markers.forEach((m) => m.remove())
      
-  }, [origenPunto, destinoPunto, miUbicacion, version])
+  }, [origenPunto, destinoPunto, miUbicacion, vistaNavegacion, version])
 
   // --- vuelo a un punto (buscador, favoritos, "ver en mapa", etc.) ----------
   // Lo dispara App.jsx via onReady exponiendo el mapa (ver App.jsx: efecto
