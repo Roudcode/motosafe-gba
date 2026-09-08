@@ -1117,12 +1117,21 @@ function App() {
   // por el mismo espacio -- Rodo lo vio en captura real. El estado de
   // "dejó de seguir" ya tiene su propio aviso (el botón de recentrar que
   // aparece), así que no hace falta repetirlo acá.
+  // Mismo criterio que "Modo Viaje" más arriba: el pill de estado vive en la
+  // misma fila que los íconos de tema/capas/clima, y su ancho depende del
+  // texto -- con "740 zonas registradas · hace 45s" no entraba y el topbar
+  // pasaba a 2 (o 3) líneas, corriendo todo lo de abajo y rompiendo la
+  // simetría con la marca de la izquierda (Rodo lo vio en captura real: con
+  // un reporte, texto corto, quedaba prolijo en una sola fila; al borrarlo,
+  // volvía el texto largo y se desarmaba). Se acorta cada variante para que
+  // el pill entre en una sola línea en el caso común, en vez de perseguir el
+  // problema por breakpoint cada vez que cambia el estado que se muestra.
   if (modoViaje) textoTopbar = 'Modo Viaje'
   else if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
-  else if (cargandoHotspots) textoTopbar = 'Conectando con el servidor de datos...'
+  else if (cargandoHotspots) textoTopbar = 'Conectando...'
   else if (misReportes.length > 0) textoTopbar = `${misReportes.length} reporte${misReportes.length > 1 ? 's' : ''} tuyo${misReportes.length > 1 ? 's' : ''} · hace ${segundos}s`
-  else if (mostrarAlerta) textoTopbar = `${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''} visible${criticosVisibles > 1 ? 's' : ''}`
-  else textoTopbar = `${zonasFiltradas.length} zonas registradas · hace ${segundos}s`
+  else if (mostrarAlerta) textoTopbar = `${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''}`
+  else textoTopbar = `${zonasFiltradas.length} zonas · hace ${segundos}s`
 
   const climaInfo = clima ? iconoClima(clima.weathercode) : null
 
