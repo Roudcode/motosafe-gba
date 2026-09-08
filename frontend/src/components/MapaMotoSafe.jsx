@@ -89,6 +89,23 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
     },
   })
 
+  // Un source de MapLibre SOLO tilea/carga sus datos si hay al menos una
+  // layer visible que lo use -- sin esto, isSourceLoaded() da true (no hay
+  // nada que cargar) pero querySourceFeatures() siempre devuelve [], porque
+  // nunca se generó el índice de tiles que esa función lee. Como acá el
+  // renderizado real lo hacen los maplibregl.Marker de HTML (no una layer de
+  // estilo), agregamos una layer "ancla" invisible (radio y opacidad 0) solo
+  // para forzar ese tileo. Costó bastante encontrar esto: confirmado contra
+  // mapbox-gl-js#5686 ("querySourceFeatures returns empty for invisible
+  // features"), que documenta exactamente esta limitación.
+  const layerAnclaId = `${sourceId}-ancla-query`
+  map.addLayer({
+    id: layerAnclaId,
+    type: 'circle',
+    source: sourceId,
+    paint: { 'circle-radius': 0, 'circle-opacity': 0 },
+  })
+
   let markersOnScreen = {}
 
   function actualizar() {
@@ -161,6 +178,9 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
     map.off('data', onData)
     map.off('move', actualizar)
     Object.values(markersOnScreen).forEach((m) => m.remove())
+    // La layer ancla se saca antes que el source: MapLibre no deja borrar un
+    // source todavia referenciado por una layer.
+    if (map.getLayer(layerAnclaId)) map.removeLayer(layerAnclaId)
     if (map.getSource(sourceId)) map.removeSource(sourceId)
   }
 }
