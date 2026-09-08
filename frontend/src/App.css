@@ -362,6 +362,27 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-form input:focus { border-color: var(--azul); }
 .ruta-form-pin { display: flex; background: none; border: none; cursor: pointer; color: var(--text-dim); }
 .ruta-form-pin.activo { color: var(--azul); filter: drop-shadow(0 0 4px rgba(79,168,232,0.6)); }
+/* relative para anclar el desplegable de sugerencias contra ESTA fila (el
+   origen/destino puntual), no contra todo .ruta-form -- así el desplegable
+   de "Origen" no tapa el campo de "Destino" que viene inmediatamente
+   después. */
+.ruta-form-fila-con-sugerencias { position: relative; }
+.ruta-form-sug-spinner { flex-shrink: 0; margin-right: -2px; }
+.ruta-form-sugerencias {
+  position: absolute; top: calc(100% + 4px); left: 16px; right: 0; z-index: 1010;
+  list-style: none; background: var(--surface-solid); border: 1px solid var(--border);
+  border-radius: 10px; padding: 4px; box-shadow: var(--shadow-float-hover);
+  max-height: 180px; overflow-y: auto;
+}
+.ruta-form-sugerencias li + li { margin-top: 2px; }
+.ruta-form-sugerencias button {
+  display: flex; align-items: flex-start; gap: 7px; width: 100%; text-align: left;
+  background: none; border: none; border-radius: 7px; padding: 8px 9px;
+  color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.35;
+  cursor: pointer; transition: background 0.12s ease;
+}
+.ruta-form-sugerencias button:hover, .ruta-form-sugerencias button:active { background: var(--inset); }
+.ruta-form-sugerencias button svg { flex-shrink: 0; margin-top: 2px; color: var(--text-dimmer); }
 .ruta-form-swap {
   display: flex; align-items: center; justify-content: center; margin: 4px 0 4px 2px;
   background: var(--inset); border: 1px solid var(--border);

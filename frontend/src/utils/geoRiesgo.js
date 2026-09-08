@@ -148,15 +148,38 @@ export function calcularAjustePorFranjaHoraria(zona, horaDelDia, franja) {
   }
 }
 
+function itemNominatimAPunto(item) {
+  return {
+    lat: parseFloat(item.lat),
+    lng: parseFloat(item.lon),
+    label: item.display_name.split(',').slice(0, 2).join(','),
+  }
+}
+
 export async function geocodificar(texto) {
   const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=1`
   const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
   const data = await res.json()
   if (!data || data.length === 0) return null
-  return {
-    lat: parseFloat(data[0].lat),
-    lng: parseFloat(data[0].lon),
-    label: data[0].display_name.split(',').slice(0, 2).join(','),
-  }
+  return itemNominatimAPunto(data[0])
+}
+
+// Sugerencias en vivo mientras se escribe el origen/destino de una ruta --
+// mismo geocoder (Nominatim) que ya usaba geocodificar() al confirmar la
+// ruta, ahora con limit=5 en vez de 1 para armar un desplegable. Antes el
+// único feedback de que "Ramos Meji" no alcanzaba para ubicar algo llegaba
+// recién al tocar "Buscar ruta" -- con la lista en vivo se corrige mientras
+// se escribe, sin tener que fallar primero.
+// `signal` (AbortSignal) deja cancelar un pedido en vuelo cuando el usuario
+// sigue tipeando: sin esto, una tecla vieja que tarda más en volver podía
+// pisar el resultado de una tecla más reciente que ya volvió.
+export async function buscarSugerencias(texto, { signal } = {}) {
+  if (!texto || texto.trim().length < 3) return []
+  const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=5`
+  const res = await fetch(url, { headers: { 'Accept-Language': 'es' }, signal })
+  const data = await res.json()
+  if (!data || data.length === 0) return []
+  return data.map(itemNominatimAPunto)
 }

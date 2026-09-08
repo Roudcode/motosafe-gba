@@ -25,6 +25,7 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
 import { MapaMotoSafe } from './components/MapaMotoSafe'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
+import { useSugerenciasDireccion } from './hooks/useSugerenciasDireccion'
 
 // Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
 // panel de detalle de zona — mismos tonos semánticos que los niveles de riesgo
@@ -149,6 +150,8 @@ function App() {
   const [destinoTexto, setDestinoTexto] = useState('')
   const [origenPunto, setOrigenPunto] = useState(null)
   const [destinoPunto, setDestinoPunto] = useState(null)
+  const sugOrigen = useSugerenciasDireccion(origenTexto, !!origenPunto)
+  const sugDestino = useSugerenciasDireccion(destinoTexto, !!destinoPunto)
   const [campoActivo, setCampoActivo] = useState(null)
   const [geocodificando, setGeocodificando] = useState(false)
   const [rutasCalculadas, setRutasCalculadas] = useState([])
@@ -636,6 +639,10 @@ function App() {
     )
   }
   const marcarEnMapa = (campo) => setCampoActivo(campo === campoActivo ? null : campo)
+  const elegirSugerencia = (campo, sug) => {
+    if (campo === 'origen') { setOrigenTexto(sug.label); setOrigenPunto({ lat: sug.lat, lng: sug.lng }); sugOrigen.limpiar() }
+    else { setDestinoTexto(sug.label); setDestinoPunto({ lat: sug.lat, lng: sug.lng }); sugDestino.limpiar() }
+  }
   const clicMapa = (punto) => {
     if (campoActivo === 'origen') { setOrigenPunto(punto); setOrigenTexto('Punto marcado en el mapa'); setCampoActivo(null) }
     if (campoActivo === 'destino') { setDestinoPunto(punto); setDestinoTexto('Punto marcado en el mapa'); setCampoActivo(null) }
@@ -1186,16 +1193,40 @@ function App() {
 
       {rutaAbierta && (
         <div className="ruta-form panel-enter hazard-edge">
-          <div className="ruta-form-fila">
+          <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
             <span className="ruta-form-punto ruta-form-punto-origen" />
-            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} aria-label="Origen de la ruta" />
+            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} onBlur={() => setTimeout(sugOrigen.limpiar, 150)} aria-label="Origen de la ruta" autoComplete="off" />
+            {sugOrigen.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
             <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}><MapPin size={14} /></button>
+            {sugOrigen.sugerencias.length > 0 && (
+              <ul className="ruta-form-sugerencias">
+                {sugOrigen.sugerencias.map((s, i) => (
+                  <li key={i}>
+                    <button type="button" onMouseDown={() => elegirSugerencia('origen', s)}>
+                      <MapPin size={12} /> {s.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar" aria-label="Intercambiar origen y destino"><ArrowUpDown size={13} /></button>
-          <div className="ruta-form-fila">
+          <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
             <span className="ruta-form-punto ruta-form-punto-destino" />
-            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} aria-label="Destino de la ruta" />
+            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} onBlur={() => setTimeout(sugDestino.limpiar, 150)} aria-label="Destino de la ruta" autoComplete="off" />
+            {sugDestino.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
             <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}><MapPin size={14} /></button>
+            {sugDestino.sugerencias.length > 0 && (
+              <ul className="ruta-form-sugerencias">
+                {sugDestino.sugerencias.map((s, i) => (
+                  <li key={i}>
+                    <button type="button" onMouseDown={() => elegirSugerencia('destino', s)}>
+                      <MapPin size={12} /> {s.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="favoritos-fila">
             {favoritos.casa ? (

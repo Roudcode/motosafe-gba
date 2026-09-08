@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm } from './geoRiesgo'
+import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm, buscarSugerencias } from './geoRiesgo'
 
 const FRANJA_MOTO = { desde: 19, hasta: 24 }
 const FRANJA_GENERAL = { desde: 17, hasta: 22 }
@@ -195,5 +195,13 @@ describe('distanciaAPolilinea', () => {
 
   it('sin coordenadas, devuelve Infinity', () => {
     expect(distanciaAPolilinea({ lat: -34.60, lng: -58.40 }, [])).toBe(Infinity)
+  })
+})
+
+describe('buscarSugerencias', () => {
+  it('no pega contra la red con menos de 3 caracteres (evita un pedido por cada tecla al empezar a escribir)', async () => {
+    expect(await buscarSugerencias('')).toEqual([])
+    expect(await buscarSugerencias('  ')).toEqual([])
+    expect(await buscarSugerencias('ab')).toEqual([])
   })
 })
