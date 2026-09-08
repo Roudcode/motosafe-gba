@@ -1020,7 +1020,7 @@ function App() {
 
       {backendError && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
-          <WifiOff size={14} /> Sin conexión con el backend (localhost:8000). Reintentando cada 5s.
+          <WifiOff size={14} /> Sin conexión con el backend. Reintentando cada 5s.
           <button onClick={cargarHotspots}>Reintentar ahora</button>
         </div>
       )}
