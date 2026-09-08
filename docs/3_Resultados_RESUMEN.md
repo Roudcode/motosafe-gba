@@ -19,14 +19,15 @@ Este documento reúne la metodología y los resultados del análisis de datos y 
 
 ---
 
-## 2. Identificación de hotspots (DBSCAN)
+## 2. Identificación de hotspots (DBSCAN, luego HDBSCAN)
 
 **Primer intento (300m de radio, mínimo 10 casos):** fusionó casi toda la ciudad en un solo cluster de 23.068 puntos — efecto de "encadenamiento" típico de DBSCAN en zonas urbanas densas.
 
-**Parámetros finales:** 60 metros de radio, mínimo 10 casos por cluster.
-**Resultado:** **430 hotspots geográficamente coherentes**, 67,9% de los siniestros clasificados como "aislados" (sin recurrencia puntual) — resultado esperable y realista, no todo punto de una ciudad concentra siniestralidad repetida.
+**Calibración DBSCAN (60 metros de radio, mínimo 10 casos por cluster):** 430 hotspots geográficamente coherentes, 67,9% de los siniestros clasificados como "aislados" (sin recurrencia puntual). Una vuelta posterior de barrido sistemático de parámetros (eps 40-120m x min_samples 6-15) mejoró esto a 412 hotspots con 49,9% de cobertura como mejor punto seguro (cluster más grande por debajo del umbral de "blob").
 
-**Hallazgo destacado:** el hotspot con más muertes (Donado, Saavedra — 4 mortales en 52 casos) no es el de mayor volumen (Av. Ricardo Balbín, Saavedra — 88 casos, 3 mortales). Confirma con datos reales que frecuencia y severidad son dimensiones distintas del riesgo.
+**Resultado final, en producción (HDBSCAN, min_cluster_size=12, min_samples=3):** se migró de DBSCAN a HDBSCAN porque este último se adapta a la densidad local de cada zona en vez de usar un radio fijo para toda la ciudad. **740 hotspots**, **75,6% de cobertura** de los siniestros históricos (24,4% quedan "aislados", casos demasiado dispersos como para formar zona compacta), con el cluster más grande ocupando apenas **0,41%** del total — más seguro incluso que la versión DBSCAN. Es la configuración vigente al momento de escribir esto.
+
+**Hallazgo destacado:** el hotspot con más muertes (Donado, Saavedra — 4 mortales en 52 casos) no es el de mayor volumen (Av. Ricardo Balbín, Saavedra — 88 casos, 3 mortales). Confirma con datos reales que frecuencia y severidad son dimensiones distintas del riesgo. (Este hallazgo surgió durante la calibración DBSCAN y se sostiene igual en la migración a HDBSCAN.)
 
 ---
 
@@ -81,7 +82,7 @@ El modelo no devuelve "bajo/medio/alto/crítico" directamente: devuelve una prob
 
 **Por qué el umbral de MORTAL es más bajo que el de GRAVE:** como se documentó en la sección anterior, la precisión de GRAVE se mantiene baja (0.08–0.15) en las cuatro versiones probadas — el modelo genera bastantes falsas alarmas de "grave". Frente a esa limitación, se decidió priorizar no perder señal de MORTAL aun a costa de más falsos positivos: alcanza con menos probabilidad acumulada de MORTAL que de GRAVE para escalar el nivel de riesgo mostrado en el mapa. Es una decisión de diseño explícita, no un valor arbitrario, coherente con el criterio de "mejor sobre-alertar que no alertar" en seguridad vial.
 
-**Cobertura de contexto:** para calcular estas probabilidades, cada uno de los 430 hotspots necesita un perfil típico (comuna, tipo de vía, contraparte, edad/sexo promedio de las víctimas históricas de esa zona), guardado en `hotspots_contexto.csv`. Si un hotspot no tiene ese perfil propio, el backend usa el perfil promedio de toda la ciudad en su lugar y lo marca explícitamente con `contexto_estimado: true` en la respuesta de la API — así queda trazable cuáles predicciones se basan en el historial específico de la zona y cuáles en un perfil genérico, en vez de mostrar un nivel de riesgo calculado con un criterio distinto sin aviso.
+**Cobertura de contexto:** para calcular estas probabilidades, cada uno de los 740 hotspots necesita un perfil típico (comuna, tipo de vía, contraparte, edad/sexo promedio de las víctimas históricas de esa zona), guardado en `hotspots_contexto.csv`. Si un hotspot no tiene ese perfil propio, el backend usa el perfil promedio de toda la ciudad en su lugar y lo marca explícitamente con `contexto_estimado: true` en la respuesta de la API — así queda trazable cuáles predicciones se basan en el historial específico de la zona y cuáles en un perfil genérico, en vez de mostrar un nivel de riesgo calculado con un criterio distinto sin aviso.
 
 ## 6. Por qué el modelo #3 es el elegido
 
@@ -112,7 +113,7 @@ El modelo no devuelve "bajo/medio/alto/crítico" directamente: devuelve una prob
 2. **40% de las edades son estimadas**, no reales — impacta la calidad de la señal que aporta esa variable.
 3. **Faltan variables con probable alto poder predictivo** que el dataset del gobierno no incluye: velocidad del vehículo, uso de casco, presencia de alcohol, condición de la vía (mojada/seca), iluminación real del lugar y momento.
 4. **El modelo se entrenó y evaluó sobre CABA exclusivamente** — no hay validación sobre datos del conurbano bonaerense.
-5. En el uso actual en producción (API `/hotspots`), el contexto de "hora" y "día" es el mismo para las 430 zonas en cada consulta (el momento actual real), por lo que la variación de riesgo entre zonas refleja mayormente su perfil histórico (comuna, vía, contraparte típica) más que un patrón horario específico de cada lugar.
+5. En el uso actual en producción (API `/hotspots`), el contexto de "hora" y "día" es el mismo para las 740 zonas en cada consulta (el momento actual real), por lo que la variación de riesgo entre zonas refleja mayormente su perfil histórico (comuna, vía, contraparte típica) más que un patrón horario específico de cada lugar.
 
 ---
 
@@ -122,7 +123,7 @@ El modelo no devuelve "bajo/medio/alto/crítico" directamente: devuelve una prob
 |---|---|
 | `motos_limpio.csv` | 23.343 siniestros de moto, limpios |
 | `motos_con_clusters.csv` | Los mismos, con el hotspot (cluster) asignado |
-| `hotspots_moto_caba.csv` | Resumen de los 430 hotspots (ubicación, cantidad, gravedad) |
+| `hotspots_moto_caba.csv` | Resumen de los 740 hotspots (ubicación, cantidad, gravedad) |
 | `hotspots_contexto.csv` | Comuna/vía/contraparte/edad/sexo típicos por hotspot (usado en producción) |
 | `modelo_random_forest.pkl` | Modelo #1 (contexto solo) |
 | `modelo_xgboost.pkl` | Modelo #2 |

@@ -54,7 +54,7 @@ ALIAS = {
     "latitud": ["latitud", "lat"],
     "longitud": ["longitud", "long", "lon"],
     "fecha": ["fecha"],
-    "franja_horaria": ["franja_horaria", "hora"],
+    "franja_horaria": ["franja_horaria", "hora", "franja"],
     "tipo_delito": ["tipo_delito", "tipo", "tipo_uso"],
     "subtipo_delito": ["subtipo_delito", "subtipo"],
     "uso_moto": ["uso_moto", "moto"],
@@ -122,6 +122,21 @@ def main():
     completo.to_csv(SALIDA, index=False)
     print(f"\nListo: {len(completo)} delitos guardados en {SALIDA}", file=sys.stderr)
     print(completo["anio_dataset"].value_counts().sort_index(), file=sys.stderr)
+
+    # Aviso explicito (no solo silencio) sobre la columna de hora: si en algun
+    # momento se pierde por un alias que no matchea el nombre real del portal
+    # (paso esto mismo con "franja" vs "franja_horaria"/"hora"), que quede
+    # visible en vez de descubrirse semanas despues.
+    if "franja_horaria" in completo.columns:
+        anios_con_hora = sorted(completo.loc[completo["franja_horaria"].notna(), "anio_dataset"].unique())
+        print(f"\nColumna de hora (franja_horaria) presente para los anios: {anios_con_hora}", file=sys.stderr)
+    else:
+        print(
+            "\nADVERTENCIA: ningun anio trajo columna de hora reconocida "
+            "(alias probados: franja_horaria, hora, franja) -- si el portal "
+            "cambio el nombre de esa columna, agregalo a ALIAS.",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":

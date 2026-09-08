@@ -47,7 +47,7 @@ Se descargaron dos archivos:
 
 ---
 
-## 3. Encontrar los "puntos calientes" (clustering con DBSCAN)
+## 3. Encontrar los "puntos calientes" (clustering: DBSCAN, luego HDBSCAN)
 
 ### El problema que resuelve
 
@@ -59,7 +59,9 @@ Se usó un algoritmo llamado **DBSCAN**, que agrupa puntos que están muy cerca 
 
 **Primer intento (radio de 300 metros):** salió mal — casi todos los 23.343 puntos terminaron agrupados en un único cluster gigante que cubría gran parte de la ciudad. Esto pasa porque, en una ciudad con calles muy densas, cualquier punto tiene otro punto cerca a 300 metros, y esa cercanía se va "encadenando" hasta unir zonas que en realidad no tienen nada que ver entre sí.
 
-**Ajuste final (radio de 60 metros, mínimo 10 casos):** dio un resultado mucho más razonable — **430 zonas de riesgo bien definidas**, cada una correspondiendo realmente a una esquina o tramo de calle específico con historial repetido de siniestros. El 67,9% de los 23.343 siniestros quedó clasificado como "caso aislado" (sin patrón geográfico repetido) — es un número esperable y realista, no un error.
+**Ajuste DBSCAN (radio de 60 metros, mínimo 10 casos):** dio un resultado mucho más razonable — 430 zonas de riesgo bien definidas, cada una correspondiendo realmente a una esquina o tramo de calle específico con historial repetido de siniestros. El 67,9% de los 23.343 siniestros quedó clasificado como "caso aislado" (sin patrón geográfico repetido) — un número esperable y realista, no un error. Una vuelta posterior de barrido sistemático de parámetros llevó esto a 412 zonas con 49,9% de cobertura como mejor punto seguro.
+
+**Resultado final, en producción:** se migró de DBSCAN a HDBSCAN, un algoritmo que no usa un radio fijo sino que se adapta a la densidad local de cada zona (una esquina con siniestros muy pegados entre sí y una avenida con siniestros más dispersos pueden formar zonas igual de válidas, cada una con su propia escala). Con `min_cluster_size=12, min_samples=3` se llegó a **740 zonas de riesgo**, con **75,6% de cobertura** de los siniestros históricos (24,4% quedan "aislados") y el cluster más grande ocupando apenas **0,41%** del total — más seguro incluso que la mejor versión con DBSCAN. Esta es la configuración vigente.
 
 **Un hallazgo concreto que salió de este análisis:** el punto con más muertes registradas (una calle en el barrio de Saavedra, con 4 casos mortales sobre 52 siniestros totales) no es el punto con más siniestros en total (una avenida, también en Saavedra, con 88 siniestros pero solo 3 mortales). Esto demuestra con datos reales algo importante: la cantidad de siniestros y la gravedad de esos siniestros son dos cosas distintas, y un sistema que solo mire "cuántos siniestros hubo" sin mirar "qué tan graves fueron" se perdería justamente el punto más peligroso de los dos.
 
@@ -121,7 +123,7 @@ El modelo entrenado predice probabilidades por clase (LEVE/GRAVE/MORTAL), no un 
 
 **Justificación de la asimetría entre los umbrales de MORTAL y GRAVE.** Como se detalla en la sección de comparación de modelos, el modelo elegido tiene una precisión baja para la clase GRAVE (0.11, y no supera 0.15 en ninguna de las cuatro versiones evaluadas): produce bastantes falsos positivos de "grave" sobre casos que en la realidad fueron leves. Esa limitación se acepta de forma consciente porque, en un sistema de alerta de seguridad vial, es preferible sobre-alertar que dejar pasar un caso serio sin avisar. Esa misma lógica se traslada al diseño de los umbrales: como la señal de GRAVE es más ruidosa, se le exige una probabilidad acumulada más alta (0.40, o 0.20 para el nivel intermedio) que a MORTAL (0.10-0.20) para que el sistema escale el nivel de riesgo mostrado en el mapa. No es un ajuste arbitrario de constantes: es la misma decisión de "priorizar recall sobre precisión" que ya se justificó al elegir el modelo, aplicada también en la capa de presentación.
 
-**Qué pasa cuando falta el contexto propio de un hotspot.** Cada uno de los 430 hotspots necesita, para pasar por el modelo, un perfil típico de esa zona (comuna, tipo de vía, contraparte y edad/sexo promedio de sus víctimas históricas), calculado una sola vez y guardado en `hotspots_contexto.csv`. En una primera versión del sistema, cuando un hotspot no tenía fila propia en ese archivo, el backend se quedaba con un nivel de riesgo calculado con una fórmula completamente distinta (una heurística simple sobre cantidad de siniestros, mortales y graves, usada solo para poblar la base de datos inicialmente) — es decir, convivían dos criterios de "riesgo" distintos en el mismo mapa sin que el usuario (ni el jurado revisando el código) pudiera distinguir cuál se estaba usando en cada punto. Se corrigió para que el modelo sea la única fuente de verdad: si falta el contexto propio del hotspot, se usa el perfil promedio de toda la ciudad como entrada al mismo modelo, y la respuesta de la API marca ese caso explícitamente con `contexto_estimado: true`, de forma que la limitación quede documentada y trazable en vez de oculta.
+**Qué pasa cuando falta el contexto propio de un hotspot.** Cada uno de los 740 hotspots necesita, para pasar por el modelo, un perfil típico de esa zona (comuna, tipo de vía, contraparte y edad/sexo promedio de sus víctimas históricas), calculado una sola vez y guardado en `hotspots_contexto.csv`. En una primera versión del sistema, cuando un hotspot no tenía fila propia en ese archivo, el backend se quedaba con un nivel de riesgo calculado con una fórmula completamente distinta (una heurística simple sobre cantidad de siniestros, mortales y graves, usada solo para poblar la base de datos inicialmente) — es decir, convivían dos criterios de "riesgo" distintos en el mismo mapa sin que el usuario (ni el jurado revisando el código) pudiera distinguir cuál se estaba usando en cada punto. Se corrigió para que el modelo sea la única fuente de verdad: si falta el contexto propio del hotspot, se usa el perfil promedio de toda la ciudad como entrada al mismo modelo, y la respuesta de la API marca ese caso explícitamente con `contexto_estimado: true`, de forma que la limitación quede documentada y trazable en vez de oculta.
 
 ## 6. Qué variables importan más para predecir la gravedad
 
@@ -156,7 +158,7 @@ Analizando el modelo base (sin edad/sexo, para entender primero el peso de las v
 |---|---|
 | `motos_limpio.csv` | Los 23.343 siniestros de moto, ya limpios |
 | `motos_con_clusters.csv` | Los mismos datos, con el número de zona (cluster) asignado a cada uno |
-| `hotspots_moto_caba.csv` | Resumen de las 430 zonas: ubicación, cantidad de siniestros, gravedad |
-| `hotspots_contexto.csv` | Comuna, tipo de vía, contraparte, edad y sexo típicos de cada una de las 430 zonas |
+| `hotspots_moto_caba.csv` | Resumen de las 740 zonas: ubicación, cantidad de siniestros, gravedad |
+| `hotspots_contexto.csv` | Comuna, tipo de vía, contraparte, edad y sexo típicos de cada una de las 740 zonas |
 | `modelo_final.pkl` | El modelo #3 (el elegido), listo para usarse — este es el que corre en la aplicación real |
 | `columnas_modelo.pkl` | El orden exacto de las 66 columnas que el modelo necesita para poder predecir correctamente |

@@ -11,15 +11,19 @@ export const UMBRAL_ALERTA_KM = 0.25
 export const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 export const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 
-// Ajuste heuristico (NO dato medido) para inseguridad: el dataset de Delitos
-// del GCBA solo trae fecha, sin hora, asi que no hay forma de saber si un
-// hecho puntual fue de dia o de noche. Esta franja sube un nivel el riesgo de
-// inseguridad en horario nocturno por criterio criminologico general (menos
-// vigilancia natural, mas oportunidad), declarado explicitamente como
-// heuristica y no como algo que el dato sostenga. No se aplica a siniestros
-// de moto porque esa capa ya recibe hora real como feature del modelo
-// entrenado (ver backend/main.py, predecir_para_fila).
-export const FRANJA_NOCTURNA = { desde: 22, hasta: 6 }
+// Franja horaria de mayor riesgo de inseguridad, calibrada con el dato REAL
+// de franja_horaria del dataset de Delitos del GCBA (columna que existia
+// pero se perdia en la carga por un alias incompleto en fetch_delitos_caba.py,
+// corregido). Se probo primero una heuristica generica de "horario nocturno"
+// (22-6hs, criterio criminologico sin verificar contra el dato) y la
+// distribucion real la contradijo: robos con moto tiene su pico real entre
+// las 19 y las 23hs (20-21hs llegan a 7.3-7.5% de los casos, contra un 4.2%
+// esperado si la distribucion fuera pareja en 24hs), mientras que 0-6hs es
+// en realidad el tramo de MENOR incidencia (1.4-2.5%), lo opuesto a lo que
+// asumia la heuristica anterior. No se aplica a siniestros de moto porque
+// esa capa ya recibe hora real como feature del modelo entrenado (ver
+// backend/main.py, predecir_para_fila).
+export const FRANJA_PICO_INSEGURIDAD = { desde: 19, hasta: 24 }
 
 // Debe reflejar exactamente VIGENCIA_HORAS_POR_CATEGORIA de backend/main.py: el
 // front la usa solo para el efecto visual de "se va apagando con el tiempo" en el

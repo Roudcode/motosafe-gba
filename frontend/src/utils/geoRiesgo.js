@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_NOCTURNA } from '../constants'
+import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD } from '../constants'
 
 export function distanciaKm(a, b) {
   const R = 6371
@@ -32,29 +32,31 @@ export function calcularAjuste(zona, climaCode, reportes) {
   return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
 }
 
-// Es de noche segun la franja heuristica declarada en FRANJA_NOCTURNA (ver
-// constants.js para la justificacion y la limitacion del dato). Maneja el
-// caso en que la franja cruza medianoche (ej. 22 a 6).
-export function esHorarioNocturno(horaDelDia, franja = FRANJA_NOCTURNA) {
+// Es franja de mayor riesgo segun FRANJA_PICO_INSEGURIDAD (ver constants.js:
+// calibrada con la distribucion horaria real de robos con moto, no con un
+// criterio generico). Maneja el caso en que la franja cruce medianoche, por
+// si en el futuro se recalibra a un rango que la cruce.
+export function esFranjaPicoInseguridad(horaDelDia, franja = FRANJA_PICO_INSEGURIDAD) {
   if (horaDelDia == null) return false
   return franja.desde > franja.hasta
     ? horaDelDia >= franja.desde || horaDelDia < franja.hasta
     : horaDelDia >= franja.desde && horaDelDia < franja.hasta
 }
 
-// Ajuste heuristico de inseguridad por franja nocturna (no depende de clima
-// ni de reportes, esos ya se manejan aparte en calcularAjuste para
-// siniestros). Declarado como heuristica, no como dato medido: ver
-// FRANJA_NOCTURNA en constants.js.
-export function calcularAjusteNocturno(zona, horaDelDia) {
+// Ajuste de inseguridad por franja horaria de mayor riesgo (no depende de
+// clima ni de reportes, esos ya se manejan aparte en calcularAjuste para
+// siniestros). A diferencia de la primera version de esto, ya no es una
+// heuristica sin sustento: FRANJA_PICO_INSEGURIDAD sale de la distribucion
+// horaria real del dataset de Delitos (ver constants.js).
+export function calcularAjustePorFranjaHoraria(zona, horaDelDia) {
   const idxBase = ORDEN_NIVELES.indexOf(zona.nivel)
-  const nocturno = esHorarioNocturno(horaDelDia)
-  const idx = nocturno && idxBase < 3 ? idxBase + 1 : idxBase
+  const enFranjaPico = esFranjaPicoInseguridad(horaDelDia)
+  const idx = enFranjaPico && idxBase < 3 ? idxBase + 1 : idxBase
   return {
     nivel: ORDEN_NIVELES[idx],
     subio: idx > idxBase,
-    nocturno,
-    motivos: nocturno && idx > idxBase ? ['franja nocturna (heurística, sin dato real de hora en el delito)'] : [],
+    enFranjaPico,
+    motivos: enFranjaPico && idx > idxBase ? ['franja horaria de mayor incidencia de robos con moto (19-23hs, dato real)'] : [],
   }
 }
 

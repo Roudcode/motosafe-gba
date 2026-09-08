@@ -33,7 +33,7 @@ describe('unificarZonasInseguridad', () => {
   })
 })
 
-describe('unificarZonasInseguridad con ajuste nocturno', () => {
+describe('unificarZonasInseguridad con ajuste por franja horaria', () => {
   const general = [
     { id: 1, latitud: -34.6, longitud: -58.4, nivel_riesgo: 'medio', cantidad_delitos: 40, tipo_delito_moda: 'robo' },
   ]
@@ -41,19 +41,19 @@ describe('unificarZonasInseguridad con ajuste nocturno', () => {
   it('no aplica ningun ajuste si no se pasa horaDelDia (compatibilidad hacia atras)', () => {
     const zonas = unificarZonasInseguridad(general, [])
     expect(zonas[0].nivel).toBe('medio')
-    expect(zonas[0].ajusteNocturno).toBeUndefined()
+    expect(zonas[0].ajusteHorario).toBeUndefined()
   })
 
-  it('sube el nivel en horario nocturno', () => {
-    const zonas = unificarZonasInseguridad(general, [], 23)
+  it('sube el nivel en la franja pico (19-23hs, calibrada con dato real)', () => {
+    const zonas = unificarZonasInseguridad(general, [], 21)
     expect(zonas[0].nivel).toBe('alto')
-    expect(zonas[0].ajusteNocturno.nocturno).toBe(true)
+    expect(zonas[0].ajusteHorario.enFranjaPico).toBe(true)
   })
 
-  it('no toca el nivel en horario diurno', () => {
+  it('no toca el nivel fuera de la franja pico', () => {
     const zonas = unificarZonasInseguridad(general, [], 12)
     expect(zonas[0].nivel).toBe('medio')
-    expect(zonas[0].ajusteNocturno.nocturno).toBe(false)
+    expect(zonas[0].ajusteHorario.enFranjaPico).toBe(false)
   })
 })
 
