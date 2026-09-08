@@ -224,7 +224,20 @@ export function MapaMotoSafe({
   })
 
   // --- init del mapa (una sola vez) -----------------------------------------
+  // OJO con StrictMode (main.jsx envuelve <App/> en <StrictMode>): en dev,
+  // React invoca cada efecto de montaje dos veces (monta -> limpia -> vuelve
+  // a montar) para detectar efectos no idempotentes. Sin el guard de abajo,
+  // esto crea DOS instancias de maplibregl.Map sobre el mismo contenedor: la
+  // primera se destruye con map.remove() pero su evento 'load' puede llegar
+  // a disparar igual (es async) y pisar mapaRef/version con un mapa ya
+  // muerto, mientras las capas (clusters, heatmap, etc.) quedan repartidas
+  // de forma inconsistente entre instancia vieja y nueva. Sintoma exacto que
+  // reportó el usuario: mapa base visible, cero marcadores, sin errores en
+  // consola. El guard evita crear una segunda instancia real; el mapa vive
+  // igual toda la vida de la app (MapaMotoSafe nunca se desmonta solo).
   useEffect(() => {
+    if (mapRef.current) return
+
     const map = new MapaLibre({
       container: contenedorRef.current,
       style: ESTILOS[tema] || ESTILOS.dark,
@@ -245,10 +258,9 @@ export function MapaMotoSafe({
       if (campoActivoRef.current) onClickMapaRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng })
     })
 
-    return () => {
-      map.remove()
-      mapRef.current = null
-    }
+    // Sin cleanup que llame a map.remove(): con el guard de arriba, la
+    // "limpieza fantasma" de StrictMode destruiría el único mapa real que
+    // vamos a usar. Este componente vive durante toda la vida de la app.
     // Solo al montar: centro/zoomInicial son el estado inicial nomás, tema
     // inicial también -- los cambios de tema post-montaje se manejan aparte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -349,7 +361,7 @@ export function MapaMotoSafe({
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [capaMapa, zonasFiltradas, atenuarFondo, version])
 
   // --- cluster de siniestros (capaMapa === 'clusters') ----------------------
@@ -391,7 +403,7 @@ export function MapaMotoSafe({
       },
     })
     return limpiar
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [capaMapa, zonasFiltradas, zonaResaltada, zonasCruzadasIds, atenuarFondo, version])
 
   // --- corredores de riesgo (capaMapa === 'corredores') ---------------------
@@ -451,7 +463,7 @@ export function MapaMotoSafe({
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [capaMapa, corredoresFiltrados, atenuarFondo, version])
 
   // --- cluster de inseguridad (delitos GCBA) --------------------------------
@@ -497,7 +509,7 @@ export function MapaMotoSafe({
       },
     })
     return () => { popup?.remove(); limpiar() }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [capaInseguridad, inseguridadFiltrada, version])
 
   // --- reportes colaborativos (no clusterizados) ----------------------------
@@ -529,7 +541,7 @@ export function MapaMotoSafe({
       return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
     })
     return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [reportes, autorId, horaActual, version])
 
   // --- rutas calculadas (polilíneas) ----------------------------------------
@@ -578,7 +590,7 @@ export function MapaMotoSafe({
     // No hace falta cleanup de listeners acá: se recrean solo cuando el layer
     // se recrea (rutasCalculadas pasa de 0 a >0), y el layer/source se limpian
     // arriba cuando rutasCalculadas vuelve a 0.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [rutasCalculadas, rutaSeleccionada, version])
 
   // --- origen / destino / mi ubicación (marcadores simples) -----------------
@@ -600,7 +612,7 @@ export function MapaMotoSafe({
       markers.push(new Marker({ element: el }).setLngLat([miUbicacion.lng, miUbicacion.lat]).addTo(map))
     }
     return () => markers.forEach((m) => m.remove())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [origenPunto, destinoPunto, miUbicacion, version])
 
   // --- vuelo a un punto (buscador, favoritos, "ver en mapa", etc.) ----------
