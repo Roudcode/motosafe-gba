@@ -12,7 +12,7 @@ import {
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
 } from './constants'
-import { distanciaKm, calcularAjuste, geocodificar } from './utils/geoRiesgo'
+import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo } from './utils/geoRiesgo'
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
 } from './utils/riesgoRuta'
@@ -31,6 +31,19 @@ import { useSegundosDesde } from './hooks/useSegundosDesde'
 // (bajo=verde, alto=naranja, crítico=rojo), pero mapeados a las clases reales del
 // modelo en vez de al nivel ya traducido.
 const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B' }
+
+// Nivel de zoom "de navegación", tipo Waze/Google Maps al arrancar un viaje
+// (mucho más cerca que el zoom de exploración general, zoomInicial=11 más
+// abajo). Se aplica una sola vez al activar Modo Viaje -- después el usuario
+// puede alejarse con pellizco sin que se lo pisemos en cada actualización de
+// posición, mismo criterio que usan esas apps.
+const ZOOM_NAVEGACION = 17
+
+// Distancia mínima entre dos fixes de GPS para confiar en el rumbo calculado
+// por diferencia de posición (fallback cuando coords.heading no está
+// disponible). Por debajo de esto el ruido normal del GPS da rumbos
+// erráticos que harían temblar el mapa sin que el usuario se haya movido.
+const DISTANCIA_MIN_PARA_RUMBO_KM = 0.003
 
 // Barra de escala manual (mismo cálculo que antes, con Leaflet): MapLibre no
 // tiene un control de escala con este estilo visual propio (el suyo trae su
@@ -134,21 +147,43 @@ function App() {
   // Instancia real de maplibregl.Map, expuesta por MapaMotoSafe via onReady.
   // Reemplaza lo que antes hacían VueloControlado/SeguimientoEnVivo/
   // ControlesZoom/EscalaMapa con useMap() de react-leaflet: acá se llama
-  // directo a los métodos del mapa. rumboActual queda en 0 por ahora (no hay
-  // brújula del dispositivo conectada todavía -- iOS Safari pide permiso
-  // explícito por gesto del usuario para DeviceOrientationEvent, se conecta
-  // como tarea aparte); ya deja armado el enganche para cuando se sume.
+  // directo a los métodos del mapa.
+  //
+  // rumboActual: dirección de movimiento real, no una brújula del
+  // dispositivo. Se toma de coords.heading (lo calcula el propio GPS a
+  // partir del desplazamiento, igual que Waze/Google Maps mientras estás en
+  // movimiento) y si el navegador no lo entrega, se calcula a mano con
+  // calcularRumbo() entre el fix anterior y el actual (ver toggleModoViaje).
+  // La brújula del dispositivo (DeviceOrientationEvent, con su permiso
+  // explícito en iOS) quedaría como mejora aparte para cuando el vehículo
+  // está detenido, que es el único caso que esto no cubre.
   const mapaRef = useRef(null)
   const [mapaListo, setMapaListo] = useState(false)
-  const [rumboActual] = useState(0)
+  const [rumboActual, setRumboActual] = useState(0)
+  const zoomNavegacionHechoRef = useRef(false)
 
   useEffect(() => {
     if (vuelo && mapaListo) mapaRef.current?.flyTo({ center: [vuelo.lng, vuelo.lat], zoom: vuelo.zoom || 15, duration: 1400 })
   }, [vuelo, mapaListo])
 
   useEffect(() => {
-    if (modoViaje && miUbicacion && mapaListo) mapaRef.current?.panTo([miUbicacion.lng, miUbicacion.lat], { animate: true, duration: 800 })
-  }, [modoViaje, miUbicacion, mapaListo])
+    if (!modoViaje) zoomNavegacionHechoRef.current = false
+  }, [modoViaje])
+
+  // Seguimiento de cámara en 2D (norte arriba, sin inclinación). Cuando
+  // vistaNavegacion está activa, es MapaMotoSafe quien controla la cámara
+  // (centro + zoom + pitch + bearing juntos, ver ese componente) para que no
+  // compitan los dos por moverla al mismo tiempo.
+  useEffect(() => {
+    const map = mapaRef.current
+    if (!modoViaje || !miUbicacion || !mapaListo || vistaNavegacion || !map) return
+    if (!zoomNavegacionHechoRef.current) {
+      zoomNavegacionHechoRef.current = true
+      map.easeTo({ center: [miUbicacion.lng, miUbicacion.lat], zoom: ZOOM_NAVEGACION, duration: 1200 })
+    } else {
+      map.panTo([miUbicacion.lng, miUbicacion.lat], { animate: true, duration: 800 })
+    }
+  }, [modoViaje, miUbicacion, mapaListo, vistaNavegacion])
 
   // Ahora "real" (no segundos desde el montaje): se usa para calcular antiguedad
   // y opacidad de los reportes colaborativos, se refresca cada 30s (alcanza para
@@ -341,6 +376,7 @@ function App() {
       setWatchId(null)
       setModoViaje(false)
       setVistaNavegacion(false)
+      setRumboActual(0)
       setZonasAlertadas(new Set())
       setAlertaViaje(null)
       mostrarToast('Modo Viaje desactivado')
@@ -348,7 +384,27 @@ function App() {
     }
     if (!navigator.geolocation) { mostrarToast('Tu navegador no soporta geolocalización'); return }
     const id = navigator.geolocation.watchPosition(
-      (pos) => setMiUbicacion({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        const heading = pos.coords.heading
+        if (heading != null && !Number.isNaN(heading)) {
+          // El GPS ya viene con rumbo calculado (lo más confiable mientras
+          // hay movimiento real, que es el caso normal andando en moto).
+          setRumboActual(heading)
+        } else {
+          // Fallback: sin heading del navegador, lo calculamos a mano contra
+          // el fix anterior. Se ignoran desplazamientos chicos (ruido de GPS
+          // con el vehículo casi detenido) para que el rumbo no tiemble.
+          setMiUbicacion((anterior) => {
+            if (anterior && distanciaKm(anterior, punto) > DISTANCIA_MIN_PARA_RUMBO_KM) {
+              setRumboActual(calcularRumbo(anterior, punto))
+            }
+            return punto
+          })
+          return
+        }
+        setMiUbicacion(punto)
+      },
       () => mostrarToast('No se pudo obtener tu ubicación en vivo'),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     )

@@ -13,6 +13,22 @@ export function distanciaKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
+// Rumbo (bearing inicial, en grados 0-360 desde el norte) del punto a al
+// punto b. Se usa como fallback para la vista de navegación cuando el GPS no
+// entrega coords.heading (pasa seguido con poca velocidad o en navegadores
+// que no lo soportan): calculamos la dirección de movimiento a partir de las
+// últimas dos posiciones, igual que hacen Waze/Google Maps cuando no tienen
+// brújula del dispositivo.
+export function calcularRumbo(a, b) {
+  const lat1 = a.lat * Math.PI / 180
+  const lat2 = b.lat * Math.PI / 180
+  const dLng = (b.lng - a.lng) * Math.PI / 180
+  const y = Math.sin(dLng) * Math.cos(lat2)
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng)
+  const rumbo = Math.atan2(y, x) * 180 / Math.PI
+  return (rumbo + 360) % 360
+}
+
 export function distanciaAPolilinea(punto, coords) {
   let min = Infinity
   for (const [lat, lng] of coords) {

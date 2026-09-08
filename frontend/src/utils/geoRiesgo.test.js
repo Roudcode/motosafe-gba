@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria } from './geoRiesgo'
+import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo } from './geoRiesgo'
 
 const FRANJA_MOTO = { desde: 19, hasta: 24 }
 const FRANJA_GENERAL = { desde: 17, hasta: 22 }
@@ -71,5 +71,33 @@ describe('calcularAjustePorFranjaHoraria', () => {
   it('no agrega motivos si no hubo ajuste', () => {
     const ajuste = calcularAjustePorFranjaHoraria({ nivel: 'bajo' }, 12, FRANJA_MOTO)
     expect(ajuste.motivos).toEqual([])
+  })
+})
+
+describe('calcularRumbo', () => {
+  it('da 0 (norte) cuando el movimiento es puro hacia el norte', () => {
+    const rumbo = calcularRumbo({ lat: -34.60, lng: -58.40 }, { lat: -34.50, lng: -58.40 })
+    expect(rumbo).toBeCloseTo(0, 0)
+  })
+
+  it('da 180 (sur) cuando el movimiento es puro hacia el sur', () => {
+    const rumbo = calcularRumbo({ lat: -34.50, lng: -58.40 }, { lat: -34.60, lng: -58.40 })
+    expect(rumbo).toBeCloseTo(180, 0)
+  })
+
+  it('da 90 (este) cuando el movimiento es puro hacia el este', () => {
+    const rumbo = calcularRumbo({ lat: -34.60, lng: -58.50 }, { lat: -34.60, lng: -58.40 })
+    expect(rumbo).toBeCloseTo(90, 0)
+  })
+
+  it('da 270 (oeste) cuando el movimiento es puro hacia el oeste', () => {
+    const rumbo = calcularRumbo({ lat: -34.60, lng: -58.40 }, { lat: -34.60, lng: -58.50 })
+    expect(rumbo).toBeCloseTo(270, 0)
+  })
+
+  it('siempre devuelve un valor normalizado entre 0 y 360', () => {
+    const rumbo = calcularRumbo({ lat: -34.60, lng: -58.40 }, { lat: -34.59, lng: -58.41 })
+    expect(rumbo).toBeGreaterThanOrEqual(0)
+    expect(rumbo).toBeLessThan(360)
   })
 })

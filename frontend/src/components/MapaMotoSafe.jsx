@@ -43,6 +43,16 @@ const ESTILOS = {
 }
 
 const PITCH_NAVEGACION = 55
+// Zoom "de cámara" durante la vista inclinada -- más cerca que el zoom plano
+// de Modo Viaje (ZOOM_NAVEGACION=17 en App.jsx), porque con pitch la cámara
+// ya "ve" mucho más terreno por la perspectiva, y a un zoom bajo con
+// inclinación se pierde el detalle de calle inmediato que es lo que importa
+// mientras estás manejando.
+const ZOOM_VISTA_INCLINADA = 17.5
+// Corre el punto de la cámara hacia abajo de la pantalla (deja más "mapa por
+// delante" visible arriba): el mismo truco de composición que usan Waze y
+// Google Maps para la vista de navegación en primera persona.
+const PADDING_VISTA_INCLINADA = { top: 0, bottom: 260, left: 0, right: 0 }
 
 // --- helpers de bajo nivel, sin estado de React -----------------------------
 
@@ -299,12 +309,29 @@ export function MapaMotoSafe({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tema])
 
-  // --- pitch/bearing: vista inclinada real al entrar en navegación ---------
+  // --- cámara de navegación: pitch + bearing + zoom + centro + padding -----
+  // Todo junto en un solo easeTo (no un efecto por propiedad) porque son una
+  // sola composición de cámara: cambiar el bearing sin re-centrar en la
+  // posición actual, por ejemplo, deja al usuario fuera de foco apenas gira.
+  // Mientras vistaNavegacion está activa, ESTE efecto es el único que mueve
+  // la cámara (el seguimiento 2D de App.jsx se desactiva a propósito, ver
+  // ese componente) para que no compitan dos `easeTo` al mismo tiempo.
   useEffect(() => {
     const map = mapRef.current
     if (!map || version === 0) return
-    map.easeTo({ pitch: vistaNavegacion ? PITCH_NAVEGACION : 0, bearing: vistaNavegacion ? (rumboActual || 0) : 0, duration: 700 })
-  }, [vistaNavegacion, rumboActual, version])
+    if (vistaNavegacion && miUbicacion) {
+      map.easeTo({
+        center: [miUbicacion.lng, miUbicacion.lat],
+        zoom: ZOOM_VISTA_INCLINADA,
+        pitch: PITCH_NAVEGACION,
+        bearing: rumboActual || 0,
+        padding: PADDING_VISTA_INCLINADA,
+        duration: 700,
+      })
+    } else {
+      map.easeTo({ pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 }, duration: 700 })
+    }
+  }, [vistaNavegacion, rumboActual, miUbicacion, version])
 
   // --- tráfico en vivo (tiles raster propios, TomTom vía backend) ----------
   useEffect(() => {
