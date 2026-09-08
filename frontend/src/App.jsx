@@ -4,7 +4,7 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
-  Siren, ShieldAlert, Layers, Navigation, Square, Gauge,
+  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight,
 } from 'lucide-react'
 
 import {
@@ -16,7 +16,7 @@ import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgr
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
 } from './utils/riesgoRuta'
-import { formatearAntiguedad } from './utils/tiempo'
+import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
 import { cargarDeLocalStorage, generarUuidV4Fallback } from './utils/storage'
 import { LoadingScreen } from './components/LoadingScreen'
@@ -1046,20 +1046,23 @@ function App() {
         const ManiobraIcon = iconoManiobra(pasoActivo)
         return (
           <div className="navegacion-panel panel-enter">
-            <span className="navegacion-icono"><ManiobraIcon size={24} /></span>
+            <span className="navegacion-icono-chip"><ManiobraIcon size={26} /></span>
             <div className="navegacion-texto">
-              <strong>{textoManiobra(pasoActivo)}</strong>
               {miUbicacion && (
                 <span className="navegacion-distancia">
-                  {Math.round(distanciaKm(miUbicacion, pasoActivo) * 1000)} m
+                  {formatearDistancia(distanciaKm(miUbicacion, pasoActivo))}
                 </span>
               )}
+              <strong>{textoManiobra(pasoActivo)}</strong>
               {/* Preview del giro siguiente, más chico -- ayuda en cruces
                   seguidos a no quedar "ciego" un paso adelante, que era el
-                  caso hasta ahora (solo se veía el giro inmediato). */}
+                  caso hasta ahora (solo se veía el giro inmediato). Separado
+                  del resto con su propio borde superior en vez de solo ser
+                  texto más chico, para que se lea como un dato secundario y
+                  no como continuación del mismo mensaje. */}
               {pasoSiguiente && (
                 <span className="navegacion-siguiente">
-                  Después: {textoManiobra(pasoSiguiente)}
+                  <CornerDownRight size={11} /> Después: {textoManiobra(pasoSiguiente)}
                 </span>
               )}
             </div>

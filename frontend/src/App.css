@@ -197,17 +197,42 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   padding: 10px 18px; border-radius: 20px; font-size: 13px; font-family: 'Inter', sans-serif;
 }
 
+/* Cartel de instrucción de navegación -- rediseñado con la jerarquía de un
+   turn card tipo Waze/Google Maps: ícono en chip de color sólido (no un
+   ícono suelto flotando), distancia como dato destacado arriba del texto
+   principal (es lo primero que se lee de un vistazo, antes que la calle),
+   y el "después" separado con su propio borde y opacidad reducida para que
+   se lea como dato secundario, no como continuación del mismo mensaje. */
 .navegacion-panel {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1002;
-  display: flex; align-items: center; gap: 12px;
-  background: var(--surface-solid); border: 1px solid var(--verde); border-radius: 16px;
-  padding: 12px 20px; max-width: 90vw;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface-solid); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px; padding: 14px 22px 14px 14px;
+  width: max-content; max-width: min(90vw, 460px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
 }
-.navegacion-icono { display: flex; color: var(--verde); }
-.navegacion-texto { display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
-.navegacion-texto strong { font-size: 15px; color: var(--text); }
-.navegacion-distancia { font-size: 12px; color: var(--verde); font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
-.navegacion-siguiente { font-size: 10px; color: var(--text-dimmer); margin-top: 2px; }
+.navegacion-icono-chip {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--verde); color: #0B1620;
+  box-shadow: 0 3px 10px rgba(61,220,132,0.35);
+}
+.navegacion-texto { display: flex; flex-direction: column; font-family: 'Inter', sans-serif; min-width: 0; }
+.navegacion-distancia {
+  font-size: 13px; color: var(--verde); font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700; letter-spacing: 0.02em;
+}
+.navegacion-texto strong {
+  font-size: 17px; line-height: 1.25; color: var(--text); font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.navegacion-siguiente {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-dimmer); margin-top: 6px; padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 .alerta-viaje {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1003;

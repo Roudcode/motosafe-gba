@@ -23,3 +23,12 @@ export function opacidadPorAntiguedad(fechaIso, vigenciaHoras, ahoraMs) {
 export function esReciente(fechaIso, ahoraMs, minutos = 15) {
   return (ahoraMs - new Date(fechaIso).getTime()) / 60000 <= minutos
 }
+
+// Distancia legible para el cartel de navegación: en metros redondeados si es
+// corta (asi se lee "150 m", no "0.15 km"), en km con un decimal si es larga
+// (asi se lee "1.4 km", no "1400 m" ni, el bug real que esto reemplaza,
+// "47056 m" sin separador de miles ni unidad legible).
+export function formatearDistancia(km) {
+  if (km < 1) return `${Math.round(km * 1000)} m`
+  return `${km.toFixed(1)} km`
+}

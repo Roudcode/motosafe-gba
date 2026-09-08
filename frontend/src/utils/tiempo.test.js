@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatearAntiguedad, opacidadPorAntiguedad, esReciente } from './tiempo'
+import { formatearAntiguedad, opacidadPorAntiguedad, esReciente, formatearDistancia } from './tiempo'
 
 const AHORA = new Date('2026-09-07T12:00:00.000Z').getTime()
 const hace = (ms) => new Date(AHORA - ms).toISOString()
@@ -71,5 +71,21 @@ describe('esReciente', () => {
   it('respeta un umbral de minutos custom', () => {
     expect(esReciente(hace(45 * 60 * 1000), AHORA, 60)).toBe(true)
     expect(esReciente(hace(61 * 60 * 1000), AHORA, 60)).toBe(false)
+  })
+})
+
+describe('formatearDistancia', () => {
+  it('muestra metros redondeados por debajo de 1km', () => {
+    expect(formatearDistancia(0.15)).toBe('150 m')
+    expect(formatearDistancia(0.003)).toBe('3 m')
+  })
+
+  it('muestra km con un decimal a partir de 1km (el bug real que reemplaza: antes se mostraba "47056 m")', () => {
+    expect(formatearDistancia(47.056)).toBe('47.1 km')
+    expect(formatearDistancia(1)).toBe('1.0 km')
+  })
+
+  it('redondea el borde justo en 999m sin saltar a km de más', () => {
+    expect(formatearDistancia(0.999)).toBe('999 m')
   })
 })
