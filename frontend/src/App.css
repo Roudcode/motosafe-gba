@@ -666,10 +666,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .mapa-en-navegacion .capa-fondo-nav { opacity: 0.15 !important; transition: opacity 0.4s ease; }
 
 .cluster-icon-wrapper { background: none; border: none; }
+/* El borde de cluster-bubble viene inline con el MISMO color que el relleno
+   (ver crearIconoCluster en utils/ui.js) -- a propósito, porque ese color es
+   el dato (nivel dominante), no decoración. Pero eso deja la burbuja sin
+   ningún contraste contra el satelital de fondo, que puede tener casi el
+   mismo tono en algunas zonas. El anillo claro de acá no toca el color de
+   dato: es una segunda sombra (box-shadow encadenado) puramente para separar
+   la forma del fondo, mismo problema que se resolvió con el casing de la
+   ruta. */
 .cluster-bubble {
   border: 2px solid; border-radius: 50%;
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
-  text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.4); transition: transform 0.15s ease;
+  text-align: center; transition: transform 0.15s ease;
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.4), 0 2px 10px rgba(0,0,0,0.4);
 }
 .cluster-critico { animation: pulse 2s infinite; }
 /* Burbujas de inseguridad: mismo componente, forma de squircle en vez de
@@ -683,6 +692,23 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   color: var(--text-soft); font-family: 'Space Grotesk', sans-serif; font-size: 11px; pointer-events: none;
 }
 .escala-linea { width: 80px; height: 3px; background: var(--text-soft); border-radius: 2px; }
+
+/* Feedback táctil al tocar: antes solo había :hover, que en un celular no
+   dispara nunca (no hay cursor) -- así que cada botón daba exactamente cero
+   señal visual de que el tap se registró hasta que la acción ya había
+   pasado. Un scale-down breve al :active es el mismo truco que usan
+   iOS/Android nativos y Waze/Maps en cada botón tocable. transform en vez de
+   cambiar tamaño real para que no dispare reflow. */
+.theme-toggle:active, .capa-toggle:active, .zoom-controls button:active,
+.route-fab:active, .herramientas-fab:active, .report-fab:active,
+.ruta-resumen-iniciar:active, .nav-resumen-mini-detener:active,
+.ruta-prioridad button:active, .favorito-chip:active:not(:disabled),
+.legend-item:active, .actividad-item:active, .stats-top-item:active,
+.cercanas-item:active, .capas-opcion:active, .herramientas-menu button:active,
+.report-options button:active:not(:disabled), .ruta-resumen-compartir:active,
+.ruta-resumen-nueva:active, .ruta-form-buscar:active:not(:disabled) {
+  transform: scale(0.93);
+}
 
 @media (max-width: 480px) {
   .topbar-status { font-size: 11px; }

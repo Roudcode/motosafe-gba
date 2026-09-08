@@ -655,8 +655,10 @@ export function MapaMotoSafe({
     if (!map || version === 0) return
     const sourceId = 'rutas'
     const layerId = 'rutas-layer'
+    const layerCasingId = 'rutas-layer-casing'
     if (rutasCalculadas.length === 0) {
       if (map.getLayer(layerId)) map.removeLayer(layerId)
+      if (map.getLayer(layerCasingId)) map.removeLayer(layerCasingId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
       return
     }
@@ -695,6 +697,27 @@ export function MapaMotoSafe({
       map.getSource(sourceId).setData({ type: 'FeatureCollection', features })
     } else {
       map.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features } })
+      // Casing (contorno oscuro debajo de la línea de color): sin esto, la
+      // ruta seleccionada es una línea plana de un solo color que se pierde
+      // contra el satelital de fondo (techos, agua, tierra pueden dar casi
+      // el mismo tono). Waze/Maps siempre dibujan un borde de contraste
+      // detrás de la ruta activa, sin importar qué mapa base tengan debajo
+      // -- acá mismo truco: una segunda línea más ancha y oscura, solo para
+      // la ruta seleccionada (las alternativas ya son grises punteadas, no
+      // necesitan el refuerzo). Se agrega ANTES que la línea de color para
+      // que quede pintada por debajo (MapLibre pinta en orden de capas).
+      map.addLayer({
+        id: layerCasingId,
+        type: 'line',
+        source: sourceId,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        filter: ['==', ['get', 'seleccionada'], true],
+        paint: {
+          'line-color': '#0B1620',
+          'line-width': ['case', ['get', 'recorrido'], 7, 8],
+          'line-opacity': ['case', ['get', 'recorrido'], 0.4, 0.6],
+        },
+      })
       map.addLayer({
         id: layerId,
         type: 'line',
