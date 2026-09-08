@@ -546,10 +546,26 @@ function MapaMotoSafeInner({
       if (map.getSource(sourceId)) map.removeSource(sourceId)
       return
     }
+    // Antes, TODOS los corredores se dibujaban con el mismo ancho (5) y
+    // opacidad (0.75) sin importar el nivel de riesgo -- como la mayoría de
+    // las avenidas del GBA tienen algún corredor cargado, con capaMapa
+    // "corredores" prendida el mapa quedaba pintado de punta a punta (Rodo
+    // lo vio en captura real), y esa saturación visual tapa justo lo que la
+    // capa debería resaltar: dónde está el riesgo de verdad. Ahora el ancho
+    // y la opacidad escalan con el nivel -- bajo casi no compite con el
+    // mapa base, crítico se ve grueso y sólido -- para que el ojo vaya
+    // directo a lo que importa en vez de a una alfombra de líneas de color.
+    const ANCHO_POR_NIVEL = { bajo: 1.5, medio: 3, alto: 4.5, critico: 6 }
+    const OPACIDAD_POR_NIVEL = { bajo: 0.35, medio: 0.55, alto: 0.75, critico: 0.9 }
     const features = corredoresFiltrados.map((c) => ({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: c.geometria.map(([lat, lng]) => [lng, lat]) },
-      properties: { id: c.id, color: NIVELES[c.nivel_riesgo]?.color || NIVELES.bajo.color },
+      properties: {
+        id: c.id,
+        color: NIVELES[c.nivel_riesgo]?.color || NIVELES.bajo.color,
+        ancho: ANCHO_POR_NIVEL[c.nivel_riesgo] ?? ANCHO_POR_NIVEL.bajo,
+        opacidad: OPACIDAD_POR_NIVEL[c.nivel_riesgo] ?? OPACIDAD_POR_NIVEL.bajo,
+      },
     }))
     map.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features } })
     map.addLayer({
@@ -557,7 +573,11 @@ function MapaMotoSafeInner({
       type: 'line',
       source: sourceId,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': ['get', 'color'], 'line-width': 5, 'line-opacity': 0.75 * atenuarFondo },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': ['get', 'ancho'],
+        'line-opacity': ['*', ['get', 'opacidad'], atenuarFondo],
+      },
     })
 
     let popup
