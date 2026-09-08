@@ -585,8 +585,18 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [miUbicacion, modoViaje])
 
-  const zonasFiltradas = zonasAjustadas.filter(
-    (z) => nivelesActivos.has(z.ajuste.nivel) && z.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  // useMemo acá no es solo optimización: MapaMotoSafe reconstruye la capa
+  // entera de clusters cuando cambia la REFERENCIA de este array (a
+  // diferencia de react-leaflet, que reconciliaba por `key` sin importar
+  // la identidad del array). Sin memoizar, el re-render cada 1s de
+  // `segundos` (useSegundosDesde) generaba un array nuevo por referencia
+  // en cada tick y tiraba abajo y reconstruía la capa de siniestros todo
+  // el tiempo, así que las burbujas nunca llegaban a verse en pantalla.
+  const zonasFiltradas = useMemo(
+    () => zonasAjustadas.filter(
+      (z) => nivelesActivos.has(z.ajuste.nivel) && z.nombre.toLowerCase().includes(busqueda.toLowerCase())
+    ),
+    [zonasAjustadas, nivelesActivos, busqueda]
   )
   const criticosVisibles = zonasFiltradas.filter((z) => z.ajuste.nivel === 'critico').length
 
