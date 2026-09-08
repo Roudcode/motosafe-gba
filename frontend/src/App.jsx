@@ -162,17 +162,23 @@ function App() {
   // ControlesZoom/EscalaMapa con useMap() de react-leaflet: acá se llama
   // directo a los métodos del mapa.
   //
-  // rumboActual: dirección de movimiento real, no una brújula del
-  // dispositivo. Se toma de coords.heading (lo calcula el propio GPS a
-  // partir del desplazamiento, igual que Waze/Google Maps mientras estás en
-  // movimiento) y si el navegador no lo entrega, se calcula a mano con
-  // calcularRumbo() entre el fix anterior y el actual (ver toggleModoViaje).
-  // La brújula del dispositivo (DeviceOrientationEvent, con su permiso
-  // explícito en iOS) quedaría como mejora aparte para cuando el vehículo
-  // está detenido, que es el único caso que esto no cubre.
+  // rumboActual, en orden de prioridad: 1) coords.heading (lo calcula el
+  // propio GPS a partir del desplazamiento, lo más confiable mientras hay
+  // movimiento real) -- 2) la brújula del dispositivo (DeviceOrientationEvent,
+  // ver activarBrujula más abajo), que es la única fuente que sigue dando un
+  // rumbo válido con el vehículo DETENIDO (semáforo, cortada), que es
+  // justamente el caso que el GPS no puede cubrir sin desplazamiento -- 3) si
+  // ninguna de las dos está disponible, cálculo a mano con calcularRumbo()
+  // entre el fix anterior y el actual (ver activarModoViaje).
   const mapaRef = useRef(null)
   const [mapaListo, setMapaListo] = useState(false)
   const [rumboActual, setRumboActual] = useState(0)
+  // Espejo en ref (no state) de la última lectura de brújula: se lee dentro
+  // del callback de watchPosition, que quedó cerrado sobre el render en el
+  // que se creó -- un ref siempre da el valor más nuevo sin tener que
+  // recrear el watch cada vez que cambia.
+  const rumboBrujulaRef = useRef(null)
+  const listenerBrujulaRef = useRef(null)
   const zoomNavegacionHechoRef = useRef(false)
 
   useEffect(() => {
@@ -383,6 +389,52 @@ function App() {
     )
   }
 
+  // Brújula del dispositivo: única fuente que sigue dando un rumbo válido
+  // con el vehículo detenido (coords.heading del GPS se pone null o deja de
+  // actualizarse sin desplazamiento real -- un semáforo, una cortada). En
+  // iOS 13+ el permiso de DeviceOrientationEvent SOLO se puede pedir en
+  // respuesta directa a un gesto del usuario, por eso esto se llama desde
+  // adentro del handler del botón que prende Modo Viaje, nunca desde un
+  // useEffect en el montaje.
+  const activarBrujula = () => {
+    const manejarOrientacion = (evento) => {
+      let heading = null
+      if (evento.webkitCompassHeading != null) {
+        // iOS: ya viene como heading real de brújula, corregido por
+        // orientación de pantalla -- se usa tal cual.
+        heading = evento.webkitCompassHeading
+      } else if (evento.alpha != null) {
+        // Android/otros: alpha es la rotación desde el norte en sentido
+        // antihorario: hay que invertirla, y sumarle el ángulo de rotación
+        // de pantalla (si el celular está montado en horizontal en el
+        // manillar, alpha solo no alcanza para el rumbo real).
+        const anguloPantalla = window.screen?.orientation?.angle ?? window.orientation ?? 0
+        heading = (360 - evento.alpha + anguloPantalla) % 360
+      }
+      if (heading != null && !Number.isNaN(heading)) rumboBrujulaRef.current = heading
+    }
+    const escuchar = () => {
+      const nombreEvento = 'ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation'
+      window.addEventListener(nombreEvento, manejarOrientacion)
+      listenerBrujulaRef.current = { nombreEvento, manejarOrientacion }
+    }
+    const DOE = window.DeviceOrientationEvent
+    if (!DOE) return
+    if (typeof DOE.requestPermission === 'function') {
+      DOE.requestPermission().then((estado) => { if (estado === 'granted') escuchar() }).catch(() => {})
+    } else {
+      escuchar()
+    }
+  }
+
+  const desactivarBrujula = () => {
+    if (listenerBrujulaRef.current) {
+      window.removeEventListener(listenerBrujulaRef.current.nombreEvento, listenerBrujulaRef.current.manejarOrientacion)
+      listenerBrujulaRef.current = null
+    }
+    rumboBrujulaRef.current = null
+  }
+
   // Arranca el seguimiento GPS. conVistaNavegacion=true es el camino que usa
   // "Iniciar viaje" desde una ruta ya calculada: además de prender Modo Viaje,
   // deja lista la cámara 3D de una sola vez, sin que el usuario tenga que ir
@@ -390,6 +442,7 @@ function App() {
   // el problema de UX que se pidió resolver -- que la app se acomode sola).
   const activarModoViaje = (conVistaNavegacion = false) => {
     if (!navigator.geolocation) { mostrarToast('Tu navegador no soporta geolocalización'); return }
+    activarBrujula()
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude }
@@ -398,9 +451,14 @@ function App() {
           // El GPS ya viene con rumbo calculado (lo más confiable mientras
           // hay movimiento real, que es el caso normal andando en moto).
           setRumboActual(heading)
+        } else if (rumboBrujulaRef.current != null) {
+          // Sin heading de GPS (típico parado, sin desplazamiento del que
+          // derivar rumbo): la brújula sigue dando una lectura válida, que
+          // es justo el caso que el cálculo manual de abajo no cubre.
+          setRumboActual(rumboBrujulaRef.current)
         } else {
-          // Fallback: sin heading del navegador, lo calculamos a mano contra
-          // el fix anterior. Se ignoran desplazamientos chicos (ruido de GPS
+          // Último fallback: sin GPS ni brújula, se calcula a mano contra el
+          // fix anterior. Se ignoran desplazamientos chicos (ruido de GPS
           // con el vehículo casi detenido) para que el rumbo no tiemble.
           setMiUbicacion((anterior) => {
             if (anterior && distanciaKm(anterior, punto) > DISTANCIA_MIN_PARA_RUMBO_KM) {
@@ -431,6 +489,7 @@ function App() {
 
   const desactivarModoViaje = () => {
     if (watchId != null) navigator.geolocation.clearWatch(watchId)
+    desactivarBrujula()
     setWatchId(null)
     setModoViaje(false)
     setVistaNavegacion(false)

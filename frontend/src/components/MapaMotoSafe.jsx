@@ -778,7 +778,18 @@ export function MapaMotoSafe({
         // rotarla por rumboActual, porque el norte queda fijo arriba.
         el = document.createElement('div')
         el.className = 'puck-navegacion'
-        el.innerHTML = '<div class="puck-navegacion-flecha"></div>'
+        // SVG en vez del truco de borders-CSS de antes (un triángulo chato,
+        // sin volumen): círculo con relleno solido + un óvalo de brillo
+        // (simula una fuente de luz arriba a la izquierda, mismo truco que
+        // da la sensación de "objeto" en vez de "recorte plano") + flecha
+        // con muesca en la base, la forma clásica de Waze/Maps.
+        el.innerHTML = `
+          <svg width="34" height="34" viewBox="0 0 34 34" class="puck-navegacion-svg">
+            <circle cx="17" cy="17" r="11" fill="#4FA8E8" stroke="#0B1620" stroke-width="2.5" />
+            <ellipse cx="13" cy="10.5" rx="4" ry="2.3" fill="#ffffff" opacity="0.3" />
+            <path d="M17 7 L23.5 21.5 L17 17.6 L10.5 21.5 Z" fill="#0B1620" />
+          </svg>
+        `
       } else {
         el = elementoCirculo({ size: 14, color: '#4FA8E8', fillOpacity: 0.9, weight: 3 })
         el.className = 'pulse-marker-yo'

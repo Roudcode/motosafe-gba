@@ -639,26 +639,24 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 @keyframes pulse-yo { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
 /* Puck direccional de navegación (reemplaza al punto pulsante mientras hay
-   vista inclinada activa) -- círculo azul con halo y una flecha que apunta
-   siempre "arriba" en pantalla, porque la cámara ya rota para dejar el rumbo
-   actual hacia arriba (ver MapaMotoSafe.jsx). El halo pulsa más lento y más
-   sutil que el punto genérico: acá el foco visual es la flecha, no el halo. */
+   vista inclinada activa) -- flecha que apunta siempre "arriba" en pantalla,
+   porque la cámara ya rota para dejar el rumbo actual hacia arriba (ver
+   MapaMotoSafe.jsx). El dibujo en sí es un SVG (círculo + brillo + flecha
+   con muesca, ver ese componente): acá solo el halo pulsante y la sombra de
+   elevación, que antes vivían sobre un div sin forma real (un triángulo de
+   borders CSS, chato) y ahora envuelven al SVG. El halo pulsa más lento y
+   más sutil que el punto genérico: acá el foco visual es la flecha. */
 .puck-navegacion {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--azul); border: 3px solid #0B1620;
+  width: 34px; height: 34px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 0 8px rgba(79,168,232,0.22), 0 2px 10px rgba(0,0,0,0.45);
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
   animation: puck-halo 2.2s infinite;
 }
-.puck-navegacion-flecha {
-  width: 0; height: 0; margin-top: -1px;
-  border-left: 5px solid transparent; border-right: 5px solid transparent;
-  border-bottom: 9px solid #0B1620;
-}
+.puck-navegacion-svg { display: block; }
 @keyframes puck-halo {
-  0% { box-shadow: 0 0 0 6px rgba(79,168,232,0.25), 0 2px 10px rgba(0,0,0,0.45); }
-  50% { box-shadow: 0 0 0 10px rgba(79,168,232,0.12), 0 2px 10px rgba(0,0,0,0.45); }
-  100% { box-shadow: 0 0 0 6px rgba(79,168,232,0.25), 0 2px 10px rgba(0,0,0,0.45); }
+  0% { box-shadow: 0 0 0 6px rgba(79,168,232,0.25); }
+  50% { box-shadow: 0 0 0 10px rgba(79,168,232,0.12); }
+  100% { box-shadow: 0 0 0 6px rgba(79,168,232,0.25); }
 }
 
 /* Atenuado de fondo durante la navegación (ver el efecto correspondiente en
