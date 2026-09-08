@@ -510,8 +510,8 @@ function App() {
   // ordinal en los tres casos (percentiles calculados dentro de cada
   // dataset), asi que sumar PESO_RIESGO entre tipos es valido.
   const zonasInseguridadUnificadas = useMemo(
-    () => unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto),
-    [inseguridadGeneral, inseguridadMoto]
+    () => unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, new Date(horaActual).getHours()),
+    [inseguridadGeneral, inseguridadMoto, horaActual]
   )
 
   const zonasRiesgoTodas = useMemo(

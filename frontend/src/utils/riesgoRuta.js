@@ -4,12 +4,15 @@
 // funciones puras sobre datos planos, sin estado de React ni efectos.
 
 import { ORDEN_NIVELES, PESO_RIESGO } from '../constants'
-import { distanciaAPolilinea } from './geoRiesgo'
+import { distanciaAPolilinea, calcularAjusteNocturno } from './geoRiesgo'
 
 // Pasa los hotspots de inseguridad (general y moto, tal como los devuelve el
 // backend) a la misma forma que usan las zonas de siniestro: lat/lng/nivel.
-export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto) {
-  return [
+// horaDelDia es opcional (0-23): si no se pasa, no se aplica ningun ajuste
+// nocturno y el nivel queda tal como viene del backend (compatibilidad con
+// los tests existentes y con cualquier caller que todavia no la pase).
+export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, horaDelDia = null) {
+  const zonas = [
     ...inseguridadGeneral.map((h) => ({
       id: `insg-general-${h.id}`,
       lat: h.latitud,
@@ -29,6 +32,15 @@ export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto) {
       nombre: `Zona de robos con moto: ${h.cantidad_delitos} hechos`,
     })),
   ]
+  if (horaDelDia == null) return zonas
+  // Se pisa el nivel base con el ajustado (heuristica nocturna, ver
+  // calcularAjusteNocturno) pero se guarda el ajuste aparte para poder
+  // mostrar el motivo en la UI si hace falta, igual que hace calcularAjuste
+  // con las zonas de siniestro.
+  return zonas.map((z) => {
+    const ajusteNocturno = calcularAjusteNocturno(z, horaDelDia)
+    return { ...z, nivel: ajusteNocturno.nivel, ajusteNocturno }
+  })
 }
 
 // Junta siniestros (con ajuste de clima/reportes ya aplicado) e inseguridad

@@ -11,6 +11,16 @@ export const UMBRAL_ALERTA_KM = 0.25
 export const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 export const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 
+// Ajuste heuristico (NO dato medido) para inseguridad: el dataset de Delitos
+// del GCBA solo trae fecha, sin hora, asi que no hay forma de saber si un
+// hecho puntual fue de dia o de noche. Esta franja sube un nivel el riesgo de
+// inseguridad en horario nocturno por criterio criminologico general (menos
+// vigilancia natural, mas oportunidad), declarado explicitamente como
+// heuristica y no como algo que el dato sostenga. No se aplica a siniestros
+// de moto porque esa capa ya recibe hora real como feature del modelo
+// entrenado (ver backend/main.py, predecir_para_fila).
+export const FRANJA_NOCTURNA = { desde: 22, hasta: 6 }
+
 // Debe reflejar exactamente VIGENCIA_HORAS_POR_CATEGORIA de backend/main.py: el
 // front la usa solo para el efecto visual de "se va apagando con el tiempo" en el
 // mapa (mas fresco = mas solido, cerca de vencer = mas transparente). El backend

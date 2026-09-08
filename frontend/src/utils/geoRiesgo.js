@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA } from '../constants'
+import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_NOCTURNA } from '../constants'
 
 export function distanciaKm(a, b) {
   const R = 6371
@@ -30,6 +30,32 @@ export function calcularAjuste(zona, climaCode, reportes) {
   const reportesCercanos = reportes.filter((r) => distanciaKm(zona, r) <= UMBRAL_REPORTE_KM).length
   if (reportesCercanos > 0 && idx < 3) { idx += 1; motivos.push(`${reportesCercanos} reporte${reportesCercanos > 1 ? 's' : ''} tuyo${reportesCercanos > 1 ? 's' : ''} cerca`) }
   return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
+}
+
+// Es de noche segun la franja heuristica declarada en FRANJA_NOCTURNA (ver
+// constants.js para la justificacion y la limitacion del dato). Maneja el
+// caso en que la franja cruza medianoche (ej. 22 a 6).
+export function esHorarioNocturno(horaDelDia, franja = FRANJA_NOCTURNA) {
+  if (horaDelDia == null) return false
+  return franja.desde > franja.hasta
+    ? horaDelDia >= franja.desde || horaDelDia < franja.hasta
+    : horaDelDia >= franja.desde && horaDelDia < franja.hasta
+}
+
+// Ajuste heuristico de inseguridad por franja nocturna (no depende de clima
+// ni de reportes, esos ya se manejan aparte en calcularAjuste para
+// siniestros). Declarado como heuristica, no como dato medido: ver
+// FRANJA_NOCTURNA en constants.js.
+export function calcularAjusteNocturno(zona, horaDelDia) {
+  const idxBase = ORDEN_NIVELES.indexOf(zona.nivel)
+  const nocturno = esHorarioNocturno(horaDelDia)
+  const idx = nocturno && idxBase < 3 ? idxBase + 1 : idxBase
+  return {
+    nivel: ORDEN_NIVELES[idx],
+    subio: idx > idxBase,
+    nocturno,
+    motivos: nocturno && idx > idxBase ? ['franja nocturna (heurística, sin dato real de hora en el delito)'] : [],
+  }
 }
 
 export async function geocodificar(texto) {
