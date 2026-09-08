@@ -52,6 +52,17 @@ html, body, #root { height: 100%; }
   --b3: calc(84px + var(--safe-bottom));
   --b4: calc(96px + var(--safe-bottom));
   --b5: calc(152px + var(--safe-bottom));
+
+  /* Elevación consistente para todo lo que "flota" sobre el mapa (chips,
+     botones circulares, FABs, paneles). Antes cada control tenía a lo sumo
+     un borde de 1px y ninguna sombra -- se leía plano, pegado al mapa en vez
+     de flotando sobre él, que es la diferencia visual más grande entre esto
+     y Waze/Google Maps. Dos niveles: -float para chips/botones sueltos,
+     -panel (ya existía como valor suelto en varios paneles) para superficies
+     más grandes -- se deja page-scoped por ahora, no todos los paneles usan
+     la misma sombra todavía. */
+  --shadow-float: 0 2px 10px rgba(0,0,0,0.28), 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-float-hover: 0 4px 16px rgba(0,0,0,0.32), 0 1px 3px rgba(0,0,0,0.4);
 }
 
 [data-theme="light"] {
@@ -138,18 +149,18 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; justify-content: center;
   width: 40px; height: 40px; border-radius: 50%;
   background: rgba(var(--surface-rgb), 0.85); border: 1px solid var(--border); color: var(--text-dim);
-  cursor: pointer; transition: all 0.2s ease;
+  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-float);
 }
-.theme-toggle:hover { color: var(--amarillo); border-color: var(--amarillo); transform: rotate(15deg); }
+.theme-toggle:hover { color: var(--amarillo); border-color: var(--amarillo); transform: rotate(15deg) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 
 /* ===== Toggle de capa de mapa (clusters / heatmap) ===== */
 .capa-toggle {
   display: flex; align-items: center; justify-content: center;
   width: 40px; height: 40px; border-radius: 50%;
   background: rgba(var(--surface-rgb), 0.85); border: 1px solid var(--border); color: var(--text-dim);
-  cursor: pointer; transition: all 0.2s ease;
+  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-float);
 }
-.capa-toggle:hover { color: #F2793B; border-color: #F2793B; transform: scale(1.08); }
+.capa-toggle:hover { color: #F2793B; border-color: #F2793B; transform: scale(1.08) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 .capa-toggle.capas-con-cambios { background: #F2793B; border-color: #F2793B; color: #14171A; }
 .capa-toggle.capas-con-cambios:hover { color: #14171A; }
 
@@ -257,19 +268,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .brand-name { font-weight: 700; font-size: 19px; letter-spacing: -0.02em; color: var(--text); }
 .brand-badge { font-size: 11px; font-weight: 700; background: var(--amarillo); color: #14171A; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.03em; }
 
-.topbar-right { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.topbar-right { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
 .clima-badge {
   display: flex; align-items: center; gap: 4px; font-size: 12px;
   background: rgba(var(--surface-rgb),0.85); padding: 6px 10px; border-radius: 20px; border: 1px solid var(--border);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Space Grotesk', sans-serif; box-shadow: var(--shadow-float);
 }
 .topbar-status {
   display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim);
   background: rgba(var(--surface-rgb),0.85); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);
-  transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif; box-shadow: var(--shadow-float);
 }
 .topbar-status.clickeable { cursor: pointer; }
-.topbar-status.clickeable:hover { border-color: var(--azul); }
+.topbar-status.clickeable:hover { border-color: var(--azul); box-shadow: var(--shadow-float-hover); }
 .topbar-status.alerta { color: var(--rojo); border-color: rgba(255,59,59,0.4); background: rgba(255,59,59,0.12); }
 .topbar-status.viaje { color: var(--verde); border-color: rgba(61,220,132,0.4); background: rgba(61,220,132,0.12); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--verde); flex-shrink: 0; }
@@ -398,6 +409,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .zoom-controls {
   position: absolute; top: var(--yzoom); right: calc(20px + var(--safe-right)); z-index: 1000;
   display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+  box-shadow: var(--shadow-float);
 }
 /* 44px, no 36px: mismo piso de touch target que theme-toggle/capa-toggle
    (ver comentario ahí) -- + y - son de los controles que más se tocan
@@ -449,9 +461,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .ruta-resumen {
   position: absolute; top: var(--y3); right: calc(20px + var(--safe-right)); z-index: 1000; width: 250px;
-  background: rgba(var(--surface-rgb),0.95); border: 1px solid var(--border); border-radius: 12px;
+  background: rgba(var(--surface-rgb),0.95); border: 1px solid var(--border); border-radius: 14px;
   padding: 14px; backdrop-filter: blur(6px);
   max-height: calc(100vh - 180px); overflow-y: auto;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3);
 }
 .ruta-resumen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .ruta-resumen-editar { display: flex; background: none; border: none; cursor: pointer; color: var(--text-dim); opacity: 0.8; }
@@ -466,10 +479,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-prioridad button.activa { border-color: var(--azul); color: var(--azul); background: rgba(79,168,232,0.1); }
 .ruta-opcion {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
-  background: var(--inset); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
-  cursor: pointer; text-align: left; font-family: 'Inter', sans-serif; transition: all 0.2s ease;
+  background: var(--inset); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; margin-bottom: 6px;
+  cursor: pointer; text-align: left; font-family: 'Inter', sans-serif;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
-.ruta-opcion.activa { border-color: var(--azul); background: rgba(79,168,232,0.1); }
+.ruta-opcion:hover { transform: translateY(-1px); box-shadow: var(--shadow-float); border-color: var(--text-dimmer); }
+/* La opción activa se separa de las demás con el mismo lenguaje de profundidad
+   que el resto de la UI flotante (sombra + borde azul), no solo un cambio de
+   color de fondo -- así se lee como "seleccionada" incluso a simple vistazo. */
+.ruta-opcion.activa {
+  border-color: var(--azul); background: rgba(79,168,232,0.1);
+  box-shadow: 0 3px 12px rgba(79,168,232,0.22), 0 1px 2px rgba(0,0,0,0.3);
+}
+.ruta-opcion.activa:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(79,168,232,0.28), 0 1px 3px rgba(0,0,0,0.35); }
 .ruta-opcion-num { font-size: 11px; font-weight: 700; color: var(--text); font-family: 'Space Grotesk', sans-serif; }
 .ruta-opcion-badge {
   display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: 9px; font-weight: 700;
@@ -592,9 +614,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; gap: 6px;
   background: var(--surface-solid); border: 1px solid var(--border); color: var(--text);
   border-radius: 24px; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
-  cursor: pointer; transition: all 0.2s ease;
+  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-float);
 }
-.route-fab:hover { border-color: var(--azul); transform: scale(1.03); }
+.route-fab:hover { border-color: var(--azul); transform: scale(1.03) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 
 .herramientas-stack {
   position: absolute; bottom: var(--b5); right: calc(24px + var(--safe-right)); z-index: 1000;
@@ -604,9 +626,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--surface-solid); border: 1px solid var(--border); color: var(--text);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease; box-shadow: var(--shadow-float);
 }
-.herramientas-fab:hover { border-color: var(--azul); transform: scale(1.05); }
+.herramientas-fab:hover { border-color: var(--azul); transform: scale(1.05) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 .herramientas-fab.activo { background: var(--azul); border-color: var(--azul); color: #0B1620; }
 .herramientas-menu {
   display: flex; flex-direction: column; gap: 6px;
