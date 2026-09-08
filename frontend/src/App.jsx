@@ -1123,7 +1123,13 @@ function App() {
   const mostrandoOpcionesRuta = rutasCalculadas.length > 0 && !modoViaje
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && misReportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
-  if (modoViaje) textoTopbar = 'Modo Viaje · siguiendo tu ubicación'
+  // Texto corto a propósito: con "· siguiendo tu ubicación" el pill se
+  // ensanchaba tanto que dejaba de leerse como una insignia en la esquina
+  // (arriba a la derecha) y competía con el cartel de navegación, centrado,
+  // por el mismo espacio -- Rodo lo vio en captura real. El estado de
+  // "dejó de seguir" ya tiene su propio aviso (el botón de recentrar que
+  // aparece), así que no hace falta repetirlo acá.
+  if (modoViaje) textoTopbar = 'Modo Viaje'
   else if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
   else if (cargandoHotspots) textoTopbar = 'Conectando con el servidor de datos...'
   else if (misReportes.length > 0) textoTopbar = `${misReportes.length} reporte${misReportes.length > 1 ? 's' : ''} tuyo${misReportes.length > 1 ? 's' : ''} · hace ${segundos}s`
@@ -1311,9 +1317,12 @@ function App() {
           mientras estás en camino, sino que en pantalla chica quedaba
           asomando detrás de la tarjeta de "doblá acá" (se veía en las
           capturas que mandaste) -- las dos ocupaban la misma franja
-          horizontal arriba. */}
+          horizontal arriba.
+          Sin hazard-edge: la franja de "cinta de peligro" sobre una píldora
+          se veía mal (a pedido de Rodo) -- ese motivo queda reservado para
+          paneles de datos de riesgo, no para el buscador. */}
       {!vistaNavegacion && (
-        <div className="searchbar panel-enter hazard-edge" style={{ animationDelay: '0.05s' }}>
+        <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <span className="searchbar-icon"><Search size={13} /></span>
           <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
@@ -1333,7 +1342,7 @@ function App() {
       )}
 
       {rutaAbierta && (
-        <div className="ruta-form panel-enter hazard-edge">
+        <div className="ruta-form panel-enter">
           <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
             <span className="ruta-form-punto ruta-form-punto-origen" />
             <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} onBlur={() => setTimeout(sugOrigen.limpiar, 150)} aria-label="Origen de la ruta" autoComplete="off" />
@@ -1460,6 +1469,13 @@ function App() {
           clutter más visible de las capturas que mandaste. */}
       {mostrandoOpcionesRuta && (
         <div className="ruta-resumen panel-enter hazard-edge">
+        {/* "Iniciar viaje" quedaba adentro del mismo scroll que la lista de
+            rutas y zonas cruzadas -- con 2+ rutas y varias zonas, ese botón
+            terminaba fuera de vista sin scrollear (Rodo lo reportó en
+            captura real). Ahora solo esta parte de arriba scrollea; el CTA
+            y las acciones secundarias quedan fijas abajo del panel, visibles
+            siempre sin importar cuánto contenido haya arriba. */}
+        <div className="ruta-resumen-scroll">
           <div className="ruta-resumen-header">
             <span className="cercanas-title">Opciones de ruta</span>
             <button className="ruta-resumen-editar" onClick={editarRuta} aria-label="Editar origen y destino"><Pencil size={13} /></button>
@@ -1521,6 +1537,7 @@ function App() {
               )}
             </div>
           )}
+        </div>
           <button className="ruta-resumen-iniciar" onClick={iniciarNavegacionRuta}>
             <Navigation size={15} /> Iniciar viaje
           </button>
