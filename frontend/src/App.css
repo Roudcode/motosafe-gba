@@ -643,6 +643,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .herramientas-menu button:hover { border-color: var(--azul); }
 .herramientas-menu button.activo { border-color: var(--verde); color: var(--verde); }
 
+/* Con la barra de ETA activa (nav-resumen-mini, centrada y de ancho variable
+   según cuánto texto tenga), en pantallas angostas su borde derecho invadía a
+   Reportar -- ambos comparten casi el mismo "bottom" (24px vs 28px por
+   defecto), así que en vez de tocar esa barra centrada se sube Reportar
+   arriba de esa fila, la solución más simple que no depende de cuánto mida
+   el contenido de la barra en cada caso. */
+.app:has(.nav-resumen-mini) .report-fab { bottom: calc(84px + var(--safe-bottom)); }
+
 .report-fab {
   position: absolute; bottom: var(--b2); right: calc(24px + var(--safe-right)); z-index: 1000;
   display: flex; align-items: center; gap: 8px;
@@ -781,7 +789,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
   .cercanas-panel, .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; width: 200px; max-height: 40vh; }
-  .legend { left: 12px; bottom: calc(90px + var(--safe-bottom)); padding: 10px 12px; }
+  /* Sin tope de ancho, la leyenda crecía para que el título ("NIVEL DE
+     RIESGO (tocá para filtrar)") entrara en una sola línea -- en un celular
+     angosto eso la hacía invadir el panel de rutas/cercanas del otro lado
+     (ambos pueden estar abiertos a la vez, ver captura real). Un ancho fijo
+     fuerza al título a partirse en dos líneas en vez de ensancharse. */
+  .legend { left: 12px; bottom: calc(90px + var(--safe-bottom)); padding: 10px 12px; width: 140px; min-width: 0; }
   .route-fab { right: 16px; bottom: var(--b3); }
   .herramientas-stack { right: 16px; bottom: calc(138px + var(--safe-bottom)); }
   .report-fab { right: 16px; bottom: var(--b1); padding: 12px 16px; }

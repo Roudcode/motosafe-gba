@@ -45,6 +45,17 @@ const ZOOM_NAVEGACION = 17
 // erráticos que harían temblar el mapa sin que el usuario se haya movido.
 const DISTANCIA_MIN_PARA_RUMBO_KM = 0.003
 
+// Velocidad mínima (m/s) para confiar en coords.heading -- ese campo es
+// "rumbo sobre el terreno" (course over ground), calculado por el propio GPS
+// a partir de fixes consecutivos: con el vehículo detenido o a paso de
+// caminata es tan ruidoso como calcularlo a mano, pero a diferencia del
+// fallback manual (ver DISTANCIA_MIN_PARA_RUMBO_KM) no tenía ningún filtro,
+// así que la cámara 3D podía "volverse loca" girando sola parado en un
+// semáforo o probando la app sin moverse en moto real. Mismo criterio de
+// fondo que el piso de velocidad para el ETA más abajo: por debajo de esto,
+// la señal no alcanza para decir hacia dónde se apunta.
+const VELOCIDAD_MIN_PARA_RUMBO_GPS = 1.5
+
 // Umbral para considerar que el usuario se desvió de la ruta calculada (no
 // que el GPS tembló): más que el ruido normal en calle (~15-30m con buena
 // señal), lo bastante chico como para reaccionar rápido si de verdad se
@@ -447,9 +458,15 @@ function App() {
       (pos) => {
         const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         const heading = pos.coords.heading
-        if (heading != null && !Number.isNaN(heading)) {
+        const velocidadGps = pos.coords.speed
+        const hayVelocidadConfiable = velocidadGps != null && !Number.isNaN(velocidadGps) && velocidadGps >= VELOCIDAD_MIN_PARA_RUMBO_GPS
+        if (heading != null && !Number.isNaN(heading) && hayVelocidadConfiable) {
           // El GPS ya viene con rumbo calculado (lo más confiable mientras
-          // hay movimiento real, que es el caso normal andando en moto).
+          // hay movimiento real, que es el caso normal andando en moto) --
+          // pero solo si ese movimiento es real: a velocidad casi nula,
+          // coords.heading es tan ruidoso como cualquier otro cálculo por
+          // diferencia de posición, y usarlo sin filtro hacía temblar la
+          // cámara 3D con el vehículo parado.
           setRumboActual(heading)
         } else if (rumboBrujulaRef.current != null) {
           // Sin heading de GPS (típico parado, sin desplazamiento del que
@@ -882,10 +899,16 @@ function App() {
     const ruta = rutasConScore[rutaSeleccionada]
     if (!ruta) return null
     // Con velocidad GPS real disponible, el tiempo restante sale del ritmo
-    // actual (más fiel si vas parado en un semáforo o zafando de tráfico).
-    // Sin eso, repartimos el tiempo total de la ruta en proporción a la
-    // distancia que falta -- una aproximación razonable, no exacta.
-    const minRestante = velocidadActual
+    // actual (más fiel reflejando tráfico real). Pero dividir la distancia
+    // que falta por una velocidad casi nula (parado en un semáforo, GPS
+    // ruidoso probando la app sin moverse) da un ETA absurdo -- "1989 min"
+    // en vez de "52 min" con apenas 2 km/h de velocidad instantánea, el caso
+    // real que motivó este piso. Por debajo de VELOCIDAD_MIN_PARA_RUMBO_GPS
+    // (mismo umbral que ya se usa para no confiar en el rumbo a esa
+    // velocidad) se cae al reparto proporcional del tiempo total de la ruta,
+    // una aproximación razonable para "estoy parado un momento", no exacta.
+    const velocidadConfiableParaEta = velocidadActual != null && velocidadActual >= VELOCIDAD_MIN_PARA_RUMBO_GPS
+    const minRestante = velocidadConfiableParaEta
       ? (progresoRuta.distanciaRestanteKm / (velocidadActual * 3.6)) * 60
       : ruta.min * (1 - progresoRuta.fraccionRecorrida)
     const llegada = new Date(Date.now() + minRestante * 60000)
