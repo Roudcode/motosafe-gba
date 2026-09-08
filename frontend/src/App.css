@@ -512,10 +512,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .nav-resumen-mini-datos { display: flex; align-items: center; gap: 9px; font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; white-space: nowrap; }
 .nav-resumen-mini-sep { color: var(--text-dimmer); }
 .nav-resumen-mini-llegada { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-dim); font-weight: 400; margin-left: 4px; }
+/* Con texto ("Salir"), no solo el ícono: es la única acción destructiva de
+   todo el modo viaje (corta la navegación activa) y un ícono ambiguo ahí es
+   peor que la palabra -- mismo criterio que usa Waze con su píldora roja
+   de "Salir" en vez de una cruz sola. */
 .nav-resumen-mini-detener {
-  display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  height: 40px; padding: 0 14px; border-radius: 12px; border: none; cursor: pointer; flex-shrink: 0;
   background: rgba(255,59,59,0.15); color: var(--rojo);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; white-space: nowrap;
 }
 .nav-resumen-mini-detener:hover { background: rgba(255,59,59,0.25); }
 

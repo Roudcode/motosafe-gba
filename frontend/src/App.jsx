@@ -1285,7 +1285,7 @@ function App() {
             {etaInfo && <span className="nav-resumen-mini-llegada">llegás {etaInfo.horaLlegada}</span>}
           </div>
           <button className="nav-resumen-mini-detener" onClick={desactivarModoViaje} aria-label="Detener navegación">
-            <Square size={13} />
+            <Square size={12} /> Salir
           </button>
         </div>
       )}
