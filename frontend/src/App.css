@@ -703,6 +703,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; justify-content: center;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
   animation: puck-halo 2.2s infinite;
+  /* El SVG interno solo pinta un circulo solido de 22px dentro de esta caja
+     de 34px: el margen que queda (los ~6px entre el circulo y el borde de la
+     caja) es transparente, asi que un marcador de fondo (zona de siniestro
+     o de inseguridad) que caiga cerca de la posicion actual asoma por ese
+     hueco -- se ve como si el puck estuviera "roto", aunque el marcador de
+     abajo este bien atenuado (.capa-fondo-nav baja su opacidad en
+     navegacion, pero atenuado no es invisible). Un fondo opaco del mismo
+     color que las superficies de la app tapa cualquier cosa detras, sea
+     cual sea su tamano o que tan cerca este del centro exacto -- asi se ve
+     como el disco solido de un solo color que usan Waze/Maps, sin huecos. */
+  background: var(--surface-solid);
 }
 .puck-navegacion-svg { display: block; }
 @keyframes puck-halo {
