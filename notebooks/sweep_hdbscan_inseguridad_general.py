@@ -82,6 +82,11 @@ def main():
     t0 = time.time()
     delitos = pd.read_csv(DATA / "delitos_caba.csv", low_memory=False)
     delitos = delitos.dropna(subset=["latitud", "longitud"]).copy()
+    # (0,0) es un valor centinela de GPS invalido, no un null real -- dropna no lo
+    # agarra. Sin este filtro, un cluster entero de casos con coordenada rota
+    # (~3463 en el dataset actual, tipo "Lesiones") se cuela como un "hotspot" en
+    # el medio del Golfo de Guinea. Encontrado en la validacion cualitativa.
+    delitos = delitos[(delitos["latitud"] != 0) | (delitos["longitud"] != 0)].copy()
     print(f"  {len(delitos)} filas cargadas en {time.time()-t0:.1f}s", flush=True)
 
     anio_max = delitos["anio_dataset"].max()

@@ -107,6 +107,11 @@ def clusterizar_hdbscan(df, min_cluster_size, min_samples, etiqueta):
 def main():
     delitos = pd.read_csv(DATA / "delitos_caba.csv", low_memory=False)
     delitos = delitos.dropna(subset=["latitud", "longitud"]).copy()
+    # (0,0) es un valor centinela de GPS invalido, no un null real -- dropna no lo
+    # agarra. Sin este filtro, un cluster entero de casos con coordenada rota
+    # (~3463 en el dataset actual, tipo "Lesiones") se cuela como un "hotspot" en
+    # el medio del Golfo de Guinea. Encontrado en la validacion cualitativa.
+    delitos = delitos[(delitos["latitud"] != 0) | (delitos["longitud"] != 0)].copy()
 
     anio_max = delitos["anio_dataset"].max()
     anios_incluidos = list(range(anio_max - ANIOS_VENTANA + 1, anio_max + 1))
