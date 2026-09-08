@@ -927,8 +927,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      200px que cortaban "Segura") deja libre el resto del ancho de la
      pantalla para seguir viendo el trazado, y menos alto máximo (34vh, no
      44vh) deja más mapa visible arriba del panel. */
-  .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); width: min(300px, 78vw); max-height: 34vh; }
-  .detalle-panel { right: 12px; left: auto; }
+  .ruta-resumen, .detalle-panel { top: auto; width: min(300px, 78vw); max-height: 34vh; }
+  .detalle-panel { bottom: calc(210px + var(--safe-bottom)); right: 12px; left: auto; }
   /* La leyenda se esconde mientras "Opciones de ruta" está abierto (ver
      mostrandoOpcionesRuta en App.jsx), y ese rincón queda libre justo para
      este panel -- por eso "Opciones de ruta" va abajo a la IZQUIERDA (donde
@@ -938,7 +938,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      .ruta-resumen-scroll) así siempre se ve sin scrollear. .detalle-panel no
      entra en este cambio de lado porque ese sí sigue conviviendo con la
      leyenda (se abre al tocar una zona en el mapa, no al elegir ruta). */
-  .ruta-resumen { left: 12px; right: auto; max-height: 42vh; }
+  /* Mismo margen inferior que la leyenda (var(--b1)) -- ese es justo el
+     lugar que la leyenda deja libre mientras este panel está abierto.
+     Antes usaba el mismo bottom que .detalle-panel (210px, pensado para
+     convivir CON la leyenda) y por eso quedaba mitad de pantalla, "en el
+     medio a la izquierda" (como lo vio Rodo), tapando mapa de más sin
+     necesidad -- ahora baja del todo, como el resto de los paneles que
+     viven en esa esquina. */
+  .ruta-resumen { bottom: var(--b1); left: 12px; right: auto; max-height: 42vh; }
   /* "Opciones de ruta" era el panel más pesado en vertical (tarjeta por
      ruta + desglose de puntaje + lista de zonas cruzadas + botones): se
      achica todo lo que no es indispensable para decidir qué ruta tomar --

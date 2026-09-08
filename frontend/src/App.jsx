@@ -3,7 +3,7 @@ import './App.css'
 
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
-  ShieldCheck, CircleCheck, TriangleAlert, Share2, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
+  ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
   Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight,
 } from 'lucide-react'
 
@@ -1104,18 +1104,6 @@ function App() {
     return [...zonasAjustadas].sort((a, b) => (b.cantidad || 0) - (a.cantidad || 0)).slice(0, 5)
   }, [zonasAjustadas])
 
-  const compartirRuta = async () => {
-    const r = rutasConScore[rutaSeleccionada]
-    const cruces = zonasCruzadasPorRuta[rutaSeleccionada]?.length || 0
-    const texto = `🏍️ MotoSafe GBA\nEn camino: ${r.km} km, ~${r.min} min.\n${cruces === 0 ? 'Ruta sin zonas de riesgo registradas.' : `Cruza ${cruces} zona(s) de riesgo.`}`
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Mi ruta en MotoSafe GBA', text: texto }) } catch { /* usuario canceló */ }
-    } else if (navigator.clipboard) {
-      await navigator.clipboard.writeText(texto)
-      mostrarToast('Ruta copiada al portapapeles')
-    }
-  }
-
   const hayFiltrosApagados = nivelesActivos.size < Object.keys(NIVELES).length
   // "Opciones de ruta" abierto (ver el panel .ruta-resumen más abajo): mismo
   // booleano para esconder la leyenda mientras se muestra, así los dos no
@@ -1542,7 +1530,12 @@ function App() {
             <Navigation size={15} /> Iniciar viaje
           </button>
           <div className="ruta-resumen-acciones-finales">
-            <button className="ruta-resumen-compartir" onClick={compartirRuta}><Share2 size={13} /> Compartir</button>
+            {/* Antes iba "Compartir" acá -- a pedido de Rodo, se cambia por
+                un Cancelar más directo (mismo cierre completo que ya hacía
+                "Nueva ruta") para que salir de "Opciones de ruta" y volver a
+                la búsqueda sea más fácil, sin tener que buscar el ícono de
+                editar (lápiz) arriba del panel. */}
+            <button className="ruta-resumen-compartir" onClick={cerrarTodoRuta}><X size={13} /> Cancelar</button>
             <button className="ruta-resumen-nueva" onClick={cerrarTodoRuta}>Nueva ruta</button>
           </div>
         </div>
