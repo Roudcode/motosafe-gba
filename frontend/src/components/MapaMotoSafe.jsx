@@ -227,6 +227,7 @@ export function MapaMotoSafe({
   onClickRuta,
   origenPunto,
   destinoPunto,
+  ubicacionReporte,
   miUbicacion,
   vistaNavegacion,
   rumboActual,
@@ -732,9 +733,18 @@ export function MapaMotoSafe({
       const el = elementoCirculo({ size: 16, color: '#FF3B3B', fillOpacity: 1, weight: 3 })
       markers.push(new Marker({ element: el }).setLngLat([destinoPunto.lng, destinoPunto.lat]).addTo(map))
     }
+    if (ubicacionReporte) {
+      // Marcador visible del punto donde va a quedar el reporte -- antes no
+      // había NINGÚN indicio visual de dónde se iba a guardar (ni siquiera
+      // cuando el punto era el real del GPS), lo que hacía imposible
+      // corregirlo si el GPS pifiaba la esquina.
+      const el = elementoCirculo({ size: 18, color: '#FFC933', fillOpacity: 0.85, weight: 3 })
+      el.className = 'pulse-marker-report'
+      markers.push(new Marker({ element: el }).setLngLat([ubicacionReporte.lng, ubicacionReporte.lat]).addTo(map))
+    }
     return () => markers.forEach((m) => m.remove())
      
-  }, [origenPunto, destinoPunto, version])
+  }, [origenPunto, destinoPunto, ubicacionReporte, version])
 
   // --- mi ubicación: marker persistente con movimiento animado --------------
   // Antes este marker se destruía y se recreaba en CADA fix de GPS (cada

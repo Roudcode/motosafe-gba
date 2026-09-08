@@ -348,7 +348,7 @@ function App() {
       if (e.key !== 'Escape') return
       if (mostrarOnboarding) { cerrarOnboarding(); return }
       if (rutaAbierta) { cerrarTodoRuta(); return }
-      if (paso === 'eligiendo') { setPaso('idle'); return }
+      if (paso === 'eligiendo') { setPaso('idle'); setCampoActivo(null); return }
       if (zonaSeleccionada) { setZonaSeleccionada(null); return }
       if (statsAbierto) { setStatsAbierto(false); return }
       if (actividadAbierta) { setActividadAbierta(false); return }
@@ -464,28 +464,43 @@ function App() {
     activarModoViaje(true)
   }
 
+  // Antes, si la geolocalización fallaba o el navegador no la soportaba, el
+  // reporte se ubicaba en un punto ALEATORIO cerca del centro del GBA sin
+  // avisarle nada al usuario -- para una app cuyo valor entero depende de
+  // que los datos de ubicación sean reales, eso es peor que no tener el
+  // dato: un incidente "fantasma" en un lugar inventado. Ahora, si no hay
+  // GPS, se le pide directamente al usuario que toque el mapa para marcar
+  // el punto (mismo mecanismo que ya existía para marcar origen/destino de
+  // ruta), y ese mismo tap queda disponible siempre durante 'eligiendo' por
+  // si el GPS acertó el barrio pero no la esquina exacta.
   const iniciarReporte = () => {
-    if (paso === 'eligiendo' || paso === 'buscando') { setPaso('idle'); return }
+    if (paso === 'eligiendo' || paso === 'buscando') { setPaso('idle'); setCampoActivo(null); return }
     setPaso('buscando')
     const usar = (punto) => {
       setUbicacionReporte(punto)
       setVuelo({ ...punto, zoom: 15 })
       setPaso('eligiendo')
+      setCampoActivo('reporte')
     }
-    if (!navigator.geolocation) {
-      usar({ lat: CENTRO_GBA.lat + (Math.random() - 0.5) * 0.1, lng: CENTRO_GBA.lng + (Math.random() - 0.5) * 0.1 })
-      return
+    const sinUbicacion = () => {
+      setUbicacionReporte(null)
+      setPaso('eligiendo')
+      setCampoActivo('reporte')
+      mostrarToast('No pudimos ubicarte -- tocá el mapa para marcar dónde fue')
     }
+    if (!navigator.geolocation) { sinUbicacion(); return }
     navigator.geolocation.getCurrentPosition(
       (pos) => usar({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => usar({ lat: CENTRO_GBA.lat + (Math.random() - 0.5) * 0.1, lng: CENTRO_GBA.lng + (Math.random() - 0.5) * 0.1 }),
+      sinUbicacion,
       { timeout: 6000 }
     )
   }
 
   const confirmarReporte = (categoria) => {
+    if (!ubicacionReporte) { mostrarToast('Marcá primero el lugar en el mapa'); return }
     const nuevo = { lat: ubicacionReporte.lat, lng: ubicacionReporte.lng, categoria, autor_id: autorId }
     setPaso('idle')
+    setCampoActivo(null)
     fetch(`${API_URL}/reportes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -555,9 +570,12 @@ function App() {
   }
   const marcarEnMapa = (campo) => setCampoActivo(campo === campoActivo ? null : campo)
   const clicMapa = (punto) => {
-    if (campoActivo === 'origen') { setOrigenPunto(punto); setOrigenTexto('Punto marcado en el mapa') }
-    if (campoActivo === 'destino') { setDestinoPunto(punto); setDestinoTexto('Punto marcado en el mapa') }
-    setCampoActivo(null)
+    if (campoActivo === 'origen') { setOrigenPunto(punto); setOrigenTexto('Punto marcado en el mapa'); setCampoActivo(null) }
+    if (campoActivo === 'destino') { setDestinoPunto(punto); setDestinoTexto('Punto marcado en el mapa'); setCampoActivo(null) }
+    // Para el reporte, a propósito NO se apaga campoActivo: mientras la
+    // hojita de categorías sigue abierta, el usuario puede re-tocar el mapa
+    // las veces que quiera para afinar el punto antes de confirmar.
+    if (campoActivo === 'reporte') { setUbicacionReporte(punto); setVuelo({ ...punto, zoom: 15 }) }
   }
 
   const usarFavorito = (fav) => { setDestinoTexto(fav.texto); setDestinoPunto(fav.punto) }
@@ -1199,6 +1217,7 @@ function App() {
           onClickRuta={setRutaSeleccionada}
           origenPunto={origenPunto}
           destinoPunto={destinoPunto}
+          ubicacionReporte={paso === 'eligiendo' ? ubicacionReporte : null}
           miUbicacion={miUbicacion}
           vistaNavegacion={vistaNavegacion}
           rumboActual={rumboActual}
@@ -1451,12 +1470,15 @@ function App() {
       {paso === 'eligiendo' && (
         <div className="report-sheet hazard-edge">
           <h3>¿Qué estás viendo en la vía?</h3>
-          <div className="report-options">
+          <div className={`report-options ${!ubicacionReporte ? 'deshabilitadas' : ''}`}>
             {CATEGORIAS_REPORTE.map((cat) => (
               <button key={cat.id} onClick={() => confirmarReporte(cat.id)}><cat.Icon size={15} /> {cat.label}</button>
             ))}
           </div>
-          <p className="report-hint"><MapPin size={12} /> Ubicación tomada por GPS del dispositivo.</p>
+          <p className="report-hint">
+            <MapPin size={12} />
+            {ubicacionReporte ? 'Ubicación por GPS -- tocá el mapa si no es exacta.' : 'Tocá el mapa para marcar dónde fue.'}
+          </p>
         </div>
       )}
     </div>

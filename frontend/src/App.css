@@ -570,6 +570,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-options { display: flex; flex-direction: column; gap: 8px; }
 .report-options button { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--inset); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: border-color 0.15s ease; }
 .report-options button:hover { border-color: var(--amarillo); }
+/* Antes de tener un punto (GPS falló y todavía no tocaste el mapa), las
+   categorías quedan visibles pero sin poder confirmarse -- confirmar sin
+   ubicación real guardaría un reporte fantasma. */
+.report-options.deshabilitadas { opacity: 0.4; pointer-events: none; }
 .report-hint { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 11px; color: var(--text-dim); }
 
 .maplibregl-popup-content { background: var(--surface-solid); color: var(--text); border-radius: 10px; border: 1px solid var(--border); padding: 10px 12px; }
@@ -653,6 +657,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .herramientas-stack { right: 16px; bottom: 138px; }
   .report-fab { right: 16px; bottom: 20px; padding: 12px 16px; }
   .report-sheet { right: 12px; left: 12px; width: auto; bottom: 84px; }
+  .nav-resumen-mini { bottom: 16px; max-width: 62vw; padding: 8px 8px 8px 12px; }
+  .nav-resumen-mini-datos { font-size: 12px; gap: 6px; }
+  .nav-resumen-mini-llegada { display: none; }
+  .velocimetro { bottom: 16px; left: 12px; width: 48px; height: 48px; }
+  .velocimetro strong { font-size: 15px; }
 }
 
 @media (max-width: 768px) and (min-width: 481px) {
