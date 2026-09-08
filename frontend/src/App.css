@@ -49,15 +49,24 @@ html, body { touch-action: pan-x pan-y; }
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 
-  /* Las mismas "filas" de siempre (62/64/112/154px desde arriba, 24/28/84/
-     96/152px desde abajo) pero con el inset seguro sumado -- así un panel
-     no queda tapado por el notch/isla dinámica arriba, ni por la barra de
-     gestos abajo, sin tener que tocar cada regla una por una si el offset
-     base cambia. */
-  --y1: calc(62px + var(--safe-top));
-  --yzoom: calc(64px + var(--safe-top));
-  --y2: calc(112px + var(--safe-top));
-  --y3: calc(154px + var(--safe-top));
+  /* --topbar-h: alto REAL de la topbar, medido en vivo con un ResizeObserver
+     (ver App.jsx, topbarRef) porque no hay forma de adivinarlo por CSS --
+     puede tener 1 línea o partirse en 2 o 3 según el ancho de pantalla, si
+     el clima está cargado, cuánto texto tenga el pill de estado ("185 zonas
+     registradas · hace 12s" no mide lo mismo que "Modo Viaje · siguiendo tu
+     ubicación"), etc. Este valor ya YA incluye el padding-top con
+     --safe-top de .topbar, así que --y1 y compañía no necesitan sumarlo de
+     nuevo. El 62px es solo el piso antes de que el observer mida por
+     primera vez (no debería notarse, corre en el primer paint).
+     Con esto, buscador/toast/cartel de navegación/alerta -- todo lo que
+     antes se pisaba con la topbar cada vez que esta pasaba a 2 líneas
+     (varias rondas de bugs reales reportados) -- se acomoda solo, sin
+     volver a adivinar un offset fijo por breakpoint. */
+  --topbar-h: 62px;
+  --y1: calc(var(--topbar-h) + 12px);
+  --yzoom: calc(var(--topbar-h) + 14px);
+  --y2: calc(var(--topbar-h) + 62px);
+  --y3: calc(var(--topbar-h) + 104px);
   --b1: calc(24px + var(--safe-bottom));
   --b2: calc(28px + var(--safe-bottom));
   --b3: calc(84px + var(--safe-bottom));
@@ -112,6 +121,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   background: repeating-linear-gradient(-45deg, var(--amarillo) 0 7px, var(--bg) 7px 14px);
   opacity: 0.7; border-radius: 12px 12px 0 0;
 }
+/* La franja de .hazard-edge asume paneles con esquinas de 12px (la mayoría).
+   La searchbar es una píldora de 24px de radio, así que con el radio genérico
+   la franja quedaba "cuadrada" sobre un borde redondeado, mal integrada. */
+.searchbar.hazard-edge::before { border-radius: 24px 24px 0 0; }
 
 /* ===== Pantalla de carga ===== */
 .loading-screen {
@@ -845,22 +858,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .topbar-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; width: 100%; }
   .topbar-status { font-size: 11px; }
   .clima-badge { font-size: 11px; }
-  /* 96px y no 58px: con la fila de arriba pudiendo partirse en dos líneas
-     (ver .topbar más arriba), un offset pensado para una sola línea hacía
-     que el buscador/paneles de abajo quedaran tapados por la segunda línea
-     de badges cuando esta aparecía. De más da un poco de aire de sobra
-     cuando entra todo en una sola línea; de menos tapaba contenido -- el
-     primero es el error seguro. */
-  .searchbar, .ruta-form { top: calc(96px + var(--safe-top)); width: 88vw; }
-  .toast, .capas-panel { top: calc(96px + var(--safe-top)); }
-  /* OJO: 152px, no 96px como el buscador -- ese fue el error del commit
-     anterior. 96px solo despeja la topbar partida en dos líneas, pero deja
-     a estos carteles exactamente a la misma altura que el buscador (que
-     también vive en 96px), así que quedaban pisándose entre sí en vez de
-     pisar al buscador. 152px = 96px + el alto real del buscador (~46px) +
-     un margen chico, para que quede DEBAJO de todo lo de arriba, no a la
-     misma altura. */
-  .ruta-banner, .navegacion-panel, .alerta-viaje { top: calc(152px + var(--safe-top)); }
+  /* Los offsets fijos que había acá (96px, 152px...) se sacaron: --y1/--y2
+     ahora se calculan solos a partir del alto REAL medido de la topbar
+     (--topbar-h, ver :root y App.jsx) en vez de un número adivinado por
+     breakpoint -- por eso hacían falta cada vez que la topbar cambiaba de
+     alto (se partía en 2 líneas, el pill de estado tenía texto más largo,
+     etc.) y por eso ya no hacen falta. Solo queda lo que es puramente de
+     ancho, no de posición vertical. */
+  .searchbar, .ruta-form { width: 88vw; }
   .actividad-panel, .stats-panel { top: calc(96px + var(--safe-top)); right: 12px; width: 82vw; }
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
@@ -906,6 +911,16 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .nav-resumen-mini-llegada { display: none; }
   .velocimetro { bottom: var(--b1); left: 12px; width: 48px; height: 48px; }
   .velocimetro strong { font-size: 15px; }
+  /* El cartel de "Doblá a la derecha" con el tamaño de escritorio (chip de
+     46px + padding generoso) comía demasiado alto en un celular, justo la
+     franja donde también compite el pill de "Modo Viaje" del topbar. Se
+     achica el chip y el padding, y el dato "después" (siguiente calle) pasa
+     a una sola línea en vez de su propio renglón con borde -- sigue
+     legible, ocupa bastante menos. */
+  .navegacion-panel { gap: 10px; padding: 10px 16px 10px 10px; border-radius: 16px; }
+  .navegacion-icono-chip { width: 36px; height: 36px; }
+  .navegacion-texto strong { font-size: 15px; -webkit-line-clamp: 1; }
+  .navegacion-siguiente { margin-top: 3px; padding-top: 3px; }
 }
 
 /* Modo horizontal (teléfono montado en el manillar, uso real más común en
@@ -918,11 +933,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 @media (orientation: landscape) and (max-height: 500px) {
   .topbar { padding-top: calc(8px + var(--safe-top)); padding-bottom: 8px; }
   .brand-name { font-size: 16px; }
-  .searchbar, .ruta-form, .toast, .navegacion-panel, .alerta-viaje { top: calc(48px + var(--safe-top)); }
+  /* Sin top fijo acá: --y1/--y3/--yzoom siguen solos el alto real de la
+     topbar (que ya achicamos arriba con menos padding), así que no hace
+     falta repetir el offset a mano para landscape. */
   .capas-panel, .actividad-panel, .stats-panel, .ruta-resumen, .detalle-panel {
-    top: calc(48px + var(--safe-top)); max-height: calc(100vh - 70px); right: calc(12px + var(--safe-right));
+    max-height: calc(100vh - 70px); right: calc(12px + var(--safe-right));
   }
-  .zoom-controls { top: calc(48px + var(--safe-top)); }
   .legend { bottom: calc(8px + var(--safe-bottom)); padding: 8px 10px; }
   .legend-inseguridad { bottom: calc(120px + var(--safe-bottom)); }
   .route-fab, .report-fab, .herramientas-stack { bottom: calc(8px + var(--safe-bottom)); }

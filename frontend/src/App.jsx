@@ -65,6 +65,13 @@ const VELOCIDAD_MIN_PARA_RUMBO_GPS = 1.5
 // (ver DESVIOS_SEGUIDOS_PARA_RECALCULAR) antes de recalcular.
 const UMBRAL_DESVIO_RUTA_KM = 0.06
 const DESVIOS_SEGUIDOS_PARA_RECALCULAR = 3
+// Si la ruta recalculada sigue sin "pegarse" a la posición real (calle
+// dividida, sentido único, snapping del backend a la calle paralela), sin
+// este freno el ciclo detección-de-desvío -> reroute -> sigue desviado se
+// repetía cada pocos segundos y el toast de aviso terminaba apareciendo todo
+// el tiempo. Con el cooldown, como mucho se avisa una vez cada tanto aunque
+// el desvío real persista.
+const COOLDOWN_RECALCULO_MS = 20000
 
 // Barra de escala manual (mismo cálculo que antes, con Leaflet): MapLibre no
 // tiene un control de escala con este estilo visual propio (el suyo trae su
@@ -207,6 +214,14 @@ function App() {
   // ninguna de las dos está disponible, cálculo a mano con calcularRumbo()
   // entre el fix anterior y el actual (ver activarModoViaje).
   const mapaRef = useRef(null)
+  // Mide la altura real del topbar (varia segun 1 o 2 lineas, badge de clima
+  // presente, largo del texto del status pill, portrait vs landscape) y la
+  // publica como variable CSS --topbar-h, de la que dependen --y1/--y2/--y3
+  // (ver App.css). Reemplaza los offsets en px hardcodeados que se
+  // desincronizaban de la altura real cada vez que el contenido del topbar
+  // cambiaba, causando superposiciones repetidas con la searchbar y otros
+  // paneles flotantes.
+  const topbarRef = useRef(null)
   const [mapaListo, setMapaListo] = useState(false)
   const [rumboActual, setRumboActual] = useState(0)
   // Espejo en ref (no state) de la última lectura de brújula: se lee dentro
@@ -220,6 +235,21 @@ function App() {
   useEffect(() => {
     if (vuelo && mapaListo) mapaRef.current?.flyTo({ center: [vuelo.lng, vuelo.lat], zoom: vuelo.zoom || 15, duration: 1400 })
   }, [vuelo, mapaListo])
+
+  // Publica la altura real del topbar en --topbar-h en cada resize (rotar el
+  // celular, que el badge de clima aparezca/desaparezca, que el status pill
+  // pase a 2 lineas por un texto largo, etc). ResizeObserver dispara una vez
+  // al observar y despues en cada cambio de tamaño real del elemento.
+  useEffect(() => {
+    const el = topbarRef.current
+    if (!el) return
+    const obs = new ResizeObserver((entries) => {
+      const alto = entries[0]?.contentRect?.height
+      if (alto) document.documentElement.style.setProperty('--topbar-h', `${Math.round(alto)}px`)
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   useEffect(() => {
     if (!modoViaje) zoomNavegacionHechoRef.current = false
@@ -893,8 +923,9 @@ function App() {
   // (misma función que arma la ruta inicial) contra el mismo destino.
   const desviosSeguidosRef = useRef(0)
   const rerouteEnCursoRef = useRef(false)
+  const ultimoRerouteTsRef = useRef(0)
   useEffect(() => {
-    if (!modoViaje) { desviosSeguidosRef.current = 0; return }
+    if (!modoViaje) { desviosSeguidosRef.current = 0; ultimoRerouteTsRef.current = 0; return }
     if (!miUbicacion || !destinoPunto || rutasCalculadas.length === 0 || rerouteEnCursoRef.current) return
     const ruta = rutasCalculadas[rutaSeleccionada]
     if (!ruta?.coords) return
@@ -906,6 +937,11 @@ function App() {
     }
     if (desviosSeguidosRef.current >= DESVIOS_SEGUIDOS_PARA_RECALCULAR) {
       desviosSeguidosRef.current = 0
+      // Sin este freno, si la ruta recalculada sigue sin coincidir con la
+      // posición real, el ciclo se repetía cada pocos segundos (ver
+      // COOLDOWN_RECALCULO_MS más arriba).
+      if (Date.now() - ultimoRerouteTsRef.current < COOLDOWN_RECALCULO_MS) return
+      ultimoRerouteTsRef.current = Date.now()
       rerouteEnCursoRef.current = true
       mostrarToast('Te desviaste -- recalculando ruta...')
       calcularRuta(miUbicacion, destinoPunto).finally(() => { rerouteEnCursoRef.current = false })
@@ -1113,7 +1149,7 @@ function App() {
       <LoadingScreen visible={!primeraVezListo} />
       {mostrarOnboarding && primeraVezListo && <Onboarding onCerrar={cerrarOnboarding} />}
 
-      <header className="topbar">
+      <header className="topbar" ref={topbarRef}>
         <div className="brand">
           <span className="brand-dot" />
           <span className="brand-name">MotoSafe</span>
