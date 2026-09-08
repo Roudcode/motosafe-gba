@@ -2,6 +2,17 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
+/* El meta viewport (maximum-scale=1 + user-scalable=no en index.html) ya no
+   alcanza: Safari en iOS lo ignora desde hace rato por accesibilidad, así
+   que el pinch-zoom seguía zoomeando toda la interfaz aunque el meta tag
+   estuviera puesto -- esto es lo que realmente lo frena hoy. touch-action
+   en html/body bloquea el pinch-zoom y el double-tap-zoom NATIVOS del
+   navegador sobre toda la app (dejando pan normal con un dedo), pero no
+   toca el mapa: maplibre-gl.css ya define su propio touch-action:none
+   sobre .maplibregl-canvas-container/.maplibregl-canvas, más específico
+   que este, así que ahí sigue mandando maplibre con sus propios gestos de
+   zoom/pan/rotate en vez del navegador. */
+html, body { touch-action: pan-x pan-y; }
 
 /* ===== Tokens de tema =====
    :root define el tema oscuro (el default original de la app, sin cambios visuales
@@ -842,21 +853,24 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      primero es el error seguro. */
   .searchbar, .ruta-form { top: calc(96px + var(--safe-top)); width: 88vw; }
   .toast, .capas-panel { top: calc(96px + var(--safe-top)); }
-  /* Mismo offset que el buscador -- se habían quedado en top:var(--y1)
-     (pensado para topbar de una sola línea) y por eso el cartel de "acercate
-     para ver el tráfico" quedaba tapando al buscador, y el cartel de "Doblá
-     a tal lado" tapaba el pill de estado de la topbar ("Modo Viaje ·
-     siguiendo tu ubicación") cuando la topbar se partía en dos líneas. */
-  .ruta-banner, .navegacion-panel, .alerta-viaje { top: calc(96px + var(--safe-top)); }
+  /* OJO: 152px, no 96px como el buscador -- ese fue el error del commit
+     anterior. 96px solo despeja la topbar partida en dos líneas, pero deja
+     a estos carteles exactamente a la misma altura que el buscador (que
+     también vive en 96px), así que quedaban pisándose entre sí en vez de
+     pisar al buscador. 152px = 96px + el alto real del buscador (~46px) +
+     un margen chico, para que quede DEBAJO de todo lo de arriba, no a la
+     misma altura. */
+  .ruta-banner, .navegacion-panel, .alerta-viaje { top: calc(152px + var(--safe-top)); }
   .actividad-panel, .stats-panel { top: calc(96px + var(--safe-top)); right: 12px; width: 82vw; }
   .zoom-controls { display: none; }
   .escala-mapa { display: none; }
-  /* Antes 200px fijo en un ancho de pantalla real de ~390-430px -- quedaba
-     angosto para el contenido (el chip "Segura" se cortaba, badges y precios
-     se amontonaban) y encima con poco uso del ancho disponible, forzando más
-     scroll interno del necesario. De punta a punta (con el mismo margen que
-     el resto de los paneles) entra más por línea sin agrandar la tarjeta. */
-  .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); left: 12px; right: 12px; width: auto; max-height: 44vh; }
+  /* De punta a punta (el intento anterior) tapaba el mapa entero -- Rodo no
+     podía ver por dónde pasaba cada ruta mientras comparaba opciones, que es
+     el motivo mismo de tener el panel abierto. 300px (angosto pero ya no los
+     200px que cortaban "Segura") deja libre el resto del ancho de la
+     pantalla para seguir viendo el trazado, y menos alto máximo (34vh, no
+     44vh) deja más mapa visible arriba del panel. */
+  .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; left: auto; width: min(300px, 78vw); max-height: 34vh; }
   /* "Opciones de ruta" era el panel más pesado en vertical (tarjeta por
      ruta + desglose de puntaje + lista de zonas cruzadas + botones): se
      achica todo lo que no es indispensable para decidir qué ruta tomar --

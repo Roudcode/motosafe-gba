@@ -294,6 +294,28 @@ function App() {
     setTimeout(() => setToast(null), 2200)
   }
 
+  // Antes esto era un cartel fijo (.ruta-banner) que se quedaba en pantalla
+  // TODO el tiempo que estuvieras con la capa de tráfico prendida y alejado
+  // del umbral de zoom -- Rodo lo reportó como invasivo y constante, con
+  // razón: no avisa una vez, insiste. Ahora es un toast (se muestra solo,
+  // se apaga solo a los 2.2s) que aparece una sola vez por cada vez que SE
+  // CRUZA el umbral hacia abajo (alejando el zoom con tráfico prendido, o
+  // prendiendo tráfico ya alejado) -- no en cada render mientras siga
+  // alejado. bajoUmbralRef guarda el estado anterior para detectar ese
+  // cruce sin volver a disparar el toast en cada cambio de zoom mientras ya
+  // estabas alejado.
+  const bajoUmbralTraficoRef = useRef(false)
+  useEffect(() => {
+    if (!capaTrafico || traficoNoDisponible) { bajoUmbralTraficoRef.current = false; return }
+    const bajoUmbral = zoomActual < UMBRAL_ZOOM_TRAFICO
+    if (bajoUmbral && !bajoUmbralTraficoRef.current) {
+      const id = setTimeout(() => mostrarToast('Acercate para ver el tráfico en detalle'), 0)
+      bajoUmbralTraficoRef.current = bajoUmbral
+      return () => clearTimeout(id)
+    }
+    bajoUmbralTraficoRef.current = bajoUmbral
+  }, [capaTrafico, traficoNoDisponible, zoomActual])
+
   const cargarHotspots = () => {
     setCargandoHotspots(true)
     fetch(`${API_URL}/hotspots`)
@@ -1189,11 +1211,6 @@ function App() {
         </div>
       )}
 
-      {capaTrafico && !traficoNoDisponible && zoomActual < UMBRAL_ZOOM_TRAFICO && (
-        <div className="ruta-banner panel-enter">
-          <Zap size={14} /> Acercate para ver el tráfico en detalle
-        </div>
-      )}
 
       {actividadAbierta && misReportes.length > 0 && (
         <div className="actividad-panel panel-enter hazard-edge">
