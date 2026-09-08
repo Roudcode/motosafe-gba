@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD } from '../constants'
+import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
 
 export function distanciaKm(a, b) {
   const R = 6371
@@ -32,11 +32,12 @@ export function calcularAjuste(zona, climaCode, reportes) {
   return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
 }
 
-// Es franja de mayor riesgo segun FRANJA_PICO_INSEGURIDAD (ver constants.js:
-// calibrada con la distribucion horaria real de robos con moto, no con un
-// criterio generico). Maneja el caso en que la franja cruce medianoche, por
-// si en el futuro se recalibra a un rango que la cruce.
-export function esFranjaPicoInseguridad(horaDelDia, franja = FRANJA_PICO_INSEGURIDAD) {
+// Es franja de mayor riesgo segun la franja pasada (ver constants.js:
+// FRANJA_PICO_INSEGURIDAD_MOTO / _GENERAL, cada una calibrada con la
+// distribucion horaria real de su propio subtipo, no con un criterio
+// generico). Maneja el caso en que la franja cruce medianoche, por si en el
+// futuro se recalibra a un rango que la cruce.
+export function esFranjaPicoInseguridad(horaDelDia, franja = FRANJA_PICO_INSEGURIDAD_MOTO) {
   if (horaDelDia == null) return false
   return franja.desde > franja.hasta
     ? horaDelDia >= franja.desde || horaDelDia < franja.hasta
@@ -45,18 +46,19 @@ export function esFranjaPicoInseguridad(horaDelDia, franja = FRANJA_PICO_INSEGUR
 
 // Ajuste de inseguridad por franja horaria de mayor riesgo (no depende de
 // clima ni de reportes, esos ya se manejan aparte en calcularAjuste para
-// siniestros). A diferencia de la primera version de esto, ya no es una
-// heuristica sin sustento: FRANJA_PICO_INSEGURIDAD sale de la distribucion
-// horaria real del dataset de Delitos (ver constants.js).
-export function calcularAjustePorFranjaHoraria(zona, horaDelDia) {
+// siniestros). franja es obligatorio: cada subtipo (general/moto) tiene su
+// propia franja pico calibrada con su propia distribucion horaria real (ver
+// constants.js) -- una franja compartida entre los dos subtipos no calzaba
+// bien con ninguno de los dos.
+export function calcularAjustePorFranjaHoraria(zona, horaDelDia, franja) {
   const idxBase = ORDEN_NIVELES.indexOf(zona.nivel)
-  const enFranjaPico = esFranjaPicoInseguridad(horaDelDia)
+  const enFranjaPico = esFranjaPicoInseguridad(horaDelDia, franja)
   const idx = enFranjaPico && idxBase < 3 ? idxBase + 1 : idxBase
   return {
     nivel: ORDEN_NIVELES[idx],
     subio: idx > idxBase,
     enFranjaPico,
-    motivos: enFranjaPico && idx > idxBase ? ['franja horaria de mayor incidencia de robos con moto (19-23hs, dato real)'] : [],
+    motivos: enFranjaPico && idx > idxBase ? ['franja horaria de mayor incidencia (dato real, no heurística)'] : [],
   }
 }
 

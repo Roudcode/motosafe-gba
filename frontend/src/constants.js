@@ -11,19 +11,25 @@ export const UMBRAL_ALERTA_KM = 0.25
 export const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 export const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 
-// Franja horaria de mayor riesgo de inseguridad, calibrada con el dato REAL
-// de franja_horaria del dataset de Delitos del GCBA (columna que existia
+// Franjas horarias de mayor riesgo de inseguridad, calibradas con el dato
+// REAL de franja_horaria del dataset de Delitos del GCBA (columna que existia
 // pero se perdia en la carga por un alias incompleto en fetch_delitos_caba.py,
 // corregido). Se probo primero una heuristica generica de "horario nocturno"
-// (22-6hs, criterio criminologico sin verificar contra el dato) y la
-// distribucion real la contradijo: robos con moto tiene su pico real entre
-// las 19 y las 23hs (20-21hs llegan a 7.3-7.5% de los casos, contra un 4.2%
-// esperado si la distribucion fuera pareja en 24hs), mientras que 0-6hs es
-// en realidad el tramo de MENOR incidencia (1.4-2.5%), lo opuesto a lo que
-// asumia la heuristica anterior. No se aplica a siniestros de moto porque
-// esa capa ya recibe hora real como feature del modelo entrenado (ver
-// backend/main.py, predecir_para_fila).
-export const FRANJA_PICO_INSEGURIDAD = { desde: 19, hasta: 24 }
+// (22-6hs) y la distribucion real la contradijo: 0-6hs es en realidad el
+// tramo de MENOR incidencia en ambos subtipos.
+//
+// Una sola franja compartida tampoco calzaba bien para los dos subtipos, asi
+// que se separaron:
+// - Robos con moto: pico marcado 19-23hs (20-21hs llegan a 7.3-7.5% de los
+//   casos vs. 4.2% esperado si fuera parejo en 24hs).
+// - Delito general: pico mas temprano y mas suave, 17-21hs (5.1-5.6% vs.
+//   4.17% esperado); a las 23hs ya volvio a baseline (4.2%), a diferencia de
+//   robos con moto que sigue elevado hasta esa hora.
+//
+// No se aplica a siniestros de moto porque esa capa ya recibe hora real como
+// feature del modelo entrenado (ver backend/main.py, predecir_para_fila).
+export const FRANJA_PICO_INSEGURIDAD_MOTO = { desde: 19, hasta: 24 }
+export const FRANJA_PICO_INSEGURIDAD_GENERAL = { desde: 17, hasta: 22 }
 
 // Debe reflejar exactamente VIGENCIA_HORAS_POR_CATEGORIA de backend/main.py: el
 // front la usa solo para el efecto visual de "se va apagando con el tiempo" en el

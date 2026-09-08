@@ -33,21 +33,38 @@ describe('unificarZonasInseguridad', () => {
   })
 })
 
-describe('unificarZonasInseguridad con ajuste por franja horaria', () => {
+describe('unificarZonasInseguridad con ajuste por franja horaria (distinta por subtipo)', () => {
   const general = [
     { id: 1, latitud: -34.6, longitud: -58.4, nivel_riesgo: 'medio', cantidad_delitos: 40, tipo_delito_moda: 'robo' },
   ]
+  const moto = [
+    { id: 7, latitud: -34.61, longitud: -58.41, nivel_riesgo: 'medio', cantidad_delitos: 12, tipo_delito_moda: null },
+  ]
 
   it('no aplica ningun ajuste si no se pasa horaDelDia (compatibilidad hacia atras)', () => {
-    const zonas = unificarZonasInseguridad(general, [])
+    const zonas = unificarZonasInseguridad(general, moto)
     expect(zonas[0].nivel).toBe('medio')
     expect(zonas[0].ajusteHorario).toBeUndefined()
   })
 
-  it('sube el nivel en la franja pico (19-23hs, calibrada con dato real)', () => {
-    const zonas = unificarZonasInseguridad(general, [], 21)
+  it('sube el nivel de general en su franja pico (17-21hs)', () => {
+    const zonas = unificarZonasInseguridad(general, [], 18)
     expect(zonas[0].nivel).toBe('alto')
     expect(zonas[0].ajusteHorario.enFranjaPico).toBe(true)
+  })
+
+  it('sube el nivel de moto en su franja pico (19-23hs)', () => {
+    const zonas = unificarZonasInseguridad([], moto, 22)
+    expect(zonas[0].nivel).toBe('alto')
+    expect(zonas[0].ajusteHorario.enFranjaPico).toBe(true)
+  })
+
+  it('a las 22hs, general ya no esta en su franja pico pero moto si (franjas distintas por subtipo)', () => {
+    const zonas = unificarZonasInseguridad(general, moto, 22)
+    const zonaGeneral = zonas.find((z) => z.subtipoInseguridad === 'general')
+    const zonaMoto = zonas.find((z) => z.subtipoInseguridad === 'moto')
+    expect(zonaGeneral.ajusteHorario.enFranjaPico).toBe(false)
+    expect(zonaMoto.ajusteHorario.enFranjaPico).toBe(true)
   })
 
   it('no toca el nivel fuera de la franja pico', () => {

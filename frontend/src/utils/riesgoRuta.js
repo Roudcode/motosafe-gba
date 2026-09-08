@@ -3,7 +3,7 @@
 // Extraído de App.jsx para poder testearlo sin renderizar componentes: son
 // funciones puras sobre datos planos, sin estado de React ni efectos.
 
-import { ORDEN_NIVELES, PESO_RIESGO } from '../constants'
+import { ORDEN_NIVELES, PESO_RIESGO, FRANJA_PICO_INSEGURIDAD_GENERAL, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
 import { distanciaAPolilinea, calcularAjustePorFranjaHoraria } from './geoRiesgo'
 
 // Pasa los hotspots de inseguridad (general y moto, tal como los devuelve el
@@ -34,11 +34,13 @@ export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, ho
   ]
   if (horaDelDia == null) return zonas
   // Se pisa el nivel base con el ajustado (franja horaria de mayor riesgo,
-  // calibrada con dato real -- ver calcularAjustePorFranjaHoraria) pero se
-  // guarda el ajuste aparte para poder mostrar el motivo en la UI si hace
-  // falta, igual que hace calcularAjuste con las zonas de siniestro.
+  // calibrada con dato real, DISTINTA por subtipo -- ver constants.js y
+  // calcularAjustePorFranjaHoraria) pero se guarda el ajuste aparte para
+  // poder mostrar el motivo en la UI si hace falta, igual que hace
+  // calcularAjuste con las zonas de siniestro.
   return zonas.map((z) => {
-    const ajusteHorario = calcularAjustePorFranjaHoraria(z, horaDelDia)
+    const franja = z.subtipoInseguridad === 'moto' ? FRANJA_PICO_INSEGURIDAD_MOTO : FRANJA_PICO_INSEGURIDAD_GENERAL
+    const ajusteHorario = calcularAjustePorFranjaHoraria(z, horaDelDia, franja)
     return { ...z, nivel: ajusteHorario.nivel, ajusteHorario }
   })
 }
