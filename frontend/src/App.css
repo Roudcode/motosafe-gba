@@ -871,6 +871,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      pantalla para seguir viendo el trazado, y menos alto máximo (34vh, no
      44vh) deja más mapa visible arriba del panel. */
   .ruta-resumen, .detalle-panel { top: auto; bottom: calc(210px + var(--safe-bottom)); right: 12px; left: auto; width: min(300px, 78vw); max-height: 34vh; }
+  /* La leyenda se esconde mientras "Opciones de ruta" está abierto (ver
+     mostrandoOpcionesRuta en App.jsx) -- ese rincón de la pantalla que antes
+     se disputaban los dos queda libre solo para este panel, así que puede
+     estirarse un poco más hacia arriba sin volver a tapar el mapa como la
+     versión de punta a punta. .detalle-panel no entra en esta regla porque
+     ese sí sigue conviviendo con la leyenda (se abre al tocar una zona, no
+     al elegir ruta). */
+  .ruta-resumen { max-height: 42vh; }
   /* "Opciones de ruta" era el panel más pesado en vertical (tarjeta por
      ruta + desglose de puntaje + lista de zonas cruzadas + botones): se
      achica todo lo que no es indispensable para decidir qué ruta tomar --

@@ -1081,6 +1081,10 @@ function App() {
   }
 
   const hayFiltrosApagados = nivelesActivos.size < Object.keys(NIVELES).length
+  // "Opciones de ruta" abierto (ver el panel .ruta-resumen más abajo): mismo
+  // booleano para esconder la leyenda mientras se muestra, así los dos no
+  // compiten por el mismo rincón de la pantalla en celular.
+  const mostrandoOpcionesRuta = rutasCalculadas.length > 0 && !modoViaje
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && misReportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
   if (modoViaje) textoTopbar = 'Modo Viaje · siguiendo tu ubicación'
@@ -1418,7 +1422,7 @@ function App() {
           giro (navegacion-panel, arriba) y cuánto falta (nav-resumen-mini,
           abajo). Tenerlo abierto durante la navegación era el problema de
           clutter más visible de las capturas que mandaste. */}
-      {rutasCalculadas.length > 0 && !modoViaje && (
+      {mostrandoOpcionesRuta && (
         <div className="ruta-resumen panel-enter hazard-edge">
           <div className="ruta-resumen-header">
             <span className="cercanas-title">Opciones de ruta</span>
@@ -1568,7 +1572,13 @@ function App() {
         </div>
       )}
 
-      {!vistaNavegacion && (
+      {/* La leyenda se esconde mientras está abierto "Opciones de ruta": ahí
+          el riesgo ya se lee en cada tarjeta de ruta (bajo/medio/alto/
+          crítico) y en las burbujas de hotspot del mapa, así que la leyenda
+          + filtro por nivel no suma nada en ese momento y sí compite por el
+          mismo espacio de pantalla en celular (a pedido de Rodo: que
+          "Opciones de ruta" pueda usar ese lugar en vez de compartirlo). */}
+      {!vistaNavegacion && !mostrandoOpcionesRuta && (
         <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
           <div className="legend-header">
             <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
@@ -1584,7 +1594,7 @@ function App() {
         </div>
       )}
 
-      {capaInseguridad !== 'apagado' && !vistaNavegacion && (
+      {capaInseguridad !== 'apagado' && !vistaNavegacion && !mostrandoOpcionesRuta && (
         <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
           <div className="legend-header">
             <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
