@@ -2,6 +2,7 @@ import os
 import json
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -64,11 +65,15 @@ BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI()
 
-# Rate limiting por IP en los tres endpoints con costo real: computo del modelo
-# (/predecir), escritura en base (/reportes POST) y llamada a un servicio externo
-# pago (/rutas, via TomTom). Limite conservador pensado para no afectar el uso
-# normal de una sola persona navegando el mapa, solo cortar abuso obvio (scripts,
-# refresh en loop) antes de que impacte la cuota de TomTom o la base de datos.
+# Rate limiting por IP en los endpoints con costo real: computo del modelo para
+# los 740 hotspots en cada pedido (/hotspots) o para un solo escenario
+# (/predecir), escritura en base (/reportes POST) y llamada a un servicio
+# externo pago (/rutas, via TomTom). Limite conservador pensado para no afectar
+# el uso normal de una sola persona navegando el mapa, solo cortar abuso obvio
+# (scripts, refresh en loop) antes de que impacte la cuota de TomTom o la base
+# de datos. /hotspots es, en volumen de computo, el mas caro de los cinco (un
+# predict_proba de lote sobre 740 filas en cada llamada, sin cache propia mas
+# alla del clima) y no tenia limite -- se lo agrega con el mismo criterio.
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -131,6 +136,14 @@ def indice_inseguridad_de(comuna):
 OPEN_METEO_URL = os.getenv('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1/forecast')
 LATITUD_CABA = -34.61
 LONGITUD_CABA = -58.44
+# La hora y el dia de la semana son features del modelo (franjas pico de
+# siniestralidad, ver constants.js del frontend): tienen que ser la hora real
+# de Buenos Aires, no la hora local del servidor. datetime.now() sin tz da la
+# hora del sistema operativo del proceso -- en desarrollo coincide con la de
+# CABA porque la PC esta configurada asi, pero en un deploy real (contenedor
+# en UTC, tipico de la mayoria de los hostings) el modelo recibiria una hora
+# desfasada 3hs y clasificaria mal el riesgo horario sin ningun error visible.
+ZONA_CABA = ZoneInfo('America/Argentina/Buenos_Aires')
 CACHE_CLIMA_TTL_SEGUNDOS = 600  # 10 minutos: evita repetir la llamada externa en cada
                                  # pedido a /hotspots (que ya procesa 740 hotspots por request)
 
@@ -260,19 +273,22 @@ def raiz():
 
 
 @app.get("/hotspots")
-def obtener_hotspots():
+@limiter.limit("30/minute")
+def obtener_hotspots(request: Request):
     conn = _pool_conexiones.getconn()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("""
-        SELECT id, cluster, latitud, longitud, cantidad_siniestros, mortales, graves, nivel_riesgo
-        FROM hotspots_riesgo
-        ORDER BY cantidad_siniestros DESC
-    """)
-    resultado = cur.fetchall()
-    cur.close()
-    _pool_conexiones.putconn(conn)
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT id, cluster, latitud, longitud, cantidad_siniestros, mortales, graves, nivel_riesgo
+            FROM hotspots_riesgo
+            ORDER BY cantidad_siniestros DESC
+        """)
+        resultado = cur.fetchall()
+        cur.close()
+    finally:
+        _pool_conexiones.putconn(conn)
 
-    ahora = datetime.now()
+    ahora = datetime.now(ZONA_CABA)
     hora_actual = ahora.hour
     dia_actual = ahora.strftime('%A')
     clima_actual = obtener_clima_actual()
@@ -434,17 +450,26 @@ class ReporteNuevo(BaseModel):
 @limiter.limit("20/minute")
 def crear_reporte(request: Request, reporte: ReporteNuevo):
     conn = _pool_conexiones.getconn()
-    _asegurar_tabla_reportes(conn)
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("""
-        INSERT INTO reportes_colaborativos (lat, lng, categoria, autor_id)
-        VALUES (%s, %s, %s, %s)
-        RETURNING id, lat, lng, categoria, autor_id, creado_en
-    """, (reporte.lat, reporte.lng, reporte.categoria, reporte.autor_id))
-    fila = cur.fetchone()
-    conn.commit()
-    cur.close()
-    _pool_conexiones.putconn(conn)
+    try:
+        _asegurar_tabla_reportes(conn)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            INSERT INTO reportes_colaborativos (lat, lng, categoria, autor_id)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, lat, lng, categoria, autor_id, creado_en
+        """, (reporte.lat, reporte.lng, reporte.categoria, reporte.autor_id))
+        fila = cur.fetchone()
+        conn.commit()
+        cur.close()
+    except Exception:
+        # Si algo revienta a mitad de la transaccion, hay que devolver la
+        # conexion limpia al pool -- sin este rollback, la proxima request
+        # que la reciba del pool hereda una transaccion abortada y falla con
+        # "current transaction is aborted" aunque su propia query sea valida.
+        conn.rollback()
+        raise
+    finally:
+        _pool_conexiones.putconn(conn)
     return fila
 
 
@@ -457,12 +482,14 @@ def listar_reportes():
     riesgo de su zona.
     """
     conn = _pool_conexiones.getconn()
-    _asegurar_tabla_reportes(conn)
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT id, lat, lng, categoria, autor_id, creado_en FROM reportes_colaborativos ORDER BY creado_en DESC")
-    filas = cur.fetchall()
-    cur.close()
-    _pool_conexiones.putconn(conn)
+    try:
+        _asegurar_tabla_reportes(conn)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT id, lat, lng, categoria, autor_id, creado_en FROM reportes_colaborativos ORDER BY creado_en DESC")
+        filas = cur.fetchall()
+        cur.close()
+    finally:
+        _pool_conexiones.putconn(conn)
 
     ahora = datetime.now(timezone.utc)
     vigentes = []
@@ -484,13 +511,18 @@ def borrar_mis_reportes(autor_id: str):
     except (ValueError, AttributeError, TypeError):
         raise HTTPException(status_code=422, detail="autor_id debe ser un UUID valido")
     conn = _pool_conexiones.getconn()
-    _asegurar_tabla_reportes(conn)
-    cur = conn.cursor()
-    cur.execute("DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,))
-    eliminados = cur.rowcount
-    conn.commit()
-    cur.close()
-    _pool_conexiones.putconn(conn)
+    try:
+        _asegurar_tabla_reportes(conn)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,))
+        eliminados = cur.rowcount
+        conn.commit()
+        cur.close()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        _pool_conexiones.putconn(conn)
     return {"eliminados": eliminados}
 
 
@@ -507,21 +539,23 @@ def obtener_corredores():
     el modelo entrenado, no se guarda precalculado.
     """
     conn = _pool_conexiones.getconn()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("""
-        SELECT id, calle, tramo, tramos_totales, geometria, cantidad_siniestros, mortales, graves,
-               comuna_moda, tipo_via_moda, contraparte_moda, edad_promedio, sexo_moda
-        FROM corredores_riesgo
-        ORDER BY cantidad_siniestros DESC
-    """)
-    resultado = cur.fetchall()
-    cur.close()
-    _pool_conexiones.putconn(conn)
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT id, calle, tramo, tramos_totales, geometria, cantidad_siniestros, mortales, graves,
+                   comuna_moda, tipo_via_moda, contraparte_moda, edad_promedio, sexo_moda
+            FROM corredores_riesgo
+            ORDER BY cantidad_siniestros DESC
+        """)
+        resultado = cur.fetchall()
+        cur.close()
+    finally:
+        _pool_conexiones.putconn(conn)
 
     if not resultado:
         return []
 
-    ahora = datetime.now()
+    ahora = datetime.now(ZONA_CABA)
     hora_actual = ahora.hour
     dia_actual = ahora.strftime('%A')
     clima_actual = obtener_clima_actual()
@@ -594,16 +628,18 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
     tipo=moto: delitos con uso de moto (en la practica, robos).
     """
     conn = _pool_conexiones.getconn()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("""
-        SELECT id, cluster, latitud, longitud, cantidad_delitos, comuna_moda, tipo_delito_moda, nivel_riesgo
-        FROM hotspots_inseguridad
-        WHERE tipo = %s
-        ORDER BY cantidad_delitos DESC
-    """, (tipo,))
-    resultado = cur.fetchall()
-    cur.close()
-    _pool_conexiones.putconn(conn)
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT id, cluster, latitud, longitud, cantidad_delitos, comuna_moda, tipo_delito_moda, nivel_riesgo
+            FROM hotspots_inseguridad
+            WHERE tipo = %s
+            ORDER BY cantidad_delitos DESC
+        """, (tipo,))
+        resultado = cur.fetchall()
+        cur.close()
+    finally:
+        _pool_conexiones.putconn(conn)
     return resultado
 
 
