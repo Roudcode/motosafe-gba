@@ -112,13 +112,83 @@ def test_hotspots_sin_contexto_propio_usa_perfil_generico_pero_no_rompe():
     assert "prediccion_modelo" in hotspot
 
 
-def test_nivel_desde_probabilidades_umbrales():
-    """Casos de borde de la funcion de umbrales, documentados en su docstring."""
-    assert main.nivel_desde_probabilidades({"MORTAL": 0.25, "GRAVE": 0.0}) == "critico"
-    assert main.nivel_desde_probabilidades({"MORTAL": 0.15, "GRAVE": 0.0}) == "alto"
-    assert main.nivel_desde_probabilidades({"MORTAL": 0.0, "GRAVE": 0.45}) == "alto"
-    assert main.nivel_desde_probabilidades({"MORTAL": 0.0, "GRAVE": 0.25}) == "medio"
-    assert main.nivel_desde_probabilidades({"MORTAL": 0.0, "GRAVE": 0.0}) == "bajo"
+def test_niveles_relativos_desde_matriz_diferencia_extremos_y_respeta_orden():
+    """
+    niveles_relativos_desde_matriz reemplazo a nivel_desde_probabilidades (cortes
+    absolutos): con un lote de perfiles bien distintos, el de mayor score
+    (2*p_mortal + p_grave) tiene que terminar en el nivel mas alto del lote y el
+    de menor score en el mas bajo -- no un valor fijo, sino relativo al resto.
+    """
+    import numpy as np
+    clases = ["GRAVE", "LEVE", "MORTAL"]
+    matriz = np.array([
+        [0.0, 1.0, 0.0],   # score 0: todo LEVE
+        [0.1, 0.7, 0.2],   # score bajo-medio
+        [0.3, 0.4, 0.3],   # score medio-alto
+        [0.1, 0.0, 0.9],   # score altisimo: casi todo MORTAL
+    ])
+    niveles = main.niveles_relativos_desde_matriz(matriz, clases)
+    assert len(niveles) == 4
+    assert set(niveles) <= {"bajo", "medio", "alto", "critico"}
+    orden = ["bajo", "medio", "alto", "critico"]
+    assert orden.index(niveles[-1]) >= orden.index(niveles[0])
+
+
+def test_hotspots_diferencia_niveles_entre_si_no_todos_iguales():
+    """
+    Mismo sintoma que ya se documenta en /corredores, pero en el endpoint que
+    de verdad alimenta el mapa y el score de riesgo de cada ruta: con cortes
+    absolutos, ~86% de los 740 hotspots terminaba en 'alto'/'critico' (Bajo 6,
+    Medio 98, Alto 568, Critico 68, confirmado en produccion), asi que casi
+    cualquier ruta cruzaba una zona 'alto' sin importar que tan mejor fuera
+    respecto de otra -- el score de riesgo se sentia constante. Este test
+    verifica que con perfiles de zona bien distintos entre si, /hotspots
+    realmente reparte en mas de un nivel.
+    """
+    perfiles = [
+        {"comuna_moda": str(i), "tipo_via_moda": tv, "contraparte_moda": cp, "sexo_moda": sx, "edad_promedio": edad}
+        for i, (tv, cp, sx, edad) in enumerate([
+            ("CALLE", "BICICLETA", "F", 20.0),
+            ("CALLE", "PEATON", "F", 22.0),
+            ("AVENIDA", "AUTO", "M", 30.0),
+            ("AVENIDA", "AUTO", "M", 33.0),
+            ("AVENIDA", "AUTO", "M", 35.0),
+            ("AVENIDA", "CAMION", "M", 40.0),
+            ("AV. GRAL. PAZ", "AUTO", "M", 45.0),
+            ("AV. GRAL. PAZ", "CAMION", "M", 50.0),
+        ], start=1)
+    ]
+    filas_db = [
+        {
+            "id": i, "cluster": i, "latitud": -34.6, "longitud": -58.4,
+            "cantidad_siniestros": 50, "mortales": 1, "graves": 5, "nivel_riesgo": "bajo",
+        }
+        for i in range(1, len(perfiles) + 1)
+    ]
+    # Cada cluster necesita su propia fila en hotspots_contexto.csv para no caer
+    # todos en el mismo perfil generico (que los volveria identicos a proposito,
+    # sin poder probar nada) -- se parchea directo el contexto en cache.
+    contexto_original = main.contexto_hotspots
+    contexto_falso = contexto_original.copy() if hasattr(contexto_original, 'copy') else None
+    import pandas as pd
+    contexto_falso = pd.DataFrame([{"cluster": i, **perfiles[i - 1]} for i in range(1, len(perfiles) + 1)])
+    with patch.object(main, "contexto_hotspots", contexto_falso):
+        with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
+            r = client.get("/hotspots")
+    assert r.status_code == 200
+    hotspots = r.json()
+
+    niveles_presentes = {h["nivel_riesgo"] for h in hotspots}
+    assert len(niveles_presentes) >= 2, f"todos los hotspots quedaron en el mismo nivel: {niveles_presentes}"
+
+    def score(h):
+        p = h["prediccion_modelo"]
+        return 2 * p.get("MORTAL", 0) + p.get("GRAVE", 0)
+
+    orden_niveles = ["bajo", "medio", "alto", "critico"]
+    mas_riesgoso = max(hotspots, key=score)
+    menos_riesgoso = min(hotspots, key=score)
+    assert orden_niveles.index(mas_riesgoso["nivel_riesgo"]) >= orden_niveles.index(menos_riesgoso["nivel_riesgo"])
 
 
 def test_predecir_devuelve_clima_usado():

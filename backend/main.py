@@ -243,28 +243,53 @@ def predecir_para_fila(comuna, tipo_via, hora, dia_semana, contraparte, edad, se
     return dict(zip(clases, [round(float(p), 3) for p in probabilidades]))
 
 
-def nivel_desde_probabilidades(probs):
+def niveles_relativos_desde_matriz(matriz_probabilidades, clases):
     """
-    Traduce las probabilidades del modelo a un nivel de riesgo categórico.
+    Traduce probabilidades del modelo a nivel de riesgo categórico, relativo
+    al resto del LOTE (percentiles), no con un corte absoluto fijo.
 
-    Los cortes priorizan no perder casos MORTAL aun a costa de más falsos positivos
-    en GRAVE (igual que ya se documenta en docs/3_Resultados: la precisión de GRAVE
-    es baja en las cuatro versiones del modelo, y se acepta porque en un contexto de
-    seguridad vial es preferible sobre-alertar que no alertar). Por eso el umbral de
-    p_mortal es más chico (0.10-0.20) que el de p_grave (0.20-0.40): al modelo le
-    cuesta más discriminar GRAVE (precisión ~0.11-0.15 en el modelo elegido) que
-    detectar señal de MORTAL, así que para MORTAL alcanza con menos probabilidad
-    acumulada para escalar el nivel.
+    Antes esto usaba cortes absolutos (p_mortal >= 0.20 -> critico, etc.),
+    calibrados para "¿es esto objetivamente peligroso?". El problema real:
+    el modelo aprende que CABA en su conjunto es una zona de riesgo vial
+    relativamente alto (es el dato con el que se entrenó), así que la
+    probabilidad de GRAVE/MORTAL viene alta en la enorme mayoría de los 740
+    hotspots, no solo en los peores -- con cortes fijos, ~86% de las zonas
+    terminaba en 'alto'/'critico' y solo un puñado en 'bajo' (confirmado en
+    producción: Bajo 6, Medio 98, Alto 568, Crítico 68 sobre 740). El
+    resultado práctico: elijas la ruta que elijas, casi cualquier tramo de
+    CABA cruza una zona 'alto', así que el score de riesgo de la ruta
+    terminaba pareciendo constante sin importar qué tan mejor o peor fuera
+    una alternativa que otra -- exactamente lo que este cambio soluciona.
+    La pregunta que le importa a quien usa la app no es "¿es esto peligroso
+    en el vacío?" sino "¿cuál de estas rutas es MÁS segura que las otras?",
+    y para eso lo que hace falta es poder comparar zonas entre sí, no una
+    etiqueta absoluta que termina siendo la misma para casi todo.
+
+    Ya se había resuelto así para /corredores (ver ese endpoint) por el
+    mismo síntoma en un rango más angosto; acá se generaliza a una función
+    compartida, para no mantener dos copias de la misma lógica.
+
+    p_mortal pesa el doble que p_grave en el score (mismo criterio que el
+    corte absoluto que reemplaza: preferible sobre-alertar en MORTAL antes
+    que en GRAVE, que el modelo discrimina peor -- ver docs/3_Resultados).
+    Sigue siendo 100% la probabilidad real del modelo: cambia únicamente
+    cómo se traducen esas probabilidades a las 4 categorías visuales.
     """
-    p_mortal = probs.get('MORTAL', 0)
-    p_grave = probs.get('GRAVE', 0)
-    if p_mortal >= 0.20:
-        return 'critico'
-    if p_mortal >= 0.10 or p_grave >= 0.40:
-        return 'alto'
-    if p_grave >= 0.20:
-        return 'medio'
-    return 'bajo'
+    idx_mortal = clases.index('MORTAL')
+    idx_grave = clases.index('GRAVE')
+    score = 2 * matriz_probabilidades[:, idx_mortal] + matriz_probabilidades[:, idx_grave]
+    p25, p75, p95 = np.percentile(score, [25, 75, 95])
+
+    def nivel_relativo(s):
+        if s >= p95:
+            return 'critico'
+        if s >= p75:
+            return 'alto'
+        if s >= p25:
+            return 'medio'
+        return 'bajo'
+
+    return [nivel_relativo(s) for s in score]
 
 
 @app.get("/")
@@ -339,10 +364,11 @@ def obtener_hotspots(request: Request):
     fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
     matriz_probabilidades = modelo_final.predict_proba(fila_alineada)
     clases = modelo_final.classes_.tolist()
+    niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases)
 
     for i, h in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
-        h['nivel_riesgo'] = nivel_desde_probabilidades(probs)
+        h['nivel_riesgo'] = niveles[i]
         h['prediccion_modelo'] = probs
         h['contexto_estimado'] = bool(contexto_estimado.iloc[i])
         h['clima'] = clima_actual
@@ -580,32 +606,17 @@ def obtener_corredores():
     clases = modelo_final.classes_.tolist()
 
     # Los corredores son, por construccion, solo avenidas con muchos siniestros
-    # (ya se filtraron a partir de 30 en notebooks/identificar_corredores.py), asi
-    # que su riesgo absoluto cae en un rango mucho mas angosto que el de los 740
-    # hotspots (que incluyen tambien esquinas tranquilas con pocos casos). Usar
-    # los mismos cortes absolutos de nivel_desde_probabilidades ahi casi todo cae
-    # en "alto" — se probo (ver commit) y con eso el 95% de los corredores
-    # quedaba en el mismo nivel, sin distinguir ninguno de otro. Por eso el nivel
-    # de un corredor es relativo a los demas corredores de este mismo pedido
-    # (percentiles), no un corte absoluto: sigue siendo 100% la probabilidad real
-    # del modelo, solo cambia como se traduce a las 4 categorias visuales.
-    idx_mortal = clases.index('MORTAL')
-    idx_grave = clases.index('GRAVE')
-    score = 2 * matriz_probabilidades[:, idx_mortal] + matriz_probabilidades[:, idx_grave]
-    p25, p75, p95 = np.percentile(score, [25, 75, 95])
-
-    def nivel_relativo(s):
-        if s >= p95:
-            return 'critico'
-        if s >= p75:
-            return 'alto'
-        if s >= p25:
-            return 'medio'
-        return 'bajo'
+    # (ya se filtraron a partir de 30 en notebooks/identificar_corredores.py),
+    # asi que su riesgo absoluto cae en un rango mas angosto todavia que el de
+    # los 740 hotspots -- mismo sintoma (ver niveles_relativos_desde_matriz),
+    # mas marcado. El nivel de un corredor es relativo a los demas corredores
+    # de este mismo pedido (percentiles calculados sobre este lote puntual,
+    # no sobre los hotspots), pero es la misma funcion compartida.
+    niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases)
 
     for i, c in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
-        c['nivel_riesgo'] = nivel_relativo(score[i])
+        c['nivel_riesgo'] = niveles[i]
         c['prediccion_modelo'] = probs
         c['geometria'] = json.loads(c['geometria'])
 
