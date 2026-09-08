@@ -18,7 +18,6 @@ import queue
 from dotenv import load_dotenv
 import httpx
 import joblib
-import numpy as np
 import pandas as pd
 
 load_dotenv()
@@ -243,49 +242,80 @@ def predecir_para_fila(comuna, tipo_via, hora, dia_semana, contraparte, edad, se
     return dict(zip(clases, [round(float(p), 3) for p in probabilidades]))
 
 
-def niveles_relativos_desde_matriz(matriz_probabilidades, clases):
+# Cortes de percentil (p25/p75/p95) que separan bajo/medio/alto/critico, calibrados
+# UNA SOLA VEZ offline sobre una poblacion de referencia amplia -- ver
+# notebooks/calibrar_umbrales_riesgo.py -- en vez de recalcularse en cada pedido
+# HTTP sobre el lote de ese momento.
+#
+# Por que un corte fijo y no percentiles del lote de cada pedido (que es lo que
+# habia antes, ver historial de niveles_relativos_desde_matriz): 'hora' es el
+# feature mas influyente del modelo con bastante diferencia sobre el resto (ver
+# docs/3_Resultados_DETALLADO.md) y se le pasa el MISMO valor a las 740 filas de
+# un pedido (la hora real del momento de la consulta). El Random Forest generaliza
+# fuerte sobre esa variable, asi que a ciertas horas la probabilidad predicha para
+# las 740 zonas se comprime (terminan pareciendose mucho entre si). Calcular
+# percentiles DESDE CERO sobre esa distribucion ya comprimida hacia que "alto"
+# significara cosas distintas segun la hora de la consulta -- a las 3am salia
+# "casi todo alto" y a las 11am "bastante repartido", no porque el mapa cambiara
+# de contenido sino porque la vara de medir se recalibraba sola en cada pedido.
+#
+# La correccion: los percentiles se calculan una sola vez sobre una poblacion de
+# referencia que cubre las 24 horas x 7 dias x lluvia si/no para las 740 zonas (o
+# los 243 corredores), y esos cortes quedan fijos. La probabilidad en si se sigue
+# calculando en vivo con la hora/clima reales de cada pedido -- lo que cambia es
+# contra que se la compara. Consecuencia esperada y correcta: de madrugada mas
+# zonas caen en alto/critico que a media mañana (verificado: hora 3am da
+# aproximadamente bajo=122 medio=96 alto=346 critico=176 sobre 740, mientras que
+# hora 11am da aproximadamente bajo=223 medio=500 alto=16 critico=1) -- eso es la
+# señal real que el modelo aprendio (de noche es mas grave), no un artefacto de
+# calculo, y ahora 'alto' significa lo mismo sin importar cuando se consulte.
+UMBRALES_HOTSPOTS = {'p25': 0.7097281275573558, 'p75': 0.8510277233152828, 'p95': 1.0168910028314664}
+UMBRALES_CORREDORES = {'p25': 0.7366849020697045, 'p75': 0.8824753817295781, 'p95': 1.0313856422589212}
+
+
+def niveles_relativos_desde_matriz(matriz_probabilidades, clases, cortes):
     """
-    Traduce probabilidades del modelo a nivel de riesgo categórico, relativo
-    al resto del LOTE (percentiles), no con un corte absoluto fijo.
+    Traduce probabilidades del modelo a nivel de riesgo categórico, contra
+    cortes de percentil fijos (cortes: dict con 'p25'/'p75'/'p95', ver
+    UMBRALES_HOTSPOTS / UMBRALES_CORREDORES y el comentario que las calibra),
+    no con un corte absoluto arbitrario ni con percentiles recalculados sobre
+    el lote de este pedido puntual.
 
-    Antes esto usaba cortes absolutos (p_mortal >= 0.20 -> critico, etc.),
-    calibrados para "¿es esto objetivamente peligroso?". El problema real:
-    el modelo aprende que CABA en su conjunto es una zona de riesgo vial
-    relativamente alto (es el dato con el que se entrenó), así que la
-    probabilidad de GRAVE/MORTAL viene alta en la enorme mayoría de los 740
-    hotspots, no solo en los peores -- con cortes fijos, ~86% de las zonas
-    terminaba en 'alto'/'critico' y solo un puñado en 'bajo' (confirmado en
-    producción: Bajo 6, Medio 98, Alto 568, Crítico 68 sobre 740). El
-    resultado práctico: elijas la ruta que elijas, casi cualquier tramo de
-    CABA cruza una zona 'alto', así que el score de riesgo de la ruta
-    terminaba pareciendo constante sin importar qué tan mejor o peor fuera
-    una alternativa que otra -- exactamente lo que este cambio soluciona.
-    La pregunta que le importa a quien usa la app no es "¿es esto peligroso
-    en el vacío?" sino "¿cuál de estas rutas es MÁS segura que las otras?",
-    y para eso lo que hace falta es poder comparar zonas entre sí, no una
-    etiqueta absoluta que termina siendo la misma para casi todo.
+    Es la tercera version de esta funcion, cada una resolviendo el problema de
+    la anterior:
+    1. Corte absoluto fijo (p_mortal >= 0.20 -> critico, etc.): el modelo
+       aprende que CABA en su conjunto es zona de riesgo vial relativamente
+       alto, asi que la probabilidad de GRAVE/MORTAL viene alta en la enorme
+       mayoria de los 740 hotspots -- ~86% terminaba en 'alto'/'critico'
+       (confirmado en producción: Bajo 6, Medio 98, Alto 568, Crítico 68).
+    2. Percentiles calculados sobre el lote de CADA pedido: resolvia la
+       comparacion entre zonas en un mismo momento, pero 'hora' (el feature
+       mas influyente del modelo) es igual para todo el lote y cambia entre
+       pedidos, asi que la vara de medir se recalibraba sola en cada
+       consulta -- 'alto' dejaba de significar lo mismo de una hora a otra.
+    3. (esta version) Percentiles calculados UNA SOLA VEZ sobre una poblacion
+       de referencia que cubre todas las horas/dias/climas posibles: la
+       probabilidad se sigue calculando en vivo, pero se compara contra una
+       vara fija, asi que el significado de cada nivel es estable en el
+       tiempo y las diferencias reales (de noche es mas grave) siguen
+       reflejandose sin distorsionar la escala.
 
-    Ya se había resuelto así para /corredores (ver ese endpoint) por el
-    mismo síntoma en un rango más angosto; acá se generaliza a una función
-    compartida, para no mantener dos copias de la misma lógica.
-
-    p_mortal pesa el doble que p_grave en el score (mismo criterio que el
-    corte absoluto que reemplaza: preferible sobre-alertar en MORTAL antes
-    que en GRAVE, que el modelo discrimina peor -- ver docs/3_Resultados).
-    Sigue siendo 100% la probabilidad real del modelo: cambia únicamente
-    cómo se traducen esas probabilidades a las 4 categorías visuales.
+    p_mortal pesa el doble que p_grave en el score (mismo criterio que las
+    versiones anteriores: preferible sobre-alertar en MORTAL antes que en
+    GRAVE, que el modelo discrimina peor -- ver docs/3_Resultados). Sigue
+    siendo 100% la probabilidad real del modelo: cambia únicamente contra qué
+    vara fija se comparan esas probabilidades.
     """
     idx_mortal = clases.index('MORTAL')
     idx_grave = clases.index('GRAVE')
     score = 2 * matriz_probabilidades[:, idx_mortal] + matriz_probabilidades[:, idx_grave]
-    p25, p75, p95 = np.percentile(score, [25, 75, 95])
 
     def nivel_relativo(s):
-        if s >= p95:
+        if s >= cortes['p95']:
             return 'critico'
-        if s >= p75:
+        if s >= cortes['p75']:
             return 'alto'
-        if s >= p25:
+        if s >= cortes['p25']:
             return 'medio'
         return 'bajo'
 
@@ -364,7 +394,7 @@ def obtener_hotspots(request: Request):
     fila_alineada = fila_codificada.reindex(columns=columnas_modelo, fill_value=0)
     matriz_probabilidades = modelo_final.predict_proba(fila_alineada)
     clases = modelo_final.classes_.tolist()
-    niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases)
+    niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases, UMBRALES_HOTSPOTS)
 
     for i, h in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
@@ -607,12 +637,12 @@ def obtener_corredores():
 
     # Los corredores son, por construccion, solo avenidas con muchos siniestros
     # (ya se filtraron a partir de 30 en notebooks/identificar_corredores.py),
-    # asi que su riesgo absoluto cae en un rango mas angosto todavia que el de
-    # los 740 hotspots -- mismo sintoma (ver niveles_relativos_desde_matriz),
-    # mas marcado. El nivel de un corredor es relativo a los demas corredores
-    # de este mismo pedido (percentiles calculados sobre este lote puntual,
-    # no sobre los hotspots), pero es la misma funcion compartida.
-    niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases)
+    # asi que su riesgo absoluto cae en un rango distinto al de los 740
+    # hotspots puntuales -- por eso tienen su propia poblacion de referencia
+    # calibrada por separado (UMBRALES_CORREDORES, ver
+    # notebooks/calibrar_umbrales_riesgo.py), no los mismos cortes que
+    # /hotspots, aunque la funcion de clasificacion es la misma.
+    niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases, UMBRALES_CORREDORES)
 
     for i, c in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))

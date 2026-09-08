@@ -112,26 +112,38 @@ def test_hotspots_sin_contexto_propio_usa_perfil_generico_pero_no_rompe():
     assert "prediccion_modelo" in hotspot
 
 
-def test_niveles_relativos_desde_matriz_diferencia_extremos_y_respeta_orden():
+def test_niveles_relativos_desde_matriz_clasifica_contra_cortes_fijos():
     """
-    niveles_relativos_desde_matriz reemplazo a nivel_desde_probabilidades (cortes
-    absolutos): con un lote de perfiles bien distintos, el de mayor score
-    (2*p_mortal + p_grave) tiene que terminar en el nivel mas alto del lote y el
-    de menor score en el mas bajo -- no un valor fijo, sino relativo al resto.
+    niveles_relativos_desde_matriz ya no recalcula percentiles sobre el lote de
+    cada pedido (eso hacia que 'alto' significara cosas distintas segun la hora
+    de la consulta, ver el comentario largo de la funcion en main.py) -- ahora
+    compara la probabilidad de cada fila contra cortes fijos (UMBRALES_HOTSPOTS /
+    UMBRALES_CORREDORES, calibrados offline). Este test verifica la logica de
+    clasificacion en si, con cortes explicitos y scores elegidos a proposito
+    justo en cada borde, independiente de cualquier lote real.
     """
     import numpy as np
     clases = ["GRAVE", "LEVE", "MORTAL"]
-    matriz = np.array([
-        [0.0, 1.0, 0.0],   # score 0: todo LEVE
-        [0.1, 0.7, 0.2],   # score bajo-medio
-        [0.3, 0.4, 0.3],   # score medio-alto
-        [0.1, 0.0, 0.9],   # score altisimo: casi todo MORTAL
-    ])
-    niveles = main.niveles_relativos_desde_matriz(matriz, clases)
-    assert len(niveles) == 4
-    assert set(niveles) <= {"bajo", "medio", "alto", "critico"}
-    orden = ["bajo", "medio", "alto", "critico"]
-    assert orden.index(niveles[-1]) >= orden.index(niveles[0])
+    cortes = {"p25": 0.4, "p75": 0.8, "p95": 1.2}
+
+    def matriz_para_score(score):
+        # score = 2*p_mortal + p_grave; con p_grave=0 y p_leve=1-p_mortal, alcanza
+        # con variar p_mortal = score/2 para obtener el score deseado exacto.
+        p_mortal = score / 2
+        return np.array([[0.0, 1.0 - p_mortal, p_mortal]])
+
+    casos = [
+        (0.1, "bajo"),      # bien por debajo de p25
+        (0.4, "medio"),     # exactamente en p25 -> ya no es bajo
+        (0.7, "medio"),     # entre p25 y p75
+        (0.8, "alto"),      # exactamente en p75 -> ya no es medio
+        (1.0, "alto"),      # entre p75 y p95
+        (1.2, "critico"),   # exactamente en p95 -> ya no es alto
+        (1.6, "critico"),   # bien por encima de p95
+    ]
+    for score, esperado in casos:
+        [nivel] = main.niveles_relativos_desde_matriz(matriz_para_score(score), clases, cortes)
+        assert nivel == esperado, f"score={score} dio {nivel}, esperaba {esperado}"
 
 
 def test_hotspots_diferencia_niveles_entre_si_no_todos_iguales():
@@ -144,7 +156,21 @@ def test_hotspots_diferencia_niveles_entre_si_no_todos_iguales():
     respecto de otra -- el score de riesgo se sentia constante. Este test
     verifica que con perfiles de zona bien distintos entre si, /hotspots
     realmente reparte en mas de un nivel.
+
+    La hora se congela (11am, un horario diurno cualquiera) porque los cortes
+    ahora son fijos (UMBRALES_HOTSPOTS, calibrados offline -- ver el comentario
+    de niveles_relativos_desde_matriz en main.py) en vez de recalcularse sobre
+    el lote de cada pedido: sin congelar la hora, este test dependeria de la
+    hora real a la que corre pytest, verificado a mano que 11am reparte bien
+    estos 8 perfiles entre varios niveles.
     """
+    from datetime import datetime as datetime_real
+
+    class _RelojFijo(datetime_real):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime_real(2026, 1, 6, 11, 0, 0, tzinfo=tz)  # martes 11am
+
     perfiles = [
         {"comuna_moda": str(i), "tipo_via_moda": tv, "contraparte_moda": cp, "sexo_moda": sx, "edad_promedio": edad}
         for i, (tv, cp, sx, edad) in enumerate([
@@ -174,7 +200,8 @@ def test_hotspots_diferencia_niveles_entre_si_no_todos_iguales():
     contexto_falso = pd.DataFrame([{"cluster": i, **perfiles[i - 1]} for i in range(1, len(perfiles) + 1)])
     with patch.object(main, "contexto_hotspots", contexto_falso):
         with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
-            r = client.get("/hotspots")
+            with patch("main.datetime", _RelojFijo):
+                r = client.get("/hotspots")
     assert r.status_code == 200
     hotspots = r.json()
 
@@ -406,14 +433,24 @@ def test_corredores_devuelve_lista_vacia_sin_reventar_si_no_hay_datos():
 def test_corredores_diferencia_niveles_entre_si_no_todos_iguales():
     """
     Los corredores son, por construccion, solo avenidas transitadas (>=30
-    siniestros): su riesgo absoluto cae en un rango angosto y los cortes fijos
-    de nivel_desde_probabilidades (calibrados para el rango completo de los 740
-    hotspots) los metia casi a todos en 'alto'. Este test verifica que el nivel
-    relativo (percentiles entre los propios corredores del pedido) realmente
-    diferencia: con corredores de perfiles bien distintos, tienen que aparecer
-    al menos dos niveles distintos, y el de mayor probabilidad de MORTAL/GRAVE
-    no puede terminar en un nivel mas bajo que el de menor probabilidad.
+    siniestros): su riesgo absoluto cae en un rango distinto al de los 740
+    hotspots puntuales, por eso tienen su propia poblacion de referencia
+    (UMBRALES_CORREDORES). Este test verifica que, con corredores de perfiles
+    bien distintos, aparecen al menos dos niveles, y el de mayor probabilidad
+    de MORTAL/GRAVE no termina en un nivel mas bajo que el de menor probabilidad.
+
+    Hora congelada (11am) por el mismo motivo que en el test analogo de
+    /hotspots: los cortes ahora son fijos, no se recalculan sobre el lote de
+    este pedido, asi que sin congelar la hora el test dependeria de a que hora
+    real corre pytest.
     """
+    from datetime import datetime as datetime_real
+
+    class _RelojFijo(datetime_real):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime_real(2026, 1, 6, 11, 0, 0, tzinfo=tz)  # martes 11am
+
     perfiles = [
         {"comuna_moda": str(i), "tipo_via_moda": tv, "contraparte_moda": cp, "sexo_moda": sx, "edad_promedio": edad}
         for i, (tv, cp, sx, edad) in enumerate([
@@ -435,7 +472,8 @@ def test_corredores_diferencia_niveles_entre_si_no_todos_iguales():
         for i, perfil in enumerate(perfiles, start=1)
     ]
     with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
-        r = client.get("/corredores")
+        with patch("main.datetime", _RelojFijo):
+            r = client.get("/corredores")
     assert r.status_code == 200
     corredores = r.json()
 
