@@ -1,7 +1,9 @@
 // Helpers de presentación: iconos/textos de clima y maniobras de ruta, sonido de
-// alerta, e ícono de burbuja para clusters de hotspots en el mapa (usa Leaflet).
+// alerta, y armado del HTML de burbuja para clusters de hotspots en el mapa.
+// Agnóstico del motor de mapa (antes usaba L.divIcon de Leaflet; ahora
+// MapaMotoSafe.jsx arma el DOM element a partir del HTML que devuelven estas
+// funciones, para usarlo con maplibregl.Marker).
 
-import L from 'leaflet'
 import {
   Sun, CloudSun, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning, Thermometer,
   Flag, Navigation, RefreshCw, ArrowLeft, ArrowRight, Undo2, ArrowUp,
@@ -70,17 +72,15 @@ const TEXTO_SOBRE_NIVEL_INSEGURIDAD = { bajo: '#2A0F3D', medio: '#2A0F3D', alto:
 // Nivel dominante entre los hotspots agrupados en un cluster: si al menos un
 // 15% son críticos, el cluster entero se pinta crítico (misma lógica de
 // "priorizar no subestimar" que los umbrales del modelo en backend/main.py,
-// nivel_desde_probabilidades); si no, se usa el nivel más frecuente. Comparte
-// esta lógica el cluster de siniestros y el de inseguridad, solo cambia la
-// paleta de color con la que se dibuja.
-function nivelDominanteDe(hijos) {
-  const conteoPorNivel = { bajo: 0, medio: 0, alto: 0, critico: 0 }
-  hijos.forEach((m) => {
-    const nivel = m.options.nivelData
-    if (conteoPorNivel[nivel] !== undefined) conteoPorNivel[nivel] += 1
-  })
-  const count = hijos.length
-  const propCritico = count > 0 ? conteoPorNivel.critico / count : 0
+// nivel_desde_probabilidades); si no, se usa el nivel más frecuente.
+//
+// Antes recibía los child markers de Leaflet.markercluster y contaba a mano;
+// ahora recibe directamente el conteo por nivel (lo arma MapLibre solo, vía
+// `clusterProperties` al definir el GeoJSON source -- ver MapaMotoSafe.jsx),
+// asi que la funcion queda mas simple y sigue siendo pura/testeable.
+export function nivelDominanteDe(conteoPorNivel) {
+  const count = Object.values(conteoPorNivel).reduce((a, b) => a + b, 0)
+  const propCritico = count > 0 ? (conteoPorNivel.critico || 0) / count : 0
   return propCritico >= 0.15
     ? 'critico'
     : Object.entries(conteoPorNivel).sort((a, b) => b[1] - a[1])[0][0]
@@ -96,16 +96,17 @@ function burbujaClusterHtml({ count, nivelDominante, colorPorNivel, textoPorNive
 // inseguridad esta prendida encima (ver App.jsx, atenuarFondo), asi la capa
 // que el usuario acaba de activar queda como protagonista en vez de competir
 // en igualdad de jerarquia visual con lo que ya estaba.
-export function crearIconoCluster(cluster, opacidad = 1) {
-  const count = cluster.getChildCount()
-  const nivelDominante = nivelDominanteDe(cluster.getAllChildMarkers())
+//
+// `conteoPorNivel` viene de las clusterProperties del source de MapLibre:
+// { bajo, medio, alto, critico, point_count }.
+export function crearIconoCluster(conteoPorNivel, count, opacidad = 1) {
+  const nivelDominante = nivelDominanteDe(conteoPorNivel)
   const size = count < 10 ? 34 : count < 30 ? 42 : 50
   const colorPorNivel = Object.fromEntries(Object.entries(NIVELES).map(([k, v]) => [k, v.color]))
-  return L.divIcon({
+  return {
     html: burbujaClusterHtml({ count, nivelDominante, colorPorNivel, textoPorNivel: TEXTO_SOBRE_NIVEL, size, opacidad, claseForma: '' }),
-    className: 'cluster-icon-wrapper',
-    iconSize: L.point(size, size),
-  })
+    size,
+  }
 }
 
 // Paleta violeta/magenta (NIVELES_INSEGURIDAD_COLOR) y forma de burbuja distinta
@@ -113,13 +114,11 @@ export function crearIconoCluster(cluster, opacidad = 1) {
 // no se confunda con uno de siniestros ni siquiera de reojo. Nunca se atenúa
 // (siempre opacidad 1): es la capa que el usuario prendió a proposito, la que
 // se atenúa es el fondo, no ella.
-export function crearIconoClusterInseguridad(cluster) {
-  const count = cluster.getChildCount()
-  const nivelDominante = nivelDominanteDe(cluster.getAllChildMarkers())
+export function crearIconoClusterInseguridad(conteoPorNivel, count) {
+  const nivelDominante = nivelDominanteDe(conteoPorNivel)
   const size = count < 10 ? 30 : count < 30 ? 38 : 46
-  return L.divIcon({
+  return {
     html: burbujaClusterHtml({ count, nivelDominante, colorPorNivel: NIVELES_INSEGURIDAD_COLOR, textoPorNivel: TEXTO_SOBRE_NIVEL_INSEGURIDAD, size, opacidad: 1, claseForma: 'cluster-bubble-inseguridad' }),
-    className: 'cluster-icon-wrapper',
-    iconSize: L.point(size, size),
-  })
+    size,
+  }
 }

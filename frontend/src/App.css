@@ -47,28 +47,13 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .mapa-wrapper {
   position: relative; height: 100%; width: 100%; overflow: hidden;
-  perspective: 900px; perspective-origin: 50% 60%;
-}
-.mapa-wrapper.tilt .map {
-  transform: rotateX(58deg) scale(1.7);
-  transform-origin: 50% 100%;
-  pointer-events: none;
 }
 /* Revelado del mapa: mientras cargan los hotspots queda desenfocado y achicado
    detrás de la pantalla de carga; cuando llegan los datos, "entra en foco" en vez
-   de aparecer de golpe. */
+   de aparecer de golpe. La inclinación real (pitch) al entrar en navegación ya
+   no es un truco de CSS (rotateX): la maneja MapaMotoSafe.jsx con la cámara
+   nativa de MapLibre (bearing/pitch), por eso acá no queda ningún ".tilt". */
 .mapa-wrapper:not(.cargado) .map { opacity: 0; filter: blur(10px); transform: scale(1.04); }
-.mapa-wrapper.tilt:not(.cargado) .map { transform: scale(1.04); }
-
-/* El truco de dark-mode con filter solo se aplica en tema oscuro: en tema claro
-   los tiles de OpenStreetMap se ven sin modificar, con sus colores originales. */
-[data-theme="dark"] .leaflet-tile-pane,
-:root:not([data-theme]) .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6);
-}
-.leaflet-fade-anim .leaflet-tile { transition: opacity 0.3s ease; }
-.leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1); }
-.leaflet-interactive { transition: fill 0.4s ease, stroke 0.4s ease, opacity 0.3s ease, r 0.3s ease; }
 
 @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .panel-enter { animation: panelIn 0.45s ease backwards; }
@@ -536,8 +521,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-options button:hover { border-color: var(--amarillo); }
 .report-hint { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 11px; color: var(--text-dim); }
 
-.leaflet-popup-content-wrapper { background: var(--surface-solid); color: var(--text); border-radius: 10px; border: 1px solid var(--border); }
-.leaflet-popup-tip { background: var(--surface-solid); }
+.maplibregl-popup-content { background: var(--surface-solid); color: var(--text); border-radius: 10px; border: 1px solid var(--border); padding: 10px 12px; }
+.maplibregl-popup-tip { border-top-color: var(--surface-solid); border-bottom-color: var(--surface-solid); }
+.maplibregl-popup-close-button { color: var(--text-dim); font-size: 16px; }
 .popup-content { display: flex; flex-direction: column; gap: 4px; font-family: 'Inter', sans-serif; }
 .popup-nivel { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .popup-content strong { font-size: 14px; }
@@ -545,11 +531,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .popup-modelo { display: flex; gap: 8px; margin-top: 2px; font-size: 10px; color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
 .popup-modelo-estimado { font-size: 10px; color: var(--azul); font-style: italic; }
 
-.pulse-marker path { animation: pulse 2s infinite; }
+/* Antes apuntaban a "path" (así dibuja Leaflet un CircleMarker en SVG); los
+   marcadores de MapaMotoSafe.jsx son divs de MapLibre, así que la animación
+   se aplica directo sobre el elemento. */
+.pulse-marker { animation: pulse 2s infinite; }
 @keyframes pulse { 0% { opacity: 0.55; } 50% { opacity: 0.9; } 100% { opacity: 0.55; } }
-.pulse-marker-report path { animation: pulse-report 1.4s infinite; }
+.pulse-marker-report { animation: pulse-report 1.4s infinite; }
 @keyframes pulse-report { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-.pulse-marker-yo path { animation: pulse-yo 1.6s infinite; }
+.pulse-marker-yo { animation: pulse-yo 1.6s infinite; }
 @keyframes pulse-yo { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
 .cluster-icon-wrapper { background: none; border: none; }

@@ -1,9 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMapEvents } from 'react-leaflet'
-import MarkerClusterGroup from 'react-leaflet-cluster'
-import 'leaflet/dist/leaflet.css'
-import 'leaflet.markercluster/dist/MarkerCluster.css'
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import './App.css'
 
 import {
@@ -16,21 +11,19 @@ import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
-  VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT,
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar } from './utils/geoRiesgo'
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
 } from './utils/riesgoRuta'
-import { formatearAntiguedad, opacidadPorAntiguedad, esReciente } from './utils/tiempo'
-import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra, crearIconoCluster, crearIconoClusterInseguridad } from './utils/ui'
+import { formatearAntiguedad } from './utils/tiempo'
+import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
 import { cargarDeLocalStorage, generarUuidV4Fallback } from './utils/storage'
-import { VueloControlado, SeguimientoEnVivo, ControlesZoom, ClicksDeMapa, EscalaMapa } from './components/MapaControles'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
-import { CapaCalor } from './components/CapaCalor'
+import { MapaMotoSafe } from './components/MapaMotoSafe'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
 
 // Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
@@ -39,13 +32,34 @@ import { useSegundosDesde } from './hooks/useSegundosDesde'
 // modelo en vez de al nivel ya traducido.
 const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B' }
 
-// Componente sin salida visual propia: solo escucha el zoom del mapa y lo
-// reporta hacia arriba. Vive fuera de App() porque useMapEvents necesita
-// estar dentro del <MapContainer>, y App() ya tiene demasiado adentro del
-// JSX del mapa como para meterle ademas la logica del hook ahi mismo.
-function RastreadorZoom({ onCambio }) {
-  useMapEvents({ zoomend: (e) => onCambio(e.target.getZoom()) })
-  return null
+// Barra de escala manual (mismo cálculo que antes, con Leaflet): MapLibre no
+// tiene un control de escala con este estilo visual propio (el suyo trae su
+// propio look), así que se mantiene el mismo diseño calculando a mano sobre
+// la instancia real de maplibregl.Map en vez de useMap() de react-leaflet.
+function EscalaMapa({ mapa }) {
+  const [texto, setTexto] = useState('')
+  useEffect(() => {
+    if (!mapa) return
+    const actualizar = () => {
+      const centro = mapa.getCenter()
+      const zoom = mapa.getZoom()
+      const metrosPorPixel = 156543.03392 * Math.cos((centro.lat * Math.PI) / 180) / Math.pow(2, zoom)
+      const metros = metrosPorPixel * 80
+      const pasos = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]
+      const cercano = pasos.reduce((prev, curr) => (Math.abs(curr - metros) < Math.abs(prev - metros) ? curr : prev))
+      setTexto(cercano >= 1000 ? `${cercano / 1000} km` : `${cercano} m`)
+    }
+    actualizar()
+    mapa.on('zoomend', actualizar)
+    mapa.on('moveend', actualizar)
+    return () => { mapa.off('zoomend', actualizar); mapa.off('moveend', actualizar) }
+  }, [mapa])
+  return (
+    <div className="escala-mapa">
+      <div className="escala-linea" />
+      <span>{texto}</span>
+    </div>
+  )
 }
 
 function App() {
@@ -116,6 +130,25 @@ function App() {
   const [watchId, setWatchId] = useState(null)
   const [zonasAlertadas, setZonasAlertadas] = useState(new Set())
   const [alertaViaje, setAlertaViaje] = useState(null)
+
+  // Instancia real de maplibregl.Map, expuesta por MapaMotoSafe via onReady.
+  // Reemplaza lo que antes hacían VueloControlado/SeguimientoEnVivo/
+  // ControlesZoom/EscalaMapa con useMap() de react-leaflet: acá se llama
+  // directo a los métodos del mapa. rumboActual queda en 0 por ahora (no hay
+  // brújula del dispositivo conectada todavía -- iOS Safari pide permiso
+  // explícito por gesto del usuario para DeviceOrientationEvent, se conecta
+  // como tarea aparte); ya deja armado el enganche para cuando se sume.
+  const mapaRef = useRef(null)
+  const [mapaListo, setMapaListo] = useState(false)
+  const [rumboActual] = useState(0)
+
+  useEffect(() => {
+    if (vuelo && mapaListo) mapaRef.current?.flyTo({ center: [vuelo.lng, vuelo.lat], zoom: vuelo.zoom || 15, duration: 1400 })
+  }, [vuelo, mapaListo])
+
+  useEffect(() => {
+    if (modoViaje && miUbicacion && mapaListo) mapaRef.current?.panTo([miUbicacion.lng, miUbicacion.lat], { animate: true, duration: 800 })
+  }, [modoViaje, miUbicacion, mapaListo])
 
   // Ahora "real" (no segundos desde el montaje): se usa para calcular antiguedad
   // y opacidad de los reportes colaborativos, se refresca cada 30s (alcanza para
@@ -578,6 +611,12 @@ function App() {
     () => zonasCruzadasPorRuta[rutaSeleccionada] || [],
     [zonasCruzadasPorRuta, rutaSeleccionada]
   )
+  // Solo los ids: es lo unico que necesita MapaMotoSafe para resaltar el
+  // borde de una zona cruzada por la ruta seleccionada.
+  const zonasCruzadasIds = useMemo(
+    () => new Set(zonasCruzadasActual.map((z) => z.id)),
+    [zonasCruzadasActual]
+  )
 
   const zonasCruzadasOrdenadas = useMemo(() => {
     return [...zonasCruzadasActual].sort(
@@ -894,171 +933,48 @@ function App() {
         <div className="ruta-banner ruta-banner-error panel-enter">{rutaError}<button onClick={cerrarTodoRuta}>Cerrar</button></div>
       )}
 
-      <div className={`mapa-wrapper ${vistaNavegacion ? 'tilt' : ''} ${primeraVezListo ? 'cargado' : ''}`}>
-        <MapContainer
-          center={[CENTRO_GBA.lat, CENTRO_GBA.lng]}
-          zoom={11}
-          zoomControl={false}
-          zoomSnap={0.5}
-          zoomDelta={0.5}
-          preferCanvas={true}
-          className="map"
-        >
-          <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <RastreadorZoom onCambio={setZoomActual} />
-          {capaTrafico && (
-            <TileLayer
-              url={`${API_URL}/trafico/tiles/{z}/{x}/{y}.png`}
-              opacity={0.75}
-              updateWhenZooming={false}
-              eventHandlers={{
-                tileerror: () => setTraficoNoDisponible(true),
-                tileload: () => setTraficoNoDisponible(false),
-              }}
-            />
-          )}
-          <ControlesZoom />
-          <EscalaMapa />
-          <VueloControlado destino={vuelo} />
-          <SeguimientoEnVivo activo={modoViaje} punto={miUbicacion} />
-          <ClicksDeMapa campoActivo={campoActivo} onClick={clicMapa} />
-
-          {rutasCalculadas.map((r, i) => (
-            <Polyline
-              key={i}
-              positions={r.coords}
-              pathOptions={{
-                color: i === rutaSeleccionada ? '#4FA8E8' : '#6B7178',
-                weight: i === rutaSeleccionada ? 5 : 4,
-                opacity: i === rutaSeleccionada ? 0.9 : 0.45,
-                dashArray: i === rutaSeleccionada ? null : '6 6',
-              }}
-              eventHandlers={{ click: () => setRutaSeleccionada(i) }}
-            />
-          ))}
-
-          {origenPunto && (
-            <CircleMarker center={[origenPunto.lat, origenPunto.lng]} radius={8} pathOptions={{ color: '#3DDC84', fillColor: '#3DDC84', fillOpacity: 1, weight: 3 }}>
-              <Popup>Origen</Popup>
-            </CircleMarker>
-          )}
-          {destinoPunto && (
-            <CircleMarker center={[destinoPunto.lat, destinoPunto.lng]} radius={8} pathOptions={{ color: '#FF3B3B', fillColor: '#FF3B3B', fillOpacity: 1, weight: 3 }}>
-              <Popup>Destino</Popup>
-            </CircleMarker>
-          )}
-
-          {capaMapa === 'heatmap' && <CapaCalor zonas={zonasFiltradas} activa={capaMapa === 'heatmap'} atenuada={atenuarFondo < 1} />}
-
-          {capaMapa === 'corredores' && corredoresFiltrados.map((c) => (
-            <Polyline
-              key={c.id}
-              positions={c.geometria}
-              pathOptions={{
-                color: NIVELES[c.nivel_riesgo]?.color || NIVELES.bajo.color,
-                weight: 5,
-                opacity: 0.75 * atenuarFondo,
-              }}
-            >
-              <Popup>
-                <div className="popup-content">
-                  <span className="popup-nivel" style={{ color: NIVELES[c.nivel_riesgo]?.color }}>{NIVELES[c.nivel_riesgo]?.label}</span>
-                  <strong>{c.calle}{c.tramos_totales > 1 ? ` — tramo ${c.tramo}/${c.tramos_totales}` : ''}</strong>
-                  <span>{c.cantidad_siniestros} siniestros históricos · {c.mortales} mortales · {c.graves} graves</span>
-                </div>
-              </Popup>
-            </Polyline>
-          ))}
-
-          {capaInseguridad !== 'apagado' && (
-          <MarkerClusterGroup chunkedLoading iconCreateFunction={crearIconoClusterInseguridad} maxClusterRadius={60}>
-            {(capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada).map((h) => (
-              <CircleMarker
-                key={h.id}
-                center={[h.latitud, h.longitud]}
-                radius={h.nivel_riesgo === 'critico' ? 15 : h.nivel_riesgo === 'alto' ? 12 : 9}
-                pathOptions={{
-                  color: NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] || NIVELES_INSEGURIDAD_COLOR.bajo,
-                  fillColor: NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] || NIVELES_INSEGURIDAD_COLOR.bajo,
-                  fillOpacity: 0.4,
-                  weight: 1,
-                  nivelData: h.nivel_riesgo,
-                }}
-                className={h.nivel_riesgo === 'critico' ? 'pulse-marker' : ''}
-              >
-                <Popup>
-                  <div className="popup-content">
-                    <span className="popup-nivel" style={{ color: NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo] }}>{NIVELES[h.nivel_riesgo]?.label}</span>
-                    <strong>{h.cantidad_delitos} delitos históricos ({h.tipo_delito_moda || 'varios'})</strong>
-                    <span>Comuna {h.comuna_moda} · datos oficiales del GCBA, últimos 3 años</span>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            ))}
-          </MarkerClusterGroup>
-          )}
-
-          {capaMapa === 'clusters' && (
-          <MarkerClusterGroup chunkedLoading iconCreateFunction={(cluster) => crearIconoCluster(cluster, atenuarFondo)} maxClusterRadius={55}>
-            {zonasFiltradas.map((zona) => {
-              const cruzada = zonasCruzadasActual.some((z) => z.id === zona.id)
-              const resaltada = zonaResaltada === zona.id
-              return (
-                <CircleMarker
-                  key={zona.id}
-                  center={[zona.lat, zona.lng]}
-                  radius={resaltada ? 14 : zona.ajuste.nivel === 'critico' ? 11 : 8}
-                  pathOptions={{
-                    color: cruzada ? '#4FA8E8' : resaltada ? '#4FA8E8' : NIVELES[zona.ajuste.nivel].color,
-                    fillColor: NIVELES[zona.ajuste.nivel].color,
-                    fillOpacity: 0.75 * atenuarFondo,
-                    opacity: atenuarFondo,
-                    weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
-                    nivelData: zona.ajuste.nivel,
-                  }}
-                  className={zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}
-                  eventHandlers={{ click: () => { setZonaSeleccionada(zona); setCapasAbiertas(false) } }}
-                />
-              )
-            })}
-          </MarkerClusterGroup>
-          )}
-
-          {reportes.map((rep) => {
-            // Reportes colaborativos: se distingue color entre los propios y los
-            // de otros usuarios para que se note a simple vista en el mapa, no
-            // solo abriendo el popup. Ademas se atenua con la antiguedad (estilo
-            // Waze: recien creado, solido y pulsando; cerca de vencer, casi
-            // transparente y sin pulso), usando la misma vigencia por categoria
-            // que ya aplica el backend para dejar de devolverlo del todo.
-            const color = rep.autorId === autorId ? '#FFC933' : '#B98CFF'
-            const vigenciaHoras = VIGENCIA_HORAS_POR_CATEGORIA[rep.categoria] || VIGENCIA_HORAS_DEFAULT
-            const opacidad = opacidadPorAntiguedad(rep.creadoEn, vigenciaHoras, horaActual)
-            const reciente = esReciente(rep.creadoEn, horaActual)
-            return (
-              <CircleMarker
-                key={rep.id}
-                center={[rep.lat, rep.lng]}
-                radius={8}
-                pathOptions={{ color, fillColor: color, fillOpacity: 0.7 * opacidad, opacity: opacidad, weight: 2 }}
-                className={reciente ? 'pulse-marker-report' : ''}
-              >
-                <Popup>
-                  <div className="popup-content">
-                    <span className="popup-nivel" style={{ color }}>{rep.autorId === autorId ? 'Tu reporte' : 'Reporte de otro usuario'} · {formatearAntiguedad(rep.creadoEn, horaActual)}</span>
-                    <strong>{CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label}</strong>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            )
-          })}
-
-          {miUbicacion && (
-            <CircleMarker center={[miUbicacion.lat, miUbicacion.lng]} radius={7} pathOptions={{ color: '#4FA8E8', fillColor: '#4FA8E8', fillOpacity: 0.9, weight: 3 }} className="pulse-marker-yo">
-              <Popup>Tu ubicación actual</Popup>
-            </CircleMarker>
-          )}
-        </MapContainer>
+      <div className={`mapa-wrapper ${primeraVezListo ? 'cargado' : ''}`}>
+        <MapaMotoSafe
+          tema={tema}
+          centro={CENTRO_GBA}
+          zoomInicial={11}
+          onZoomChange={setZoomActual}
+          onReady={(map) => { mapaRef.current = map; setMapaListo(true) }}
+          apiUrl={API_URL}
+          capaTrafico={capaTrafico}
+          onTraficoEstado={(disponible) => setTraficoNoDisponible(!disponible)}
+          campoActivo={campoActivo}
+          onClickMapa={clicMapa}
+          zonasFiltradas={zonasFiltradas}
+          zonaResaltada={zonaResaltada}
+          zonasCruzadasIds={zonasCruzadasIds}
+          onClickZona={(zona) => { setZonaSeleccionada(zona); setCapasAbiertas(false) }}
+          atenuarFondo={atenuarFondo}
+          capaMapa={capaMapa}
+          corredoresFiltrados={corredoresFiltrados}
+          capaInseguridad={capaInseguridad}
+          inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
+          reportes={reportes}
+          autorId={autorId}
+          horaActual={horaActual}
+          rutasCalculadas={rutasCalculadas}
+          rutaSeleccionada={rutaSeleccionada}
+          onClickRuta={setRutaSeleccionada}
+          origenPunto={origenPunto}
+          destinoPunto={destinoPunto}
+          miUbicacion={miUbicacion}
+          vistaNavegacion={vistaNavegacion}
+          rumboActual={rumboActual}
+        />
+        {mapaListo && (
+          <>
+            <div className="zoom-controls panel-enter" style={{ animationDelay: '0.1s' }}>
+              <button onClick={() => mapaRef.current.zoomTo(mapaRef.current.getZoom() + 0.5, { duration: 200 })} aria-label="Acercar mapa">+</button>
+              <button onClick={() => mapaRef.current.zoomTo(mapaRef.current.getZoom() - 0.5, { duration: 200 })} aria-label="Alejar mapa">−</button>
+            </div>
+            <EscalaMapa mapa={mapaRef.current} />
+          </>
+        )}
       </div>
 
       {rutasCalculadas.length > 0 && (
