@@ -21,16 +21,17 @@ HDBSCAN"):
     misma metodologia haya dado una mejora comparable.
 
   - GENERAL: todo delito salvo "Vialidad" (que es infraccion de transito, no
-    inseguridad). Se mantiene DBSCAN (eps=60m, min_samples=100 -- los datos
-    son ~18x mas densos que los siniestros de moto, así que el min_samples
-    tambien escala): HDBSCAN no pudo evaluarse en el entorno de trabajo en la
-    nube usado para esta migracion por timeout (mas de 411 mil puntos, la
-    construccion del arbol de expansion minima de HDBSCAN no termino en 3
-    minutos ni con distintos parametros) -- queda pendiente de evaluar en una
-    maquina con mas tiempo/CPU disponible (ver
-    notebooks/sweep_hdbscan_inseguridad_general.py, pensado para correrse en
-    background y sin apuro). Cobertura actual: 29.2% (303 hotspots), cluster
-    mas grande <3% del total (chequeado, sin encadenamiento).
+    inseguridad). Migrado a HDBSCAN (min_cluster_size=150, min_samples=20).
+    El barrido inicial (notebooks/sweep_hdbscan_inseguridad_general.py) se
+    corrio sobre una muestra del 20% por el timeout que daba HDBSCAN en el
+    entorno de trabajo en la nube sobre el dataset completo (mas de 411 mil
+    puntos); ahi esta combinacion ya ganaba claro (90 hotspots, 42.8%
+    cobertura, cluster mayor 1.73% vs. 303 hotspots/29.2%/<3% de DBSCAN).
+    Se confirmo despues sobre el dataset COMPLETO en la maquina local
+    (notebooks/confirmar_hdbscan_general_completo.py, 71.7 minutos de
+    corrida): 633 hotspots, cobertura 50.2%, cluster mas grande 0.63% del
+    total (ver data/../sweep_log_confirmacion.txt). Gana en las tres metricas
+    a la vez frente a DBSCAN, por eso queda como decision final.
 
 Se corre sobre data/delitos_caba.csv (ya descargado por fetch_delitos_caba.py),
 tomando la misma ventana de los ultimos 3 anios completos que usa el indice de
@@ -61,8 +62,10 @@ ANIOS_VENTANA = 3
 MOTO_MIN_CLUSTER_SIZE = 12
 MOTO_MIN_SAMPLES = 2
 
-# GENERAL (DBSCAN, sin cambios -- ver docstring).
-GENERAL_MIN_SAMPLES = 100
+# GENERAL (HDBSCAN) -- ver docstring de arriba para el resultado de la
+# confirmacion sobre el dataset completo.
+GENERAL_MIN_CLUSTER_SIZE = 150
+GENERAL_MIN_SAMPLES = 20
 
 
 def _resumir(df, labels, etiqueta):
@@ -119,7 +122,11 @@ def main():
     print(f"Ventana usada: {anios_incluidos} ({len(ventana)} delitos con coordenadas)")
 
     general = ventana[ventana["tipo_delito"] != "Vialidad"].copy()
-    resumen_general = clusterizar_dbscan(general, min_samples=GENERAL_MIN_SAMPLES, etiqueta="GENERAL")
+    print("GENERAL (HDBSCAN): puede tardar bastante sobre el dataset completo "
+          "(~70 min en la confirmacion previa) -- no es que se colgo.")
+    resumen_general = clusterizar_hdbscan(
+        general, min_cluster_size=GENERAL_MIN_CLUSTER_SIZE, min_samples=GENERAL_MIN_SAMPLES, etiqueta="GENERAL"
+    )
     resumen_general.to_csv(DATA / "hotspots_inseguridad_general.csv", index=False)
 
     moto = ventana[ventana["uso_moto"] == "SI"].copy()
