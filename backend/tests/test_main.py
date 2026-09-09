@@ -407,6 +407,70 @@ def test_borrar_mis_reportes_rechaza_autor_id_no_uuid():
     assert r.status_code == 422
 
 
+def test_confirmar_reporte_devuelve_el_voto_creado():
+    autor_original = "11111111-2222-4333-8444-555555555555"
+    otro_autor = "99999999-8888-4777-8666-555555555555"
+    reporte_existente = {"autor_id": autor_original}
+    voto_creado = {"reporte_id": 1, "autor_id": otro_autor, "tipo": "confirma"}
+    cursor = MagicMock()
+    cursor.fetchone.side_effect = [reporte_existente, voto_creado]
+    conexion = MagicMock()
+    conexion.cursor.return_value = cursor
+    with patch("main.psycopg2.connect", return_value=conexion):
+        r = client.post("/reportes/1/confirmar", json={"autor_id": otro_autor, "tipo": "confirma"})
+    assert r.status_code == 201
+    assert r.json()["tipo"] == "confirma"
+
+
+def test_confirmar_reporte_rechaza_votar_el_propio():
+    autor_original = "11111111-2222-4333-8444-555555555555"
+    cursor = MagicMock()
+    cursor.fetchone.return_value = {"autor_id": autor_original}
+    conexion = MagicMock()
+    conexion.cursor.return_value = cursor
+    with patch("main.psycopg2.connect", return_value=conexion):
+        r = client.post("/reportes/1/confirmar", json={"autor_id": autor_original, "tipo": "desmiente"})
+    assert r.status_code == 400
+
+
+def test_confirmar_reporte_rechaza_reporte_inexistente():
+    otro_autor = "99999999-8888-4777-8666-555555555555"
+    cursor = MagicMock()
+    cursor.fetchone.return_value = None
+    conexion = MagicMock()
+    conexion.cursor.return_value = cursor
+    with patch("main.psycopg2.connect", return_value=conexion):
+        r = client.post("/reportes/999/confirmar", json={"autor_id": otro_autor, "tipo": "confirma"})
+    assert r.status_code == 404
+
+
+def test_confirmar_reporte_rechaza_tipo_invalido():
+    otro_autor = "99999999-8888-4777-8666-555555555555"
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes()):
+        r = client.post("/reportes/1/confirmar", json={"autor_id": otro_autor, "tipo": "me-gusta"})
+    assert r.status_code == 422
+
+
+def test_listar_reportes_retira_por_consenso_de_desmentidas():
+    """Un reporte con 3 desmentidas y 0 confirmaciones se retira antes de tiempo,
+    aunque su vigencia por categoria todavia no haya vencido."""
+    ahora = datetime.now(timezone.utc)
+    robo_desmentido = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "robo",
+        "autor_id": "a", "creado_en": ahora - timedelta(hours=1),
+        "confirmaciones": 0, "desmentidas": 3,
+    }
+    robo_confirmado = {
+        "id": 2, "lat": -34.6, "lng": -58.4, "categoria": "robo",
+        "autor_id": "b", "creado_en": ahora - timedelta(hours=1),
+        "confirmaciones": 3, "desmentidas": 2,
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchall_valor=[robo_confirmado, robo_desmentido])):
+        r = client.get("/reportes")
+    ids = [f["id"] for f in r.json()]
+    assert ids == [2]
+
+
 def test_corredores_devuelve_nivel_de_riesgo_y_geometria_parseada():
     fila_db = {
         "id": 1, "calle": "PAZ, GRAL. AV.", "geometria": json.dumps([[-34.6, -58.5], [-34.5, -58.46]]),

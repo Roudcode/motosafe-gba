@@ -170,13 +170,30 @@ _cache_clima = {'datos': None, 'timestamp': 0.0}
 # La vigencia es distinta por categoria porque no todos los reportes envejecen igual:
 # un corte de calle deja de ser cierto en horas, un pozo en el pavimento sigue ahi
 # semanas.
-CATEGORIAS_REPORTE_VALIDAS = ('pavimento', 'corte', 'iluminacion', 'inseguro')
+#
+# "robo" se separo de "inseguro" (antes una sola categoria "Zona insegura") porque
+# son cosas distintas: robo es un hecho puntual (arrebato, robo en curso o recien
+# pasado), con vigencia corta y que dispara una alerta de proximidad en vivo en el
+# frontend si sucedio hace poco (ver MINUTOS_ALERTA_REPORTE_RECIENTE en
+# frontend/src/constants.js); inseguro es una percepcion de zona (poca luz, sin
+# gente) que no es un evento puntual y no amerita esa alerta.
+CATEGORIAS_REPORTE_VALIDAS = ('robo', 'inseguro', 'pavimento', 'corte', 'iluminacion')
 VIGENCIA_HORAS_POR_CATEGORIA = {
     'corte': 12,           # cortes/desvios: casi siempre se resuelven en el dia
+    'robo': 48,            # hecho puntual: sirve de advertencia un par de dias, despues es ruido viejo
     'inseguro': 24 * 7,    # percepcion de inseguridad: vale refrescarla cada semana
     'pavimento': 24 * 30,  # pozos/pavimento roto: tarda semanas o meses en arreglarse
     'iluminacion': 24 * 30,
 }
+
+# Umbral de retiro anticipado por consenso (ver listar_reportes): si suficientes
+# usuarios distintos dicen "ya no esta", el reporte se oculta del mapa antes de
+# que venza su timer de vigencia normal. Exige tanto un piso absoluto de
+# desmentidas (para que un solo voto malintencionado no tire abajo un reporte
+# real) como que le ganen claramente a las confirmaciones (para que un reporte
+# activamente confirmado no se caiga por un par de desmentidas sueltas).
+MIN_DESMENTIDAS_PARA_OCULTAR = 2
+MIN_DIFERENCIA_DESMENTIDAS_PARA_OCULTAR = 2
 VIGENCIA_HORAS_DEFAULT = 24 * 7
 
 
@@ -481,10 +498,32 @@ def _asegurar_tabla_reportes(conn):
     cur.close()
 
 
+def _asegurar_tabla_confirmaciones(conn):
+    """
+    Un voto ("confirma" / "desmiente") por dispositivo y por reporte -- el UNIQUE
+    de mas abajo es lo que hace que votar de nuevo actualice el voto propio en vez
+    de sumar otro (ver confirmar_reporte, INSERT ... ON CONFLICT). ON DELETE CASCADE
+    porque una confirmacion sin su reporte no significa nada.
+    """
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS reportes_confirmaciones (
+            id SERIAL PRIMARY KEY,
+            reporte_id INTEGER NOT NULL REFERENCES reportes_colaborativos(id) ON DELETE CASCADE,
+            autor_id VARCHAR(50) NOT NULL,
+            tipo VARCHAR(10) NOT NULL,
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+            UNIQUE (reporte_id, autor_id)
+        )
+    """)
+    conn.commit()
+    cur.close()
+
+
 class ReporteNuevo(BaseModel):
     lat: float
     lng: float
-    categoria: Literal['pavimento', 'corte', 'iluminacion', 'inseguro']
+    categoria: Literal['robo', 'inseguro', 'pavimento', 'corte', 'iluminacion']
     # No es autenticacion de usuario -- es un identificador de dispositivo (UUID v4
     # generado por el frontend la primera vez que se abre la app y persistido en
     # localStorage, ver frontend/src/App.jsx -- estado autorId). Sirve para que 'borrar mis
@@ -529,19 +568,84 @@ def crear_reporte(request: Request, reporte: ReporteNuevo):
     return fila
 
 
+class ConfirmacionNueva(BaseModel):
+    # Mismo autor_id de dispositivo que ReporteNuevo (ver nota mas arriba): no es
+    # autenticacion real, solo lo minimo para que un dispositivo no pueda votar dos
+    # veces el mismo reporte (UNIQUE en reportes_confirmaciones) ni confirmar/desmentir
+    # su propio reporte (chequeado en confirmar_reporte).
+    autor_id: str
+    tipo: Literal['confirma', 'desmiente']
+
+    @field_validator('autor_id')
+    @classmethod
+    def validar_autor_id(cls, valor):
+        try:
+            uuid.UUID(valor)
+        except (ValueError, AttributeError, TypeError):
+            raise ValueError('autor_id debe ser un UUID valido')
+        return valor
+
+
+@app.post("/reportes/{reporte_id}/confirmar", status_code=201)
+@limiter.limit("30/minute")
+def confirmar_reporte(request: Request, reporte_id: int, confirmacion: ConfirmacionNueva):
+    """
+    Verificacion social sobre un reporte ya existente: cualquier dispositivo que no
+    sea el autor original puede marcar "sigue ahi" o "ya no esta". Un segundo voto
+    del mismo dispositivo sobre el mismo reporte actualiza su voto anterior (no lo
+    duplica), via el UNIQUE(reporte_id, autor_id) + ON CONFLICT de mas abajo.
+    """
+    conn = _pool_conexiones.getconn()
+    try:
+        _asegurar_tabla_reportes(conn)
+        _asegurar_tabla_confirmaciones(conn)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT autor_id FROM reportes_colaborativos WHERE id = %s", (reporte_id,))
+        reporte = cur.fetchone()
+        if reporte is None:
+            raise HTTPException(status_code=404, detail="Reporte no encontrado")
+        if reporte['autor_id'] == confirmacion.autor_id:
+            raise HTTPException(status_code=400, detail="No podes confirmar o desmentir tu propio reporte")
+        cur.execute("""
+            INSERT INTO reportes_confirmaciones (reporte_id, autor_id, tipo)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (reporte_id, autor_id) DO UPDATE SET tipo = EXCLUDED.tipo, creado_en = now()
+            RETURNING reporte_id, autor_id, tipo
+        """, (reporte_id, confirmacion.autor_id, confirmacion.tipo))
+        fila = cur.fetchone()
+        conn.commit()
+        cur.close()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        _pool_conexiones.putconn(conn)
+    return fila
+
+
 @app.get("/reportes")
 def listar_reportes():
     """
     Devuelve los reportes de TODOS los usuarios (esto es lo colaborativo), filtrados
     por vigencia segun su categoria: un reporte vencido no se borra de la base (queda
     como historico), simplemente deja de aparecer en el mapa y de sumar al ajuste de
-    riesgo de su zona.
+    riesgo de su zona. Ademas de la vigencia por tiempo, un reporte se retira antes de
+    tiempo si la comunidad lo desmiente lo suficiente (ver MIN_DESMENTIDAS_PARA_OCULTAR).
     """
     conn = _pool_conexiones.getconn()
     try:
         _asegurar_tabla_reportes(conn)
+        _asegurar_tabla_confirmaciones(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, lat, lng, categoria, autor_id, creado_en FROM reportes_colaborativos ORDER BY creado_en DESC")
+        cur.execute("""
+            SELECT r.id, r.lat, r.lng, r.categoria, r.autor_id, r.creado_en,
+                   COALESCE(SUM(CASE WHEN c.tipo = 'confirma' THEN 1 ELSE 0 END), 0) AS confirmaciones,
+                   COALESCE(SUM(CASE WHEN c.tipo = 'desmiente' THEN 1 ELSE 0 END), 0) AS desmentidas
+            FROM reportes_colaborativos r
+            LEFT JOIN reportes_confirmaciones c ON c.reporte_id = r.id
+            GROUP BY r.id
+            ORDER BY r.creado_en DESC
+        """)
         filas = cur.fetchall()
         cur.close()
     finally:
@@ -552,8 +656,19 @@ def listar_reportes():
     for fila in filas:
         vigencia_horas = VIGENCIA_HORAS_POR_CATEGORIA.get(fila['categoria'], VIGENCIA_HORAS_DEFAULT)
         edad_horas = (ahora - fila['creado_en']).total_seconds() / 3600
-        if edad_horas <= vigencia_horas:
-            vigentes.append(fila)
+        if edad_horas > vigencia_horas:
+            continue
+        # .get (no fila[...]) para tolerar filas sin estas columnas -- pasa en los
+        # tests que mockean fetchall con dicts a mano sin confirmaciones/desmentidas.
+        desmentidas = fila.get('desmentidas', 0)
+        confirmaciones = fila.get('confirmaciones', 0)
+        retirado_por_consenso = (
+            desmentidas >= MIN_DESMENTIDAS_PARA_OCULTAR
+            and (desmentidas - confirmaciones) >= MIN_DIFERENCIA_DESMENTIDAS_PARA_OCULTAR
+        )
+        if retirado_por_consenso:
+            continue
+        vigentes.append(fila)
     return vigentes
 
 

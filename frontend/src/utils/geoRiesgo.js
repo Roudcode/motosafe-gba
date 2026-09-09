@@ -113,8 +113,12 @@ export function calcularAjuste(zona, climaCode, reportes) {
   const motivos = []
   const esLluvia = climaCode != null && CODIGOS_LLUVIA.includes(climaCode)
   if (esLluvia && idx < 3) { idx += 1; motivos.push('lluvia actual') }
+  // "cercanos" incluye reportes de TODOS los usuarios, no solo los propios
+  // (desde que los reportes son colaborativos -- ver backend/main.py). El
+  // motivo no debe decir "tuyo": seria informacion falsa si el reporte lo
+  // puso otro usuario.
   const reportesCercanos = reportes.filter((r) => distanciaKm(zona, r) <= UMBRAL_REPORTE_KM).length
-  if (reportesCercanos > 0 && idx < 3) { idx += 1; motivos.push(`${reportesCercanos} reporte${reportesCercanos > 1 ? 's' : ''} tuyo${reportesCercanos > 1 ? 's' : ''} cerca`) }
+  if (reportesCercanos > 0 && idx < 3) { idx += 1; motivos.push(`${reportesCercanos} reporte${reportesCercanos > 1 ? 's' : ''} cerca`) }
   return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
 }
 

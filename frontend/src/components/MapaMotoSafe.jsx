@@ -229,6 +229,7 @@ function MapaMotoSafeInner({
   capaInseguridad,
   inseguridadFiltrada,
   reportes,
+  onVotarReporte,
   autorId,
   horaActual,
   rutasCalculadas,
@@ -677,21 +678,38 @@ function MapaMotoSafeInner({
         e.stopPropagation()
         popup?.remove()
         const label = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label || rep.categoria
+        const esPropio = rep.autorId === autorId
+        // Verificacion social: no se puede votar el propio reporte (el backend
+        // igual lo rechaza, ver confirmar_reporte en main.py -- esto solo evita
+        // mostrar botones que van a fallar).
+        const botonesVoto = esPropio ? '' : `
+              <div class="popup-votos">
+                <button class="popup-voto-btn popup-voto-confirma" data-tipo="confirma">✓ Sigue ahí (${rep.confirmaciones || 0})</button>
+                <button class="popup-voto-btn popup-voto-desmiente" data-tipo="desmiente">✕ Ya no está (${rep.desmentidas || 0})</button>
+              </div>`
         popup = new Popup({ closeButton: true })
           .setLngLat([rep.lng, rep.lat])
           .setHTML(`
             <div class="popup-content">
-              <span class="popup-nivel" style="color:${color}">${rep.autorId === autorId ? 'Tu reporte' : 'Reporte de otro usuario'} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
+              <span class="popup-nivel" style="color:${color}">${esPropio ? 'Tu reporte' : 'Reporte de otro usuario'} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
               <strong>${label}</strong>
+              ${botonesVoto}
             </div>
           `)
           .addTo(map)
+        popup.getElement()?.querySelectorAll('.popup-voto-btn').forEach((boton) => {
+          boton.addEventListener('click', (ev) => {
+            ev.stopPropagation()
+            onVotarReporte?.(rep.id, boton.dataset.tipo)
+            popup?.remove()
+          })
+        })
       })
       return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
     })
     return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
-     
-  }, [reportes, autorId, horaActual, version])
+
+  }, [reportes, autorId, horaActual, version, onVotarReporte])
 
   // --- rutas calculadas (polilíneas) ----------------------------------------
   useEffect(() => {

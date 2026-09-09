@@ -314,6 +314,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .alerta-viaje.alta { background: rgba(255,140,66,0.95); color: #14171A; }
 .alerta-viaje.critica { background: rgba(255,59,59,0.95); color: #14171A; }
 .alerta-viaje-detalle { font-weight: 400; font-size: var(--fs-sm); opacity: 0.85; }
+/* Si coincide con alerta-viaje (riesgo historico) en el mismo instante, se
+   corre un poco hacia abajo para no superponerse exactamente -- caso raro
+   (dos alertas distintas al mismo tiempo) pero mejor que se tapen mal. */
+.alerta-reporte { top: calc(var(--y1) + 70px); }
 
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
@@ -799,6 +803,16 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .popup-nivel { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .popup-content strong { font-size: 14px; }
 .popup-content p { font-size: var(--fs-base); color: var(--text-dim); }
+.popup-votos { display: flex; gap: 6px; margin-top: 4px; }
+.popup-voto-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 6px 8px; border-radius: var(--r-sm); border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: var(--fs-2xs); font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.popup-voto-btn:hover { filter: brightness(1.15); }
+.popup-voto-confirma { color: #3DDC84; border-color: rgba(61,220,132,0.4); }
+.popup-voto-desmiente { color: #FF3B3B; border-color: rgba(255,59,59,0.4); }
 .popup-modelo { display: flex; gap: 8px; margin-top: 2px; font-size: var(--fs-xs); color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
 .popup-modelo-estimado { font-size: var(--fs-xs); color: var(--azul); font-style: italic; }
 

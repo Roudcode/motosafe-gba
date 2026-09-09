@@ -2,12 +2,21 @@
 // definiciones de niveles de riesgo y catálogos fijos (categorías de reporte).
 // Se separan de App.jsx para que estén en un solo lugar y no mezcladas con lógica de UI.
 
-import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route, Zap, EyeOff } from 'lucide-react'
+import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route, EyeOff, Siren } from 'lucide-react'
 
 export const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
 export const UMBRAL_CRUCE_KM = 0.6
 export const UMBRAL_REPORTE_KM = 0.5
 export const UMBRAL_ALERTA_KM = 0.25
+// Alerta de proximidad a un reporte de "robo" reciente (no de zona insegura
+// generica -- ver CATEGORIAS_ALERTA_PROXIMIDAD): distinta de UMBRAL_ALERTA_KM
+// porque esa es contra zonas de riesgo historico, esta es contra un hecho
+// puntual que alguien reporto hace poco. Un reporte de robo de hace 3 dias ya
+// no sirve como alerta "esto esta pasando ahora", aunque siga vigente en el
+// mapa (ver VIGENCIA_HORAS_POR_CATEGORIA) como advertencia historica de la zona.
+export const RADIO_ALERTA_REPORTE_KM = 0.3
+export const MINUTOS_ALERTA_REPORTE_RECIENTE = 45
+export const CATEGORIAS_ALERTA_PROXIMIDAD = ['robo']
 export const ORDEN_NIVELES = ['bajo', 'medio', 'alto', 'critico']
 export const PESO_RIESGO = { bajo: 1, medio: 2, alto: 3, critico: 5 }
 
@@ -39,6 +48,7 @@ export const FRANJA_PICO_INSEGURIDAD_GENERAL = { desde: 17, hasta: 22 }
 // o menos opaco de lo que deberia, nunca aparece uno ya vencido.
 export const VIGENCIA_HORAS_POR_CATEGORIA = {
   corte: 12,
+  robo: 48,           // hecho puntual: sirve de advertencia un par de dias, despues es ruido viejo
   inseguro: 24 * 7,
   pavimento: 24 * 30,
   iluminacion: 24 * 30,
@@ -97,11 +107,17 @@ export const NIVELES_INSEGURIDAD_COLOR = {
 
 export const CODIGOS_LLUVIA = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]
 
+// "robo" e "inseguro" se separan porque son cosas distintas: robo es un hecho
+// puntual (arrebato, robo en curso o recien pasado) con vigencia corta y que
+// dispara la alerta de proximidad en vivo (ver CATEGORIAS_ALERTA_PROXIMIDAD);
+// inseguro es una percepcion de zona (poca luz, sin gente, sensacion de
+// inseguridad) que no es un evento puntual y no amerita esa alerta.
 export const CATEGORIAS_REPORTE = [
+  { id: 'robo', label: 'Robo o arrebato', Icon: Siren },
+  { id: 'inseguro', label: 'Zona insegura', Icon: ShieldAlert },
   { id: 'pavimento', label: 'Pavimento en mal estado', Icon: Construction },
   { id: 'corte', label: 'Corte o desvío', Icon: TrafficCone },
   { id: 'iluminacion', label: 'Falta de iluminación', Icon: LightbulbOff },
-  { id: 'inseguro', label: 'Zona insegura', Icon: ShieldAlert },
 ]
 
 // Panel unico de capas: reemplaza los dos botones que ciclaban estados (uno

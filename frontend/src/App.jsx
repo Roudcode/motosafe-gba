@@ -9,6 +9,7 @@ import {
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
+  RADIO_ALERTA_REPORTE_KM, MINUTOS_ALERTA_REPORTE_RECIENTE, CATEGORIAS_ALERTA_PROXIMIDAD,
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
   CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
@@ -194,6 +195,12 @@ function App() {
   const [watchId, setWatchId] = useState(null)
   const [zonasAlertadas, setZonasAlertadas] = useState(new Set())
   const [alertaViaje, setAlertaViaje] = useState(null)
+  // Alerta de proximidad a un reporte de robo reciente (ver efecto mas abajo,
+  // junto al de zonasRiesgoTodas) -- separada de alertaViaje porque esa es
+  // contra riesgo historico y esta contra un hecho puntual reportado por otro
+  // usuario hace minutos.
+  const [reportesAlertados, setReportesAlertados] = useState(new Set())
+  const [alertaReporte, setAlertaReporte] = useState(null)
   // Velocidad real del GPS (m/s, la unidad nativa de coords.speed) -- se usa
   // para estimar el tiempo restante de viaje con el ritmo actual en vez de
   // repartir el tiempo total de la ruta en proporción a la distancia (que
@@ -421,6 +428,8 @@ function App() {
         categoria: r.categoria,
         autorId: r.autor_id,
         creadoEn: r.creado_en,
+        confirmaciones: r.confirmaciones || 0,
+        desmentidas: r.desmentidas || 0,
       }))))
       .catch(() => { /* backend caido: se mantienen los reportes que ya estaban cargados */ })
   }
@@ -618,6 +627,7 @@ function App() {
     setWatchId(id)
     setModoViaje(true)
     setZonasAlertadas(new Set())
+    setReportesAlertados(new Set())
     if (conVistaNavegacion) setVistaNavegacion(true)
     mostrarToast(conVistaNavegacion ? 'Navegación iniciada' : 'Modo Viaje activado')
   }
@@ -632,6 +642,8 @@ function App() {
     setVelocidadActual(null)
     setZonasAlertadas(new Set())
     setAlertaViaje(null)
+    setReportesAlertados(new Set())
+    setAlertaReporte(null)
     mostrarToast('Modo Viaje desactivado')
   }
 
@@ -700,6 +712,8 @@ function App() {
           categoria: creado.categoria,
           autorId: creado.autor_id,
           creadoEn: creado.creado_en,
+          confirmaciones: 0,
+          desmentidas: 0,
         }, ...prev])
         mostrarToast('Reporte enviado — gracias por sumar el dato')
       })
@@ -711,6 +725,27 @@ function App() {
       .then(() => setReportes((prev) => prev.filter((r) => r.autorId !== autorId)))
       .catch(() => mostrarToast('No se pudo borrar (¿backend caído?)'))
     setActividadAbierta(false)
+  }
+
+  // Verificacion social sobre un reporte ajeno: "sigue ahi" / "ya no esta". El
+  // backend rechaza votar el propio reporte (ver confirmar_reporte en main.py) y
+  // acumula desmentidas para retirarlo antes de tiempo si la comunidad coincide
+  // en que ya no aplica. Optimista sobre el contador local para que se sienta
+  // instantaneo; si falla, no rompe nada -- el proximo cargarReportes corrige.
+  const votarReporte = (reporteId, tipo) => {
+    setReportes((prev) => prev.map((r) => (
+      r.id === reporteId
+        ? { ...r, confirmaciones: r.confirmaciones + (tipo === 'confirma' ? 1 : 0), desmentidas: r.desmentidas + (tipo === 'desmiente' ? 1 : 0) }
+        : r
+    )))
+    fetch(`${API_URL}/reportes/${reporteId}/confirmar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ autor_id: autorId, tipo }),
+    })
+      .then((r) => { if (!r.ok) throw new Error(); return r.json() })
+      .then(() => mostrarToast(tipo === 'confirma' ? 'Gracias, confirmado' : 'Gracias, avisamos que ya no está'))
+      .catch(() => mostrarToast('No se pudo registrar el voto (¿backend caído?)'))
   }
 
   const abrirPanelRuta = () => {
@@ -901,6 +936,36 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [miUbicacion, modoViaje, zonasRiesgoTodas])
+
+  // Alerta de proximidad a un reporte de ROBO reciente (evento puntual, no zona
+  // de riesgo historico -- ver CATEGORIAS_ALERTA_PROXIMIDAD). Distinta del efecto
+  // de arriba: esa alerta contra los hotspots/corredores precalculados, esta
+  // contra lo que otro usuario reporto hace minutos. Solo dispara una vez por
+  // reporte (reportesAlertados), y solo si sigue "reciente" segun
+  // MINUTOS_ALERTA_REPORTE_RECIENTE, no solo vigente en el mapa.
+  useEffect(() => {
+    if (!modoViaje || !miUbicacion || reportes.length === 0) return
+    const ahoraMs = Date.now()
+    const candidatos = reportes.filter((r) => {
+      if (!CATEGORIAS_ALERTA_PROXIMIDAD.includes(r.categoria)) return false
+      if (reportesAlertados.has(r.id)) return false
+      const edadMin = (ahoraMs - new Date(r.creadoEn).getTime()) / 60000
+      if (edadMin > MINUTOS_ALERTA_REPORTE_RECIENTE) return false
+      return distanciaKm(miUbicacion, r) <= RADIO_ALERTA_REPORTE_KM
+    })
+    if (candidatos.length > 0) {
+      const rep = candidatos[0]
+      const edadMin = Math.max(1, Math.round((ahoraMs - new Date(rep.creadoEn).getTime()) / 60000))
+      const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAlertaReporte({ label: cat?.label || rep.categoria, minutos: edadMin })
+      setReportesAlertados((prev) => new Set(prev).add(rep.id))
+      if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 200])
+      reproducirBeep()
+      setTimeout(() => setAlertaReporte(null), 8000)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [miUbicacion, modoViaje, reportes])
 
   useEffect(() => {
     if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
@@ -1247,6 +1312,16 @@ function App() {
         </div>
       )}
 
+      {alertaReporte && (
+        <div className="alerta-viaje panel-enter critica alerta-reporte">
+          <span className="alerta-viaje-cabecera">
+            <Siren size={16} />
+            {' '}{alertaReporte.label} reportado hace {alertaReporte.minutos} min
+          </span>
+          <span className="alerta-viaje-detalle">Cerca de tu posición actual</span>
+        </div>
+      )}
+
       {backendError && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
           <WifiOff size={14} /> Sin conexión con el backend. Reintentando cada 5s.
@@ -1432,6 +1507,7 @@ function App() {
           capaInseguridad={capaInseguridad}
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
           reportes={reportes}
+          onVotarReporte={votarReporte}
           autorId={autorId}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}
