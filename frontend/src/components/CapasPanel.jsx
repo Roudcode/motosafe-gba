@@ -10,13 +10,14 @@
 // TomTom (ver backend/main.py, endpoints /trafico/*) — si no está disponible,
 // el toggle avisa en vez de fallar en silencio.
 
-import { X, Zap } from 'lucide-react'
+import { X, Zap, Newspaper } from 'lucide-react'
 import { OPCIONES_CAPA_MAPA, OPCIONES_CAPA_INSEGURIDAD } from '../constants'
 
 export function CapasPanel({
   capaMapa, onCambiarCapaMapa,
   capaInseguridad, onCambiarCapaInseguridad,
   capaTrafico, onCambiarCapaTrafico,
+  capaPrensa, onCambiarCapaPrensa,
   onCerrar,
 }) {
   return (
@@ -68,6 +69,19 @@ export function CapasPanel({
         <span className="capas-opcion-texto">
           <span className="capas-opcion-label">Tráfico en vivo</span>
           <span className="capas-opcion-desc">Congestión actual por calle (TomTom) · se actualiza cada 2 min</span>
+        </span>
+      </button>
+
+      <span className="capas-grupo-titulo">Prensa</span>
+      <button
+        className={`capas-opcion ${capaPrensa ? 'activa' : ''}`}
+        onClick={() => onCambiarCapaPrensa(!capaPrensa)}
+      >
+        <span className="capas-opcion-radio" />
+        <Newspaper size={15} className="capas-opcion-icono" />
+        <span className="capas-opcion-texto">
+          <span className="capas-opcion-label">Robos en noticias</span>
+          <span className="capas-opcion-desc">Últimos 30 días · Infobae / La Nación, no en vivo · tocá un punto para ver la nota</span>
         </span>
       </button>
 

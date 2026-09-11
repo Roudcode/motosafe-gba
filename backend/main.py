@@ -697,6 +697,79 @@ def borrar_mis_reportes(autor_id: str):
     return {"eliminados": eliminados}
 
 
+# --- Reportes de prensa (corroborados por medios, no por usuarios) ---
+# Distintos de reportes_colaborativos a proposito: esto no lo escribe un usuario
+# desde la app sino un scraper offline (ver notebooks/scrapear_noticias_robos.py,
+# corre unas pocas veces por dia, no en cada request) que junta noticias de robos
+# de portales (La Nacion, Infobae) en el GBA. No pasa por el sistema de
+# confirmar/desmentir (no tiene sentido "desmentir" una nota publicada) ni
+# alimenta la alerta de proximidad en vivo del frontend (una noticia sale horas
+# o un dia despues del hecho, nunca es "esto esta pasando ahora"). Su valor es
+# otro: cubrir el arranque en frio del mapa colaborativo (recien lanzada la app,
+# sin usuarios reportando todavia, esto ya pone datos reales) y darle mas peso a
+# la tesis con una fuente verificable ademas de la autoreportada.
+#
+# nivel_precision indica que tan exacta es la ubicacion extraida del texto de la
+# noticia (nunca viene con coordenadas, hay que inferirlas -- ver el scraper):
+# 'interseccion' (calle y calle, la mas precisa), 'calle' (calle + altura) o
+# 'barrio'/'partido' (la nota solo menciona la zona, sin calle). radio_metros
+# viene de la mano: cuanto mas vago el texto, mas grande el radio que se pinta
+# en el mapa, para no mostrar como pin exacto algo que en realidad es "en algun
+# lugar de este barrio". Ver renderizado en el frontend (radio > 0 = circulo,
+# no marcador puntual).
+VIGENCIA_HORAS_PRENSA = 24 * 30  # "ultimo mes", pedido explicito de Rodo -- no es
+                                 # vivo, sirve como contexto/historico reciente
+
+
+def _asegurar_tabla_prensa(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS reportes_prensa (
+            id SERIAL PRIMARY KEY,
+            lat DOUBLE PRECISION NOT NULL,
+            lng DOUBLE PRECISION NOT NULL,
+            nivel_precision VARCHAR(20) NOT NULL,
+            radio_metros INTEGER NOT NULL,
+            titular TEXT NOT NULL,
+            url_fuente VARCHAR(500) NOT NULL UNIQUE,
+            fuente VARCHAR(50) NOT NULL,
+            publicado_en TIMESTAMPTZ,
+            creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
+    conn.commit()
+    cur.close()
+
+
+@app.get("/reportes-prensa")
+def listar_reportes_prensa():
+    """
+    Igual que /reportes pero de la tabla de prensa: filtra por VIGENCIA_HORAS_PRENSA
+    (30 dias fijo, no varia por nada -- no hay categorias distintas aca, todo es
+    "robo corroborado por un medio"). No se borra nada de la base, solo deja de
+    devolverse.
+    """
+    conn = _pool_conexiones.getconn()
+    try:
+        _asegurar_tabla_prensa(conn)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, creado_en
+            FROM reportes_prensa
+            ORDER BY creado_en DESC
+        """)
+        filas = cur.fetchall()
+        cur.close()
+    finally:
+        _pool_conexiones.putconn(conn)
+
+    ahora = datetime.now(timezone.utc)
+    return [
+        fila for fila in filas
+        if (ahora - fila['creado_en']).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
+    ]
+
+
 @app.get("/corredores")
 def obtener_corredores():
     """

@@ -72,6 +72,11 @@ export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
 export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
 export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
+// Prensa (noticias de robos scrapeadas, ver backend/scrapear_noticias_robos.py):
+// prendida por default -- a diferencia de tráfico (costo de API) o inseguridad
+// (overlay denso que puede saturar el mapa), esta capa son pocos puntos por
+// corrida y es justamente el diferencial que se quiere mostrar de entrada.
+export const CLAVE_CAPA_PRENSA = 'motosafe_capa_prensa'
 // TomTom (como Google Maps y Waze) no pinta el color de congestion por calle
 // a niveles de zoom muy alejados -- a esa escala seria ruido visual ilegible,
 // asi que recien se ve algo util a partir de este zoom (nivel de barrio/calle).

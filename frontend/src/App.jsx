@@ -13,6 +13,7 @@ import {
   API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
   CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
+  CLAVE_CAPA_PRENSA,
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
@@ -126,6 +127,10 @@ function App() {
   // gratuita para usuarios que nunca miraron esta capa.
   const [capaTrafico, setCapaTrafico] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_TRAFICO, false))
   const [traficoNoDisponible, setTraficoNoDisponible] = useState(false)
+  // Prensa (robos scrapeados de noticias, ver backend/scrapear_noticias_robos.py):
+  // prendida por default, ver la nota en constants.js sobre por qué.
+  const [capaPrensa, setCapaPrensa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_PRENSA, true))
+  const [reportesPrensa, setReportesPrensa] = useState([])
   const [zoomActual, setZoomActual] = useState(11)
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
   const [nivelesActivos, setNivelesActivos] = useState(
@@ -443,6 +448,33 @@ function App() {
   }, [])
 
   useEffect(() => {
+    // Reportes de prensa (scrapeados a mano/tarea programada, no en vivo, ver
+    // scrapear_noticias_robos.py): refrescar cada 30s como los reportes de
+    // usuarios sería inútil, esta fuente cambia a lo sumo unas pocas veces
+    // por día. 10 minutos alcanza de sobra para que aparezca algo nuevo sin
+    // recargar la página, sin pegarle al backend por nada.
+    const cargarReportesPrensa = () => {
+      fetch(`${API_URL}/reportes-prensa`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => setReportesPrensa(data.map((r) => ({
+          id: r.id,
+          lat: r.lat,
+          lng: r.lng,
+          nivelPrecision: r.nivel_precision,
+          radioMetros: r.radio_metros,
+          titular: r.titular,
+          urlFuente: r.url_fuente,
+          fuente: r.fuente,
+          creadoEn: r.creado_en,
+        }))))
+        .catch(() => { /* backend caido: se mantienen los que ya estaban cargados */ })
+    }
+    cargarReportesPrensa()
+    const id = setInterval(cargarReportesPrensa, 10 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
     if (!backendError) return
     const id = setInterval(cargarHotspots, 5000)
     return () => clearInterval(id)
@@ -473,6 +505,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(CLAVE_CAPA_TRAFICO, JSON.stringify(capaTrafico))
   }, [capaTrafico])
+
+  useEffect(() => {
+    localStorage.setItem(CLAVE_CAPA_PRENSA, JSON.stringify(capaPrensa))
+  }, [capaPrensa])
 
   useEffect(() => {
     return () => { if (watchId != null) navigator.geolocation.clearWatch(watchId) }
@@ -1265,6 +1301,8 @@ function App() {
             if (v && traficoNoDisponible) { mostrarToast('Tráfico en vivo no disponible ahora'); return }
             setCapaTrafico(v)
           }}
+          capaPrensa={capaPrensa}
+          onCambiarCapaPrensa={setCapaPrensa}
           onCerrar={() => setCapasAbiertas(false)}
         />
       )}
@@ -1508,6 +1546,7 @@ function App() {
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
           reportes={reportes}
           onVotarReporte={votarReporte}
+          reportesPrensa={capaPrensa ? reportesPrensa : []}
           autorId={autorId}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}

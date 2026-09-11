@@ -79,6 +79,51 @@ function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExt
   return el
 }
 
+// Marcador de un reporte de prensa (ver backend/scrapear_noticias_robos.py):
+// un ícono de diario en vez del círculo genérico de reportes de usuario, para
+// que se lea de un vistazo como "esto es una noticia, no algo que reportó
+// alguien" -- y un halo punteado alrededor cuyo tamaño escala con
+// radio_metros, para representar visualmente qué tan precisa (o no) es la
+// ubicación: un halo chico si la nota daba una intersección, uno grande si
+// solo se pudo ubicar el barrio. Nunca se dibuja como si fuera un punto
+// exacto cuando el texto de la noticia no lo era.
+const TAMANO_ICONO_PRENSA = 26
+const HALO_POR_NIVEL_PRECISION = { interseccion: 0, calle: 34, barrio: 64 }
+
+function elementoMarcadorPrensa(nivelPrecision) {
+  const halo = HALO_POR_NIVEL_PRECISION[nivelPrecision] ?? HALO_POR_NIVEL_PRECISION.barrio
+  const wrapper = document.createElement('div')
+  wrapper.className = 'marker-prensa-wrapper'
+  wrapper.style.width = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
+  wrapper.style.height = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
+  if (halo > 0) {
+    const haloEl = document.createElement('div')
+    haloEl.className = 'marker-prensa-halo'
+    haloEl.style.width = `${halo}px`
+    haloEl.style.height = `${halo}px`
+    wrapper.appendChild(haloEl)
+  }
+  const icono = document.createElement('div')
+  icono.className = 'marker-prensa-icono'
+  icono.innerHTML = `
+    <svg width="${TAMANO_ICONO_PRENSA}" height="${TAMANO_ICONO_PRENSA}" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="4" width="18" height="16" rx="2" fill="#3A3F4B" stroke="#C9CDD3" stroke-width="1.4"/>
+      <line x1="7" y1="8" x2="17" y2="8" stroke="#C9CDD3" stroke-width="1.4"/>
+      <line x1="7" y1="11.3" x2="17" y2="11.3" stroke="#C9CDD3" stroke-width="1.4"/>
+      <line x1="7" y1="14.6" x2="13" y2="14.6" stroke="#C9CDD3" stroke-width="1.4"/>
+    </svg>
+  `
+  wrapper.appendChild(icono)
+  wrapper.style.cursor = 'pointer'
+  return wrapper
+}
+
+const ETIQUETA_NIVEL_PRECISION = {
+  interseccion: 'Ubicación aproximada (intersección)',
+  calle: 'Ubicación aproximada (cuadra)',
+  barrio: 'Ubicación aproximada (zona/barrio)',
+}
+
 // Arma (o reconstruye) una capa clusterizada de puntos sobre un GeoJSON
 // source, con marcadores HTML propios en vez de círculos de estilo -- así se
 // reutiliza el mismo diseño de "burbuja con conteo" que ya existía. Sigue el
@@ -230,6 +275,7 @@ function MapaMotoSafeInner({
   inseguridadFiltrada,
   reportes,
   onVotarReporte,
+  reportesPrensa,
   autorId,
   horaActual,
   rutasCalculadas,
@@ -710,6 +756,43 @@ function MapaMotoSafeInner({
     return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
 
   }, [reportes, autorId, horaActual, version, onVotarReporte])
+
+  // --- reportes de prensa (noticias de robos scrapeadas) --------------------
+  // Capa separada de "reportes colaborativos": vigencia, semántica y fuente
+  // distintas (ver la nota larga en backend/main.py sobre por qué). Click en
+  // el ícono abre la nota original en una pestaña nueva -- esta capa no
+  // permite votar/confirmar como los reportes de usuarios, no tiene sentido
+  // "desmentir" una noticia ya publicada.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || version === 0) return
+    let popup
+    const markers = (reportesPrensa || []).map((rep) => {
+      const el = elementoMarcadorPrensa(rep.nivelPrecision)
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        popup?.remove()
+        popup = new Popup({ closeButton: true, maxWidth: '260px' })
+          .setLngLat([rep.lng, rep.lat])
+          .setHTML(`
+            <div class="popup-content">
+              <span class="popup-nivel popup-prensa-fuente">${rep.fuente} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
+              <strong>${rep.titular}</strong>
+              <span class="popup-prensa-precision">${ETIQUETA_NIVEL_PRECISION[rep.nivelPrecision] || ''}</span>
+              <button class="popup-ver-noticia" type="button">Ver noticia completa</button>
+            </div>
+          `)
+          .addTo(map)
+        popup.getElement()?.querySelector('.popup-ver-noticia')?.addEventListener('click', (ev) => {
+          ev.stopPropagation()
+          window.open(rep.urlFuente, '_blank', 'noopener,noreferrer')
+        })
+      })
+      return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
+    })
+    return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
+
+  }, [reportesPrensa, horaActual, version])
 
   // --- rutas calculadas (polilíneas) ----------------------------------------
   useEffect(() => {

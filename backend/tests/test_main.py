@@ -471,6 +471,27 @@ def test_listar_reportes_retira_por_consenso_de_desmentidas():
     assert ids == [2]
 
 
+def test_listar_reportes_prensa_excluye_los_de_mas_de_un_mes():
+    """A diferencia de /reportes, aca no hay categorias con vigencia distinta --
+    todo vence a los 30 dias fijo (ver VIGENCIA_HORAS_PRENSA)."""
+    ahora = datetime.now(timezone.utc)
+    nota_vigente = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "nivel_precision": "barrio", "radio_metros": 800,
+        "titular": "Asaltaron a un jubilado en Flores", "url_fuente": "https://ejemplo.com/1",
+        "fuente": "La Nación", "creado_en": ahora - timedelta(days=10),
+    }
+    nota_vencida = {
+        "id": 2, "lat": -34.6, "lng": -58.4, "nivel_precision": "barrio", "radio_metros": 800,
+        "titular": "Robo en Palermo", "url_fuente": "https://ejemplo.com/2",
+        "fuente": "Infobae", "creado_en": ahora - timedelta(days=45),
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchall_valor=[nota_vigente, nota_vencida])):
+        r = client.get("/reportes-prensa")
+    assert r.status_code == 200
+    ids = [f["id"] for f in r.json()]
+    assert ids == [1]
+
+
 def test_corredores_devuelve_nivel_de_riesgo_y_geometria_parseada():
     fila_db = {
         "id": 1, "calle": "PAZ, GRAL. AV.", "geometria": json.dumps([[-34.6, -58.5], [-34.5, -58.46]]),

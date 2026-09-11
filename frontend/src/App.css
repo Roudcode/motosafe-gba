@@ -815,6 +815,30 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .popup-voto-desmiente { color: #FF3B3B; border-color: rgba(255,59,59,0.4); }
 .popup-modelo { display: flex; gap: 8px; margin-top: 2px; font-size: var(--fs-xs); color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
 .popup-modelo-estimado { font-size: var(--fs-xs); color: var(--azul); font-style: italic; }
+.popup-prensa-fuente { color: #C9CDD3; }
+.popup-prensa-precision { font-size: var(--fs-2xs); color: var(--text-dim); font-style: italic; }
+.popup-ver-noticia {
+  margin-top: 4px; padding: 6px 8px; border-radius: var(--r-sm); border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: var(--fs-2xs); font-weight: 600;
+  cursor: pointer;
+}
+.popup-ver-noticia:hover { filter: brightness(1.15); }
+
+/* Marcador de reporte de prensa (ver MapaMotoSafe.jsx): el halo punteado
+   representa el radio de incertidumbre de la ubicación (radio_metros) -- no
+   es una capa geográfica real (metros de mapa), es una escala visual fija en
+   pixeles a propósito, para que se note de un vistazo "esto es aproximado"
+   sin depender del zoom actual. */
+.marker-prensa-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
+.marker-prensa-halo {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; border: 1.5px dashed rgba(201, 205, 211, 0.55);
+  background: rgba(201, 205, 211, 0.08);
+}
+.marker-prensa-icono {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+}
 
 /* Antes apuntaban a "path" (así dibuja Leaflet un CircleMarker en SVG); los
    marcadores de MapaMotoSafe.jsx son divs de MapLibre, así que la animación
