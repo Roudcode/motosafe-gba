@@ -137,6 +137,29 @@ mismo error de diagnostico):
     el script baja un nivel solo en vez de tratar nombres de archivo como
     si fueran notas.
 
+Correcciones v6.2 (segunda corrida real de Rodo con v6.1, 11/09):
+  - El Diario Sur e Infosur Diario: confirmados funcionando (el fix de
+    v6.1 resolvio ambos casos). Inforbano seguia en 0, por una causa
+    DISTINTA de la de v6.1: su indice de sitemaps (WordPress/Yoast) mezcla
+    post-sitemapN.xml (articulos reales, 38 archivos) con page-sitemap,
+    tdb_templates-sitemap, category-sitemap, post_tag-sitemapN (uno por
+    tag/categoria/autor, no por fecha) y author-sitemap -- en ORDEN
+    INVERSO, el presupuesto de intentos se gastaba entero en
+    author-sitemap y post_tag-sitemapN sin llegar nunca a un post-sitemap
+    real (858 URLs bajadas, 0 candidatas, ninguna era una nota). Se
+    agregaron esos tipos a _SITEMAP_TIPOS_IRRELEVANTES para que se
+    prueben de ultimos -- fix generalizable a cualquier sitio WordPress
+    con Yoast SEO, no especifico de Inforbano.
+  - Infocielo: SIGUE devolviendo 403 aun con HEADERS_NAVEGADOR (la prueba
+    de v6.1 que decia que funcionaba con headers de navegador no se
+    reprodujo en la corrida real de Rodo). Se trata como fuente bloqueada,
+    mismo estado que Clarín (parcial) y TN (total) -- no vale la pena
+    seguir iterando con mas headers sin poder inspeccionar la respuesta
+    real del WAF: puede ser un bloqueo de infraestructura (Cloudflare o
+    similar) que no distingue por User-Agent sino por huella de cliente
+    HTTP completa, y ahi headers no alcanzan. Documentado como limitacion
+    explicita de la tesis junto con TN, no como bug pendiente de arreglar.
+
 Probados y DESCARTADOS en esta ronda (para no repetir la busqueda):
   - Diario Anticipos, Moron Digital, Vivi el Oeste, Infosur Diario (el feed
     de categoria, no el sitemap -- ese si se usa, ver arriba): todos
@@ -652,7 +675,21 @@ def _es_sitemap_index(xml_bytes):
 # iban a pasar el filtro de palabras clave. Estas palabras deprorizan (no
 # descartan del todo, por si acaso) esos sub-sitemaps para que se prueben
 # de ultimos, no de primeros.
-_SITEMAP_TIPOS_IRRELEVANTES = ('recipe', 'receta', 'galer', 'video', 'audio', 'podcast')
+#
+# Correccion real (corrida de Rodo, 11/09, sobre Inforbano): un indice de
+# WordPress/Yoast tipico no es una sola lista cronologica de notas -- mezcla
+# post-sitemapN.xml (los articulos reales) con page-sitemap, tdb_templates-
+# sitemap, category-sitemap, post_tag-sitemapN (uno por CADA tag/categoria/
+# autor del sitio, no por fecha). Inforbano tiene 38 post-sitemap pero
+# TERMINAN el listado del indice, y el orden inverso + el presupuesto de
+# `intentos_restantes` (5 en el primer nivel) se gastaban entero en
+# author-sitemap y post_tag-sitemap sin llegar nunca a un post-sitemap real:
+# 858 URLs bajadas, 0 candidatas, porque ninguna era una nota. Se agregan
+# estos tipos a la lista de deprorizados.
+_SITEMAP_TIPOS_IRRELEVANTES = (
+    'recipe', 'receta', 'galer', 'video', 'audio', 'podcast',
+    'post_tag', 'category-sitemap', 'author-sitemap', 'page-sitemap', 'tdb_templates',
+)
 
 
 def extraer_urls_sitemap_recursivo(url_sitemap, headers, intentos_restantes=6):
@@ -676,7 +713,10 @@ def extraer_urls_sitemap_recursivo(url_sitemap, headers, intentos_restantes=6):
     if intentos_restantes <= 0:
         return []
     try:
-        resp = httpx.get(url_sitemap, headers=headers, timeout=15, follow_redirects=True)
+        # timeout mas alto que el resto del script (15s) -- un indice de
+        # sitemaps grande (Inforbano: dio ReadTimeout real en una corrida
+        # de Rodo el 11/09) puede tardar mas que una nota individual.
+        resp = httpx.get(url_sitemap, headers=headers, timeout=25, follow_redirects=True)
         resp.raise_for_status()
     except Exception as err:
         print(f"    [sitemap] {url_sitemap} -> {type(err).__name__}: {err}")
