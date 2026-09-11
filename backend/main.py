@@ -413,12 +413,19 @@ def obtener_hotspots(request: Request):
     clases = modelo_final.classes_.tolist()
     niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases, UMBRALES_HOTSPOTS)
 
+    # Ver "Ajuste de riesgo por reportes de prensa recientes" mas abajo: un
+    # choque reportado en prensa hace poco y cerca de un hotspot le sube el
+    # nivel un escalon, sin tocar la calibracion del modelo (nivel_riesgo
+    # sigue saliendo 100% del modelo antes de este ajuste).
+    reportes_choque_recientes = _obtener_reportes_recientes_por_tipo('choque')
+
     for i, h in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
         h['nivel_riesgo'] = niveles[i]
         h['prediccion_modelo'] = probs
         h['contexto_estimado'] = bool(contexto_estimado.iloc[i])
         h['clima'] = clima_actual
+        _aplicar_ajuste_riesgo(h, h['latitud'], h['longitud'], reportes_choque_recientes, 'choque')
 
     return resultado
 
@@ -733,10 +740,17 @@ def _asegurar_tabla_prensa(conn):
             titular TEXT NOT NULL,
             url_fuente VARCHAR(500) NOT NULL UNIQUE,
             fuente VARCHAR(50) NOT NULL,
+            tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo',
             publicado_en TIMESTAMPTZ,
             creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
         )
     """)
+    # Para bases que ya tenian la tabla creada antes de que existiera esta
+    # columna (CREATE TABLE IF NOT EXISTS no la agrega si la tabla ya
+    # existe) -- ver la misma alteracion del lado del scraper
+    # (scrapear_noticias_robos.py:_asegurar_tabla), asi que corra primero
+    # cualquiera de los dos dos la tabla termina igual.
+    cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
     conn.commit()
     cur.close()
 
@@ -745,8 +759,9 @@ def _asegurar_tabla_prensa(conn):
 def listar_reportes_prensa():
     """
     Igual que /reportes pero de la tabla de prensa: filtra por VIGENCIA_HORAS_PRENSA
-    (30 dias fijo, no varia por nada -- no hay categorias distintas aca, todo es
-    "robo corroborado por un medio"). No se borra nada de la base, solo deja de
+    (30 dias fijo, no varia por nada). Desde v5 hay dos tipo_incidente posibles
+    ('robo', 'choque' -- ver scrapear_noticias_robos.py), cada uno con su
+    propio icono en el frontend. No se borra nada de la base, solo deja de
     devolverse.
     """
     conn = _pool_conexiones.getconn()
@@ -754,7 +769,7 @@ def listar_reportes_prensa():
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, creado_en
+            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, creado_en
             FROM reportes_prensa
             ORDER BY creado_en DESC
         """)
@@ -768,6 +783,167 @@ def listar_reportes_prensa():
         fila for fila in filas
         if (ahora - fila['creado_en']).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
     ]
+
+
+# --- Ajuste de riesgo por reportes de prensa recientes ---
+# Pedido explicito de Rodo: los reportes recientes de prensa (robos, choques)
+# tienen que "contemplarse en el riesgo", no ser solo una capa visual aparte.
+# Decision de diseño (confirmada con Rodo antes de implementar): el modelo
+# entrenado NO se toca -- sus umbrales de percentil (UMBRALES_HOTSPOTS/
+# UMBRALES_CORREDORES) estan calibrados una sola vez offline para que
+# "alto"/"critico" signifique siempre lo mismo, y meter esto como feature
+# nueva del Random Forest exigiria reentrenar y recalibrar, sin sentido
+# todavia con pocas semanas de reportes acumulados. En cambio, el nivel que
+# YA calculo el modelo se sube un escalon (bajo->medio->alto->critico,
+# nunca mas alla de critico) cuando hay un reporte del tipo correspondiente
+# a poca distancia y reciente de verdad -- y queda marcado explicitamente
+# (ajustado_por_reciente + motivo_ajuste) para que se note en el frontend y
+# en la tesis que ese nivel no es 100% el output crudo del modelo.
+#
+# Que tipo de reporte ajusta que capa es semantico, no arbitrario: 'choque'
+# ajusta /hotspots y /corredores (predicen severidad de SINIESTRO VIAL, un
+# choque de prensa es literalmente un dato de esa misma naturaleza); 'robo'
+# ajusta /hotspots-inseguridad (densidad de DELITO, no de siniestro).
+RADIO_AJUSTE_RECIENTE_METROS = 600
+DIAS_AJUSTE_RECIENTE = 7
+CACHE_REPORTES_RECIENTES_TTL_SEGUNDOS = 180
+_cache_reportes_recientes = {}  # tipo_incidente -> {'datos': [...], 'timestamp': float}
+_NIVELES_EN_ORDEN = ('bajo', 'medio', 'alto', 'critico')
+
+
+def _obtener_reportes_recientes_por_tipo(tipo_incidente, dias=DIAS_AJUSTE_RECIENTE):
+    """Lista de {'lat', 'lng', 'titular'} de reportes_prensa de ese tipo
+    dentro de los ultimos `dias` dias, cacheada un rato corto (ver
+    CACHE_REPORTES_RECIENTES_TTL_SEGUNDOS -- el scraper corre a lo sumo unas
+    pocas veces por dia, no hace falta ir a la base en cada pedido de
+    /hotspots). Nunca rompe el endpoint que la llama: si la tabla no existe
+    todavia, la conexion falla, o una fila viene con datos raros, se la
+    ignora y sigue -- este ajuste es un plus visible, no una dependencia
+    dura (mismo criterio que ya se usa para TomTom/clima)."""
+    entrada = _cache_reportes_recientes.get(tipo_incidente)
+    ahora_ts = time.time()
+    if entrada and (ahora_ts - entrada['timestamp']) < CACHE_REPORTES_RECIENTES_TTL_SEGUNDOS:
+        return entrada['datos']
+
+    reportes = []
+    conn = None
+    try:
+        conn = _pool_conexiones.getconn()
+        _asegurar_tabla_prensa(conn)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT lat, lng, titular, creado_en
+            FROM reportes_prensa
+            WHERE tipo_incidente = %s
+            ORDER BY creado_en DESC
+        """, (tipo_incidente,))
+        filas = cur.fetchall()
+        cur.close()
+        ahora = datetime.now(timezone.utc)
+        for fila in filas:
+            try:
+                lat, lng, titular, creado_en = fila['lat'], fila['lng'], fila['titular'], fila['creado_en']
+                if lat is None or lng is None or creado_en is None:
+                    continue
+                if (ahora - creado_en).total_seconds() / 3600 > dias * 24:
+                    continue
+                reportes.append({'lat': float(lat), 'lng': float(lng), 'titular': titular})
+            except (KeyError, TypeError, ValueError):
+                continue
+    except Exception:
+        reportes = []
+    finally:
+        if conn is not None:
+            _pool_conexiones.putconn(conn)
+
+    _cache_reportes_recientes[tipo_incidente] = {'datos': reportes, 'timestamp': ahora_ts}
+    return reportes
+
+
+def _distancia_metros(lat1, lng1, lat2, lng2):
+    """Haversine simple -- de sobra de precision para un radio de a lo sumo
+    unos cientos de metros, no hace falta nada mas fino (ni una extension de
+    Postgres) para este uso."""
+    import math
+    R = 6371000
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lng2 - lng1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def _nivel_subido_un_escalon(nivel):
+    if nivel not in _NIVELES_EN_ORDEN:
+        return nivel
+    idx = _NIVELES_EN_ORDEN.index(nivel)
+    return _NIVELES_EN_ORDEN[min(idx + 1, len(_NIVELES_EN_ORDEN) - 1)]
+
+
+def _ajuste_por_reportes_recientes(lat, lng, reportes, radio_m=RADIO_AJUSTE_RECIENTE_METROS):
+    """Devuelve (hay_ajuste, cantidad, titular_mas_reciente) segun cuantos de
+    `reportes` (ya prefiltrados por tipo y por antigüedad, ver
+    _obtener_reportes_recientes_por_tipo) caen a `radio_m` o menos de
+    (lat, lng). `reportes` viene ordenado por creado_en DESC, asi que el
+    primer match en el loop ya es el mas reciente."""
+    cercanos = [r for r in reportes if _distancia_metros(lat, lng, r['lat'], r['lng']) <= radio_m]
+    if not cercanos:
+        return False, 0, None
+    return True, len(cercanos), cercanos[0]['titular']
+
+
+def _aplicar_ajuste_riesgo(fila, lat, lng, reportes, tipo_label):
+    """Muta `fila` (dict) in-place: sube nivel_riesgo un escalon si hay un
+    reporte reciente cerca, y deja siempre presentes ajustado_por_reciente/
+    motivo_ajuste (True/mensaje o False/None) para que el frontend pueda
+    mostrarlo sin adivinar si la clave existe."""
+    hay_ajuste, cantidad, titular = _ajuste_por_reportes_recientes(lat, lng, reportes)
+    fila['ajustado_por_reciente'] = hay_ajuste
+    if hay_ajuste:
+        fila['nivel_riesgo'] = _nivel_subido_un_escalon(fila['nivel_riesgo'])
+        plural = 's' if cantidad != 1 else ''
+        fila['motivo_ajuste'] = (
+            f"{cantidad} {tipo_label}{plural} reportado{plural} en prensa en los últimos "
+            f"{DIAS_AJUSTE_RECIENTE} días cerca de esta zona (más reciente: \"{titular}\")"
+        )
+    else:
+        fila['motivo_ajuste'] = None
+
+
+def _vertices_de_geometria(geometria):
+    """Extrae los vertices (lat, lng) de corredores_riesgo.geometria ya
+    parseada (json.loads de la columna) -- una lista plana de pares
+    [lat, lng] (ver test_corredores_devuelve_nivel_de_riesgo_y_geometria_parseada
+    en tests/test_main.py, que documenta el formato real). Devuelve [] ante
+    cualquier formato inesperado en vez de romper el endpoint."""
+    try:
+        return [(float(lat), float(lng)) for lat, lng in geometria]
+    except (TypeError, ValueError):
+        return []
+
+
+def _aplicar_ajuste_por_corredor(corredor, reportes, tipo_label):
+    """Como _aplicar_ajuste_riesgo, pero para un corredor (calle entera, no
+    un punto): "cerca" es cerca de CUALQUIER vertice de su trazado. Entre
+    todos los reportes que caen cerca de algun vertice, se usa el mas
+    reciente para el mensaje."""
+    vertices = _vertices_de_geometria(corredor.get('geometria', {}))
+    mejor = (False, 0, None)
+    for lat, lng in vertices:
+        hay, cantidad, titular = _ajuste_por_reportes_recientes(lat, lng, reportes)
+        if hay and cantidad > mejor[1]:
+            mejor = (hay, cantidad, titular)
+    corredor['ajustado_por_reciente'] = mejor[0]
+    if mejor[0]:
+        corredor['nivel_riesgo'] = _nivel_subido_un_escalon(corredor['nivel_riesgo'])
+        cantidad, titular = mejor[1], mejor[2]
+        plural = 's' if cantidad != 1 else ''
+        corredor['motivo_ajuste'] = (
+            f"{cantidad} {tipo_label}{plural} reportado{plural} en prensa en los últimos "
+            f"{DIAS_AJUSTE_RECIENTE} días cerca de este corredor (más reciente: \"{titular}\")"
+        )
+    else:
+        corredor['motivo_ajuste'] = None
 
 
 @app.get("/corredores")
@@ -832,11 +1008,17 @@ def obtener_corredores():
     # /hotspots, aunque la funcion de clasificacion es la misma.
     niveles = niveles_relativos_desde_matriz(matriz_probabilidades, clases, UMBRALES_CORREDORES)
 
+    reportes_choque_recientes = _obtener_reportes_recientes_por_tipo('choque')
+
     for i, c in enumerate(resultado):
         probs = dict(zip(clases, [round(float(p), 3) for p in matriz_probabilidades[i]]))
         c['nivel_riesgo'] = niveles[i]
         c['prediccion_modelo'] = probs
         c['geometria'] = json.loads(c['geometria'])
+        # Un corredor es una calle entera, no un punto -- se toma "cerca" como
+        # "cerca de CUALQUIER vertice de su trazado" (ver _vertices_de_geometria),
+        # no del centro ni de un extremo solo.
+        _aplicar_ajuste_por_corredor(c, reportes_choque_recientes, 'choque')
 
     return resultado
 
@@ -869,6 +1051,15 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
         cur.close()
     finally:
         _pool_conexiones.putconn(conn)
+
+    # A diferencia de /hotspots y /corredores (siniestros viales), esta capa
+    # es densidad de DELITO -- el tipo de reporte de prensa que le
+    # corresponde semanticamente es 'robo', no 'choque' (ver el comentario
+    # largo de "Ajuste de riesgo por reportes de prensa recientes").
+    reportes_robo_recientes = _obtener_reportes_recientes_por_tipo('robo')
+    for h in resultado:
+        _aplicar_ajuste_riesgo(h, h['latitud'], h['longitud'], reportes_robo_recientes, 'robo')
+
     return resultado
 
 

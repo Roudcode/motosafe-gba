@@ -743,3 +743,152 @@ def test_calcular_rutas_sin_resultados_devuelve_404():
             "destino_lat": -34.61, "destino_lng": -58.44,
         })
     assert r.status_code == 404
+
+
+# --- Ajuste de riesgo por reportes de prensa recientes (ver el comentario
+# largo de _ajuste_por_reportes_recientes en main.py) --------------------
+#
+# Estos tests patchean main._obtener_reportes_recientes_por_tipo directo en
+# vez de sumar filas falsas a _mock_db/_mock_db_reportes a proposito: esa
+# funcion cachea su resultado en un dict a nivel de modulo
+# (_cache_reportes_recientes) que persiste entre tests dentro de la misma
+# corrida de pytest, asi que depender del mock de la conexion de base
+# haria estos tests fragiles frente al orden en que corren. Patchear la
+# funcion en si es determinista y evita ademas que los tests existentes de
+# /hotspots, /corredores y /hotspots-inseguridad (que NO patchean esto)
+# necesiten tocarse: sin el patch, esa funcion cae en su propio manejo
+# defensivo de filas con forma inesperada (ver el try/except por fila) y
+# devuelve lista vacia, o sea "sin ajuste" -- el comportamiento de antes.
+
+def test_reportes_prensa_incluye_tipo_incidente():
+    ahora = datetime.now(timezone.utc)
+    nota_choque = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "nivel_precision": "barrio", "radio_metros": 800,
+        "titular": "Choque múltiple en la Panamericana", "url_fuente": "https://ejemplo.com/1",
+        "fuente": "TN", "tipo_incidente": "choque", "creado_en": ahora - timedelta(days=1),
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchall_valor=[nota_choque])):
+        r = client.get("/reportes-prensa")
+    assert r.status_code == 200
+    assert r.json()[0]["tipo_incidente"] == "choque"
+
+
+def test_nivel_subido_un_escalon_topa_en_critico():
+    assert main._nivel_subido_un_escalon("bajo") == "medio"
+    assert main._nivel_subido_un_escalon("medio") == "alto"
+    assert main._nivel_subido_un_escalon("alto") == "critico"
+    assert main._nivel_subido_un_escalon("critico") == "critico"
+    assert main._nivel_subido_un_escalon("valor-no-reconocido") == "valor-no-reconocido"
+
+
+def test_hotspots_sin_reportes_recientes_no_se_ajusta():
+    fila_db = {
+        "id": 1, "cluster": 0, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_siniestros": 50, "mortales": 1, "graves": 3, "nivel_riesgo": "bajo",
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=[]):
+        r = client.get("/hotspots")
+    hotspot = r.json()[0]
+    assert hotspot["ajustado_por_reciente"] is False
+    assert hotspot["motivo_ajuste"] is None
+
+
+def test_hotspots_con_choque_reciente_cerca_sube_un_escalon():
+    """Un hotspot a ~50m de un choque reportado hace 2 días tiene que subir
+    su nivel_riesgo un escalón (relativo al que calcula el modelo para ese
+    mismo contexto) y quedar marcado como ajustado. No se asume un nivel
+    absoluto fijo ("bajo", "medio", etc.): el modelo real (no uno de prueba)
+    puede dar cualquiera de los cuatro para este contexto sintético según la
+    hora/clima -- lo que hay que verificar es que el ajuste sube EXACTAMENTE
+    un escalón respecto de lo que el modelo daría sin él, no un valor
+    absoluto adivinado. La hora se congela (mismo patrón que
+    test_hotspots_diferencia_niveles_entre_si_no_todos_iguales) para que las
+    dos llamadas (con y sin reporte cercano) usen el mismo contexto horario
+    y sean comparables entre sí."""
+    from datetime import datetime as datetime_real
+
+    class _RelojFijo(datetime_real):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime_real(2026, 1, 6, 11, 0, 0, tzinfo=tz)  # martes 11am
+
+    fila_db = {
+        "id": 1, "cluster": 0, "latitud": -34.6000, "longitud": -58.4000,
+        "cantidad_siniestros": 50, "mortales": 1, "graves": 3, "nivel_riesgo": "bajo",
+    }
+    reporte_cercano = [{"lat": -34.6003, "lng": -58.4000, "titular": "Choque en Palermo"}]
+
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main.datetime", _RelojFijo), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=[]):
+        r_sin_ajuste = client.get("/hotspots")
+    nivel_base = r_sin_ajuste.json()[0]["nivel_riesgo"]
+
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main.datetime", _RelojFijo), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=reporte_cercano):
+        r_con_ajuste = client.get("/hotspots")
+    hotspot = r_con_ajuste.json()[0]
+
+    assert hotspot["ajustado_por_reciente"] is True
+    assert hotspot["nivel_riesgo"] == main._nivel_subido_un_escalon(nivel_base)
+    assert "Choque en Palermo" in hotspot["motivo_ajuste"]
+
+
+def test_hotspots_con_choque_reciente_lejos_no_se_ajusta():
+    fila_db = {
+        "id": 1, "cluster": 0, "latitud": -34.6000, "longitud": -58.4000,
+        "cantidad_siniestros": 50, "mortales": 1, "graves": 3, "nivel_riesgo": "bajo",
+    }
+    reporte_lejano = [{"lat": -34.9, "lng": -58.9, "titular": "Choque en La Matanza"}]
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=reporte_lejano):
+        r = client.get("/hotspots")
+    hotspot = r.json()[0]
+    assert hotspot["ajustado_por_reciente"] is False
+    # No se ajusta -> nivel_riesgo tiene que ser el mismo que sin reporte alguno
+    # (no un valor absoluto adivinado, ver la nota larga del test anterior).
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=[]):
+        r_sin_reportes = client.get("/hotspots")
+    assert hotspot["nivel_riesgo"] == r_sin_reportes.json()[0]["nivel_riesgo"]
+
+
+def test_corredores_con_choque_cerca_de_un_vertice_se_ajusta():
+    fila_db = {
+        "id": 1, "calle": "PAZ, GRAL. AV.", "geometria": json.dumps([[-34.6, -58.5], [-34.5, -58.46]]),
+        "cantidad_siniestros": 1119, "mortales": 23, "graves": 70,
+        "comuna_moda": "12", "tipo_via_moda": "AV. GRAL. PAZ", "contraparte_moda": "AUTO",
+        "edad_promedio": 34.3, "sexo_moda": "M",
+    }
+    reporte_cercano_al_segundo_vertice = [{"lat": -34.5003, "lng": -58.46, "titular": "Choque en Av. Gral. Paz"}]
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=reporte_cercano_al_segundo_vertice):
+        r = client.get("/corredores")
+    corredor = r.json()[0]
+    assert corredor["ajustado_por_reciente"] is True
+    assert "Choque en Av. Gral. Paz" in corredor["motivo_ajuste"]
+
+
+def test_hotspots_inseguridad_con_robo_reciente_cerca_se_ajusta():
+    fila_db = {
+        "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+        "nivel_riesgo": "alto",
+    }
+    reporte_cercano = [{"lat": -34.6002, "lng": -58.4001, "titular": "Robo en Retiro"}]
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=reporte_cercano):
+        r = client.get("/hotspots-inseguridad")
+    hotspot = r.json()[0]
+    assert hotspot["ajustado_por_reciente"] is True
+    assert hotspot["nivel_riesgo"] == "critico"  # alto -> critico
+    assert "Robo en Retiro" in hotspot["motivo_ajuste"]
+
+
+def test_vertices_de_geometria_maneja_formatos_invalidos_sin_reventar():
+    assert main._vertices_de_geometria(None) == []
+    assert main._vertices_de_geometria([]) == []
+    assert main._vertices_de_geometria("no-es-una-lista") == []
+    assert main._vertices_de_geometria([[-34.6, -58.5], [-34.5, -58.46]]) == [(-34.6, -58.5), (-34.5, -58.46)]

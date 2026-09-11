@@ -835,6 +835,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   border-radius: 50%; border: 1.5px dashed rgba(201, 205, 211, 0.55);
   background: rgba(201, 205, 211, 0.08);
 }
+/* Halo naranja para reportes tipo_incidente='choque' (ver
+   ICONOS_POR_TIPO_INCIDENTE en MapaMotoSafe.jsx) -- mismo mecanismo que el
+   halo gris de robo, solo cambia el color para que se distinga de un
+   vistazo también en el radio de incertidumbre, no solo en el ícono. */
+.marker-prensa-halo--choque {
+  border-color: rgba(255, 154, 61, 0.6);
+  background: rgba(255, 154, 61, 0.1);
+}
 .marker-prensa-icono {
   position: relative; display: flex; align-items: center; justify-content: center;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));

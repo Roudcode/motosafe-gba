@@ -80,8 +80,8 @@ export function CapasPanel({
         <span className="capas-opcion-radio" />
         <Newspaper size={15} className="capas-opcion-icono" />
         <span className="capas-opcion-texto">
-          <span className="capas-opcion-label">Robos en noticias</span>
-          <span className="capas-opcion-desc">Últimos 30 días · Infobae / La Nación, no en vivo · tocá un punto para ver la nota</span>
+          <span className="capas-opcion-label">Robos y choques en noticias</span>
+          <span className="capas-opcion-desc">Últimos 30 días, no en vivo · ícono de diario para robos, de auto para choques · tocá un punto para ver la nota</span>
         </span>
       </button>
 

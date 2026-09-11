@@ -465,6 +465,7 @@ function App() {
           titular: r.titular,
           urlFuente: r.url_fuente,
           fuente: r.fuente,
+          tipoIncidente: r.tipo_incidente,
           creadoEn: r.creado_en,
         }))))
         .catch(() => { /* backend caido: se mantienen los que ya estaban cargados */ })

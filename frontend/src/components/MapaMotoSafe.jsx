@@ -80,43 +80,65 @@ function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExt
 }
 
 // Marcador de un reporte de prensa (ver backend/scrapear_noticias_robos.py):
-// un ícono de diario en vez del círculo genérico de reportes de usuario, para
-// que se lea de un vistazo como "esto es una noticia, no algo que reportó
+// un ícono propio (no el círculo genérico de reportes de usuario) para que
+// se lea de un vistazo como "esto es una noticia, no algo que reportó
 // alguien" -- y un halo punteado alrededor cuyo tamaño escala con
 // radio_metros, para representar visualmente qué tan precisa (o no) es la
 // ubicación: un halo chico si la nota daba una intersección, uno grande si
 // solo se pudo ubicar el barrio. Nunca se dibuja como si fuera un punto
 // exacto cuando el texto de la noticia no lo era.
+//
+// Desde v5 el ícono además distingue tipo_incidente (pedido explícito de
+// Rodo: "choques de este último mes, robos de este último mes... que estén
+// diferenciados por una capa y un ícono"): diario gris para 'robo', auto
+// con signo de choque en naranja para 'choque'. Un tipo desconocido (dato
+// viejo sin la columna, o valor inesperado) cae al ícono de 'robo' por
+// default -- mismo default que usa la tabla en main.py.
 const TAMANO_ICONO_PRENSA = 26
 const HALO_POR_NIVEL_PRECISION = { interseccion: 0, calle: 34, barrio: 64 }
 
-function elementoMarcadorPrensa(nivelPrecision) {
-  const halo = HALO_POR_NIVEL_PRECISION[nivelPrecision] ?? HALO_POR_NIVEL_PRECISION.barrio
-  const wrapper = document.createElement('div')
-  wrapper.className = 'marker-prensa-wrapper'
-  wrapper.style.width = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
-  wrapper.style.height = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
-  if (halo > 0) {
-    const haloEl = document.createElement('div')
-    haloEl.className = 'marker-prensa-halo'
-    haloEl.style.width = `${halo}px`
-    haloEl.style.height = `${halo}px`
-    wrapper.appendChild(haloEl)
-  }
-  const icono = document.createElement('div')
-  icono.className = 'marker-prensa-icono'
-  icono.innerHTML = `
+const ICONOS_POR_TIPO_INCIDENTE = {
+  robo: `
     <svg width="${TAMANO_ICONO_PRENSA}" height="${TAMANO_ICONO_PRENSA}" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="4" width="18" height="16" rx="2" fill="#3A3F4B" stroke="#C9CDD3" stroke-width="1.4"/>
       <line x1="7" y1="8" x2="17" y2="8" stroke="#C9CDD3" stroke-width="1.4"/>
       <line x1="7" y1="11.3" x2="17" y2="11.3" stroke="#C9CDD3" stroke-width="1.4"/>
       <line x1="7" y1="14.6" x2="13" y2="14.6" stroke="#C9CDD3" stroke-width="1.4"/>
     </svg>
-  `
+  `,
+  choque: `
+    <svg width="${TAMANO_ICONO_PRENSA}" height="${TAMANO_ICONO_PRENSA}" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="#3A2A1A" stroke="#FF9A3D" stroke-width="1.4"/>
+      <path d="M12 6.5 L17 16 H7 Z" fill="none" stroke="#FF9A3D" stroke-width="1.5" stroke-linejoin="round"/>
+      <line x1="12" y1="10" x2="12" y2="13" stroke="#FF9A3D" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="12" cy="14.7" r="0.9" fill="#FF9A3D"/>
+    </svg>
+  `,
+}
+
+function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
+  const halo = HALO_POR_NIVEL_PRECISION[nivelPrecision] ?? HALO_POR_NIVEL_PRECISION.barrio
+  const svgIcono = ICONOS_POR_TIPO_INCIDENTE[tipoIncidente] ?? ICONOS_POR_TIPO_INCIDENTE.robo
+  const wrapper = document.createElement('div')
+  wrapper.className = 'marker-prensa-wrapper'
+  wrapper.style.width = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
+  wrapper.style.height = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
+  if (halo > 0) {
+    const haloEl = document.createElement('div')
+    haloEl.className = `marker-prensa-halo${tipoIncidente === 'choque' ? ' marker-prensa-halo--choque' : ''}`
+    haloEl.style.width = `${halo}px`
+    haloEl.style.height = `${halo}px`
+    wrapper.appendChild(haloEl)
+  }
+  const icono = document.createElement('div')
+  icono.className = 'marker-prensa-icono'
+  icono.innerHTML = svgIcono
   wrapper.appendChild(icono)
   wrapper.style.cursor = 'pointer'
   return wrapper
 }
+
+const ETIQUETA_TIPO_INCIDENTE = { robo: 'Robo', choque: 'Choque' }
 
 const ETIQUETA_NIVEL_PRECISION = {
   interseccion: 'Ubicación aproximada (intersección)',
@@ -768,15 +790,16 @@ function MapaMotoSafeInner({
     if (!map || version === 0) return
     let popup
     const markers = (reportesPrensa || []).map((rep) => {
-      const el = elementoMarcadorPrensa(rep.nivelPrecision)
+      const el = elementoMarcadorPrensa(rep.nivelPrecision, rep.tipoIncidente)
       el.addEventListener('click', (e) => {
         e.stopPropagation()
         popup?.remove()
+        const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
         popup = new Popup({ closeButton: true, maxWidth: '260px' })
           .setLngLat([rep.lng, rep.lat])
           .setHTML(`
             <div class="popup-content">
-              <span class="popup-nivel popup-prensa-fuente">${rep.fuente} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
+              <span class="popup-nivel popup-prensa-fuente">${etiquetaTipo} · ${rep.fuente} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
               <strong>${rep.titular}</strong>
               <span class="popup-prensa-precision">${ETIQUETA_NIVEL_PRECISION[rep.nivelPrecision] || ''}</span>
               <button class="popup-ver-noticia" type="button">Ver noticia completa</button>
