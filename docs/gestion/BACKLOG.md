@@ -37,7 +37,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | T06 | En curso | Procedimiento documentado de dump/restauración aislada; falta ejecutar y registrar un ensayo real. |
 | A15 | Validado parcialmente | La primera carga se libera ante fallo de hotspots; las capas secundarias conservan caché, identifican cuáles fallaron, muestran última consulta y se reintentan sin recargar toda la página. Faltan estados de fecha de origen desde backend. |
 | F08 | En curso | La actividad identifica reportes propios vigentes. Faltan contratos backend y pantalla para vencidos, retirados por consenso y desmentidos. |
-| A16 | En curso | La velocidad se limpia al detenerse y deja de conservar una ETA obsoleta. Faltan trazas GPS y revisión completa de progreso. |
+| A16 | Validado parcialmente | Velocidad/ETA se limpian al detenerse y el progreso se proyecta sobre segmentos, evitando saltos entre vértices largos. Faltan trazas GPS reales de parada, giro, desvío, pérdida y llegada. |
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |
 | V10 | Validado parcialmente | La carga inicial no queda bloqueada; los fallos de capas enumeran la fuente y ofrecen reintento localizado sin simular éxito. Faltan mensajes específicos para sin datos y red del sistema. |
 

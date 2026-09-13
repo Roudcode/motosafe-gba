@@ -50,12 +50,26 @@ export function calcularProgresoRuta(punto, coords) {
   const distanciaTotalKm = acumulado[acumulado.length - 1]
   let indiceCercano = 0
   let mejorDist = Infinity
-  for (let i = 0; i < coords.length; i++) {
-    const [lat, lng] = coords[i]
-    const d = distanciaKm(punto, { lat, lng })
-    if (d < mejorDist) { mejorDist = d; indiceCercano = i }
+  let distanciaRecorridaKm = 0
+  for (let i = 0; i < coords.length - 1; i++) {
+    const [lat1, lng1] = coords[i]
+    const [lat2, lng2] = coords[i + 1]
+    const latMedia = (lat1 + lat2) / 2 * Math.PI / 180
+    const kmPorLat = 111.32
+    const kmPorLng = 111.32 * Math.cos(latMedia)
+    const ax = lng1 * kmPorLng, ay = lat1 * kmPorLat
+    const bx = lng2 * kmPorLng, by = lat2 * kmPorLat
+    const px = punto.lng * kmPorLng, py = punto.lat * kmPorLat
+    const dx = bx - ax, dy = by - ay
+    const largo2 = dx * dx + dy * dy
+    const t = Math.max(0, Math.min(1, largo2 ? ((px - ax) * dx + (py - ay) * dy) / largo2 : 0))
+    const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+    if (d < mejorDist) {
+      mejorDist = d
+      indiceCercano = t === 1 ? i + 1 : i
+      distanciaRecorridaKm = acumulado[i] + (acumulado[i + 1] - acumulado[i]) * t
+    }
   }
-  const distanciaRecorridaKm = acumulado[indiceCercano]
   const distanciaRestanteKm = Math.max(0, distanciaTotalKm - distanciaRecorridaKm)
   return {
     indiceCercano,

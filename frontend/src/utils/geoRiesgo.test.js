@@ -150,6 +150,12 @@ describe('calcularProgresoRuta', () => {
     expect(p.distanciaRestanteKm).toBeCloseTo(p.distanciaRecorridaKm * 2, 1)
   })
 
+  it('avanza de forma continua dentro de un tramo largo, sin saltar al vértice siguiente', () => {
+    const p = calcularProgresoRuta({ lat: -34.595, lng: -58.40 }, RUTA_RECTA)
+    expect(p.fraccionRecorrida).toBeCloseTo(1 / 6, 1)
+    expect(p.distanciaRecorridaKm).toBeGreaterThan(0)
+  })
+
   it('recorrida + restante siempre suman el total', () => {
     const p = calcularProgresoRuta({ lat: -34.583, lng: -58.401 }, RUTA_RECTA)
     expect(p.distanciaRecorridaKm + p.distanciaRestanteKm).toBeCloseTo(p.distanciaTotalKm, 3)
