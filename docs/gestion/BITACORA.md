@@ -134,6 +134,11 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: controles de tema y capas se ampliaron a 44 px, consistentes con zoom y navegación.
 - Pruebas: lint y 75 pruebas frontend aprobadas.
 
+## 2026-09-13 — SES-018 — Transferencia durable y menú accesible
+
+- Cambio: se agregó prompt durable para Claude; el botón de herramientas comunica su estado expandido a lectores de pantalla.
+- Límite: el prompt exige consultar el estado vigente del repositorio, por lo que sigue siendo válido ante avances posteriores.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

@@ -1857,6 +1857,7 @@ function App() {
           className={`herramientas-fab ${herramientasAbiertas ? 'activo' : ''}`}
           onClick={() => setHerramientasAbiertas((v) => !v)}
           aria-label="Más herramientas"
+          aria-expanded={herramientasAbiertas}
         >
           {herramientasAbiertas ? <X size={18} /> : <Wrench size={18} />}
         </button>

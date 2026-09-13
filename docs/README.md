@@ -9,6 +9,7 @@
 3. Leer [PRIORIZACION.md](gestion/PRIORIZACION.md): paquetes recomendados y decisiones pendientes.
 4. Revisar [BITACORA.md](gestion/BITACORA.md) y [DECISIONES.md](gestion/DECISIONES.md): qué se hizo y qué se decidió realmente.
 5. Usar [VALIDACION.md](gestion/VALIDACION.md) para registrar evidencia antes de cerrar cambios.
+6. Para transferir el trabajo a Claude, usar [PROMPT_PARA_CLAUDE.md](gestion/PROMPT_PARA_CLAUDE.md).
 
 ## Evidencia y documentación existente
 
