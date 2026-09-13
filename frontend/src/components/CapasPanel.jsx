@@ -10,7 +10,7 @@
 // TomTom (ver backend/main.py, endpoints /trafico/*) — si no está disponible,
 // el toggle avisa en vez de fallar en silencio.
 
-import { X, Zap, Newspaper } from 'lucide-react'
+import { X, Zap, Newspaper, Bike, CarFront, ShieldAlert, ListFilter } from 'lucide-react'
 import { OPCIONES_CAPA_MAPA, OPCIONES_CAPA_INSEGURIDAD } from '../constants'
 
 export function CapasPanel({
@@ -85,12 +85,18 @@ export function CapasPanel({
         </span>
       </button>
       {capaPrensa && (
-        <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias">
-          {['todos', 'moto', 'robo', 'inseguridad', 'choque'].map((filtro) => (
-            <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)}>
-              {{ todos: 'Todos', moto: 'Motos', robo: 'Robos', inseguridad: 'Inseguridad', choque: 'Choques' }[filtro]}
+        <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias de prensa">
+          <div className="capas-prensa-filtros-titulo"><ListFilter size={13} /> Mostrando</div>
+          <div className="capas-prensa-filtros-opciones">
+          {[
+            ['todos', 'Todo', Newspaper], ['moto', 'Motos', Bike], ['robo', 'Robos', ShieldAlert],
+            ['inseguridad', 'Seguridad', ShieldAlert], ['choque', 'Choques', CarFront],
+          ].map(([filtro, etiqueta, Icono]) => (
+            <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)} aria-pressed={filtroPrensa === filtro}>
+              <Icono size={12} /> {etiqueta}
             </button>
           ))}
+          </div>
         </div>
       )}
 

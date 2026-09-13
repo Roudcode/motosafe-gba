@@ -369,12 +369,14 @@ function MapaMotoSafeInner({
   const onClickZonaRef = useRef(onClickZona)
   const onClickRutaRef = useRef(onClickRuta)
   const onPaneoManualRef = useRef(onPaneoManual)
+  const horaActualRef = useRef(horaActual)
   useEffect(() => {
     campoActivoRef.current = campoActivo
     onClickMapaRef.current = onClickMapa
     onClickZonaRef.current = onClickZona
     onClickRutaRef.current = onClickRuta
     onPaneoManualRef.current = onPaneoManual
+    horaActualRef.current = horaActual
   })
 
   // --- init del mapa (una sola vez) -----------------------------------------
@@ -833,14 +835,16 @@ function MapaMotoSafeInner({
         const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
         popup = new Popup({ closeButton: true, maxWidth: '260px' })
           .setLngLat([rep.lng, rep.lat])
-          .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActual))
+          .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current))
           .addTo(map)
       })
       return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
     })
     return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
 
-  }, [reportesPrensa, horaActual, version])
+  // No depende del reloj de la interfaz: antes ese tick rearmaba todos los
+  // marcadores cada segundo y el cleanup cerraba el popup inmediatamente.
+  }, [reportesPrensa, version])
 
   // --- rutas calculadas (polilíneas) ----------------------------------------
   useEffect(() => {

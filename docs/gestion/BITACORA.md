@@ -224,6 +224,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: compilación sintáctica de `scrapear_noticias_robos.py` y `git diff --check` aprobados.
 - Límite: el resumen mide el pipeline, no precisión real. Para decidir cobertura o calidad todavía hace falta una corrida guardada, revisión humana y PostgreSQL funcional.
 
+## 2026-09-13 — SES-035 — Tema inicial y filtros de prensa
+
+- IDs: V08, A09, A23.
+- Pedido: Rodo pidió tema claro por defecto, corregir el cierre al tocar una noticia y mejorar el filtro de prensa.
+- Cambio: instalaciones sin preferencia guardada inician en modo claro. El efecto de marcadores de prensa ya no depende del reloj que se actualiza cada segundo, por lo que su cleanup no cierra el popup inmediatamente. El filtro pasó a chips con iconos, etiqueta de estado y `aria-pressed`.
+- Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
+- Límite: una preferencia oscura ya guardada se respeta; no se modificó el ajuste elegido previamente por cada usuario. Falta QA visual real de los chips en móvil y ambos temas.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

@@ -1086,3 +1086,57 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .ruta-resumen, .detalle-panel, .actividad-panel, .stats-panel { width: 200px; }
   .searchbar, .ruta-form { width: 78vw; }
 }
+/* Filtros de prensa: son chips táctiles separados del interruptor de capa.
+   El grupo deja claro qué está visible sin obligar a cerrar/reabrir el panel. */
+.capas-prensa-filtros {
+  margin: 2px 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border, rgba(128, 140, 156, 0.35));
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(127, 139, 155, 0.10));
+}
+
+.capas-prensa-filtros-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--text-muted, #667085);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.capas-prensa-filtros-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.capas-prensa-filtros button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--border, rgba(128, 140, 156, 0.42));
+  border-radius: 999px;
+  color: var(--text, #20252b);
+  background: var(--surface, #fff);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.capas-prensa-filtros button.activa {
+  border-color: #d69e00;
+  color: #513b00;
+  background: #ffd65a;
+  font-weight: 700;
+}
+
+[data-theme='dark'] .capas-prensa-filtros button.activa {
+  color: #221a00;
+  background: #ffc933;
+}

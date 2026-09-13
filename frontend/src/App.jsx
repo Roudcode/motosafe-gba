@@ -122,7 +122,7 @@ function App() {
   const [erroresCapas, setErroresCapas] = useState({})
   const [actualizacionesCapas, setActualizacionesCapas] = useState({})
   const [recargaCapas, setRecargaCapas] = useState(0)
-  const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
+  const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'light'))
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
   const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
   // Tráfico en vivo (TomTom): apagado por default -- no todos tienen la API key

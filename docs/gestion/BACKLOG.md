@@ -89,7 +89,7 @@ V01–V14 son propuestas de diseño basadas en componentes y CSS revisados. **No
 | V05 | Panel inferior móvil con alturas controladas | P2/M | V01; propuesta frente a paneles flotantes | A 360/390 px, teclado abierto y paisaje no tapa controles esenciales. |
 | V06 | Tarjetas de rutas comparables | P2/M | A05/A06/A16 | Tiempo, distancia, cobertura y ejes separados; selección visible sin promesa absoluta. |
 | V07 | Detalle de zona con explicación progresiva | P2/M | A11 | Primero conclusión y fecha; fuente y método ampliables sin saturar. |
-| V08 | Simplificar panel de capas | P2/S | Capas ya existen | Diferencia fondo/overlay y visualización/cálculo; estado seleccionado accesible. |
+| V08 | Simplificar panel de capas | En curso / P2-S | El filtro de prensa se rediseñó como chips con iconos y estado presionado. | Falta QA visual real en móvil y ambos temas. |
 | V09 | Atenuar decoración y animación durante viaje | P2/S | A23; preservar alertas relevantes | Ruta y maniobra dominan; movimiento reducido respeta preferencias. |
 | V10 | Estados vacíos y errores con acción útil | P2/S | A15 | Mensajes distinguen sin datos, sin red y fallo; ofrecen reintento adecuado. |
 | V11 | Revisar contraste sobre mapas claros/satélite | P2/M | QA visual pendiente | Ruta, etiquetas y puntos distinguibles en fondos representativos. |
