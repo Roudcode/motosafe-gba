@@ -1621,7 +1621,7 @@ function App() {
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
           reportes={reportes}
           onVotarReporte={votarReporte}
-          reportesPrensa={capaPrensa ? reportesPrensa.filter((r) => filtroPrensa === 'todos' || r.tipoIncidente === filtroPrensa) : []}
+          reportesPrensa={capaPrensa ? reportesPrensa.filter((r) => filtroPrensa === 'todos' || r.tipoIncidente === filtroPrensa || (filtroPrensa === 'moto' && /\bmoto(?:s|cicleta|cicletas)?\b/i.test(r.titular || ''))) : []}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}
           rutaSeleccionada={rutaSeleccionada}

@@ -74,9 +74,9 @@ export function CapasPanel({
       </button>
       {capaPrensa && (
         <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias">
-          {['todos', 'robo', 'choque'].map((filtro) => (
+          {['todos', 'moto', 'robo', 'choque'].map((filtro) => (
             <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)}>
-              {{ todos: 'Todos', robo: 'Robos', choque: 'Choques' }[filtro]}
+              {{ todos: 'Todos', moto: 'Motos', robo: 'Robos', choque: 'Choques' }[filtro]}
             </button>
           ))}
         </div>
