@@ -542,12 +542,9 @@ def predecir_gravedad(request: Request, contexto: ContextoSiniestro):
 
 def _asegurar_tabla_reportes(conn):
     """
-    CREATE TABLE IF NOT EXISTS en vez de una migracion aparte: el proyecto no tiene
-    herramienta de migraciones (ver cargar_hotspots.py, que asume la tabla de
-    hotspots ya creada a mano), y para una tabla tan simple agregar una es mas
-    ceremonia que valor. Se ejecuta al principio de cada endpoint que toca la
-    tabla, es barato en Postgres cuando ya existe, y el sistema funciona igual
-    en un clone limpio sin pasos manuales de setup adicionales.
+    Compatibilidad para instalaciones existentes. Las instalaciones nuevas se
+    inicializan con ``backend/migrar.py`` y las migraciones versionadas; este
+    guard evita romper una instancia aún no migrada durante la transición.
     """
     cur = conn.cursor()
     cur.execute("""
@@ -570,7 +567,7 @@ def _asegurar_tabla_reportes(conn):
 
 def _asegurar_tabla_confirmaciones(conn):
     """
-    Un voto ("confirma" / "desmiente") por dispositivo y por reporte -- el UNIQUE
+    Compatibilidad para instalaciones existentes. Un voto ("confirma" / "desmiente") por dispositivo y por reporte -- el UNIQUE
     de mas abajo es lo que hace que votar de nuevo actualice el voto propio en vez
     de sumar otro (ver confirmar_reporte, INSERT ... ON CONFLICT). ON DELETE CASCADE
     porque una confirmacion sin su reporte no significa nada.

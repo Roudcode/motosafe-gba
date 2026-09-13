@@ -34,6 +34,12 @@ pip install -r ../requirements.txt
 
 Copiar `.env.example` a `.env` en `backend/` (o en la raíz, según corresponda) y completar `DATABASE_URL` si difiere del default de `docker-compose.yml`. `OPEN_METEO_BASE_URL` y `CORS_ALLOWED_ORIGINS` ya vienen con un default que funciona en desarrollo local, no hace falta tocarlos. `TOMTOM_API_KEY` es opcional: sin ella el backend arranca igual, pero la capa de tráfico en vivo (`/trafico/tiles`) y el cálculo de rutas (`/rutas`) no van a funcionar (ver [tomtom.com/developer](https://developer.tomtom.com) para sacar una key gratuita).
 
+Aplicar las migraciones versionadas de reportes antes de iniciar la API (se puede repetir sin modificar migraciones ya aplicadas):
+
+```
+python migrar.py
+```
+
 Cargar los hotspots en la base (una sola vez, o cada vez que se regeneren los datos):
 
 ```

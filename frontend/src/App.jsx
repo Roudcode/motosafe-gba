@@ -1676,6 +1676,9 @@ function App() {
           {rutasConScore.length === 1 && (
             <p className="ruta-sin-alternativa">No encontramos una ruta alternativa razonable para este tramo.</p>
           )}
+          <p className="ruta-cobertura-aviso">
+            La exposición compara zonas históricas registradas; no estima la probabilidad de un siniestro ni confirma cobertura completa fuera de las áreas con datos.
+          </p>
           {zonasCruzadasOrdenadas.length > 0 && (
             <div className="ruta-resumen-detalle">
               {zonasCruzadasOrdenadas.slice(0, 6).map((z) => (

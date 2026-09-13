@@ -613,6 +613,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-resumen-icono { color: var(--text-dimmer); flex-shrink: 0; }
 .desglose-pts { font-size: var(--fs-2xs); color: var(--text-dimmer); margin-left: 2px; opacity: 0.7; }
 .ruta-sin-alternativa { font-size: var(--fs-sm); color: var(--text-dimmer); margin-top: 4px; font-style: italic; }
+.ruta-cobertura-aviso { font-size: var(--fs-sm); color: var(--text-dimmer); margin: 8px 0 0; line-height: 1.35; }
 .ruta-resumen-detalle { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); max-height: 160px; overflow-y: auto; }
 .ruta-resumen-mas { font-size: var(--fs-sm); color: var(--text-dimmer); margin-top: 6px; font-style: italic; }
 .ruta-resumen-item { display: flex; align-items: center; gap: 8px; font-size: var(--fs-base); padding: 3px 0; }

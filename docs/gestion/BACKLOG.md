@@ -10,7 +10,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 
 | ID | Estado | Alcance real y evidencia |
 |---|---|---|
-| A05 | En curso | Se quitó el refuerzo de reportes de la función que puntúa riesgo vial; falta modelar y mostrar cobertura explícita. |
+| A05 | En curso | Se quitó el refuerzo de reportes de la función que puntúa riesgo vial y el comparador aclara que la exposición usa zonas registradas, no probabilidad ni cobertura completa. Falta modelar cobertura explícita por tramo. |
 | A06 | En curso | Los empates de rutas ya no se etiquetan automáticamente como la opción menos expuesta; falta validar pesos y capas con rutas de referencia. |
 | A07 | Validado parcialmente | Borrado con token privado de una sola entrega, UUID canónico, token no expuesto por GET y prueba de contrato. Quedan migración versionada, cuotas y política de votos. |
 | A08 | Validado | Prensa externa pasa a nodos DOM con texto y solo enlaces `http(s)`; cubierto por revisión y build. |
@@ -18,6 +18,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A10 | En curso | Se eliminó la doble aplicación de lluvia y se actualizan hotspots cada cinco minutos. Falta TTL/procedencia y semántica completa de actualización. |
 | A12 | Validado parcialmente | Pool con máximo físico, espera acotada, rollback y prueba unitaria. Falta integración contra PostgreSQL real. |
 | A13 | Validado | Límites de coordenadas/hora/edad y respuesta vacía de hotspots probados. |
+| A14 | En curso | Se agregó `backend/migrar.py` y la migración SQL versionada de reportes/confirmaciones. Falta ejecutarla contra PostgreSQL aislado y retirar la compatibilidad DDL por request. |
 | A15 | Validado parcialmente | La primera carga se libera ante fallo de hotspots; faltan estados y reintentos coherentes para todos los servicios. |
 | A16 | En curso | La velocidad se limpia al detenerse y deja de conservar una ETA obsoleta. Faltan trazas GPS y revisión completa de progreso. |
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |
