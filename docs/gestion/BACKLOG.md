@@ -29,9 +29,12 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A11 | En curso | Se documentaron unidad, procedencia, TTL y límites de cada capa; la tarjeta de ruta muestra cobertura separada por fuente. Faltan fechas diferenciadas visibles desde backend y distancia a segmentos. |
 | D03 | En curso | Se agregó plantilla de rutas de referencia para cobertura parcial, empate, desvío y discordancia entre fuentes. Faltan casos independientes revisados. |
 | D04 | En curso | Se definió la evidencia para variar radio/pesos; faltan corridas y reporte de sensibilidad real. |
-| A12 | Validado parcialmente | Pool con máximo físico, espera acotada, rollback y prueba unitaria. Falta integración contra PostgreSQL real. |
+| A12 | Validado parcialmente | Pool con máximo físico, espera acotada, rollback y prueba unitaria. `/health` reporta estado de DB sin secretos. Falta integración contra PostgreSQL real. |
 | A13 | Validado | Límites de coordenadas/hora/edad y respuesta vacía de hotspots probados. |
-| A14 | En curso | Se agregó `backend/migrar.py` y la migración SQL versionada de reportes/confirmaciones. Falta ejecutarla contra PostgreSQL aislado y retirar la compatibilidad DDL por request. |
+| A14 | En curso | Se agregó `backend/migrar.py`, migración versionada y procedimiento de ejecución. Falta ejecutarla contra PostgreSQL aislado y retirar la compatibilidad DDL por request. |
+| T04 | Validado parcialmente | `/health` informa servicio, disponibilidad de base y hora UTC sin datos personales. Faltan métricas de latencia/error por servicio y retención de logs. |
+| T05 | Validado parcialmente | CI en GitHub valida lint, tests y build frontend, más sintaxis backend en Python 3.12. Falta corrida confirmada en GitHub e integración con PostgreSQL. |
+| T06 | En curso | Procedimiento documentado de dump/restauración aislada; falta ejecutar y registrar un ensayo real. |
 | A15 | En curso | La primera carga se libera ante fallo de hotspots; errores HTTP de capas secundarias conservan la última caché, muestran un aviso y permiten reintentar la carga completa. Faltan reintentos independientes y estados de fecha por capa. |
 | A16 | En curso | La velocidad se limpia al detenerse y deja de conservar una ETA obsoleta. Faltan trazas GPS y revisión completa de progreso. |
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |

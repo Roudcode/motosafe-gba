@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import os
 import hashlib
 import secrets
 from datetime import datetime, timezone
@@ -396,6 +397,28 @@ def niveles_relativos_desde_matriz(matriz_probabilidades, clases, cortes):
 @app.get("/")
 def raiz():
     return {"mensaje": "MotoSafe GBA API funcionando"}
+
+
+@app.get("/health")
+def estado_salud():
+    """Sonda mínima para despliegue: no devuelve configuración ni datos de usuarios."""
+    estado_db = "no_verificada"
+    try:
+        conn = _pool_conexiones.getconn()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT 1")
+            cur.close()
+            estado_db = "ok"
+        finally:
+            _pool_conexiones.putconn(conn)
+    except Exception:
+        estado_db = "no_disponible"
+    return {
+        "estado": "ok" if estado_db == "ok" else "degradado",
+        "base_datos": estado_db,
+        "servidor_utc": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @app.get("/hotspots")

@@ -136,6 +136,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Decisión: DEC-009 separa la cobertura necesaria para una recomendación de las capas informativas complementarias.
 - Pruebas ejecutadas: 79 pruebas de frontend aprobadas, lint aprobado, build de producción aprobado. `git diff --check` aprobado. El evaluador de prensa rechaza correctamente una plantilla vacía para no fabricar una métrica.
 - Límite: no hay aún rutas de referencia ni muestra humana etiquetada; no se validaron pesos/radios, precisión del scraper ni fechas de generación de capas contra fuentes externas.
+
+## 2026-09-13 — SES-023 — Operación del backend
+
+- IDs: A12, A14, T01, T04, T05, T06.
+- Cambio: se corrigió la importación de configuración de entorno, se agregó sonda `/health` sin secretos, `requirements.txt`, CI y procedimiento operativo para migración, backup y restauración.
+- Pruebas ejecutadas: prueba de contrato de `/health`, sintaxis backend y revisión de diff antes de commit.
+- Límite: no hubo PostgreSQL/Docker operativo en esta sesión, por lo que T01, ejecución de migraciones y restauración siguen pendientes de evidencia real.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido

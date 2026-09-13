@@ -40,6 +40,16 @@ def test_raiz_responde_ok():
     assert "mensaje" in r.json()
 
 
+def test_health_informa_estado_de_base_sin_exponer_configuracion():
+    conexion = _mock_db([])
+    with patch("main.psycopg2.connect", return_value=conexion):
+        r = client.get("/health")
+    assert r.status_code == 200
+    assert r.json()["estado"] == "ok"
+    assert r.json()["base_datos"] == "ok"
+    assert "DATABASE_URL" not in r.text
+
+
 def test_pool_no_supera_el_maximo_y_reutiliza_conexion_limpia():
     primera, segunda = _ConexionFalsaPool(), _ConexionFalsaPool()
     pool = main._PoolConexiones(maxsize=2, timeout=0)
