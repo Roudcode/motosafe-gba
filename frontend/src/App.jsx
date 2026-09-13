@@ -477,6 +477,7 @@ function App() {
           fuente: r.fuente,
           tipoIncidente: r.tipo_incidente,
           relacionadoMoto: Boolean(r.relacionado_moto),
+          fechaReferencia: r.publicado_en || r.creado_en,
           creadoEn: r.creado_en,
         }))))
         .catch(() => { /* backend caido: se mantienen los que ya estaban cargados */ })

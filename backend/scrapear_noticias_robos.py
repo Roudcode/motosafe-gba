@@ -263,6 +263,8 @@ import sys
 import time
 import unicodedata
 import xml.etree.ElementTree as ET
+from datetime import timezone
+from email.utils import parsedate_to_datetime
 
 import httpx
 import psycopg2
@@ -859,8 +861,24 @@ def parsear_rss(xml_bytes):
         titulo = (item.findtext('title') or '').strip()
         link = (item.findtext('link') or '').strip()
         descripcion = re.sub(r'<[^>]+>', ' ', item.findtext('description') or '').strip()
+        publicado_en = None
+        fecha_rss = (item.findtext('pubDate') or '').strip()
+        if fecha_rss:
+            try:
+                publicado_en = parsedate_to_datetime(fecha_rss)
+                if publicado_en.tzinfo is None:
+                    publicado_en = publicado_en.replace(tzinfo=timezone.utc)
+            except (TypeError, ValueError, IndexError):
+                # Una fecha con formato no estándar no invalida la nota: el
+                # backend usará la fecha de ingesta como respaldo visible.
+                pass
         if titulo and link:
-            items.append({'titulo': titulo, 'link': link, 'descripcion': html.unescape(descripcion)})
+            items.append({
+                'titulo': titulo,
+                'link': link,
+                'descripcion': html.unescape(descripcion),
+                'publicado_en': publicado_en,
+            })
     return items
 
 
@@ -1011,7 +1029,7 @@ def _asegurar_tabla(cur):
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
 
 
-def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores):
+def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores, publicado_en=None):
     """Cola comun del pipeline a partir de titulo+descripcion ya conocidos,
     vengan de un RSS directo (ya los trae) o de bajar y parsear una nota
     individual (ver _procesar_url): categoria_de -> ubicacion -> geocode ->
@@ -1057,7 +1075,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
             INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (url_fuente) DO NOTHING
-        """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, None))
+        """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en))
         if cur.rowcount > 0:
             contadores['guardadas'] += 1
 
@@ -1137,7 +1155,10 @@ def main():
             continue
         print(f"  {len(items)} items en el feed")
         for item in items:
-            _evaluar_y_guardar(item['titulo'], item['descripcion'], item['link'], nombre_fuente, guardar, cur, contadores)
+            _evaluar_y_guardar(
+                item['titulo'], item['descripcion'], item['link'], nombre_fuente,
+                guardar, cur, contadores, item['publicado_en'],
+            )
 
     for nombre_fuente, url_sitemap, segmento in FUENTES_SITEMAP_SECCIONADO:
         print(f"\n=== {nombre_fuente} (sitemap seccionado: {url_sitemap}) ===")

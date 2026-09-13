@@ -1,4 +1,4 @@
-from scrapear_noticias_robos import categoria_de, extraer_ubicacion, encontrar_zona, relacionado_con_moto
+from scrapear_noticias_robos import categoria_de, extraer_ubicacion, encontrar_zona, parsear_rss, relacionado_con_moto
 
 
 def test_categoria_no_confunde_subcadena_de_robo():
@@ -24,3 +24,12 @@ def test_clasifica_inseguridad_y_moto_como_atributos_independientes():
     assert relacionado_con_moto('Motociclista herido en Quilmes', '') is True
     assert relacionado_con_moto('La moto de agua fue secuestrada', '') is False
     assert relacionado_con_moto('Un auto chocó en Quilmes', '') is False
+
+
+def test_rss_conserva_fecha_de_publicacion():
+    rss = b'''<?xml version="1.0"?><rss><channel><item>
+        <title>Robo en Quilmes</title><link>https://ejemplo.test/nota</link>
+        <description>Una noticia</description><pubDate>Sun, 13 Sep 2026 15:30:00 -0300</pubDate>
+    </item></channel></rss>'''
+    item = parsear_rss(rss)[0]
+    assert item['publicado_en'].isoformat() == '2026-09-13T15:30:00-03:00'

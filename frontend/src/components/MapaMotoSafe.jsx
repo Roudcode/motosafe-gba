@@ -93,7 +93,7 @@ function contenidoPopupPrensa(rep, etiquetaTipo, horaActual) {
   contenido.className = 'popup-content'
   const fuente = document.createElement('span')
   fuente.className = 'popup-nivel popup-prensa-fuente'
-  fuente.textContent = `${etiquetaTipo} · ${rep.fuente || 'Fuente sin identificar'} · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
+  fuente.textContent = `${etiquetaTipo} · ${rep.fuente || 'Fuente sin identificar'} · ${formatearAntiguedad(rep.fechaReferencia || rep.creadoEn, horaActual)}`
   const titular = document.createElement('strong')
   titular.textContent = rep.titular || 'Noticia sin titular'
   const precision = document.createElement('span')

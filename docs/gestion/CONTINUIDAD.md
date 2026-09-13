@@ -44,6 +44,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-024 reemplazó el reintento por recarga de página por reintentos independientes de corredores e inseguridad, conservando caché e indicando fuentes fallidas y última consulta. Los estados completos de reportes siguen pendientes de contrato backend.
 - SES-025 corrigió el progreso GPS para medir sobre segmentos de ruta y no sólo vértices; las pruebas cubren avance intermedio continuo. Faltan trazas reales y perfilado de rendimiento.
 - SES-031 amplió la ingesta de prensa: hechos `robo`, `inseguridad` y `choque` se clasifican por separado del atributo persistente `relacionado_moto`; la interfaz permite filtrar Motos sin ocultar el resto. Se añadieron dos RSS de búsqueda pública para ampliar el descubrimiento de medios locales. Falta ejecución real, conjunto humano etiquetado y deduplicación semántica.
+- SES-032 conserva la fecha real de publicación de RSS y la usa en la vigencia, orden, ajustes de riesgo y antigüedad visible. Las fuentes sin fecha siguen usando la de ingesta. Falta extraer fecha de páginas/sitemaps y ejecutar contra PostgreSQL real.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

@@ -876,19 +876,18 @@ def _asegurar_tabla_prensa(conn):
 def listar_reportes_prensa():
     """
     Igual que /reportes pero de la tabla de prensa: filtra por VIGENCIA_HORAS_PRENSA
-    (30 dias fijo, no varia por nada). Desde v5 hay dos tipo_incidente posibles
-    ('robo', 'choque' -- ver scrapear_noticias_robos.py), cada uno con su
-    propio icono en el frontend. No se borra nada de la base, solo deja de
-    devolverse.
+    (30 dias fijo, no varia por nada). La vigencia usa la fecha de publicación
+    cuando existe y la fecha de ingesta sólo como respaldo. No se borra nada
+    de la base, solo deja de devolverse.
     """
     conn = _pool_conexiones.getconn()
     try:
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, creado_en
+            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en, creado_en
             FROM reportes_prensa
-            ORDER BY creado_en DESC
+            ORDER BY COALESCE(publicado_en, creado_en) DESC
         """)
         filas = cur.fetchall()
         cur.close()
@@ -898,7 +897,7 @@ def listar_reportes_prensa():
     ahora = datetime.now(timezone.utc)
     return [
         fila for fila in filas
-        if (ahora - fila['creado_en']).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
+        if (ahora - (fila['publicado_en'] or fila['creado_en'])).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
     ]
 
 
@@ -949,20 +948,20 @@ def _obtener_reportes_recientes_por_tipo(tipo_incidente, dias=DIAS_AJUSTE_RECIEN
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT lat, lng, titular, creado_en
+            SELECT lat, lng, titular, COALESCE(publicado_en, creado_en) AS fecha_referencia
             FROM reportes_prensa
             WHERE tipo_incidente = %s
-            ORDER BY creado_en DESC
+            ORDER BY COALESCE(publicado_en, creado_en) DESC
         """, (tipo_incidente,))
         filas = cur.fetchall()
         cur.close()
         ahora = datetime.now(timezone.utc)
         for fila in filas:
             try:
-                lat, lng, titular, creado_en = fila['lat'], fila['lng'], fila['titular'], fila['creado_en']
-                if lat is None or lng is None or creado_en is None:
+                lat, lng, titular, fecha_referencia = fila['lat'], fila['lng'], fila['titular'], fila['fecha_referencia']
+                if lat is None or lng is None or fecha_referencia is None:
                     continue
-                if (ahora - creado_en).total_seconds() / 3600 > dias * 24:
+                if (ahora - fecha_referencia).total_seconds() / 3600 > dias * 24:
                     continue
                 reportes.append({'lat': float(lat), 'lng': float(lng), 'titular': titular})
             except (KeyError, TypeError, ValueError):

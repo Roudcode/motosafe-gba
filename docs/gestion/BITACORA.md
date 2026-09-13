@@ -203,6 +203,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas ejecutadas: compilación sintáctica de `backend/main.py` y `backend/scrapear_noticias_robos.py` con el Python alternativo de Codex; `npm.cmd run lint`, Vitest (80 pruebas) y `git diff --check` aprobados. La prueba unitaria nueva no se ejecutó: ese Python alternativo no incluye `pytest` y el `venv` del backend sigue apuntando a un intérprete base inexistente.
 - Límite: no se ejecutó una corrida de red ni se insertaron noticias; la búsqueda agregada puede repetir o modificar titulares. No se automatizan redes sociales ni se eluden restricciones: una integración social requiere API oficial, feed permitido o exportación autorizada. Falta validación contra PostgreSQL y muestra humana etiquetada.
 
+## 2026-09-13 — SES-032 — Vigencia por fecha de publicación
+
+- IDs: A09, A10, A11.
+- Cambio: el parser RSS extrae `pubDate` cuando existe, lo guarda como `publicado_en` y el backend lo usa para ordenar, limitar la vigencia de treinta días y aplicar ajustes recientes. La capa muestra esa antigüedad, en lugar de hacer pasar por reciente una noticia antigua descubierta hoy. La fecha de ingesta se conserva como respaldo para fuentes sin fecha.
+- Pruebas: compilación sintáctica de backend y de la nueva prueba; `npm.cmd run lint`, Vitest (80 pruebas) y `git diff --check` aprobados. La prueba de parser no corrió por el mismo límite de `pytest`/`venv` documentado en SES-031.
+- Límite: sitemaps y páginas HTML todavía no extraen fecha de publicación; PostgreSQL real no fue validado en esta sesión.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.
