@@ -3,6 +3,7 @@
 Separar decisiones tomadas de recomendaciones. Una propuesta de Codex/Claude no equivale a aprobación de Rodo.
 
 | ID | Fecha | Estado | Decisión y origen | Consecuencia |
+| DEC-008 | 2026-09-13 | Vigente | Para A01–A04, el score se define como gravedad condicional a un siniestro observado. Rodo autorizó completar el bloque académico; la definición se formalizó sin cambiar el uso productivo. | No se comunica como probabilidad de ocurrencia, seguridad de una ruta ni riesgo individual. La cobertura espacial se evalúa por separado. |
 |---|---|---|---|---|
 | DEC-001 | 2026-09-11 | Adoptada | Rodo solicita centralizar documentación, auditoría y futuros cambios para retomar con Claude. | `docs/README.md` es la entrada; `docs/gestion/` contiene continuidad, backlog, bitácora, decisiones y validación. |
 | DEC-002 | 2026-09-11 | Adoptada, implementación documental | Preservar el assessment fechado y registrar evolución fuera de esa fotografía. | Correcciones en BACKLOG/BITACORA; nueva evidencia en carpetas fechadas. |

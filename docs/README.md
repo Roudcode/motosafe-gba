@@ -16,6 +16,10 @@
 |---|---|
 | [Assessment integral 2026-09-11](assessment_2026-09-11/ASSESSMENT.md) | Diagnóstico histórico con 23 hallazgos. No actualizarlo como si fuera el estado futuro; registrar correcciones en backlog y bitácora. |
 | [Evidencias](assessment_2026-09-11/evidencias.json), [inventario](assessment_2026-09-11/inventario.csv), [script](assessment_2026-09-11/auditar.py) | Resultados y mecanismo de reproducción de aquella revisión. |
+| [Contrato y evaluación del modelo](modelo/CONTRATO_Y_EVALUACION.md) | Definición defendible del score, protocolo temporal y límites de faltantes/calibración. |
+| [Ficha de siniestros con moto](datos/FICHA_SINIESTROS_MOTO.md) | Unidad de análisis, fuentes locales, transformaciones y límites de los datos. |
+| [Contrato y evaluación del modelo](modelo/CONTRATO_Y_EVALUACION.md) | Definición defendible del score, protocolo temporal y límites de faltantes/calibración. |
+| [Ficha de siniestros con moto](datos/FICHA_SINIESTROS_MOTO.md) | Unidad de análisis, fuentes locales, transformaciones y límites de los datos. |
 | [Guía detallada](1_Guia_DETALLADA.md) / [resumen](1_Guia_RESUMEN.md) | Explicación general; contiene información histórica desactualizada. Pendiente sincronizar con versión validada. |
 | [Manual detallado](2_Manual_DETALLADO.md) / [resumen](2_Manual_RESUMEN.md) | Operación; no ejecutar Run All del notebook para recuperar errores sin resolver A19. |
 | [Resultados detallados](3_Resultados_DETALLADO.md) / [resumen](3_Resultados_RESUMEN.md) | Resultados de versiones anteriores; no adjudicarlos automáticamente al modelo vigente. |

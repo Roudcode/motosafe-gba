@@ -120,6 +120,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - IDs: A23, V10.
 - Cambio: los avisos de fallo del backend y de capas usan regiones ARIA para lectores de pantalla.
 - Pruebas: lint y 75 pruebas frontend aprobadas.
+
+## 2026-09-13 — SES-021 — Defensa académica y evaluación temporal reproducible
+
+- IDs: A01, A02, A03, A04, D01, D02.
+- Cambio: se incorporaron el contrato académico del modelo, una ficha inicial de datos y `notebooks/evaluar_modelo_academico.py`. El evaluador separa entrenamiento, selección y prueba por año; ajusta imputación/codificación sólo con entrenamiento, excluye el índice agregado sin fecha de corte y escribe evidencia sólo bajo una ruta indicada por parámetro. También compara ablaciones demográficas, faltantes, Brier, ECE, matriz de confusión e intervalo bootstrap de F1.
+- Decisión: DEC-008 deja explícito que la salida es gravedad condicionada a un siniestro, no ocurrencia por viaje.
+- Pruebas ejecutadas: compilación sintáctica con el Python alternativo de Codex; se creó `notebooks/__pycache__/evaluar_modelo_academico.cpython-312.pyc`.
+- Límite: no se ejecutó la evaluación completa ni se reportaron métricas nuevas. El `venv` local conserva paquetes pero su intérprete base no existe; el Python alternativo no completó la carga de dependencias científicas en esta sesión. No se tocaron datasets ni artefactos productivos.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido

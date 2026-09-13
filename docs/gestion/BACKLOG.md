@@ -11,6 +11,16 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | ID | Estado | Alcance real y evidencia |
 |---|---|---|
 | A05 | Validado parcialmente | El comparador calcula proporción de trazado cercana a zonas registradas; bajo 60% muestra cobertura insuficiente y no otorga “menor exposición”. Falta validación geográfica independiente y cobertura por fuente. |
+| A01 | Validado parcialmente | Contrato formal y etiquetas de interfaz dejan explícita la gravedad condicionada a un siniestro. Falta revisión con dirección académica y consistencia de todas las guías históricas. |
+| A02 | En curso | Se incorporó evaluación temporal con selección y test separados, preprocesamiento ajustado sólo en train y salida reproducible. Falta ejecución real y evidencia resultante. |
+| A03 | En curso | El protocolo mide faltantes por período, métricas por ausencia de edad y ablaciones demográficas. Falta ejecución y análisis de sus resultados, sin inferencias causales. |
+| A04 | En curso | El protocolo calcula Brier, ECE, matriz de confusión e intervalos bootstrap. Falta evidencia real y una decisión explícita de costos/umbrales de alertas. |
+| D01 | En curso | Se añadió ficha inicial del dataset de siniestros y contrato del modelo. Faltan fichas de todas las fuentes, licencia, procedencia primaria y versiones verificadas. |
+| D02 | En curso | El evaluador calcula intervalo bootstrap descriptivo para F1. Faltan resultados reales y estabilidad por año/comuna con soporte suficiente. |
+| A01 | Validado parcialmente | Contrato formal y etiquetas de interfaz dejan explícita la gravedad condicionada a un siniestro. Falta revisión con dirección académica y consistencia de todas las guías históricas. |
+| A02 | En curso | Se incorporó evaluación temporal con selección y test separados, preprocesamiento ajustado sólo en train y salida reproducible. Falta ejecución real y evidencia resultante. |
+| A03 | En curso | El protocolo mide faltantes por período, métricas por ausencia de edad y ablaciones demográficas. Falta ejecución y análisis de sus resultados, sin inferencias causales. |
+| A04 | En curso | El protocolo calcula Brier, ECE, matriz de confusión e intervalos bootstrap. Falta evidencia real y una decisión explícita de costos/umbrales de alertas. |
 | A06 | En curso | Los empates de rutas ya no se etiquetan automáticamente como la opción menos expuesta; falta validar pesos y capas con rutas de referencia. |
 | A07 | Validado parcialmente | Borrado con token privado de una sola entrega, UUID canónico, token no expuesto por GET y prueba de contrato. Quedan migración versionada, cuotas y política de votos. |
 | A08 | Validado | Prensa externa pasa a nodos DOM con texto y solo enlaces `http(s)`; cubierto por revisión y build. |

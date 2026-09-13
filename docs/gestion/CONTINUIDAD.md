@@ -38,6 +38,8 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - Última verificación local: backend 55 pruebas aprobadas en SES-004; SES-005 verificó sintaxis de `migrar.py` con Python alternativo y frontend 73 con `node node_modules/vitest/vitest.mjs run`, lint y build aprobados. El `venv` del backend ya no puede iniciar porque su Python base no existe en la ruta configurada. Build advierte un bundle JavaScript de 1,29 MB antes de gzip. No hubo E2E contra PostgreSQL, servicios de ruteo ni navegador.
 - Métricas reconstruidas del pickle en el split declarado: macro-F1 0,378; GRAVE precision 0,111/recall 0,735; MORTAL precision 0,116/recall 0,482. **No son una nueva prueba independiente.**
 - Navegador rechazó certificado HTTPS local. No hay certificación visual de esta revisión ni E2E con PostgreSQL/TomTom reales.
+- SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
+- SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles
 
