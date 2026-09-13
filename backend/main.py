@@ -610,6 +610,23 @@ def _asegurar_tabla_confirmaciones(conn):
     cur.close()
 
 
+_esquema_reportes_listo = False
+_lock_esquema_reportes = threading.Lock()
+
+
+def _asegurar_esquema_reportes_una_vez(conn):
+    """Compatibilidad transitoria sin ejecutar DDL en cada request."""
+    global _esquema_reportes_listo
+    if _esquema_reportes_listo:
+        return
+    with _lock_esquema_reportes:
+        if _esquema_reportes_listo:
+            return
+        _asegurar_tabla_reportes(conn)
+        _asegurar_tabla_confirmaciones(conn)
+        _esquema_reportes_listo = True
+
+
 class ReporteNuevo(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lng: float = Field(ge=-180, le=180)
@@ -694,8 +711,7 @@ def confirmar_reporte(request: Request, reporte_id: int, confirmacion: Confirmac
     """
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_tabla_reportes(conn)
-        _asegurar_tabla_confirmaciones(conn)
+        _asegurar_esquema_reportes_una_vez(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT autor_id FROM reportes_colaborativos WHERE id = %s", (reporte_id,))
         reporte = cur.fetchone()
@@ -731,8 +747,7 @@ def listar_reportes():
     """
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_tabla_reportes(conn)
-        _asegurar_tabla_confirmaciones(conn)
+        _asegurar_esquema_reportes_una_vez(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT r.id, r.lat, r.lng, r.categoria, r.creado_en,
