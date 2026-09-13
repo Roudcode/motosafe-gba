@@ -17,7 +17,7 @@ import {
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
-  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularRutasConScore,
+  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
 } from './utils/riesgoRuta'
 import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
@@ -1130,6 +1130,10 @@ function App() {
     () => calcularCoberturaRegistrada(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
     [rutasCalculadas, zonasRiesgoTodas]
   )
+  const coberturaPorFuente = useMemo(
+    () => calcularCoberturaPorFuente(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
+    [rutasCalculadas, zonasRiesgoTodas]
+  )
   const zonasCruzadasActual = useMemo(
     () => zonasCruzadasPorRuta[rutaSeleccionada] || [],
     [zonasCruzadasPorRuta, rutaSeleccionada]
@@ -1148,8 +1152,8 @@ function App() {
   }, [zonasCruzadasActual])
 
   const rutasConScore = useMemo(
-    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta),
-    [rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta]
+    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta, coberturaPorFuente),
+    [rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta, coberturaPorFuente]
   )
 
   const idxMasRapida = useMemo(() => {
@@ -1682,6 +1686,10 @@ function App() {
                   : r.riesgo === 0
                   ? <><CircleCheck size={12} /> sin zonas registradas cerca</>
                   : <><TriangleAlert size={12} /> exposición {NIVELES[r.nivelRelativo]?.label.toLowerCase()} entre alternativas</>}
+              </span>
+              <span className="ruta-opcion-cobertura" title="Proporción de puntos del trazado próximos a registros de cada fuente; no mide la probabilidad de un siniestro.">
+                Cobertura: siniestros {r.coberturaPorFuente.siniestro == null ? 'sin datos' : `${Math.round(r.coberturaPorFuente.siniestro * 100)}%`}
+                {' · '}inseguridad {r.coberturaPorFuente.inseguridad == null ? 'sin datos' : `${Math.round(r.coberturaPorFuente.inseguridad * 100)}%`}
               </span>
               {r.riesgo > 0 && (
                 <span className="ruta-opcion-desglose">

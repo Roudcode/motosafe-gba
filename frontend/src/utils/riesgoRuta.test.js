@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularRutasConScore,
+  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
 } from './riesgoRuta'
 
 describe('unificarZonasInseguridad', () => {
@@ -151,6 +151,28 @@ describe('calcularCoberturaRegistrada', () => {
   })
 })
 
+describe('calcularCoberturaPorFuente', () => {
+  it('no deja que una fuente cubra artificialmente a la otra', () => {
+    const rutas = [{ coords: [[-34.6, -58.4], [-34.601, -58.401]] }]
+    const zonas = [
+      { lat: -34.6, lng: -58.4, tipoRiesgo: 'inseguridad' },
+      { lat: -35.2, lng: -59.2, tipoRiesgo: 'siniestro' },
+    ]
+    const [cobertura] = calcularCoberturaPorFuente(rutas, zonas, 0.5)
+    expect(cobertura.inseguridad).toBeGreaterThanOrEqual(0.5)
+    expect(cobertura.siniestro).toBe(0)
+  })
+
+  it('distingue una fuente no disponible de una fuente sin cobertura', () => {
+    const [cobertura] = calcularCoberturaPorFuente(
+      [{ coords: [[-34.6, -58.4]] }],
+      [{ lat: -34.6, lng: -58.4, tipoRiesgo: 'siniestro' }], 0.5
+    )
+    expect(cobertura.siniestro).toBe(1)
+    expect(cobertura.inseguridad).toBeNull()
+  })
+})
+
 describe('calcularRutasConScore', () => {
   const rutasCalculadas = [
     { min: 12, coords: [] },
@@ -210,6 +232,14 @@ describe('calcularRutasConScore', () => {
     const cruces = [[], []]
     const [ruta1] = calcularRutasConScore(rutasCalculadas, cruces)
     expect(ruta1.min).toBe(12)
+  })
+
+  it('usa cobertura de siniestros como cobertura registrada para recomendar', () => {
+    const [ruta] = calcularRutasConScore(rutasCalculadas, [[], []], [1, 1], [
+      { siniestro: 0.4, inseguridad: 1 }, { siniestro: 1, inseguridad: 0.1 },
+    ])
+    expect(ruta.coberturaRegistrada).toBe(0.4)
+    expect(ruta.coberturaPorFuente.inseguridad).toBe(1)
   })
 })
 

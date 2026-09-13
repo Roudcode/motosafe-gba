@@ -128,6 +128,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Decisión: DEC-008 deja explícito que la salida es gravedad condicionada a un siniestro, no ocurrencia por viaje.
 - Pruebas ejecutadas: compilación sintáctica con el Python alternativo de Codex; se creó `notebooks/__pycache__/evaluar_modelo_academico.cpython-312.pyc`.
 - Límite: no se ejecutó la evaluación completa ni se reportaron métricas nuevas. El `venv` local conserva paquetes pero su intérprete base no existe; el Python alternativo no completó la carga de dependencias científicas en esta sesión. No se tocaron datasets ni artefactos productivos.
+
+## 2026-09-13 — SES-022 — Cobertura y procedencia de rutas
+
+- IDs: A05, A06, A09, A10, A11, D03, D04.
+- Cambio: la cobertura se calcula y presenta por fuente. La elegibilidad de «menor exposición» usa sólo siniestros; inseguridad queda desglosada. Se agregaron pruebas de separación de fuentes, plantilla de rutas de referencia y evaluador local de prensa que mide únicamente etiquetas humanas.
+- Decisión: DEC-009 separa la cobertura necesaria para una recomendación de las capas informativas complementarias.
+- Pruebas ejecutadas: 79 pruebas de frontend aprobadas, lint aprobado, build de producción aprobado. `git diff --check` aprobado. El evaluador de prensa rechaza correctamente una plantilla vacía para no fabricar una métrica.
+- Límite: no hay aún rutas de referencia ni muestra humana etiquetada; no se validaron pesos/radios, precisión del scraper ni fechas de generación de capas contra fuentes externas.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido

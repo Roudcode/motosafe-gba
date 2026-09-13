@@ -39,6 +39,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - Métricas reconstruidas del pickle en el split declarado: macro-F1 0,378; GRAVE precision 0,111/recall 0,735; MORTAL precision 0,116/recall 0,482. **No son una nueva prueba independiente.**
 - Navegador rechazó certificado HTTPS local. No hay certificación visual de esta revisión ni E2E con PostgreSQL/TomTom reales.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
+- SES-022 separó la cobertura de rutas por fuente: inseguridad no puede completar artificialmente cobertura de siniestros. La interfaz muestra ambos porcentajes y requiere cobertura histórica de siniestros para recomendar menor exposición. Se añadieron protocolos de evidencia para rutas y prensa; faltan casos humanos/externos y fechas de artefacto expuestas por backend.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

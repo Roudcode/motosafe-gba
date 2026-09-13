@@ -602,6 +602,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-opcion-datos { font-size: var(--fs-base); color: var(--text-soft); }
 .ruta-opcion-trafico { display: inline-flex; align-items: center; gap: 2px; color: var(--azul); }
 .ruta-opcion-riesgo { display: flex; align-items: center; gap: 4px; font-size: var(--fs-sm); }
+.ruta-opcion-cobertura { display: block; margin-top: 3px; color: var(--text-dimmer); font-size: var(--fs-xs); line-height: 1.3; }
 .ruta-opcion-riesgo.ok { color: var(--verde); }
 /* Mismos 4 colores que la leyenda de niveles del mapa (NIVELES en
    constants.js), para que "riesgo medio" en una tarjeta de ruta se lea

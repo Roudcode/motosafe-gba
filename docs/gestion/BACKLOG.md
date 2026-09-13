@@ -10,7 +10,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 
 | ID | Estado | Alcance real y evidencia |
 |---|---|---|
-| A05 | Validado parcialmente | El comparador calcula proporción de trazado cercana a zonas registradas; bajo 60% muestra cobertura insuficiente y no otorga “menor exposición”. Falta validación geográfica independiente y cobertura por fuente. |
+| A05 | Validado parcialmente | El comparador calcula cobertura por trazado y por fuente. La recomendación exige 60% sobre siniestros y muestra inseguridad aparte; `sin datos` no equivale a 0%. Falta validación geográfica independiente. |
 | A01 | Validado parcialmente | Contrato formal y etiquetas de interfaz dejan explícita la gravedad condicionada a un siniestro. Falta revisión con dirección académica y consistencia de todas las guías históricas. |
 | A02 | En curso | Se incorporó evaluación temporal con selección y test separados, preprocesamiento ajustado sólo en train y salida reproducible. Falta ejecución real y evidencia resultante. |
 | A03 | En curso | El protocolo mide faltantes por período, métricas por ausencia de edad y ablaciones demográficas. Falta ejecución y análisis de sus resultados, sin inferencias causales. |
@@ -21,11 +21,14 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A02 | En curso | Se incorporó evaluación temporal con selección y test separados, preprocesamiento ajustado sólo en train y salida reproducible. Falta ejecución real y evidencia resultante. |
 | A03 | En curso | El protocolo mide faltantes por período, métricas por ausencia de edad y ablaciones demográficas. Falta ejecución y análisis de sus resultados, sin inferencias causales. |
 | A04 | En curso | El protocolo calcula Brier, ECE, matriz de confusión e intervalos bootstrap. Falta evidencia real y una decisión explícita de costos/umbrales de alertas. |
-| A06 | En curso | Los empates de rutas ya no se etiquetan automáticamente como la opción menos expuesta; falta validar pesos y capas con rutas de referencia. |
+| A06 | En curso | Los empates no se etiquetan automáticamente y la cobertura de inseguridad ya no sustituye la de siniestros. Se creó plantilla de rutas de referencia; faltan casos revisados y sensibilidad de pesos. |
 | A07 | Validado parcialmente | Borrado con token privado de una sola entrega, UUID canónico, token no expuesto por GET y prueba de contrato. Quedan migración versionada, cuotas y política de votos. |
 | A08 | Validado | Prensa externa pasa a nodos DOM con texto y solo enlaces `http(s)`; cubierto por revisión y build. |
-| A09 | En curso | Límites de palabra, ambigüedades conocidas y pruebas de regresión. Falta conjunto etiquetado y medición de precisión/error geográfico. |
-| A10 | En curso | Se eliminó la doble aplicación de lluvia y se actualizan hotspots cada cinco minutos. Falta TTL/procedencia y semántica completa de actualización. |
+| A09 | En curso | Límites de palabra, ambigüedades y pruebas de regresión. Hay plantilla/evaluador reproducible para precisión, recall, abstención y error geográfico; falta conjunto humano etiquetado y métricas reales. |
+| A10 | En curso | Se eliminó la doble aplicación de lluvia y hotspots se actualizan cada cinco minutos. Se documentaron TTL y procedencia conocidos; faltan fechas de generación devueltas por backend. |
+| A11 | En curso | Se documentaron unidad, procedencia, TTL y límites de cada capa; la tarjeta de ruta muestra cobertura separada por fuente. Faltan fechas diferenciadas visibles desde backend y distancia a segmentos. |
+| D03 | En curso | Se agregó plantilla de rutas de referencia para cobertura parcial, empate, desvío y discordancia entre fuentes. Faltan casos independientes revisados. |
+| D04 | En curso | Se definió la evidencia para variar radio/pesos; faltan corridas y reporte de sensibilidad real. |
 | A12 | Validado parcialmente | Pool con máximo físico, espera acotada, rollback y prueba unitaria. Falta integración contra PostgreSQL real. |
 | A13 | Validado | Límites de coordenadas/hora/edad y respuesta vacía de hotspots probados. |
 | A14 | En curso | Se agregó `backend/migrar.py` y la migración SQL versionada de reportes/confirmaciones. Falta ejecutarla contra PostgreSQL aislado y retirar la compatibilidad DDL por request. |

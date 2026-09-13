@@ -81,6 +81,25 @@ export function calcularCoberturaRegistrada(rutasCalculadas, zonasRiesgoTodas, u
   })
 }
 
+// Cobertura separada por procedencia. Mezclar puntos de siniestros y delitos
+// puede hacer parecer cubierto un tramo para el que sólo existe una de las dos
+// fuentes. `null` significa que esa fuente no estuvo disponible, distinto de
+// 0 (fuente disponible pero sin puntos cerca del trazado).
+export function calcularCoberturaPorFuente(rutasCalculadas, zonasRiesgoTodas, umbralKm) {
+  const fuentes = ['siniestro', 'inseguridad']
+  return rutasCalculadas.map((ruta) => Object.fromEntries(fuentes.map((fuente) => {
+    const zonas = zonasRiesgoTodas.filter((zona) => zona.tipoRiesgo === fuente)
+    if (!zonas.length) return [fuente, null]
+    const puntos = ruta.coords || []
+    if (!puntos.length) return [fuente, 0]
+    const muestreados = puntos.length > 120 ? puntos.filter((_, i) => i % Math.ceil(puntos.length / 120) === 0) : puntos
+    const cubiertos = muestreados.filter(([lat, lng]) =>
+      zonas.some((zona) => distanciaKm({ lat, lng }, zona) <= umbralKm)
+    ).length
+    return [fuente, cubiertos / muestreados.length]
+  })))
+}
+
 // Arma, para cada ruta, el score total (suma de PESO_RIESGO de todo lo que
 // cruza) desglosado por eje, más el nivel más grave que atraviesa
 // (nivelMaximo) y el nivel relativo a las demás alternativas de este mismo
@@ -131,7 +150,7 @@ function nivelRelativoEnLote(score, indice, scoresDelLote) {
   return 'bajo'
 }
 
-export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta = []) {
+export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta = [], coberturaPorFuente = []) {
   const conScore = rutasCalculadas.map((r, i) => {
     const cruces = zonasCruzadasPorRuta[i] || []
     const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
@@ -147,7 +166,11 @@ export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, cob
       riesgoInseguridad: crucesInseguridad.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
       cantSiniestros: crucesSiniestro.length,
       cantInseguridad: crucesInseguridad.length,
-      coberturaRegistrada: coberturaPorRuta[i] ?? 0,
+      // La recomendación de menor exposición exige cobertura del eje histórico
+      // de siniestros. La capa de inseguridad se informa aparte y no puede
+      // reemplazarla, porque responde otra pregunta.
+      coberturaRegistrada: coberturaPorFuente[i]?.siniestro ?? coberturaPorRuta[i] ?? 0,
+      coberturaPorFuente: coberturaPorFuente[i] || { siniestro: null, inseguridad: null },
       nivelMaximo,
     }
   })
