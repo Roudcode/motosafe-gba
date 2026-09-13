@@ -103,6 +103,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: la guía distingue gravedad condicionada a un siniestro de ocurrencia por viaje, retira la afirmación de evaluación temporal independiente y actualiza MapLibre.
 - Límite: corregir la redacción no sustituye la evaluación temporal pendiente.
 
+## 2026-09-13 — SES-013 — Sincronización de guías metodológicas
+
+- IDs: A01, A02, G01.
+- Cambio: README y guías resumen/detallada reemplazan referencias a Leaflet y a 2025 como holdout no visto; la comparación de rutas se describe como exposición histórica, no garantía.
+- Límite: resta corregir otros documentos históricos y ejecutar evaluación temporal independiente.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

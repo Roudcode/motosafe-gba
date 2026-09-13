@@ -4,7 +4,7 @@
 
 Mapa de riesgo para motociclistas en CABA, construido sobre un modelo de Machine Learning (Random Forest) entrenado con datos reales de siniestralidad vial (2019-2025, data.buenosaires.gob.ar). Proyecto Final de Ingeniería en Informática — Universidad del Salvador.
 
-Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + Leaflet. El detalle de la metodología (limpieza de datos, clustering HDBSCAN (siniestros y robos con moto) y DBSCAN (delito general), comparación de modelos, umbrales de riesgo) está documentado en `notebooks/01_eda_hotspots_moto.ipynb` y en `docs/`.
+Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + MapLibre. La documentación vigente y las limitaciones metodológicas están centralizadas en `docs/README.md`.
 
 ## Requisitos
 

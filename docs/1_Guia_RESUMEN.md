@@ -23,7 +23,7 @@ Una aplicación que muestra exposición histórica registrada en zonas de CABA. 
           ▼
 ┌──────────────────┐        ┌───────────────────┐        ┌──────────────────┐
 │  Frontend React     │ ──── │   Backend FastAPI    │ ──── │  PostgreSQL +      │
-│  (Vite + Leaflet)   │      │   (localhost:8000)   │      │  PostGIS (Docker)  │
+│  (Vite + MapLibre)  │      │   (localhost:8000)   │      │  PostGIS (Docker)  │
 └──────────────────┘        └───────────────────┘        │  tabla:            │
           │                            │                    │  hotspots_riesgo   │
           │                            ▼                    │  (740 filas)       │
@@ -61,7 +61,7 @@ Una aplicación que muestra exposición histórica registrada en zonas de CABA. 
 - Las predicciones que ves en el mapa: son la salida real del modelo, no un número fijo.
 - El clima (Open-Meteo), la geocodificación de direcciones (Nominatim) y el cálculo de rutas con tráfico en vivo (TomTom, vía el backend): servicios externos reales, no simulados.
 - Los 805 hotspots de inseguridad (303 de delito general con DBSCAN + 502 de robos con moto con HDBSCAN, tras una segunda calibración que llevó su cobertura de 14.1% a 74.3%), sobre delitos reales descargados de data.buenosaires.gob.ar.
-- El score de riesgo de cada ruta ahora suma siniestros e inseguridad de verdad (no es cosmético): la ruta "más segura" y las alertas en viaje consideran las dos fuentes, con desglose visible de cuánto aporta cada una.
+- El score de ruta compara exposición histórica registrada de siniestros e inseguridad, con desglose visible. No debe llamarse una garantía de ruta más segura.
 
 ### Simplificación consciente, documentada:
 - **La hora y el día son iguales para las 740 zonas en cada pedido** (la hora actual del servidor). Esto significa que buena parte de la variación de riesgo entre zonas viene de su comuna/vía/contraparte típica, no de un patrón horario propio de cada lugar. Es una limitación real, no un error.
