@@ -42,6 +42,8 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |
 | V10 | Validado parcialmente | La carga inicial no queda bloqueada; los fallos de capas enumeran la fuente y ofrecen reintento localizado sin simular éxito. Faltan mensajes específicos para sin datos y red del sistema. |
 | A23 | En curso | Foco visible, zoom nativo y movimiento reducido están implementados; se agregó matriz QA. Falta ejecución real con teclado, zoom, temas y dispositivos. |
+| G03 | Validado parcialmente | Matriz objetivo–evidencia–límite centralizada. Falta contrastarla con requisitos institucionales no presentes en el repositorio. |
+| G04 | Validado parcialmente | Guion de demo y condiciones de reproducción documentados. Falta ensayo medido con servicios disponibles. |
 
 ## Hallazgos existentes
 

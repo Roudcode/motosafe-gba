@@ -165,6 +165,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - IDs: A23, V01–V14.
 - Cambio: matriz centralizada para revisión reproducible de teclado, foco, zoom, temas, móvil, movimiento reducido y red.
 - Límite: no se declara conformidad ni QA visual completa hasta ejecutar casos en navegador y dispositivos reales.
+
+## 2026-09-13 — SES-027 — Matriz académica y demo
+
+- IDs: G01, G02, G03, G04.
+- Cambio: matriz central de objetivos, evidencia y límites, con guion de demo reproducible.
+- Límite: faltan requisitos institucionales, ensayo de demo y pruebas con personas.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido

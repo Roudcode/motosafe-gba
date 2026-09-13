@@ -21,6 +21,7 @@
 | [Cobertura y procedencia de capas](riesgo/PROCEDENCIA_Y_COBERTURA.md) | Fuentes, cobertura por trazado, TTL y protocolo de validación de rutas y prensa. |
 | [Operación de backend y base](operacion/BACKEND_Y_BASE_DE_DATOS.md) | Migraciones, salud, CI, backup y límites de la validación con PostgreSQL. |
 | [QA de accesibilidad y visual](calidad/QA_ACCESIBILIDAD_VISUAL.md) | Matriz reproducible para teclado, zoom, temas, móvil, movimiento y red. |
+| [Matriz académica y demo](entrega/MATRIZ_ACADEMICA_Y_DEMO.md) | Objetivos, evidencia, límites y guion reproducible de presentación. |
 | [Guía detallada](1_Guia_DETALLADA.md) / [resumen](1_Guia_RESUMEN.md) | Explicación general; contiene información histórica desactualizada. Pendiente sincronizar con versión validada. |
 | [Manual detallado](2_Manual_DETALLADO.md) / [resumen](2_Manual_RESUMEN.md) | Operación; no ejecutar Run All del notebook para recuperar errores sin resolver A19. |
 | [Resultados detallados](3_Resultados_DETALLADO.md) / [resumen](3_Resultados_RESUMEN.md) | Resultados de versiones anteriores; no adjudicarlos automáticamente al modelo vigente. |
