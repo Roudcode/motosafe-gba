@@ -178,6 +178,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: la compatibilidad de tablas de reportes se ejecuta una vez por proceso bajo lock, no en cada endpoint.
 - Pruebas: sintaxis Python y revisión de diff aprobadas.
 - Límite: sigue pendiente ejecutar migraciones y prueba de integración contra PostgreSQL aislado.
+
+## 2026-09-13 — SES-029 — Deduplicación de prensa
+
+- IDs: A09, A11.
+- Cambio: el scraper omite titulares normalizados repetidos para el mismo tipo de incidente antes de geocodificar o insertar.
+- Pruebas: sintaxis Python y diff aprobados.
+- Límite: no sustituye deduplicación semántica ni medición humana de precisión.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido

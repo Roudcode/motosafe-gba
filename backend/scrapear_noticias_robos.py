@@ -998,6 +998,12 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
     categoria = categoria_de(titulo, descripcion)
     if categoria is None:
         return
+    firma = f"{categoria}:{normalizar(titulo)}"
+    if firma in contadores['firmas_vistas']:
+        contadores['duplicadas'] += 1
+        print(f"  [duplicada] ({categoria}) {titulo}")
+        return
+    contadores['firmas_vistas'].add(firma)
     contadores['candidatas'] += 1
     contadores['candidatas_por_tipo'][categoria] = contadores['candidatas_por_tipo'].get(categoria, 0) + 1
 
@@ -1054,7 +1060,7 @@ def main():
         cur = conn.cursor()
         _asegurar_tabla(cur)
 
-    contadores = {'candidatas': 0, 'ubicadas': 0, 'guardadas': 0, 'candidatas_por_tipo': {}}
+    contadores = {'candidatas': 0, 'ubicadas': 0, 'guardadas': 0, 'duplicadas': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {}}
 
     for nombre_fuente, url_sitemap in FUENTES_SITEMAP:
         print(f"\n=== {nombre_fuente} (sitemap: {url_sitemap}) ===")
@@ -1143,7 +1149,7 @@ def main():
         conn.close()
 
     desglose = ", ".join(f"{cant} {tipo}" for tipo, cant in sorted(contadores['candidatas_por_tipo'].items()))
-    print(f"\n{contadores['candidatas']} noticias candidatas ({desglose}), {contadores['ubicadas']} pudieron ubicarse"
+    print(f"\n{contadores['candidatas']} noticias candidatas ({desglose}), {contadores['duplicadas']} duplicadas omitidas, {contadores['ubicadas']} pudieron ubicarse"
           + (f", {contadores['guardadas']} nuevas guardadas en la base" if guardar
              else " (dry-run, no se guardo nada -- corré con --guardar para insertar)"))
 
