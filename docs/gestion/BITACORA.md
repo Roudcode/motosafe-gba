@@ -83,6 +83,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: botones, campos y enlaces muestran un contorno visible al recibir foco por teclado.
 - Límite: falta revisión visual en viewports y navegación completa por teclado.
 
+## 2026-09-13 — SES-010 — Zoom accesible
+
+- IDs: A23.
+- Cambio: se eliminó el bloqueo de zoom del viewport y de `touch-action` global; el usuario puede ampliar texto y controles con el navegador.
+- Pruebas: lint y 73 pruebas frontend aprobadas.
+- Límite: falta QA visual con zoom y dispositivos reales.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

@@ -26,6 +26,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 7. SES-006 evitó que respuestas HTTP fallidas vacíen corredores, inseguridad, reportes y prensa como si fueran una respuesta sin datos. Se mantienen las cachés visibles; faltan estados específicos por capa.
 8. SES-007 añadió un aviso visible cuando una capa secundaria no puede actualizarse y conserva información en caché. Los reintentos específicos por capa siguen pendientes.
 9. SES-008 agregó un reintento global desde ese aviso; sigue pendiente separar reintentos y fechas por fuente.
+10. SES-010 habilitó zoom nativo del navegador y foco visible; falta revisión visual accesible.
 
 ## Estado técnico comprobado en la auditoría
 

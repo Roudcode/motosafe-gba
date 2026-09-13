@@ -6,17 +6,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   outline: 3px solid var(--azul);
   outline-offset: 3px;
 }
-/* El meta viewport (maximum-scale=1 + user-scalable=no en index.html) ya no
-   alcanza: Safari en iOS lo ignora desde hace rato por accesibilidad, así
-   que el pinch-zoom seguía zoomeando toda la interfaz aunque el meta tag
-   estuviera puesto -- esto es lo que realmente lo frena hoy. touch-action
-   en html/body bloquea el pinch-zoom y el double-tap-zoom NATIVOS del
-   navegador sobre toda la app (dejando pan normal con un dedo), pero no
-   toca el mapa: maplibre-gl.css ya define su propio touch-action:none
-   sobre .maplibregl-canvas-container/.maplibregl-canvas, más específico
-   que este, así que ahí sigue mandando maplibre con sus propios gestos de
-   zoom/pan/rotate en vez del navegador. */
-html, body { touch-action: pan-x pan-y; }
+/* La página permite zoom nativo para que texto y controles puedan ampliarse.
+   MapLibre conserva sus propios gestos dentro de su canvas. */
 
 /* ===== Tokens de tema =====
    :root define el tema oscuro (el default original de la app, sin cambios visuales
