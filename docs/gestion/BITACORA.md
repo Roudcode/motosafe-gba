@@ -27,8 +27,6 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pendiente: Rodo elige alcance inicial. Futuras sesiones actualizan estos mismos registros.
 - Commit: no creado; documentación local pendiente de versionar junto con el trabajo que corresponda.
 
-## Plantilla para próximas sesiones
-
 ## 2026-09-13 — SES-003 — Completar pendientes y proponer avance
 
 - Pedido: “bueno y ahora como avanzamos?”.
@@ -47,7 +45,7 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Prensa: coincidencias por término completo, exclusiones locales para “San Martín de los Andes” y “Flores” usado como sustantivo, y preferencia de partido ante una intersección ambigua. Se agregaron regresiones unitarias.
 - Pruebas ejecutadas: `backend/.\\venv\\Scripts\\python.exe -m pytest -q -p no:cacheprovider tests` → 55 aprobadas (1.200 advertencias de `joblib`/NumPy); `npm run lint` → aprobado; `node node_modules/vitest/vitest.mjs run` → 73 aprobadas; `npm run build` → aprobado.
 - Límites: no se ejecutó integración contra PostgreSQL real, proveedor de rutas/clima ni navegador/GPS. `npm test` y `npx vitest` no encuentran un ejecutable utilizable aunque el módulo de Vitest sí corre con Node. El build conserva la advertencia de bundle mayor a 500 kB. Los tokens solo permiten eliminar reportes creados o guardados desde este navegador; los registros antiguos no tienen token retroactivo.
-- Decisión: DEC-007. Modelo/datasets: sin cambios. Commit: no creado.
+- Decisión: DEC-007. Modelo/datasets: sin cambios. Cambios entregados en `d2fb3ec` (`feat: centralizar continuidad y reforzar integridad`).
 
 ## Plantilla reutilizable
 

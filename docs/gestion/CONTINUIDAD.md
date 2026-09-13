@@ -6,6 +6,13 @@
 
 Centralizar auditoría, documentación, decisiones y cambios para poder retomar con Claude. Luego Rodo autorizó avanzar y corroborar que funcione; se inició un bloque de integridad, consistencia y recuperación.
 
+## Punto de transferencia para otra IA
+
+- **Base antes de trabajar con Codex:** `c24b8a7` (auditada como fotografía histórica).
+- **Cambios de Codex entregados:** `d2fb3ec` en `main` (`feat: centralizar continuidad y reforzar integridad`). Incluye documentación, código y pruebas de SES-001 a SES-004.
+- **Estado al cerrar esa entrega:** árbol de trabajo limpio; no se modificaron datasets ni el modelo.
+- **Instrucción de arranque:** ejecutar `git status`, leer este archivo y luego `docs/README.md`, `BACKLOG.md`, `BITACORA.md` y `DECISIONES.md`. No asumir que A01–A23 están cerrados: el estado concreto está en la tabla «Ejecución actual» del backlog.
+
 ## Qué se hizo
 
 **Corrección de continuidad del 13/09:** el registro del 11/09 anticipaba un backlog y dos documentos que aún no se habían escrito. Se completaron BACKLOG, PRIORIZACION y VALIDACION el 13/09. El estado descrito abajo corresponde ahora a los archivos existentes, no a una implementación de las mejoras.
@@ -34,7 +41,7 @@ Ver A01–A23 en el assessment. No dar por resuelto un hallazgo porque existan t
 
 ## Cómo continuar
 
-1. Consultar `git status` y estos registros antes de editar; puede haber trabajo local sin commit.
+1. Consultar `git status` y estos registros antes de editar; puede haber trabajo local sin commit. El punto de transferencia conocido de Codex es `d2fb3ec`.
 2. Elegir con el alcance autorizado un paquete de PRIORIZACION. La preferencia actual es entender y priorizar; no hacer todas las propuestas automáticamente.
 3. Enlazar cada trabajo a un ID de BACKLOG. Usar los criterios de aceptación y VALIDACION.
 4. Al terminar, actualizar backlog, bitácora, decisiones si corresponde y este resumen. Registrar también intentos fallidos o limitaciones materiales.
