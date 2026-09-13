@@ -440,9 +440,10 @@ function App() {
         lng: r.lng,
         categoria: r.categoria,
           esPropio: Boolean(tokensReportes[String(r.id)]),
-        creadoEn: r.creado_en,
-        confirmaciones: r.confirmaciones || 0,
-        desmentidas: r.desmentidas || 0,
+          creadoEn: r.creado_en,
+          confirmaciones: r.confirmaciones || 0,
+          desmentidas: r.desmentidas || 0,
+          estado: 'vigente',
       }))))
       .catch(() => { /* backend caido: se mantienen los reportes que ya estaban cargados */ })
   }, [tokensReportes])
@@ -766,6 +767,7 @@ function App() {
           creadoEn: creado.creado_en,
           confirmaciones: 0,
           desmentidas: 0,
+          estado: 'vigente',
         }, ...prev])
         if (creado.delete_token) {
           setTokensReportes((anteriores) => {
@@ -1451,7 +1453,7 @@ function App() {
                 <span className="actividad-icon">{cat?.Icon && <cat.Icon size={15} />}</span>
                 <span className="actividad-texto">
                   <span className="actividad-label">{cat?.label}</span>
-                  <span className="actividad-hora">{formatearAntiguedad(rep.creadoEn, horaActual)}</span>
+                  <span className="actividad-hora">Vigente · {formatearAntiguedad(rep.creadoEn, horaActual)}</span>
                 </span>
               </button>
             )

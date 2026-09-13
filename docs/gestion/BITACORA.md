@@ -150,6 +150,7 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: corredores e inseguridad se reintentan de forma independiente; el aviso identifica las fuentes fallidas y muestra la última consulta lograda sin borrar caché ni recargar la aplicación.
 - Pruebas: lint, 79 pruebas frontend, build y `git diff --check` aprobados.
 - Límite: la fecha es de consulta del cliente, no fecha de generación del dato. Persisten estados detallados de red/sin datos y ciclo de vida completo de reportes.
+- Complemento: la actividad marca explícitamente los reportes propios actualmente vigentes; no se presentan los vencidos como si siguieran activos.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido
