@@ -97,6 +97,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: 75 pruebas frontend aprobadas.
 - Límite: falta prueba visual y de almacenamiento real en dispositivos móviles.
 
+## 2026-09-13 — SES-012 — Corrección metodológica de la guía
+
+- IDs: A01, A02, G01.
+- Cambio: la guía distingue gravedad condicionada a un siniestro de ocurrencia por viaje, retira la afirmación de evaluación temporal independiente y actualiza MapLibre.
+- Límite: corregir la redacción no sustituye la evaluación temporal pendiente.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

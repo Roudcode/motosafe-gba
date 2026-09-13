@@ -6,7 +6,7 @@ Este documento explica qué es el proyecto, cómo está armado hoy, y qué de to
 
 ## 1. Qué es MotoSafe GBA, en una frase
 
-Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por distintas zonas de CABA, combinando un modelo de Machine Learning entrenado con datos reales de siniestros, clima en tiempo real, reportes de los propios usuarios, y un segundo eje de riesgo (inseguridad: delitos reales del GCBA) que ahora también entra en el cálculo de la ruta más segura y en las alertas en viaje, no solo en el mapa.
+Una aplicación que muestra exposición histórica registrada en zonas de CABA. El modelo clasifica la gravedad esperable **si ocurre un siniestro**; no estima la probabilidad de sufrir uno durante un viaje. Se complementa con clima actual, reportes y una capa histórica de inseguridad.
 
 **Estado real a esta altura:** ya no es una maqueta. El mapa muestra predicciones calculadas en vivo por un modelo entrenado con 23.343 siniestros reales (que ahora también incluye el índice de inseguridad de cada comuna como variable) — no una regla inventada. Además de los hotspots puntuales, la app tiene una vista de corredores (avenidas completas con score de riesgo) y una capa de inseguridad histórica con sus propios hotspots (delito general y robos con moto, calculados con DBSCAN; los de siniestros usan HDBSCAN, ver más abajo).
 
@@ -57,7 +57,7 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 - Los 65.818 siniestros de CABA descargados de data.buenosaires.gob.ar (2019-2025).
 - Los 23.343 casos de motociclistas, limpios, con coordenadas válidas.
 - Los 740 hotspots, identificados con HDBSCAN (min_cluster_size=12, min_samples=3) tras evaluar también DBSCAN con un barrido sistemático de parámetros (eps 40-120m x min_samples 6-15, que llegó a 412 hotspots/49.9% de cobertura como mejor punto seguro). HDBSCAN no usa un radio fijo, así que se adapta a la densidad local de cada zona en vez de forzar un único radio para toda la ciudad, y esto permitió llegar al 75.6% de cobertura de los siniestros históricos sin arriesgar el efecto de "blob" (el cluster más grande queda en 0.41% del total, más seguro incluso que el 0.73% de la versión DBSCAN).
-- El modelo Random Forest, entrenado con esos 23.343 casos, evaluado con F1-score y matriz de confusión (no accuracy, que hubiera mentido por el desbalance de clases), y además validado con un split temporal real (entrenar con 2019-2024, testear contra 2025 completo, nunca visto), no solo con el split aleatorio habitual.
+- El modelo Random Forest, entrenado con esos 23.343 casos y evaluado con F1-score y matriz de confusión. La evaluación temporal independiente sigue pendiente: 2025 intervino en selección de configuraciones, por lo que no debe presentarse como test completamente no visto.
 - Las predicciones que ves en el mapa: son la salida real del modelo, no un número fijo.
 - El clima (Open-Meteo), la geocodificación de direcciones (Nominatim) y el cálculo de rutas con tráfico en vivo (TomTom, vía el backend): servicios externos reales, no simulados.
 - Los 805 hotspots de inseguridad (303 de delito general con DBSCAN + 502 de robos con moto con HDBSCAN, tras una segunda calibración que llevó su cobertura de 14.1% a 74.3%), sobre delitos reales descargados de data.buenosaires.gob.ar.
@@ -65,6 +65,7 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 
 ### Simplificación consciente, documentada:
 - **La hora y el día son iguales para las 740 zonas en cada pedido** (la hora actual del servidor). Esto significa que buena parte de la variación de riesgo entre zonas viene de su comuna/vía/contraparte típica, no de un patrón horario propio de cada lugar. Es una limitación real, no un error.
+- **El mapa no estima ocurrencia por viaje ni cobertura completa:** sus etiquetas comparan exposición histórica en las zonas disponibles. Una ruta fuera de la cobertura comparable no puede interpretarse como más segura.
 - **40% de las edades de víctimas son estimadas** (mediana), no datos reales — el dataset original solo tiene edad para el 60% de los casos de moto.
 - **El "quién" que usa el backend para predecir es el promedio histórico de cada zona**, no la persona real que está mirando el mapa en ese momento.
 - **Los reportes ahora son colaborativos de verdad**: se guardan en la base (tabla `reportes_colaborativos`) y los ve cualquier usuario, no solo quien los creó. Cada categoría tiene su propia vigencia (un corte vence en 12hs, un pozo en el pavimento en 30 días) — pasado ese tiempo dejan de aparecer en el mapa aunque sigan en la base como histórico.
@@ -89,7 +90,7 @@ Una aplicación que muestra en un mapa qué tan riesgoso es circular en moto por
 | pandas | Manipulación de tablas de datos | Limpieza, transformación, todo el EDA |
 | Jupyter | Entorno de código interactivo por celdas | Donde se hizo todo el análisis y entrenamiento |
 | React + Vite | Librería/herramienta para la interfaz visual | El mapa y toda la UI |
-| Leaflet + react-leaflet-cluster | Librería de mapas y agrupamiento de puntos | El mapa en sí, con los 740 puntos agrupados |
+| MapLibre GL | Librería de mapas vectoriales | El mapa, sus capas y la navegación visual |
 | Git + GitHub | Control de versiones y respaldo remoto | Historial del proyecto, respaldo fuera de tu PC |
 
 ---
