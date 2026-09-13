@@ -6,6 +6,15 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   outline: 3px solid var(--azul);
   outline-offset: 3px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 /* La página permite zoom nativo para que texto y controles puedan ampliarse.
    MapLibre conserva sus propios gestos dentro de su canvas. */
 

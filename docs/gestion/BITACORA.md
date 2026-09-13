@@ -122,6 +122,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y 75 pruebas frontend aprobadas.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
+## 2026-09-13 — SES-016 — Movimiento reducido
+
+- IDs: A23, V09.
+- Cambio: se respetan preferencias de reducción de movimiento, suprimiendo animaciones y transiciones no esenciales.
+- Pruebas: lint y 75 pruebas frontend aprobadas.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
