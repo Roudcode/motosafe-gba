@@ -133,6 +133,7 @@ function App() {
   // Prensa (robos scrapeados de noticias, ver backend/scrapear_noticias_robos.py):
   // prendida por default, ver la nota en constants.js sobre por qué.
   const [capaPrensa, setCapaPrensa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_PRENSA, true))
+  const [filtroPrensa, setFiltroPrensa] = useState('todos')
   const [reportesPrensa, setReportesPrensa] = useState([])
   const [zoomActual, setZoomActual] = useState(11)
   const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !cargarDeLocalStorage(CLAVE_ONBOARDING, false))
@@ -1368,6 +1369,8 @@ function App() {
           }}
           capaPrensa={capaPrensa}
           onCambiarCapaPrensa={setCapaPrensa}
+          filtroPrensa={filtroPrensa}
+          onCambiarFiltroPrensa={setFiltroPrensa}
           onCerrar={() => setCapasAbiertas(false)}
         />
       )}
@@ -1618,7 +1621,7 @@ function App() {
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
           reportes={reportes}
           onVotarReporte={votarReporte}
-          reportesPrensa={capaPrensa ? reportesPrensa : []}
+          reportesPrensa={capaPrensa ? reportesPrensa.filter((r) => filtroPrensa === 'todos' || r.tipoIncidente === filtroPrensa) : []}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}
           rutaSeleccionada={rutaSeleccionada}

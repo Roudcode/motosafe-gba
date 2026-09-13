@@ -25,6 +25,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A07 | Validado parcialmente | Borrado con token privado de una sola entrega, UUID canónico, token no expuesto por GET y prueba de contrato. Quedan migración versionada, cuotas y política de votos. |
 | A08 | Validado | Prensa externa pasa a nodos DOM con texto y solo enlaces `http(s)`; cubierto por revisión y build. |
 | A09 | En curso | Límites de palabra, ambigüedades, pruebas de regresión y deduplicación entre fuentes por incidente/titular. Hay evaluador reproducible; falta conjunto humano etiquetado y métricas reales. |
+| F08 | En curso | La actividad identifica reportes propios vigentes. La capa de prensa permite filtrar todos, robos o choques; faltan estados históricos personales completos. |
 | A10 | En curso | Se eliminó la doble aplicación de lluvia y hotspots se actualizan cada cinco minutos. Se documentaron TTL y procedencia conocidos; faltan fechas de generación devueltas por backend. |
 | A11 | En curso | Se documentaron unidad, procedencia, TTL y límites de cada capa; la tarjeta de ruta muestra cobertura separada por fuente. Faltan fechas diferenciadas visibles desde backend y distancia a segmentos. |
 | D03 | En curso | Se agregó plantilla de rutas de referencia para cobertura parcial, empate, desvío y discordancia entre fuentes. Faltan casos independientes revisados. |

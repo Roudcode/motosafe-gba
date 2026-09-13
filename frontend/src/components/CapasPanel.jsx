@@ -18,6 +18,7 @@ export function CapasPanel({
   capaInseguridad, onCambiarCapaInseguridad,
   capaTrafico, onCambiarCapaTrafico,
   capaPrensa, onCambiarCapaPrensa,
+  filtroPrensa, onCambiarFiltroPrensa,
   onCerrar,
 }) {
   return (
@@ -71,6 +72,15 @@ export function CapasPanel({
           <span className="capas-opcion-desc">Congestión actual por calle (TomTom) · se actualiza cada 2 min</span>
         </span>
       </button>
+      {capaPrensa && (
+        <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias">
+          {['todos', 'robo', 'choque'].map((filtro) => (
+            <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)}>
+              {{ todos: 'Todos', robo: 'Robos', choque: 'Choques' }[filtro]}
+            </button>
+          ))}
+        </div>
+      )}
 
       <span className="capas-grupo-titulo">Prensa</span>
       <button

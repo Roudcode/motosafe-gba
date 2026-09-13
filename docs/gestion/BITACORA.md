@@ -185,6 +185,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: el scraper omite titulares normalizados repetidos para el mismo tipo de incidente antes de geocodificar o insertar.
 - Pruebas: sintaxis Python y diff aprobados.
 - Límite: no sustituye deduplicación semántica ni medición humana de precisión.
+
+## 2026-09-13 — SES-030 — Filtros de prensa
+
+- IDs: A09, F08, A11.
+- Cambio: la capa de noticias permite filtrar todos los eventos, robos o choques sin eliminar la base cargada.
+- Pruebas: lint y 80 pruebas frontend aprobadas.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido
