@@ -138,6 +138,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 
 - Cambio: el botón de herramientas comunica su estado expandido a lectores de pantalla.
 
+## 2026-09-13 — SES-019 — Semántica de gravedad en interfaz
+
+- IDs: A01.
+- Cambio: el detalle de zona identifica la salida como gravedad estimada si ocurre un siniestro y aclara que no estima ocurrencia durante el viaje.
+- Pruebas: lint y 75 pruebas frontend aprobadas.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

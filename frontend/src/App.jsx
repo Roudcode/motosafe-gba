@@ -1758,14 +1758,14 @@ function App() {
       {rutasCalculadas.length === 0 && !rutaAbierta && zonaSeleccionada && (
         <div className="detalle-panel panel-enter hazard-edge">
           <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)} aria-label="Cerrar detalle de zona"><X size={14} /></button>
-          <span className="popup-nivel" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
-            Riesgo {NIVELES[zonaSeleccionada.ajuste.nivel].label}
+            <span className="popup-nivel" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
+            Gravedad estimada: {NIVELES[zonaSeleccionada.ajuste.nivel].label}
           </span>
           <strong className="detalle-nombre">{zonaSeleccionada.nombre}</strong>
           <p className="detalle-motivo">{zonaSeleccionada.motivo}</p>
           {zonaSeleccionada.prediccionModelo && (
             <div className="detalle-modelo">
-              <span className="detalle-modelo-titulo">Salida del modelo, ahora mismo</span>
+              <span className="detalle-modelo-titulo">Gravedad estimada si ocurre un siniestro</span>
               {Object.entries(zonaSeleccionada.prediccionModelo).map(([clase, prob]) => (
                 <div className="detalle-modelo-fila" key={clase}>
                   <span className="detalle-modelo-label">{clase}</span>
@@ -1778,6 +1778,7 @@ function App() {
               {zonaSeleccionada.contextoEstimado && (
                 <p className="detalle-modelo-nota">Esta zona no tiene perfil histórico propio: se usó el perfil promedio de la ciudad.</p>
               )}
+              <p className="detalle-modelo-nota">No estima la probabilidad de sufrir un siniestro durante tu viaje.</p>
             </div>
           )}
           {zonaSeleccionada.ajuste.subio && (
