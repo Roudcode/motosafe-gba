@@ -259,6 +259,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: `url_fuente` pasa a `TEXT` tanto en creación como compatibilidad de tabla. Cada inserción usa savepoint y omite sólo la fila que falle, sin perder las ya guardadas.
 - Límite: falta repetir la corrida tras reiniciar el backend/scraper y comprobar el resumen final de guardadas por fuente.
 
+## 2026-09-13 — SES-040 — Primera corrida completa multifluente
+
+- IDs: A09, A10, A11.
+- Evidencia aportada por Rodo: 560 candidatas, 16 duplicadas omitidas, 289 ubicadas y 267 nuevas guardadas; 99 candidatas estaban relacionadas con motos. La corrida finalizó sin abortar tras el arreglo de URLs largas.
+- Aporte principal: Google Noticias guardó 234 noticias entre las consultas general, motos y zonales; Inforbano guardó 12; Infobae 7; el resto aportó entre 0 y 4 cada uno en esta corrida.
+- Lectura: la ampliación logra volumen real, pero no equivale a precisión validada. La tasa global de ubicación fue 51,6% (289/560) y varios medios directos no ubicaron registros. El agregador puede solapar o redistribuir notas de esos mismos medios.
+- Próximo paso: ejecutar actualización de fechas históricas, muestreo humano por fuente/categoría y corrección de falsos positivos/ubicaciones antes de usar estos conteos como indicador de incidencia.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

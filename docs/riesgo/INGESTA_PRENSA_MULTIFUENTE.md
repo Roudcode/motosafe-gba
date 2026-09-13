@@ -22,6 +22,10 @@ Esto permite que el filtro **Motos** muestre robos, inseguridad y choques vincul
 
 La fuente agregadora puede repetir una nota ya vista en un medio directo, alterar títulos o enlazar una redirección. Por eso no debe considerarse un conteo de incidentes ni alimentar directamente el modelo predictivo. A09 sigue abierto hasta medir precisión, duplicación semántica y error geográfico con un conjunto humano etiquetado.
 
+### Evidencia de corrida del 2026-09-13
+
+La primera corrida completa posterior a la ampliación encontró 560 candidatas, ubicó 289 y guardó 267; 99 candidatas estuvieron vinculadas a motos. Las consultas de Google Noticias aportaron 234 guardadas. Es evidencia de alcance operativo, no de precisión ni de representatividad: debe usarse para seleccionar una muestra humana por fuente antes de tomar decisiones sobre peso, permanencia o cobertura.
+
 ## Redes sociales y nuevas fuentes
 
 No se automatizan cuentas ni se evaden restricciones de una red social. Para incorporar una red o una institución se requiere uno de estos caminos: API oficial con credenciales y términos vigentes, RSS/archivo público permitido, o exportación que la organización entregue. Antes de habilitarla se registra nombre, URL/API, alcance geográfico, fecha, licencia/términos, frecuencia, campos disponibles y resultado de una corrida de prueba.

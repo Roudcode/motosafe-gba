@@ -52,6 +52,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-037 refuerza la detención de eventos táctiles de los marcadores y agrega un actualizador por lotes para completar fechas editoriales de filas históricas.
 - SES-038 corrige la causa real de cierre del popup: el array filtrado se regeneraba en cada tick. `iniciar.bat` abre Scraper como pestaña separada y lo ejecuta al levantar la app; requiere reparar Python para funcionar.
 - SES-039 registró una corrida real que abortó por URL de agregador mayor a 500 caracteres. `url_fuente` se amplió a TEXT y las inserciones se aíslan por fila; hay que repetir la corrida y confirmar el resumen final.
+- SES-040 confirmó la corrida completa: 560 candidatas, 289 ubicadas, 267 guardadas y 99 candidatas de motos. Las búsquedas agregadas aportaron 234 guardadas; se necesita revisión humana y deduplicación semántica antes de interpretar el volumen como incidencia.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles
