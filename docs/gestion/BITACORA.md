@@ -159,6 +159,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y 80 pruebas frontend aprobadas, incluida la nueva traza sintética intermedia.
 - Límite: no reemplaza pruebas con GPS real ni cubre pérdida de señal o perfilado de render/mapa.
 - Complemento A18: se agregó caché temporal de búsquedas idénticas y manejo explícito de errores HTTP del geocodificador. Lint y 80 pruebas frontend aprobadas.
+
+## 2026-09-13 — SES-026 — QA visual y accesibilidad
+
+- IDs: A23, V01–V14.
+- Cambio: matriz centralizada para revisión reproducible de teclado, foco, zoom, temas, móvil, movimiento reducido y red.
+- Límite: no se declara conformidad ni QA visual completa hasta ejecutar casos en navegador y dispositivos reales.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido

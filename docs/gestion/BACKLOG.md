@@ -41,6 +41,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A18 | Validado parcialmente | Geocodificación exacta usa caché de cinco minutos y rechaza HTTP fallido explícitamente. Falta evaluar cuota/compatibilidad real del proveedor y persistencia controlada. |
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |
 | V10 | Validado parcialmente | La carga inicial no queda bloqueada; los fallos de capas enumeran la fuente y ofrecen reintento localizado sin simular éxito. Faltan mensajes específicos para sin datos y red del sistema. |
+| A23 | En curso | Foco visible, zoom nativo y movimiento reducido están implementados; se agregó matriz QA. Falta ejecución real con teclado, zoom, temas y dispositivos. |
 
 ## Hallazgos existentes
 
