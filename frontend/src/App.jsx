@@ -119,6 +119,7 @@ function App() {
   const [cargandoHotspots, setCargandoHotspots] = useState(!hayHotspotsEnCache)
   const [primeraVezListo, setPrimeraVezListo] = useState(hayHotspotsEnCache)
   const [backendError, setBackendError] = useState(false)
+  const [erroresCapas, setErroresCapas] = useState({})
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
   const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
@@ -409,8 +410,8 @@ function App() {
     // 'clusters') y el usuario la ve recien si cambia de vista.
     fetch(`${API_URL}/corredores`)
       .then((r) => { if (!r.ok) throw new Error('No se pudieron cargar corredores'); return r.json() })
-      .then((data) => { setCorredores(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_CORREDORES, data) })
-      .catch(() => { /* se conserva la caché visible; un 500 no significa “sin corredores” */ })
+      .then((data) => { setCorredores(data); setErroresCapas((prev) => ({ ...prev, corredores: false })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_CORREDORES, data) })
+      .catch(() => { setErroresCapas((prev) => ({ ...prev, corredores: true })) })
   }, [])
 
   useEffect(() => {
@@ -420,12 +421,12 @@ function App() {
     // el usuario las ve si cambia de capa.
     fetch(`${API_URL}/hotspots-inseguridad?tipo=general`)
       .then((r) => { if (!r.ok) throw new Error('No se pudo cargar inseguridad general'); return r.json() })
-      .then((data) => { setInseguridadGeneral(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, data) })
-      .catch(() => { /* se conserva la caché visible; un 500 no significa “sin datos” */ })
+      .then((data) => { setInseguridadGeneral(data); setErroresCapas((prev) => ({ ...prev, inseguridadGeneral: false })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, data) })
+      .catch(() => { setErroresCapas((prev) => ({ ...prev, inseguridadGeneral: true })) })
     fetch(`${API_URL}/hotspots-inseguridad?tipo=moto`)
       .then((r) => { if (!r.ok) throw new Error('No se pudo cargar inseguridad con moto'); return r.json() })
-      .then((data) => { setInseguridadMoto(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, data) })
-      .catch(() => { /* se conserva la caché visible; un 500 no significa “sin datos” */ })
+      .then((data) => { setInseguridadMoto(data); setErroresCapas((prev) => ({ ...prev, inseguridadMoto: false })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, data) })
+      .catch(() => { setErroresCapas((prev) => ({ ...prev, inseguridadMoto: true })) })
   }, [])
 
   const cargarReportes = useCallback(() => {
@@ -1406,6 +1407,11 @@ function App() {
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
           <WifiOff size={14} /> Sin conexión con el backend. Reintentando cada 5s.
           <button onClick={cargarHotspots}>Reintentar ahora</button>
+        </div>
+      )}
+      {!backendError && Object.values(erroresCapas).some(Boolean) && (
+        <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
+          <WifiOff size={14} /> Algunas capas no pudieron actualizarse; se muestra la última información disponible.
         </div>
       )}
 

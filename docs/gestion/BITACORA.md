@@ -63,6 +63,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: `npm run lint` y 73 pruebas de Vitest aprobadas.
 - Límite: no hay aún indicador separado de error/fecha para cada capa ni prueba E2E con backend real. Commit: pendiente al cierre de esta entrada.
 
+## 2026-09-13 — SES-007 — Aviso de capas desactualizadas
+
+- IDs: A15 y V10.
+- Cambio: al fallar corredores, inseguridad u otra capa secundaria, la interfaz conserva la última caché y muestra un aviso de que no pudo actualizarse.
+- Pruebas: `npm run lint` y 73 pruebas de Vitest aprobadas.
+- Límite: el aviso es agregado; todavía no identifica fecha, origen ni permite reintentar cada capa por separado. Commit: se registra en el historial al cerrar esta sesión.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
