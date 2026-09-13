@@ -1149,6 +1149,20 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   font-weight: 700;
 }
 
+.marker-prensa-cluster {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 2px solid #d7a400;
+  border-radius: 50%;
+  color: #2b2305;
+  background: #ffd65a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .28);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 [data-theme='dark'] .capas-prensa-filtros button.activa {
   color: #221a00;
   background: #ffc933;

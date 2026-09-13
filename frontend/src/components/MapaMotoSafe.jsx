@@ -827,28 +827,42 @@ function MapaMotoSafeInner({
     const map = mapRef.current
     if (!map || version === 0) return
     let popup
-    const markers = (reportesPrensa || []).map((rep) => {
-      const el = elementoMarcadorPrensa(rep.nivelPrecision, rep.tipoIncidente)
-      // En móvil MapLibre puede recibir el touchstart del marcador antes del
-      // click. Se corta en ambos eventos para que no cierre el popup recién
-      // creado como si el usuario hubiera tocado el fondo del mapa.
-      const detenerPropagacion = (e) => e.stopPropagation()
-      el.addEventListener('mousedown', detenerPropagacion)
-      el.addEventListener('touchstart', detenerPropagacion, { passive: false })
-      el.addEventListener('click', (e) => {
-        detenerPropagacion(e)
-        popup?.remove()
-        const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
-        // El click del marcador también llega a MapLibre; closeOnClick debe
-        // quedar desactivado o el mapa cierra este popup en el mismo gesto.
-        popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '260px' })
-          .setLngLat([rep.lng, rep.lat])
-          .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current))
-          .addTo(map)
-      })
-      return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
+    const prensaPorId = new Map((reportesPrensa || []).map((rep) => [String(rep.id), rep]))
+    const features = (reportesPrensa || []).map((rep) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [rep.lng, rep.lat] },
+      properties: { id: String(rep.id) },
+    }))
+    const abrirNoticia = (id, coords) => {
+      const rep = prensaPorId.get(String(id))
+      if (!rep) return
+      popup?.remove()
+      const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
+      popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '260px' })
+        .setLngLat(coords)
+        .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current))
+        .addTo(map)
+    }
+    const limpiar = montarCapaClusterizada(map, {
+      sourceId: 'reportes-prensa-cluster',
+      features,
+      radius: 48,
+      maxZoom: 14,
+      renderBubble: (_niveles, cantidad) => ({
+        size: 38,
+        html: `<div class="marker-prensa-cluster">${cantidad}</div>`,
+      }),
+      renderPunto: (props) => {
+        const rep = prensaPorId.get(String(props.id))
+        const el = elementoMarcadorPrensa(rep?.nivelPrecision, rep?.tipoIncidente)
+        const detenerPropagacion = (e) => e.stopPropagation()
+        el.addEventListener('mousedown', detenerPropagacion)
+        el.addEventListener('touchstart', detenerPropagacion, { passive: false })
+        return el
+      },
+      onClickPunto: abrirNoticia,
     })
-    return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
+    return () => { popup?.remove(); limpiar() }
 
   // No depende del reloj de la interfaz: antes ese tick rearmaba todos los
   // marcadores cada segundo y el cleanup cerraba el popup inmediatamente.

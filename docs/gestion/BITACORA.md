@@ -274,6 +274,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
 - Límite: los puntos con precisión de barrio/partido pueden compartir coordenada y solaparse visualmente. Queda pendiente agruparlos con contador en el mapa.
 
+## 2026-09-13 — SES-042 — Agrupación de noticias en el mapa
+
+- IDs: A09, A11, V08.
+- Cambio: la capa de prensa agrupa noticias cercanas al alejarse y muestra un contador. Al tocar una agrupación, el mapa se acerca; al acercarse se muestran los marcadores individuales con su popup de noticia.
+- Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
+- Límite: la agrupación hace visible la cantidad, pero no corrige por sí sola ubicaciones de precisión barrial compartida ni duplicación semántica.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.
