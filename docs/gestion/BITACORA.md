@@ -128,6 +128,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: se respetan preferencias de reducción de movimiento, suprimiendo animaciones y transiciones no esenciales.
 - Pruebas: lint y 75 pruebas frontend aprobadas.
 
+## 2026-09-13 — SES-017 — Objetivos táctiles principales
+
+- IDs: A23.
+- Cambio: controles de tema y capas se ampliaron a 44 px, consistentes con zoom y navegación.
+- Pruebas: lint y 75 pruebas frontend aprobadas.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
