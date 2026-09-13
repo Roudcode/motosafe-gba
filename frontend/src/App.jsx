@@ -120,6 +120,8 @@ function App() {
   const [primeraVezListo, setPrimeraVezListo] = useState(hayHotspotsEnCache)
   const [backendError, setBackendError] = useState(false)
   const [erroresCapas, setErroresCapas] = useState({})
+  const [actualizacionesCapas, setActualizacionesCapas] = useState({})
+  const [recargaCapas, setRecargaCapas] = useState(0)
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'dark'))
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
   const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
@@ -410,9 +412,9 @@ function App() {
     // 'clusters') y el usuario la ve recien si cambia de vista.
     fetch(`${API_URL}/corredores`)
       .then((r) => { if (!r.ok) throw new Error('No se pudieron cargar corredores'); return r.json() })
-      .then((data) => { setCorredores(data); setErroresCapas((prev) => ({ ...prev, corredores: false })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_CORREDORES, data) })
+      .then((data) => { setCorredores(data); setErroresCapas((prev) => ({ ...prev, corredores: false })); setActualizacionesCapas((prev) => ({ ...prev, corredores: Date.now() })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_CORREDORES, data) })
       .catch(() => { setErroresCapas((prev) => ({ ...prev, corredores: true })) })
-  }, [])
+  }, [recargaCapas])
 
   useEffect(() => {
     // Hotspots de inseguridad (delitos reales del GCBA, no siniestros de moto):
@@ -421,13 +423,13 @@ function App() {
     // el usuario las ve si cambia de capa.
     fetch(`${API_URL}/hotspots-inseguridad?tipo=general`)
       .then((r) => { if (!r.ok) throw new Error('No se pudo cargar inseguridad general'); return r.json() })
-      .then((data) => { setInseguridadGeneral(data); setErroresCapas((prev) => ({ ...prev, inseguridadGeneral: false })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, data) })
+      .then((data) => { setInseguridadGeneral(data); setErroresCapas((prev) => ({ ...prev, inseguridadGeneral: false })); setActualizacionesCapas((prev) => ({ ...prev, inseguridadGeneral: Date.now() })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, data) })
       .catch(() => { setErroresCapas((prev) => ({ ...prev, inseguridadGeneral: true })) })
     fetch(`${API_URL}/hotspots-inseguridad?tipo=moto`)
       .then((r) => { if (!r.ok) throw new Error('No se pudo cargar inseguridad con moto'); return r.json() })
-      .then((data) => { setInseguridadMoto(data); setErroresCapas((prev) => ({ ...prev, inseguridadMoto: false })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, data) })
+      .then((data) => { setInseguridadMoto(data); setErroresCapas((prev) => ({ ...prev, inseguridadMoto: false })); setActualizacionesCapas((prev) => ({ ...prev, inseguridadMoto: Date.now() })); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, data) })
       .catch(() => { setErroresCapas((prev) => ({ ...prev, inseguridadMoto: true })) })
-  }, [])
+  }, [recargaCapas])
 
   const cargarReportes = useCallback(() => {
     fetch(`${API_URL}/reportes`)
@@ -1291,6 +1293,10 @@ function App() {
   else textoTopbar = `${zonasFiltradas.length} zonas · hace ${segundos}s`
 
   const climaInfo = clima ? iconoClima(clima.weathercode) : null
+  const ultimaConsultaCapas = Object.entries(actualizacionesCapas)
+    .filter(([, momento]) => momento)
+    .map(([capa, momento]) => `${({ corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto' }[capa] || capa)} ${new Date(momento).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`)
+    .join(' · ')
 
   // Cuando la capa de inseguridad esta prendida, el fondo (clusters/calor/
   // corredores) se atenua para que la capa recien activada quede como
@@ -1425,8 +1431,9 @@ function App() {
       )}
       {!backendError && Object.values(erroresCapas).some(Boolean) && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="status" aria-live="polite">
-          <WifiOff size={14} /> Algunas capas no pudieron actualizarse; se muestra la última información disponible.
-          <button onClick={() => window.location.reload()}>Reintentar capas</button>
+          <WifiOff size={14} /> No se actualizaron: {Object.entries(erroresCapas).filter(([, fallo]) => fallo).map(([capa]) => ({ corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto' }[capa] || capa)).join(', ')}. Se mantiene la última información disponible.
+          {ultimaConsultaCapas && <span className="backend-banner-fecha">Última consulta: {ultimaConsultaCapas}</span>}
+          <button onClick={() => setRecargaCapas((v) => v + 1)}>Reintentar capas</button>
         </div>
       )}
 

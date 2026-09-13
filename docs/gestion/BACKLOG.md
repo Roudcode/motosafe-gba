@@ -35,10 +35,10 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | T04 | Validado parcialmente | `/health` informa servicio, disponibilidad de base y hora UTC sin datos personales. Faltan métricas de latencia/error por servicio y retención de logs. |
 | T05 | Validado parcialmente | CI en GitHub valida lint, tests y build frontend, más sintaxis backend en Python 3.12. Falta corrida confirmada en GitHub e integración con PostgreSQL. |
 | T06 | En curso | Procedimiento documentado de dump/restauración aislada; falta ejecutar y registrar un ensayo real. |
-| A15 | En curso | La primera carga se libera ante fallo de hotspots; errores HTTP de capas secundarias conservan la última caché, muestran un aviso y permiten reintentar la carga completa. Faltan reintentos independientes y estados de fecha por capa. |
+| A15 | Validado parcialmente | La primera carga se libera ante fallo de hotspots; las capas secundarias conservan caché, identifican cuáles fallaron, muestran última consulta y se reintentan sin recargar toda la página. Faltan estados de fecha de origen desde backend. |
 | A16 | En curso | La velocidad se limpia al detenerse y deja de conservar una ETA obsoleta. Faltan trazas GPS y revisión completa de progreso. |
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |
-| V10 | En curso | La carga inicial no queda bloqueada si falla el backend; faltan mensajes accionables para cada estado. |
+| V10 | Validado parcialmente | La carga inicial no queda bloqueada; los fallos de capas enumeran la fuente y ofrecen reintento localizado sin simular éxito. Faltan mensajes específicos para sin datos y red del sistema. |
 
 ## Hallazgos existentes
 
