@@ -267,6 +267,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Lectura: la ampliación logra volumen real, pero no equivale a precisión validada. La tasa global de ubicación fue 51,6% (289/560) y varios medios directos no ubicaron registros. El agregador puede solapar o redistribuir notas de esos mismos medios.
 - Próximo paso: ejecutar actualización de fechas históricas, muestreo humano por fuente/categoría y corrección de falsos positivos/ubicaciones antes de usar estos conteos como indicador de incidencia.
 
+## 2026-09-13 — SES-041 — Transparencia de noticias visibles
+
+- IDs: A09, A11, V08.
+- Cambio: el panel Prensa muestra cuántas noticias están cargadas y cuántas siguen visibles con el filtro activo. Evita interpretar los iconos superpuestos como el total de filas guardadas.
+- Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
+- Límite: los puntos con precisión de barrio/partido pueden compartir coordenada y solaparse visualmente. Queda pendiente agruparlos con contador en el mapa.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

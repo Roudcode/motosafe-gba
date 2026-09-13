@@ -19,6 +19,7 @@ export function CapasPanel({
   capaTrafico, onCambiarCapaTrafico,
   capaPrensa, onCambiarCapaPrensa,
   filtroPrensa, onCambiarFiltroPrensa,
+  cantidadReportesPrensa, cantidadReportesPrensaFiltrados,
   onCerrar,
 }) {
   return (
@@ -86,7 +87,10 @@ export function CapasPanel({
       </button>
       {capaPrensa && (
         <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias de prensa">
-          <div className="capas-prensa-filtros-titulo"><ListFilter size={13} /> Mostrando</div>
+          <div className="capas-prensa-filtros-titulo">
+            <span><ListFilter size={13} /> Mostrando</span>
+            <strong>{cantidadReportesPrensaFiltrados} de {cantidadReportesPrensa}</strong>
+          </div>
           <div className="capas-prensa-filtros-opciones">
           {[
             ['todos', 'Todo', Newspaper], ['moto', 'Motos', Bike], ['robo', 'Robos', ShieldAlert],

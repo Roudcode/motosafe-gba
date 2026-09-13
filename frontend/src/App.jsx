@@ -1383,6 +1383,8 @@ function App() {
           onCambiarCapaPrensa={setCapaPrensa}
           filtroPrensa={filtroPrensa}
           onCambiarFiltroPrensa={setFiltroPrensa}
+          cantidadReportesPrensa={reportesPrensa.length}
+          cantidadReportesPrensaFiltrados={reportesPrensaFiltrados.length}
           onCerrar={() => setCapasAbiertas(false)}
         />
       )}

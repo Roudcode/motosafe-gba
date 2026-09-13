@@ -1099,6 +1099,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .capas-prensa-filtros-titulo {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   margin-bottom: 8px;
   color: var(--text-muted, #667085);
@@ -1106,6 +1107,18 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
+}
+
+.capas-prensa-filtros-titulo > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.capas-prensa-filtros-titulo strong {
+  color: var(--text, #20252b);
+  font-size: 12px;
+  letter-spacing: 0;
 }
 
 .capas-prensa-filtros-opciones {
