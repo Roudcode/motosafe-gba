@@ -64,6 +64,20 @@ def test_pool_no_supera_el_maximo_y_reutiliza_conexion_limpia():
     assert primera.rollbacks == 1
 
 
+def test_esquema_reportes_se_asegura_una_sola_vez_por_proceso():
+    conexion = MagicMock()
+    estado_anterior = main._esquema_reportes_listo
+    main._esquema_reportes_listo = False
+    try:
+        with patch("main._asegurar_tabla_reportes") as reportes, patch("main._asegurar_tabla_confirmaciones") as confirmaciones:
+            main._asegurar_esquema_reportes_una_vez(conexion)
+            main._asegurar_esquema_reportes_una_vez(conexion)
+        reportes.assert_called_once_with(conexion)
+        confirmaciones.assert_called_once_with(conexion)
+    finally:
+        main._esquema_reportes_listo = estado_anterior
+
+
 def test_predecir_devuelve_prediccion_valida():
     payload = {
         "hora": 20,
