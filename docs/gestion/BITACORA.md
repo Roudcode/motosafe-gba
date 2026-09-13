@@ -90,6 +90,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y 73 pruebas frontend aprobadas.
 - Límite: falta QA visual con zoom y dispositivos reales.
 
+## 2026-09-13 — SES-011 — Pruebas de persistencia segura
+
+- IDs: A23.
+- Cambio: se agregaron regresiones para JSON corrupto y falla de cuota al usar `localStorage`.
+- Pruebas: 75 pruebas frontend aprobadas.
+- Límite: falta prueba visual y de almacenamiento real en dispositivos móviles.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
