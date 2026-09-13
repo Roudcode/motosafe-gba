@@ -72,16 +72,6 @@ export function CapasPanel({
           <span className="capas-opcion-desc">Congestión actual por calle (TomTom) · se actualiza cada 2 min</span>
         </span>
       </button>
-      {capaPrensa && (
-        <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias">
-          {['todos', 'moto', 'robo', 'choque'].map((filtro) => (
-            <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)}>
-              {{ todos: 'Todos', moto: 'Motos', robo: 'Robos', choque: 'Choques' }[filtro]}
-            </button>
-          ))}
-        </div>
-      )}
-
       <span className="capas-grupo-titulo">Prensa</span>
       <button
         className={`capas-opcion ${capaPrensa ? 'activa' : ''}`}
@@ -90,10 +80,19 @@ export function CapasPanel({
         <span className="capas-opcion-radio" />
         <Newspaper size={15} className="capas-opcion-icono" />
         <span className="capas-opcion-texto">
-          <span className="capas-opcion-label">Robos y choques en noticias</span>
-          <span className="capas-opcion-desc">Últimos 30 días, no en vivo · ícono de diario para robos, de auto para choques · tocá un punto para ver la nota</span>
+          <span className="capas-opcion-label">Hechos recientes en noticias</span>
+          <span className="capas-opcion-desc">Últimos 30 días, no en vivo · filtrá motos, robos, inseguridad o choques · tocá un punto para ver la nota</span>
         </span>
       </button>
+      {capaPrensa && (
+        <div className="capas-prensa-filtros" role="group" aria-label="Filtrar noticias">
+          {['todos', 'moto', 'robo', 'inseguridad', 'choque'].map((filtro) => (
+            <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)}>
+              {{ todos: 'Todos', moto: 'Motos', robo: 'Robos', inseguridad: 'Inseguridad', choque: 'Choques' }[filtro]}
+            </button>
+          ))}
+        </div>
+      )}
 
       <p className="capas-panel-nota">
         Tu ruta y las alertas en viaje ya tienen en cuenta la inseguridad esté o no prendida esta capa: esto solo cambia lo que ves dibujado en el mapa.

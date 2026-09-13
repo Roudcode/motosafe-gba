@@ -194,6 +194,15 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Complemento: se añadió filtro específico de noticias relacionadas con motos; es independiente de robos y choques.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
+## 2026-09-13 — SES-031 — Clasificación y alcance multifluente de prensa
+
+- Pedido / alcance autorizado: Rodo pidió mejorar intensivamente el modelo de prensa, ampliar medios y permitir un filtro de motos sin convertir toda la capa en exclusiva de motos.
+- IDs: A09, A10, A11, F08.
+- Cambio: el scraper clasifica `robo`, `inseguridad` y `choque`; guarda `relacionado_moto` como atributo independiente y excluye explícitamente “moto de agua”. El backend expone el atributo, la interfaz filtra Motos con el dato persistido y conserva compatibilidad con filas históricas. Los reportes de robo e inseguridad pueden ajustar la capa de inseguridad; choques permanecen asociados a la capa vial. Se agregaron dos RSS de Google Noticias para descubrir notas de medios locales además de los feeds directos existentes.
+- Documentación: `docs/riesgo/INGESTA_PRENSA_MULTIFUENTE.md` define procedencia, controles, límites y el proceso para sumar fuentes o redes mediante vías oficiales.
+- Pruebas ejecutadas: compilación sintáctica de `backend/main.py` y `backend/scrapear_noticias_robos.py` con el Python alternativo de Codex; `npm.cmd run lint`, Vitest (80 pruebas) y `git diff --check` aprobados. La prueba unitaria nueva no se ejecutó: ese Python alternativo no incluye `pytest` y el `venv` del backend sigue apuntando a un intérprete base inexistente.
+- Límite: no se ejecutó una corrida de red ni se insertaron noticias; la búsqueda agregada puede repetir o modificar titulares. No se automatizan redes sociales ni se eluden restricciones: una integración social requiere API oficial, feed permitido o exportación autorizada. Falta validación contra PostgreSQL y muestra humana etiquetada.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

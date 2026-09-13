@@ -4,7 +4,7 @@
 
 ## Pedido actual de Rodo
 
-Centralizar auditoría, documentación, decisiones y cambios para poder retomar con Claude. Luego Rodo autorizó avanzar y corroborar que funcione; se inició un bloque de integridad, consistencia y recuperación.
+Centralizar auditoría, documentación, decisiones y cambios para poder retomar con Claude. Rodo autorizó avanzar por bloques, con commit y push de cada entrega. El foco actual es ampliar y validar la ingesta multifluente de prensa sin confundirla con el modelo académico de gravedad.
 
 ## Punto de transferencia para otra IA
 
@@ -43,6 +43,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-023 añadió `/health`, dependencias declaradas, CI y guía operativa de migración/respaldo. No se ensayó PostgreSQL real porque el entorno local sigue sin intérprete Python funcional para el `venv` ni servicio de base confirmado.
 - SES-024 reemplazó el reintento por recarga de página por reintentos independientes de corredores e inseguridad, conservando caché e indicando fuentes fallidas y última consulta. Los estados completos de reportes siguen pendientes de contrato backend.
 - SES-025 corrigió el progreso GPS para medir sobre segmentos de ruta y no sólo vértices; las pruebas cubren avance intermedio continuo. Faltan trazas reales y perfilado de rendimiento.
+- SES-031 amplió la ingesta de prensa: hechos `robo`, `inseguridad` y `choque` se clasifican por separado del atributo persistente `relacionado_moto`; la interfaz permite filtrar Motos sin ocultar el resto. Se añadieron dos RSS de búsqueda pública para ampliar el descubrimiento de medios locales. Falta ejecución real, conjunto humano etiquetado y deduplicación semántica.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

@@ -333,6 +333,11 @@ FUENTES_RSS = [
     # RSS 2.0 real con ?alt=rss, no un Atom disfrazado).
     ("Zona Sur Diario", "https://www.zonasurdiario.com.ar/feeds/posts/default/-/Policiales?alt=rss"),
     ("Zona Oeste Diario", "https://www.zonaoestediario.com.ar/feeds/posts/default/-/Policiales?alt=rss"),
+    # Agregador público: complementa a los medios directos con notas de medios
+    # locales que no exponen RSS propio. No reemplaza la URL original: cada item
+    # conserva su enlace y el deduplicador evita repetir titulares entre fuentes.
+    ("Google Noticias GBA - seguridad", "https://news.google.com/rss/search?q=(robo+OR+asalto+OR+motochorro)+%28GBA+OR+Buenos+Aires%29&hl=es-419&gl=AR&ceid=AR:es-419"),
+    ("Google Noticias GBA - motos", "https://news.google.com/rss/search?q=(moto+OR+motocicleta+OR+motociclista)+%28choque+OR+robo+OR+siniestro%29+%28GBA+OR+Buenos+Aires%29&hl=es-419&gl=AR&ceid=AR:es-419"),
 ]
 # Sitemap general (mezcla todas las secciones) + segmento de URL a filtrar
 # antes de aplicar el prefiltro de slug de siempre -- ver la nota larga al
@@ -416,8 +421,13 @@ PALABRAS_CLAVE_CHOQUE = [
     'siniestro vial', 'despiste', 'despisto', 'accidente de transito',
     'accidente vial', 'embistio', 'embistieron',
 ]
+PALABRAS_CLAVE_INSEGURIDAD = [
+    'balearon', 'baleo', 'disparo', 'disparos', 'tiroteo', 'homicidio',
+    'asesinato', 'amenaza', 'secuestro', 'violencia de genero',
+]
 CATEGORIAS_PALABRAS_CLAVE = {
     'robo': PALABRAS_CLAVE_ROBO,
+    'inseguridad': PALABRAS_CLAVE_INSEGURIDAD,
     'choque': PALABRAS_CLAVE_CHOQUE,
 }
 
@@ -524,6 +534,21 @@ def categoria_de(titulo, descripcion):
         if any(_contiene_termino(texto, palabra) for palabra in palabras):
             return categoria
     return None
+
+
+def relacionado_con_moto(titulo, descripcion):
+    """Señal explícita y auditable; no infiere vehículo si el texto no lo dice.
+
+    Es un atributo separado del tipo: una noticia puede ser robo, choque o
+    inseguridad y, en paralelo, involucrar una moto. Esto permite filtrar la
+    capa de motos sin ocultar el resto de los hechos de prensa.
+    """
+    texto = normalizar(f"{titulo} {descripcion}")
+    if _contiene_termino(texto, 'moto de agua'):
+        return False
+    return any(_contiene_termino(texto, termino) for termino in (
+        'moto', 'motocicleta', 'motociclista', 'motociclistas', 'motovehiculo',
+    ))
 
 
 def _contiene_termino(texto_norm, termino):
@@ -972,6 +997,7 @@ def _asegurar_tabla(cur):
             url_fuente VARCHAR(500) NOT NULL UNIQUE,
             fuente VARCHAR(50) NOT NULL,
             tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo',
+            relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE,
             publicado_en TIMESTAMPTZ,
             creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
         )
@@ -982,6 +1008,7 @@ def _asegurar_tabla(cur):
     # del backend, para que correr cualquiera de los dos primero deje la
     # tabla en el mismo estado.
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
+    cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
 
 
 def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores):
@@ -1012,6 +1039,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
         print(f"  [sin ubicar] ({categoria}) {titulo}")
         return
     query, nivel, radio = ubicacion
+    es_moto = relacionado_con_moto(titulo, descripcion)
     try:
         punto = geocodificar_nominatim(query)
     except Exception as err:
@@ -1026,10 +1054,10 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
 
     if guardar:
         cur.execute("""
-            INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, publicado_en)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (url_fuente) DO NOTHING
-        """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, None))
+        """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, None))
         if cur.rowcount > 0:
             contadores['guardadas'] += 1
 

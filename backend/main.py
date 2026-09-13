@@ -856,6 +856,7 @@ def _asegurar_tabla_prensa(conn):
             url_fuente VARCHAR(500) NOT NULL UNIQUE,
             fuente VARCHAR(50) NOT NULL,
             tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo',
+            relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE,
             publicado_en TIMESTAMPTZ,
             creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
         )
@@ -866,6 +867,7 @@ def _asegurar_tabla_prensa(conn):
     # (scrapear_noticias_robos.py:_asegurar_tabla), asi que corra primero
     # cualquiera de los dos dos la tabla termina igual.
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
+    cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
     conn.commit()
     cur.close()
 
@@ -884,7 +886,7 @@ def listar_reportes_prensa():
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, creado_en
+            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, creado_en
             FROM reportes_prensa
             ORDER BY creado_en DESC
         """)
@@ -1168,10 +1170,13 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
         _pool_conexiones.putconn(conn)
 
     # A diferencia de /hotspots y /corredores (siniestros viales), esta capa
-    # es densidad de DELITO -- el tipo de reporte de prensa que le
-    # corresponde semanticamente es 'robo', no 'choque' (ver el comentario
-    # largo de "Ajuste de riesgo por reportes de prensa recientes").
-    reportes_robo_recientes = _obtener_reportes_recientes_por_tipo('robo')
+    # Es densidad de delito: robos y otros hechos explícitos de inseguridad
+    # pueden ajustar esta capa; los choques continúan separados porque sólo
+    # aportan contexto a la capa vial.
+    reportes_robo_recientes = (
+        _obtener_reportes_recientes_por_tipo('robo')
+        + _obtener_reportes_recientes_por_tipo('inseguridad')
+    )
     for h in resultado:
         _aplicar_ajuste_riesgo(h, h['latitud'], h['longitud'], reportes_robo_recientes, 'robo')
 

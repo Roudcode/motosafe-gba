@@ -476,6 +476,7 @@ function App() {
           urlFuente: r.url_fuente,
           fuente: r.fuente,
           tipoIncidente: r.tipo_incidente,
+          relacionadoMoto: Boolean(r.relacionado_moto),
           creadoEn: r.creado_en,
         }))))
         .catch(() => { /* backend caido: se mantienen los que ya estaban cargados */ })
@@ -1621,7 +1622,7 @@ function App() {
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
           reportes={reportes}
           onVotarReporte={votarReporte}
-          reportesPrensa={capaPrensa ? reportesPrensa.filter((r) => filtroPrensa === 'todos' || r.tipoIncidente === filtroPrensa || (filtroPrensa === 'moto' && /\bmoto(?:s|cicleta|cicletas)?\b/i.test(r.titular || ''))) : []}
+          reportesPrensa={capaPrensa ? reportesPrensa.filter((r) => filtroPrensa === 'todos' || r.tipoIncidente === filtroPrensa || (filtroPrensa === 'moto' && (r.relacionadoMoto || /\bmoto(?:s|cicleta|cicletas)?\b/i.test(r.titular || '')))) : []}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}
           rutaSeleccionada={rutaSeleccionada}

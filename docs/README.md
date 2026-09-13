@@ -19,6 +19,7 @@
 | [Contrato y evaluación del modelo](modelo/CONTRATO_Y_EVALUACION.md) | Definición defendible del score, protocolo temporal y límites de faltantes/calibración. |
 | [Ficha de siniestros con moto](datos/FICHA_SINIESTROS_MOTO.md) | Unidad de análisis, fuentes locales, transformaciones y límites de los datos. |
 | [Cobertura y procedencia de capas](riesgo/PROCEDENCIA_Y_COBERTURA.md) | Fuentes, cobertura por trazado, TTL y protocolo de validación de rutas y prensa. |
+| [Ingesta de prensa multifluente](riesgo/INGESTA_PRENSA_MULTIFUENTE.md) | Fuentes, clasificación de motos, límites de calidad y proceso para ampliar cobertura. |
 | [Operación de backend y base](operacion/BACKEND_Y_BASE_DE_DATOS.md) | Migraciones, salud, CI, backup y límites de la validación con PostgreSQL. |
 | [QA de accesibilidad y visual](calidad/QA_ACCESIBILIDAD_VISUAL.md) | Matriz reproducible para teclado, zoom, temas, móvil, movimiento y red. |
 | [Matriz académica y demo](entrega/MATRIZ_ACADEMICA_Y_DEMO.md) | Objetivos, evidencia, límites y guion reproducible de presentación. |
