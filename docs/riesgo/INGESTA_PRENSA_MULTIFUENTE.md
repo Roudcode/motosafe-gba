@@ -13,7 +13,7 @@ Esto permite que el filtro **Motos** muestre robos, inseguridad y choques vincul
 ## Controles de calidad y volumen
 
 - Las URL repetidas no se insertan por la restricción única de base.
-- Durante una corrida se omite el mismo titular normalizado dentro de la misma categoría antes de geocodificarlo.
+- Durante una corrida se omite el mismo titular normalizado dentro de la misma categoría antes de geocodificarlo. Para el agregador se descarta únicamente su sufijo “- medio”, por lo que una nota del feed directo coincide con su copia agregada sin fusionar titulares distintos por similitud.
 - El geocodificador está limitado al área de CABA/GBA y se conserva el radio de precisión: intersección (80 m), calle (150 m) o barrio/partido (800 m).
 - Cada medio tiene un límite de URLs por corrida y pausas entre peticiones. Aumentar volumen significa sumar ejecuciones regulares y fuentes permitidas, no descargar de forma agresiva un sitio.
 

@@ -210,6 +210,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: compilación sintáctica de backend y de la nueva prueba; `npm.cmd run lint`, Vitest (80 pruebas) y `git diff --check` aprobados. La prueba de parser no corrió por el mismo límite de `pytest`/`venv` documentado en SES-031.
 - Límite: sitemaps y páginas HTML todavía no extraen fecha de publicación; PostgreSQL real no fue validado en esta sesión.
 
+## 2026-09-13 — SES-033 — Deduplicación conservadora de agregador
+
+- IDs: A09, A11.
+- Cambio: los titulares recibidos desde Google Noticias eliminan sólo el sufijo “- medio” al crear la firma de corrida. Así una nota ya encontrada por su RSS directo no vuelve a geocodificarse ni insertarse por una variación editorial del agregador.
+- Pruebas: compilación sintáctica backend, lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado. Las pruebas unitarias de scraper quedan pendientes por la indisponibilidad de `pytest` en el intérprete alternativo.
+- Límite: no es deduplicación semántica entre redacciones distintas del mismo hecho; esa mejora necesita muestra humana para no perder incidentes independientes.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

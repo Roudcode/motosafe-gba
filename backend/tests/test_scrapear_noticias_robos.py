@@ -1,4 +1,4 @@
-from scrapear_noticias_robos import categoria_de, extraer_ubicacion, encontrar_zona, parsear_rss, relacionado_con_moto
+from scrapear_noticias_robos import categoria_de, extraer_ubicacion, encontrar_zona, firma_titular, parsear_rss, relacionado_con_moto
 
 
 def test_categoria_no_confunde_subcadena_de_robo():
@@ -33,3 +33,8 @@ def test_rss_conserva_fecha_de_publicacion():
     </item></channel></rss>'''
     item = parsear_rss(rss)[0]
     assert item['publicado_en'].isoformat() == '2026-09-13T15:30:00-03:00'
+
+
+def test_firma_de_agregador_descarta_solo_el_sufijo_de_medio():
+    assert firma_titular('Robo de una moto en Quilmes - Diario Local', 'Google Noticias GBA - motos') == 'robo de una moto en quilmes'
+    assert firma_titular('Robo de una moto en Quilmes - Diario Local', 'Diario Local') == 'robo de una moto en quilmes - diario local'

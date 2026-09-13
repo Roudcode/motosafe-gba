@@ -553,6 +553,20 @@ def relacionado_con_moto(titulo, descripcion):
     ))
 
 
+def firma_titular(titulo, nombre_fuente):
+    """Clave conservadora para deduplicar dentro de una corrida.
+
+    Google Noticias agrega habitualmente `` - Nombre del medio`` al título.
+    Se elimina ese sufijo sólo cuando el propio agregador entregó el item, de
+    modo que no se borra información editorial de los feeds directos ni se
+    intenta una deduplicación semántica que podría mezclar incidentes reales.
+    """
+    limpio = titulo
+    if nombre_fuente.startswith('Google Noticias'):
+        limpio = re.sub(r'\s+-\s+[^-]{2,100}$', '', limpio).strip()
+    return normalizar(limpio)
+
+
 def _contiene_termino(texto_norm, termino):
     """Busca una palabra o frase completa, sin confundir subcadenas.
 
@@ -1043,7 +1057,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
     categoria = categoria_de(titulo, descripcion)
     if categoria is None:
         return
-    firma = f"{categoria}:{normalizar(titulo)}"
+    firma = f"{categoria}:{firma_titular(titulo, nombre_fuente)}"
     if firma in contadores['firmas_vistas']:
         contadores['duplicadas'] += 1
         print(f"  [duplicada] ({categoria}) {titulo}")
