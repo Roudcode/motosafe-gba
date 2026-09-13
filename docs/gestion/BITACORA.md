@@ -245,6 +245,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: los marcadores de prensa detienen `mousedown` y `touchstart` antes del click para que el mapa no cierre el popup en móvil. Se agregó el actualizador por lotes de `publicado_en` para noticias históricas sin fecha editorial.
 - Límite: el actualizador requiere el Python/PostgreSQL funcional y sólo completa fechas que estén declaradas en la página fuente.
 
+## 2026-09-13 — SES-038 — Estabilidad del popup y ejecución al iniciar
+
+- IDs: A09, A10, A11, V08.
+- Cambio: la lista filtrada de prensa se memoriza; el tick del reloj ya no reconstruye los marcadores ni cierra su popup. Los eventos táctiles detienen propagación sin cancelar el click. `iniciar.bat` abre una pestaña adicional de Scraper y ejecuta una corrida con guardado al iniciar la aplicación.
+- Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
+- Límite: la pestaña Scraper depende del `venv` y PostgreSQL; mientras el intérprete base roto persista, mostrará el error en esa pestaña y no insertará noticias.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

@@ -331,6 +331,16 @@ function App() {
   // y opacidad de los reportes colaborativos, se refresca cada 30s (alcanza para
   // el nivel de granularidad de "hace X min" que mostramos).
   const [horaActual, setHoraActual] = useState(() => Date.now())
+  // El reloj actualiza App cada segundo. Sin memo, filter() creaba una lista
+  // nueva aunque no hubiera noticias nuevas y desmontaba los marcadores/popup.
+  const reportesPrensaFiltrados = useMemo(() => {
+    if (!capaPrensa) return []
+    return reportesPrensa.filter((r) => (
+      filtroPrensa === 'todos'
+      || r.tipoIncidente === filtroPrensa
+      || (filtroPrensa === 'moto' && (r.relacionadoMoto || /\bmoto(?:s|cicleta|cicletas)?\b/i.test(r.titular || '')))
+    ))
+  }, [capaPrensa, filtroPrensa, reportesPrensa])
   useEffect(() => {
     const id = setInterval(() => setHoraActual(Date.now()), 30000)
     return () => clearInterval(id)
@@ -1623,7 +1633,7 @@ function App() {
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
           reportes={reportes}
           onVotarReporte={votarReporte}
-          reportesPrensa={capaPrensa ? reportesPrensa.filter((r) => filtroPrensa === 'todos' || r.tipoIncidente === filtroPrensa || (filtroPrensa === 'moto' && (r.relacionadoMoto || /\bmoto(?:s|cicleta|cicletas)?\b/i.test(r.titular || '')))) : []}
+          reportesPrensa={reportesPrensaFiltrados}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}
           rutaSeleccionada={rutaSeleccionada}

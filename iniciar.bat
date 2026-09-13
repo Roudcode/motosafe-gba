@@ -10,11 +10,11 @@ where wt >nul 2>nul
 if errorlevel 1 goto :sin_windows_terminal
 
 echo.
-echo Abriendo Docker, Backend, Frontend y Tunel en pestanas de la misma ventana (Windows Terminal)...
-start "" wt -w 0 new-tab --title "MotoSafe - Docker" cmd /k "cd /d %~dp0 && docker compose up -d" ; new-tab --title "MotoSafe - Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && uvicorn main:app --reload" ; new-tab --title "MotoSafe - Frontend" cmd /k "cd /d %~dp0frontend && npm run dev" ; new-tab --title "MotoSafe - Tunel" cmd /k "cloudflared tunnel --url https://localhost:5173 --no-tls-verify"
+echo Abriendo Docker, Backend, Frontend, Scraper y Tunel en pestanas de la misma ventana (Windows Terminal)...
+start "" wt -w 0 new-tab --title "MotoSafe - Docker" cmd /k "cd /d %~dp0 && docker compose up -d" ; new-tab --title "MotoSafe - Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && uvicorn main:app --reload" ; new-tab --title "MotoSafe - Frontend" cmd /k "cd /d %~dp0frontend && npm run dev" ; new-tab --title "MotoSafe - Scraper" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && python scrapear_noticias_robos.py --guardar" ; new-tab --title "MotoSafe - Tunel" cmd /k "cloudflared tunnel --url https://localhost:5173 --no-tls-verify"
 
 echo.
-echo Listo. Se abrio una ventana de Windows Terminal con 4 pestanas (Docker, Backend, Frontend y Tunel).
+echo Listo. Se abrio una ventana de Windows Terminal con 5 pestanas (Docker, Backend, Frontend, Scraper y Tunel).
 echo Backend:  http://localhost:8000
 echo Frontend: http://localhost:5173
 echo Tunel:    fijate el link *.trycloudflare.com en la pestana "MotoSafe - Tunel"
@@ -45,11 +45,14 @@ start "MotoSafe - Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate &
 echo [3/4] Frontend (Vite) en otra terminal nueva...
 start "MotoSafe - Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
-echo [4/4] Tunel (Cloudflare) en otra terminal nueva...
+echo [4/5] Scraper de noticias en otra terminal nueva...
+start "MotoSafe - Scraper" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && python scrapear_noticias_robos.py --guardar"
+
+echo [5/5] Tunel (Cloudflare) en otra terminal nueva...
 start "MotoSafe - Tunel" cmd /k "cloudflared tunnel --url https://localhost:5173 --no-tls-verify"
 
 echo.
-echo Listo. Se abrieron 3 terminales (Backend, Frontend y Tunel), Docker corrio en esta misma ventana.
+echo Listo. Se abrieron 4 terminales (Backend, Frontend, Scraper y Tunel), Docker corrio en esta misma ventana.
 echo Backend:  http://localhost:8000
 echo Frontend: http://localhost:5173
 echo Tunel:    fijate el link *.trycloudflare.com en la terminal "MotoSafe - Tunel"

@@ -832,10 +832,7 @@ function MapaMotoSafeInner({
       // En móvil MapLibre puede recibir el touchstart del marcador antes del
       // click. Se corta en ambos eventos para que no cierre el popup recién
       // creado como si el usuario hubiera tocado el fondo del mapa.
-      const detenerPropagacion = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      }
+      const detenerPropagacion = (e) => e.stopPropagation()
       el.addEventListener('mousedown', detenerPropagacion)
       el.addEventListener('touchstart', detenerPropagacion, { passive: false })
       el.addEventListener('click', (e) => {
