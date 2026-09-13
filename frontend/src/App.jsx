@@ -1412,6 +1412,7 @@ function App() {
       {!backendError && Object.values(erroresCapas).some(Boolean) && (
         <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
           <WifiOff size={14} /> Algunas capas no pudieron actualizarse; se muestra la última información disponible.
+          <button onClick={() => window.location.reload()}>Reintentar capas</button>
         </div>
       )}
 

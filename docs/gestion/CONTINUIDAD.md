@@ -25,6 +25,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 6. SES-005 inició A14 con migraciones SQL versionadas y reforzó la advertencia de cobertura del comparador. La migración aún no fue ejecutada contra PostgreSQL real porque el intérprete base del `venv` local dejó de estar disponible.
 7. SES-006 evitó que respuestas HTTP fallidas vacíen corredores, inseguridad, reportes y prensa como si fueran una respuesta sin datos. Se mantienen las cachés visibles; faltan estados específicos por capa.
 8. SES-007 añadió un aviso visible cuando una capa secundaria no puede actualizarse y conserva información en caché. Los reintentos específicos por capa siguen pendientes.
+9. SES-008 agregó un reintento global desde ese aviso; sigue pendiente separar reintentos y fechas por fuente.
 
 ## Estado técnico comprobado en la auditoría
 

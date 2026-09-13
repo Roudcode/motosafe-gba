@@ -70,6 +70,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: `npm run lint` y 73 pruebas de Vitest aprobadas.
 - Límite: el aviso es agregado; todavía no identifica fecha, origen ni permite reintentar cada capa por separado. Commit: se registra en el historial al cerrar esta sesión.
 
+## 2026-09-13 — SES-008 — Reintento de capas
+
+- IDs: A15 y V10.
+- Cambio: el aviso de capas desactualizadas ofrece “Reintentar capas”, que recarga la aplicación y vuelve a solicitar las capas conservando la recuperación de caché.
+- Pruebas: `npm run lint` y 73 pruebas de Vitest aprobadas.
+- Límite: es un reintento global; quedan pendientes controles individuales y edad visible de cada fuente.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

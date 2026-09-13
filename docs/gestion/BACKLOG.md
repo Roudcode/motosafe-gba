@@ -19,7 +19,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A12 | Validado parcialmente | Pool con máximo físico, espera acotada, rollback y prueba unitaria. Falta integración contra PostgreSQL real. |
 | A13 | Validado | Límites de coordenadas/hora/edad y respuesta vacía de hotspots probados. |
 | A14 | En curso | Se agregó `backend/migrar.py` y la migración SQL versionada de reportes/confirmaciones. Falta ejecutarla contra PostgreSQL aislado y retirar la compatibilidad DDL por request. |
-| A15 | En curso | La primera carga se libera ante fallo de hotspots; errores HTTP de capas secundarias conservan la última caché y muestran un aviso visible. Faltan reintentos independientes y estados de fecha por capa. |
+| A15 | En curso | La primera carga se libera ante fallo de hotspots; errores HTTP de capas secundarias conservan la última caché, muestran un aviso y permiten reintentar la carga completa. Faltan reintentos independientes y estados de fecha por capa. |
 | A16 | En curso | La velocidad se limpia al detenerse y deja de conservar una ETA obsoleta. Faltan trazas GPS y revisión completa de progreso. |
 | A17 | En curso | Se retiró la dependencia de autor de la capa de reportes del mapa; falta perfilado y separación incremental. |
 | V10 | En curso | La carga inicial no queda bloqueada si falla el backend; faltan mensajes accionables para cada estado. |
