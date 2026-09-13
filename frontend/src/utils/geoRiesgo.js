@@ -3,6 +3,9 @@
 
 import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
 
+const CACHE_GEOCODIFICACION_TTL_MS = 5 * 60 * 1000
+const cacheGeocodificacion = new Map()
+
 export function distanciaKm(a, b) {
   const R = 6371
   const dLat = (b.lat - a.lat) * Math.PI / 180
@@ -175,12 +178,17 @@ function itemNominatimAPunto(item) {
 }
 
 export async function geocodificar(texto) {
+  const clave = texto.trim().toLocaleLowerCase('es-AR')
+  const cacheado = cacheGeocodificacion.get(clave)
+  if (cacheado && Date.now() - cacheado.momento < CACHE_GEOCODIFICACION_TTL_MS) return cacheado.resultado
   const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=1`
   const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
+  if (!res.ok) throw new Error(`Geocodificador no disponible (${res.status})`)
   const data = await res.json()
-  if (!data || data.length === 0) return null
-  return itemNominatimAPunto(data[0])
+  const resultado = !data || data.length === 0 ? null : itemNominatimAPunto(data[0])
+  cacheGeocodificacion.set(clave, { resultado, momento: Date.now() })
+  return resultado
 }
 
 // Sugerencias en vivo mientras se escribe el origen/destino de una ruta --

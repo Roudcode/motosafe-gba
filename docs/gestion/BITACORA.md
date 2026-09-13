@@ -158,6 +158,7 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: `calcularProgresoRuta` proyecta la ubicación sobre cada segmento de la polilínea y calcula distancia recorrida proporcional; no salta al vértice más cercano en avenidas o autopistas largas.
 - Pruebas: lint y 80 pruebas frontend aprobadas, incluida la nueva traza sintética intermedia.
 - Límite: no reemplaza pruebas con GPS real ni cubre pérdida de señal o perfilado de render/mapa.
+- Complemento A18: se agregó caché temporal de búsquedas idénticas y manejo explícito de errores HTTP del geocodificador. Lint y 80 pruebas frontend aprobadas.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido
