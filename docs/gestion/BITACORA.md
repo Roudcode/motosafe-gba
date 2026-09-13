@@ -115,6 +115,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: el README histórico conserva sus entradas pero agrega la rectificación sobre el uso de 2025 en selección de configuraciones.
 - Límite: la evaluación temporal independiente sigue pendiente.
 
+## 2026-09-13 — SES-015 — Anuncios accesibles de errores
+
+- IDs: A23, V10.
+- Cambio: los avisos de fallo del backend y de capas usan regiones ARIA para lectores de pantalla.
+- Pruebas: lint y 75 pruebas frontend aprobadas.
+- Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

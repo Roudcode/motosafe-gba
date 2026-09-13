@@ -1404,13 +1404,13 @@ function App() {
       )}
 
       {backendError && (
-        <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
+        <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="alert">
           <WifiOff size={14} /> Sin conexión con el backend. Reintentando cada 5s.
           <button onClick={cargarHotspots}>Reintentar ahora</button>
         </div>
       )}
       {!backendError && Object.values(erroresCapas).some(Boolean) && (
-        <div className="ruta-banner ruta-banner-error panel-enter backend-banner">
+        <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="status" aria-live="polite">
           <WifiOff size={14} /> Algunas capas no pudieron actualizarse; se muestra la última información disponible.
           <button onClick={() => window.location.reload()}>Reintentar capas</button>
         </div>
