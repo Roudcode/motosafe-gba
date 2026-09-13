@@ -48,6 +48,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-033 elimina el sufijo editorial que Google Noticias agrega a sus titulares antes de comparar duplicados durante una corrida. Sigue pendiente deduplicación semántica validada con muestra humana.
 - SES-034 imprime métricas de ingesta por fuente y el total asociado a motos para poder comparar aportes reales antes de sumar o retirar medios.
 - SES-035 fija modo claro para nuevas instalaciones, corrige el popup de prensa que se cerraba por el tick del reloj y mejora el filtro de prensa con chips accesibles.
+- SES-036 evita además el cierre por propagación del toque del mapa, extrae fecha editorial desde HTML/JSON-LD y amplía el descubrimiento agregado por zonas del GBA. Requiere corrida real para medir cuántas noticias nuevas aporta cada consulta.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

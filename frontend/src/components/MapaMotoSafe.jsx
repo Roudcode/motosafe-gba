@@ -833,7 +833,9 @@ function MapaMotoSafeInner({
         e.stopPropagation()
         popup?.remove()
         const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
-        popup = new Popup({ closeButton: true, maxWidth: '260px' })
+        // El click del marcador también llega a MapLibre; closeOnClick debe
+        // quedar desactivado o el mapa cierra este popup en el mismo gesto.
+        popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '260px' })
           .setLngLat([rep.lng, rep.lat])
           .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current))
           .addTo(map)

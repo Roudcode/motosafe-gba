@@ -263,7 +263,7 @@ import sys
 import time
 import unicodedata
 import xml.etree.ElementTree as ET
-from datetime import timezone
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
 import httpx
@@ -340,6 +340,12 @@ FUENTES_RSS = [
     # conserva su enlace y el deduplicador evita repetir titulares entre fuentes.
     ("Google Noticias GBA - seguridad", "https://news.google.com/rss/search?q=(robo+OR+asalto+OR+motochorro)+%28GBA+OR+Buenos+Aires%29&hl=es-419&gl=AR&ceid=AR:es-419"),
     ("Google Noticias GBA - motos", "https://news.google.com/rss/search?q=(moto+OR+motocicleta+OR+motociclista)+%28choque+OR+robo+OR+siniestro%29+%28GBA+OR+Buenos+Aires%29&hl=es-419&gl=AR&ceid=AR:es-419"),
+    # Consultas zonales: amplían descubrimiento de medios barriales que no
+    # suelen aparecer con una búsqueda provincial genérica.
+    ("Google Noticias zona norte", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28Tigre+OR+San+Isidro+OR+Vicente+Lopez+OR+San+Fernando%29&hl=es-419&gl=AR&ceid=AR:es-419"),
+    ("Google Noticias zona oeste", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28Moron+OR+Merlo+OR+La+Matanza+OR+Ituzaingo%29&hl=es-419&gl=AR&ceid=AR:es-419"),
+    ("Google Noticias zona sur", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28Quilmes+OR+Lanus+OR+Avellaneda+OR+Lomas+de+Zamora%29&hl=es-419&gl=AR&ceid=AR:es-419"),
+    ("Google Noticias La Plata", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28La+Plata+OR+Berisso+OR+Ensenada%29&hl=es-419&gl=AR&ceid=AR:es-419"),
 ]
 # Sitemap general (mezcla todas las secciones) + segmento de URL a filtrar
 # antes de aplicar el prefiltro de slug de siempre -- ver la nota larga al
@@ -1017,6 +1023,36 @@ def extraer_titulo_descripcion(html_text):
     return titulo, descripcion
 
 
+def extraer_fecha_publicacion(html_text):
+    """Extrae la fecha editorial declarada por una página HTML.
+
+    Prioriza metadatos de artículo y luego `datePublished` de JSON-LD. Nunca
+    adivina una fecha desde la URL: si el medio no la declara, se conserva la
+    fecha de ingesta como respaldo explícito.
+    """
+    candidatos = [
+        _meta_content(html_text, 'property', 'article:published_time'),
+        _meta_content(html_text, 'name', 'date'),
+        _meta_content(html_text, 'itemprop', 'datePublished'),
+    ]
+    for valor in candidatos:
+        fecha = _parsear_fecha_iso(valor)
+        if fecha:
+            return fecha
+    m = re.search(r'"datePublished"\s*:\s*"([^"\\]+)"', html_text)
+    return _parsear_fecha_iso(m.group(1)) if m else None
+
+
+def _parsear_fecha_iso(valor):
+    if not valor:
+        return None
+    try:
+        fecha = datetime.fromisoformat(valor.strip().replace('Z', '+00:00'))
+        return fecha if fecha.tzinfo else fecha.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
 def _asegurar_tabla(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS reportes_prensa (
@@ -1110,12 +1146,13 @@ def _procesar_url(url, nombre_fuente, guardar, cur, contadores, headers=None):
         resp = httpx.get(url, headers=headers, timeout=15, follow_redirects=True)
         resp.raise_for_status()
         titulo, descripcion = extraer_titulo_descripcion(resp.text)
+        publicado_en = extraer_fecha_publicacion(resp.text)
     except Exception as err:
         print(f"  [error al bajar la nota: {err}] {url}")
         return
     finally:
         time.sleep(PAUSA_ENTRE_FETCHES_SEG)
-    _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores)
+    _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores, publicado_en)
 
 
 def main():

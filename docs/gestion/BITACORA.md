@@ -232,6 +232,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
 - Límite: una preferencia oscura ya guardada se respeta; no se modificó el ajuste elegido previamente por cada usuario. Falta QA visual real de los chips en móvil y ambos temas.
 
+## 2026-09-13 — SES-036 — Popup persistente y cobertura zonal de prensa
+
+- IDs: A09, A10, A11, V08.
+- Cambio: el popup de prensa desactiva el cierre por click de MapLibre, que se propagaba desde el marcador en el mismo toque. El scraper extrae fecha editorial también desde metadatos HTML/JSON-LD y suma consultas agregadas específicas de zona norte, oeste, sur y La Plata.
+- Pruebas: compilación sintáctica backend, lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado. Las nuevas pruebas unitarias del parser esperan el entorno de `pytest` pendiente.
+- Límite: los nuevos feeds pueden repetir notas y deben evaluarse mediante las métricas por fuente; no se declara mayor precisión sin corrida real ni muestra humana.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.
