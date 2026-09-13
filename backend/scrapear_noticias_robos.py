@@ -1065,13 +1065,17 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
     contadores['firmas_vistas'].add(firma)
     contadores['candidatas'] += 1
     contadores['candidatas_por_tipo'][categoria] = contadores['candidatas_por_tipo'].get(categoria, 0) + 1
+    contadores['candidatas_por_fuente'][nombre_fuente] = contadores['candidatas_por_fuente'].get(nombre_fuente, 0) + 1
+
+    es_moto = relacionado_con_moto(titulo, descripcion)
+    if es_moto:
+        contadores['candidatas_moto'] += 1
 
     ubicacion = extraer_ubicacion(titulo, descripcion)
     if ubicacion is None:
         print(f"  [sin ubicar] ({categoria}) {titulo}")
         return
     query, nivel, radio = ubicacion
-    es_moto = relacionado_con_moto(titulo, descripcion)
     try:
         punto = geocodificar_nominatim(query)
     except Exception as err:
@@ -1081,6 +1085,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
         print(f"  [geocode vacio -- query: \"{query}\"] {titulo}")
         return
     contadores['ubicadas'] += 1
+    contadores['ubicadas_por_fuente'][nombre_fuente] = contadores['ubicadas_por_fuente'].get(nombre_fuente, 0) + 1
     lat, lng = punto
     print(f"  [{categoria}, {nivel}, r={radio}m] ({lat:.5f}, {lng:.5f}) -- {titulo}")
 
@@ -1092,6 +1097,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
         """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en))
         if cur.rowcount > 0:
             contadores['guardadas'] += 1
+            contadores['guardadas_por_fuente'][nombre_fuente] = contadores['guardadas_por_fuente'].get(nombre_fuente, 0) + 1
 
 
 def _procesar_url(url, nombre_fuente, guardar, cur, contadores, headers=None):
@@ -1120,7 +1126,11 @@ def main():
         cur = conn.cursor()
         _asegurar_tabla(cur)
 
-    contadores = {'candidatas': 0, 'ubicadas': 0, 'guardadas': 0, 'duplicadas': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {}}
+    contadores = {
+        'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0,
+        'duplicadas': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
+        'candidatas_por_fuente': {}, 'ubicadas_por_fuente': {}, 'guardadas_por_fuente': {},
+    }
 
     for nombre_fuente, url_sitemap in FUENTES_SITEMAP:
         print(f"\n=== {nombre_fuente} (sitemap: {url_sitemap}) ===")
@@ -1215,6 +1225,13 @@ def main():
     print(f"\n{contadores['candidatas']} noticias candidatas ({desglose}), {contadores['duplicadas']} duplicadas omitidas, {contadores['ubicadas']} pudieron ubicarse"
           + (f", {contadores['guardadas']} nuevas guardadas en la base" if guardar
              else " (dry-run, no se guardo nada -- corré con --guardar para insertar)"))
+    print(f"  Relacionadas con moto: {contadores['candidatas_moto']} candidatas")
+    for fuente in sorted(contadores['candidatas_por_fuente']):
+        candidatas = contadores['candidatas_por_fuente'][fuente]
+        ubicadas = contadores['ubicadas_por_fuente'].get(fuente, 0)
+        guardadas = contadores['guardadas_por_fuente'].get(fuente, 0)
+        print(f"  {fuente}: {candidatas} candidatas, {ubicadas} ubicadas"
+              + (f", {guardadas} guardadas" if guardar else ""))
 
 
 if __name__ == "__main__":

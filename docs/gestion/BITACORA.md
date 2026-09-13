@@ -217,6 +217,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: compilación sintáctica backend, lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado. Las pruebas unitarias de scraper quedan pendientes por la indisponibilidad de `pytest` en el intérprete alternativo.
 - Límite: no es deduplicación semántica entre redacciones distintas del mismo hecho; esa mejora necesita muestra humana para no perder incidentes independientes.
 
+## 2026-09-13 — SES-034 — Resumen por fuente de la ingesta
+
+- IDs: A09, A10, A11.
+- Cambio: cada corrida informa candidatas, ubicadas, guardadas, duplicadas y candidatas relacionadas con motos; también desglosa candidatas, ubicadas y guardadas por fuente.
+- Pruebas: compilación sintáctica de `scrapear_noticias_robos.py` y `git diff --check` aprobados.
+- Límite: el resumen mide el pipeline, no precisión real. Para decidir cobertura o calidad todavía hace falta una corrida guardada, revisión humana y PostgreSQL funcional.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.
