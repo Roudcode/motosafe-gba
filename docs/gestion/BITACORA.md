@@ -252,6 +252,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
 - Límite: la pestaña Scraper depende del `venv` y PostgreSQL; mientras el intérprete base roto persista, mostrará el error en esa pestaña y no insertará noticias.
 
+## 2026-09-13 — SES-039 — Corrida real: URLs largas y continuidad de inserción
+
+- IDs: A09, A14.
+- Evidencia: Rodo ejecutó el scraper. La salida mostró muchas candidatas de medios directos y del agregador, pero se interrumpió al intentar guardar una URL de Google Noticias superior a 500 caracteres. Al confirmar al final de la transacción, esa interrupción puede haber revertido las inserciones de esa corrida.
+- Cambio: `url_fuente` pasa a `TEXT` tanto en creación como compatibilidad de tabla. Cada inserción usa savepoint y omite sólo la fila que falle, sin perder las ya guardadas.
+- Límite: falta repetir la corrida tras reiniciar el backend/scraper y comprobar el resumen final de guardadas por fuente.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

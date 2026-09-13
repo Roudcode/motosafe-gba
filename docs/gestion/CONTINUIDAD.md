@@ -51,6 +51,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-036 evita además el cierre por propagación del toque del mapa, extrae fecha editorial desde HTML/JSON-LD y amplía el descubrimiento agregado por zonas del GBA. Requiere corrida real para medir cuántas noticias nuevas aporta cada consulta.
 - SES-037 refuerza la detención de eventos táctiles de los marcadores y agrega un actualizador por lotes para completar fechas editoriales de filas históricas.
 - SES-038 corrige la causa real de cierre del popup: el array filtrado se regeneraba en cada tick. `iniciar.bat` abre Scraper como pestaña separada y lo ejecuta al levantar la app; requiere reparar Python para funcionar.
+- SES-039 registró una corrida real que abortó por URL de agregador mayor a 500 caracteres. `url_fuente` se amplió a TEXT y las inserciones se aíslan por fila; hay que repetir la corrida y confirmar el resumen final.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

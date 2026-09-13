@@ -853,7 +853,7 @@ def _asegurar_tabla_prensa(conn):
             nivel_precision VARCHAR(20) NOT NULL,
             radio_metros INTEGER NOT NULL,
             titular TEXT NOT NULL,
-            url_fuente VARCHAR(500) NOT NULL UNIQUE,
+            url_fuente TEXT NOT NULL UNIQUE,
             fuente VARCHAR(50) NOT NULL,
             tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo',
             relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE,
@@ -868,6 +868,9 @@ def _asegurar_tabla_prensa(conn):
     # cualquiera de los dos dos la tabla termina igual.
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
+    # Los enlaces de agregadores pueden incluir parámetros de redirección muy
+    # largos; TEXT evita que una sola URL válida interrumpa una corrida.
+    cur.execute("ALTER TABLE reportes_prensa ALTER COLUMN url_fuente TYPE TEXT")
     conn.commit()
     cur.close()
 

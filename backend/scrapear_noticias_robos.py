@@ -1062,7 +1062,7 @@ def _asegurar_tabla(cur):
             nivel_precision VARCHAR(20) NOT NULL,
             radio_metros INTEGER NOT NULL,
             titular TEXT NOT NULL,
-            url_fuente VARCHAR(500) NOT NULL UNIQUE,
+            url_fuente TEXT NOT NULL UNIQUE,
             fuente VARCHAR(50) NOT NULL,
             tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo',
             relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1077,6 +1077,7 @@ def _asegurar_tabla(cur):
     # tabla en el mismo estado.
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
+    cur.execute("ALTER TABLE reportes_prensa ALTER COLUMN url_fuente TYPE TEXT")
 
 
 def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores, publicado_en=None):
@@ -1126,14 +1127,21 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
     print(f"  [{categoria}, {nivel}, r={radio}m] ({lat:.5f}, {lng:.5f}) -- {titulo}")
 
     if guardar:
-        cur.execute("""
-            INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (url_fuente) DO NOTHING
-        """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en))
-        if cur.rowcount > 0:
-            contadores['guardadas'] += 1
-            contadores['guardadas_por_fuente'][nombre_fuente] = contadores['guardadas_por_fuente'].get(nombre_fuente, 0) + 1
+        try:
+            cur.execute('SAVEPOINT insertar_prensa')
+            cur.execute("""
+                INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (url_fuente) DO NOTHING
+            """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en))
+            if cur.rowcount > 0:
+                contadores['guardadas'] += 1
+                contadores['guardadas_por_fuente'][nombre_fuente] = contadores['guardadas_por_fuente'].get(nombre_fuente, 0) + 1
+        except psycopg2.Error as err:
+            # Una fila malformada no debe abortar la corrida completa ni
+            # revertir sus noticias válidas. Se vuelve al savepoint de esta fila.
+            cur.execute('ROLLBACK TO SAVEPOINT insertar_prensa')
+            print(f"  [error al guardar, se omite] {type(err).__name__}: {titulo}")
 
 
 def _procesar_url(url, nombre_fuente, guardar, cur, contadores, headers=None):

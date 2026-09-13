@@ -13,10 +13,12 @@ Esto permite que el filtro **Motos** muestre robos, inseguridad y choques vincul
 ## Controles de calidad y volumen
 
 - Las URL repetidas no se insertan por la restricción única de base.
+- `url_fuente` usa tipo `TEXT`: los enlaces con redirección del agregador pueden superar 500 caracteres y se conservan completos.
 - Durante una corrida se omite el mismo titular normalizado dentro de la misma categoría antes de geocodificarlo. Para el agregador se descarta únicamente su sufijo “- medio”, por lo que una nota del feed directo coincide con su copia agregada sin fusionar titulares distintos por similitud.
 - El geocodificador está limitado al área de CABA/GBA y se conserva el radio de precisión: intersección (80 m), calle (150 m) o barrio/partido (800 m).
 - Cada medio tiene un límite de URLs por corrida y pausas entre peticiones. Aumentar volumen significa sumar ejecuciones regulares y fuentes permitidas, no descargar de forma agresiva un sitio.
 - Al finalizar, el scraper informa candidatas, duplicadas, ubicadas, vinculadas a motos y el desglose por fuente. Ese resumen debe conservarse al evaluar si una nueva fuente agrega cobertura real o sólo repite notas.
+- Cada inserción está aislada por un savepoint: una URL o fila inválida se informa y se omite sin revertir las noticias válidas de la corrida.
 
 La fuente agregadora puede repetir una nota ya vista en un medio directo, alterar títulos o enlazar una redirección. Por eso no debe considerarse un conteo de incidentes ni alimentar directamente el modelo predictivo. A09 sigue abierto hasta medir precisión, duplicación semántica y error geográfico con un conjunto humano etiquetado.
 
