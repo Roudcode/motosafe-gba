@@ -25,3 +25,7 @@ La fuente agregadora puede repetir una nota ya vista en un medio directo, altera
 No se automatizan cuentas ni se evaden restricciones de una red social. Para incorporar una red o una institución se requiere uno de estos caminos: API oficial con credenciales y términos vigentes, RSS/archivo público permitido, o exportación que la organización entregue. Antes de habilitarla se registra nombre, URL/API, alcance geográfico, fecha, licencia/términos, frecuencia, campos disponibles y resultado de una corrida de prueba.
 
 La expansión práctica siguiente es agregar fuentes verificadas a las listas del scraper, ejecutar en seco, revisar cuántas candidatas se ubican y recién después guardar. La frecuencia y el tamaño de la base se deben decidir junto con la capacidad de PostgreSQL y el límite de Nominatim.
+
+## Fechas ya almacenadas
+
+Las filas antiguas pueden no tener `publicado_en` porque fueron descubiertas antes de que el scraper conservara metadatos editoriales. `backend/actualizar_fechas_prensa.py` revisa sus URLs y completa sólo las fechas que la página declara; no altera ubicación, categoría ni inserta una noticia nueva. Se ejecuta por lotes y con pausa para respetar a los medios.

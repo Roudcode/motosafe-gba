@@ -829,8 +829,17 @@ function MapaMotoSafeInner({
     let popup
     const markers = (reportesPrensa || []).map((rep) => {
       const el = elementoMarcadorPrensa(rep.nivelPrecision, rep.tipoIncidente)
-      el.addEventListener('click', (e) => {
+      // En móvil MapLibre puede recibir el touchstart del marcador antes del
+      // click. Se corta en ambos eventos para que no cierre el popup recién
+      // creado como si el usuario hubiera tocado el fondo del mapa.
+      const detenerPropagacion = (e) => {
+        e.preventDefault()
         e.stopPropagation()
+      }
+      el.addEventListener('mousedown', detenerPropagacion)
+      el.addEventListener('touchstart', detenerPropagacion, { passive: false })
+      el.addEventListener('click', (e) => {
+        detenerPropagacion(e)
         popup?.remove()
         const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
         // El click del marcador también llega a MapLibre; closeOnClick debe
