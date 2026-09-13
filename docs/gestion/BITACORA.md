@@ -109,6 +109,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: README y guías resumen/detallada reemplazan referencias a Leaflet y a 2025 como holdout no visto; la comparación de rutas se describe como exposición histórica, no garantía.
 - Límite: resta corregir otros documentos históricos y ejecutar evaluación temporal independiente.
 
+## 2026-09-13 — SES-014 — Corrección de historial metodológico
+
+- IDs: A02, G01.
+- Cambio: el README histórico conserva sus entradas pero agrega la rectificación sobre el uso de 2025 en selección de configuraciones.
+- Límite: la evaluación temporal independiente sigue pendiente.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
