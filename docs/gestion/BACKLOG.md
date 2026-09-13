@@ -10,7 +10,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 
 | ID | Estado | Alcance real y evidencia |
 |---|---|---|
-| A05 | En curso | Se quitó el refuerzo de reportes de la función que puntúa riesgo vial y el comparador aclara que la exposición usa zonas registradas, no probabilidad ni cobertura completa. Falta modelar cobertura explícita por tramo. |
+| A05 | Validado parcialmente | El comparador calcula proporción de trazado cercana a zonas registradas; bajo 60% muestra cobertura insuficiente y no otorga “menor exposición”. Falta validación geográfica independiente y cobertura por fuente. |
 | A06 | En curso | Los empates de rutas ya no se etiquetan automáticamente como la opción menos expuesta; falta validar pesos y capas con rutas de referencia. |
 | A07 | Validado parcialmente | Borrado con token privado de una sola entrega, UUID canónico, token no expuesto por GET y prueba de contrato. Quedan migración versionada, cuotas y política de votos. |
 | A08 | Validado | Prensa externa pasa a nodos DOM con texto y solo enlaces `http(s)`; cubierto por revisión y build. |

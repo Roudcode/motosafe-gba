@@ -27,6 +27,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 8. SES-007 añadió un aviso visible cuando una capa secundaria no puede actualizarse y conserva información en caché. Los reintentos específicos por capa siguen pendientes.
 9. SES-008 agregó un reintento global desde ese aviso; sigue pendiente separar reintentos y fechas por fuente.
 10. SES-010 habilitó zoom nativo del navegador y foco visible; falta revisión visual accesible.
+11. SES-020 agregó cobertura registrada por trazado para evitar que ausencia de zonas se presente como menor exposición.
 
 ## Estado técnico comprobado en la auditoría
 

@@ -4,7 +4,7 @@
 // funciones puras sobre datos planos, sin estado de React ni efectos.
 
 import { ORDEN_NIVELES, PESO_RIESGO, FRANJA_PICO_INSEGURIDAD_GENERAL, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
-import { distanciaAPolilinea, calcularAjustePorFranjaHoraria } from './geoRiesgo'
+import { distanciaAPolilinea, distanciaKm, calcularAjustePorFranjaHoraria } from './geoRiesgo'
 
 // Pasa los hotspots de inseguridad (general y moto, tal como los devuelve el
 // backend) a la misma forma que usan las zonas de siniestro: lat/lng/nivel.
@@ -65,6 +65,22 @@ export function calcularZonasCruzadasPorRuta(rutasCalculadas, zonasRiesgoTodas, 
   return rutasCalculadas.map((r) => zonasRiesgoTodas.filter((z) => distanciaAPolilinea(z, r.coords) <= umbralCruceKm))
 }
 
+// Proporción de vértices del trazado que quedan cerca de alguna zona con dato
+// registrado. No es una medida de seguridad: sirve para no interpretar la
+// ausencia de zonas como exposición baja cuando el recorrido queda fuera del
+// universo disponible.
+export function calcularCoberturaRegistrada(rutasCalculadas, zonasRiesgoTodas, umbralKm) {
+  return rutasCalculadas.map((ruta) => {
+    const puntos = ruta.coords || []
+    if (!puntos.length || !zonasRiesgoTodas.length) return 0
+    const muestreados = puntos.length > 120 ? puntos.filter((_, i) => i % Math.ceil(puntos.length / 120) === 0) : puntos
+    const cubiertos = muestreados.filter(([lat, lng]) =>
+      zonasRiesgoTodas.some((zona) => distanciaKm({ lat, lng }, zona) <= umbralKm)
+    ).length
+    return cubiertos / muestreados.length
+  })
+}
+
 // Arma, para cada ruta, el score total (suma de PESO_RIESGO de todo lo que
 // cruza) desglosado por eje, más el nivel más grave que atraviesa
 // (nivelMaximo) y el nivel relativo a las demás alternativas de este mismo
@@ -115,7 +131,7 @@ function nivelRelativoEnLote(score, indice, scoresDelLote) {
   return 'bajo'
 }
 
-export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta) {
+export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta = []) {
   const conScore = rutasCalculadas.map((r, i) => {
     const cruces = zonasCruzadasPorRuta[i] || []
     const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
@@ -131,6 +147,7 @@ export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta) {
       riesgoInseguridad: crucesInseguridad.reduce((acc, z) => acc + PESO_RIESGO[z.nivel], 0),
       cantSiniestros: crucesSiniestro.length,
       cantInseguridad: crucesInseguridad.length,
+      coberturaRegistrada: coberturaPorRuta[i] ?? 0,
       nivelMaximo,
     }
   })

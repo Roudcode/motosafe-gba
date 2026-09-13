@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
+  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularRutasConScore,
 } from './riesgoRuta'
 
 describe('unificarZonasInseguridad', () => {
@@ -135,6 +135,19 @@ describe('calcularZonasCruzadasPorRuta', () => {
     const cruces = calcularZonasCruzadasPorRuta([ruta, otraRuta], [zonaEncimaDeLaRuta, zonaLejos], 0.6)
     expect(cruces[0].map((z) => z.id)).toEqual(['z1'])
     expect(cruces[1].map((z) => z.id)).toEqual(['z2'])
+  })
+})
+
+describe('calcularCoberturaRegistrada', () => {
+  it('distingue trazado cercano a datos registrados de ausencia de cobertura', () => {
+    const rutas = [
+      { coords: [[-34.6, -58.4], [-34.601, -58.401]] },
+      { coords: [[-35.2, -59.2], [-35.201, -59.201]] },
+    ]
+    const zonas = [{ lat: -34.6, lng: -58.4, nivel: 'alto' }]
+    const [cubierta, sinCobertura] = calcularCoberturaRegistrada(rutas, zonas, 0.5)
+    expect(cubierta).toBeGreaterThanOrEqual(0.5)
+    expect(sinCobertura).toBe(0)
   })
 })
 

@@ -144,6 +144,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio: el detalle de zona identifica la salida como gravedad estimada si ocurre un siniestro y aclara que no estima ocurrencia durante el viaje.
 - Pruebas: lint y 75 pruebas frontend aprobadas.
 
+## 2026-09-13 — SES-020 — Cobertura registrada de rutas
+
+- IDs: A05, A06.
+- Cambio: se calcula qué porción del trazado queda cerca de zonas registradas; rutas bajo 60% no se presentan como de menor exposición y muestran cobertura insuficiente.
+- Pruebas: lint, 76 pruebas frontend y build aprobados.
+- Límite: proximidad a zonas registradas no equivale aún a cobertura geográfica independiente por fuente.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título

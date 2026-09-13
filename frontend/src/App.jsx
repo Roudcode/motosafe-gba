@@ -17,7 +17,7 @@ import {
 } from './constants'
 import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
-  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularRutasConScore,
+  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularRutasConScore,
 } from './utils/riesgoRuta'
 import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
@@ -1125,6 +1125,11 @@ function App() {
     () => calcularZonasCruzadasPorRuta(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
     [rutasCalculadas, zonasRiesgoTodas]
   )
+
+  const coberturaPorRuta = useMemo(
+    () => calcularCoberturaRegistrada(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
+    [rutasCalculadas, zonasRiesgoTodas]
+  )
   const zonasCruzadasActual = useMemo(
     () => zonasCruzadasPorRuta[rutaSeleccionada] || [],
     [zonasCruzadasPorRuta, rutaSeleccionada]
@@ -1143,8 +1148,8 @@ function App() {
   }, [zonasCruzadasActual])
 
   const rutasConScore = useMemo(
-    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta),
-    [rutasCalculadas, zonasCruzadasPorRuta]
+    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta),
+    [rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta]
   )
 
   const idxMasRapida = useMemo(() => {
@@ -1154,8 +1159,12 @@ function App() {
 
   const idxMasSegura = useMemo(() => {
     if (rutasConScore.length === 0) return 0
-    return rutasConScore.reduce((best, r, i) => (r.riesgo < rutasConScore[best].riesgo ? i : best), 0)
-  }, [rutasConScore])
+    const comparables = rutasConScore
+      .map((ruta, indice) => ({ ruta, indice }))
+      .filter(({ ruta }) => ruta.coberturaRegistrada >= 0.6)
+    if (!comparables.length) return idxMasRapida
+    return comparables.reduce((best, actual) => (actual.ruta.riesgo < best.ruta.riesgo ? actual : best)).indice
+  }, [rutasConScore, idxMasRapida])
 
   const idxEquilibrada = useMemo(() => {
     if (rutasConScore.length < 3) return idxMasRapida
@@ -1313,6 +1322,7 @@ function App() {
               className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'clusters' ? 'capas-con-cambios' : ''}`}
               onClick={() => setCapasAbiertas((v) => !v)}
               aria-label="Capas del mapa"
+              aria-expanded={capasAbiertas}
               title="Capas del mapa"
             >
               <Layers size={15} />
@@ -1653,9 +1663,9 @@ function App() {
             <button key={i} className={`ruta-opcion ${i === rutaSeleccionada ? 'activa' : ''}`} onClick={() => setRutaSeleccionada(i)}>
               <span className="ruta-opcion-num">
                 Ruta {i + 1}
-                {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas"><Zap size={10} /><ShieldCheck size={10} /> rápida y menor exposición</span>}
+                {i === idxMasRapida && i === idxMasSegura && r.coberturaRegistrada >= 0.6 && <span className="ruta-opcion-badge badge-ambas"><Zap size={10} /><ShieldCheck size={10} /> rápida y menor exposición</span>}
                 {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida"><Zap size={10} /> rápida</span>}
-                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> menor exposición</span>}
+                {i === idxMasSegura && i !== idxMasRapida && r.coberturaRegistrada >= 0.6 && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> menor exposición</span>}
                 {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada"><Scale size={10} /> equilibrada</span>}
               </span>
               <span className="ruta-opcion-datos">
@@ -1667,7 +1677,9 @@ function App() {
                 )}
               </span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : `nivel-${r.nivelRelativo}`}`}>
-                {r.riesgo === 0
+                {r.coberturaRegistrada < 0.6
+                  ? <><TriangleAlert size={12} /> cobertura registrada insuficiente</>
+                  : r.riesgo === 0
                   ? <><CircleCheck size={12} /> sin zonas registradas cerca</>
                   : <><TriangleAlert size={12} /> exposición {NIVELES[r.nivelRelativo]?.label.toLowerCase()} entre alternativas</>}
               </span>
