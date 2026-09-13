@@ -408,9 +408,9 @@ function App() {
     // agresivos como con /hotspots porque esta capa es secundaria (arranca en
     // 'clusters') y el usuario la ve recien si cambia de vista.
     fetch(`${API_URL}/corredores`)
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => { if (!r.ok) throw new Error('No se pudieron cargar corredores'); return r.json() })
       .then((data) => { setCorredores(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_CORREDORES, data) })
-      .catch(() => {})
+      .catch(() => { /* se conserva la caché visible; un 500 no significa “sin corredores” */ })
   }, [])
 
   useEffect(() => {
@@ -419,18 +419,18 @@ function App() {
     // igual que corredores. Se cargan una sola vez al montar; son secundarias,
     // el usuario las ve si cambia de capa.
     fetch(`${API_URL}/hotspots-inseguridad?tipo=general`)
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => { if (!r.ok) throw new Error('No se pudo cargar inseguridad general'); return r.json() })
       .then((data) => { setInseguridadGeneral(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_GENERAL, data) })
-      .catch(() => {})
+      .catch(() => { /* se conserva la caché visible; un 500 no significa “sin datos” */ })
     fetch(`${API_URL}/hotspots-inseguridad?tipo=moto`)
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => { if (!r.ok) throw new Error('No se pudo cargar inseguridad con moto'); return r.json() })
       .then((data) => { setInseguridadMoto(data); if (data.length) guardarEnLocalStorage(CLAVE_CACHE_INSEGURIDAD_MOTO, data) })
-      .catch(() => {})
+      .catch(() => { /* se conserva la caché visible; un 500 no significa “sin datos” */ })
   }, [])
 
   const cargarReportes = useCallback(() => {
     fetch(`${API_URL}/reportes`)
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => { if (!r.ok) throw new Error('No se pudieron cargar reportes'); return r.json() })
         .then((data) => setReportes(data.map((r) => ({
           id: r.id,
         lat: r.lat,
@@ -460,7 +460,7 @@ function App() {
     // recargar la página, sin pegarle al backend por nada.
     const cargarReportesPrensa = () => {
       fetch(`${API_URL}/reportes-prensa`)
-        .then((r) => (r.ok ? r.json() : []))
+        .then((r) => { if (!r.ok) throw new Error('No se pudo cargar prensa'); return r.json() })
         .then((data) => setReportesPrensa(data.map((r) => ({
           id: r.id,
           lat: r.lat,

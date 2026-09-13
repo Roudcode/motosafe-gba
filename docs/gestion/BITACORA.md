@@ -56,6 +56,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Límite: no se ejecutó la migración contra PostgreSQL. El `backend/venv` no puede iniciar porque el Python base indicado en `pyvenv.cfg` no está disponible; por eso tampoco se repitió pytest. La migración queda en curso y no debe ejecutarse hasta validarla contra una base aislada.
 - Modelo/datasets: sin cambios. Commit: pendiente al cierre de esta entrada.
 
+## 2026-09-13 — SES-006 — Recuperación de capas ante error HTTP
+
+- IDs: A15 y V10.
+- Cambio: corredores, capas de inseguridad, reportes colaborativos y prensa pasan a tratar HTTP no exitoso como error. Conservan la última caché en vez de sustituirla por una lista vacía que aparenta ausencia de datos.
+- Pruebas: `npm run lint` y 73 pruebas de Vitest aprobadas.
+- Límite: no hay aún indicador separado de error/fecha para cada capa ni prueba E2E con backend real. Commit: pendiente al cierre de esta entrada.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
