@@ -171,6 +171,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - IDs: G01, G02, G03, G04.
 - Cambio: matriz central de objetivos, evidencia y límites, con guion de demo reproducible.
 - Límite: faltan requisitos institucionales, ensayo de demo y pruebas con personas.
+
+## 2026-09-13 — SES-028 — Esquema SQL sin DDL por request
+
+- IDs: A14, T01.
+- Cambio: la compatibilidad de tablas de reportes se ejecuta una vez por proceso bajo lock, no en cada endpoint.
+- Pruebas: sintaxis Python y revisión de diff aprobadas.
+- Límite: sigue pendiente ejecutar migraciones y prueba de integración contra PostgreSQL aislado.
 - Límite: PostgreSQL y Python no están disponibles en esta terminal para validación backend real.
 
 ## 2026-09-13 — SES-016 — Movimiento reducido
