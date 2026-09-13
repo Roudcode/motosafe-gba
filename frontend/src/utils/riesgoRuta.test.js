@@ -248,4 +248,12 @@ describe('calcularRutasConScore — nivelRelativo (comparativo entre alternativa
     )
     expect(rutas[1].nivelRelativo).not.toBe('critico')
   })
+
+  it('no etiqueta como bajo alternativas empatadas que sí cruzan zonas', () => {
+    const rutas = calcularRutasConScore(
+      [{ min: 10, coords: [] }, { min: 11, coords: [] }],
+      [[{ id: 'a', nivel: 'alto', tipoRiesgo: 'siniestro' }], [{ id: 'b', nivel: 'alto', tipoRiesgo: 'siniestro' }]]
+    )
+    expect(rutas.map((r) => r.nivelRelativo)).toEqual(['medio', 'medio'])
+  })
 })

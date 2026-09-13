@@ -1,5 +1,7 @@
 # MotoSafe GBA
 
+> **Continuidad y documentación central:** empezar por [docs/README.md](docs/README.md). El [backlog operativo](docs/gestion/BACKLOG.md) y el [plan de prioridades](docs/gestion/PRIORIZACION.md) reemplazan para trabajo futuro la lista histórica al final de este README. La auditoría identifica afirmaciones antiguas pendientes de actualizar en este documento.
+
 Mapa de riesgo para motociclistas en CABA, construido sobre un modelo de Machine Learning (Random Forest) entrenado con datos reales de siniestralidad vial (2019-2025, data.buenosaires.gob.ar). Proyecto Final de Ingeniería en Informática — Universidad del Salvador.
 
 Backend en FastAPI + PostgreSQL/PostGIS, frontend en React + Leaflet. El detalle de la metodología (limpieza de datos, clustering HDBSCAN (siniestros y robos con moto) y DBSCAN (delito general), comparación de modelos, umbrales de riesgo) está documentado en `notebooks/01_eda_hotspots_moto.ipynb` y en `docs/`.

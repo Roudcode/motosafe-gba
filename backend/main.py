@@ -1,20 +1,23 @@
 import os
 import json
 import time
+import hashlib
+import secrets
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Header
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
 import psycopg2.extras
 import queue
+import threading
 from dotenv import load_dotenv
 import httpx
 import joblib
@@ -36,23 +39,74 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 # ninguna conexion real al importar el modulo), lo que mantiene valido correr
 # pytest sin la base de datos levantada.
 class _PoolConexiones:
-    def __init__(self, maxsize=10):
+    """Pool lazy con límite de conexiones físicas y transacciones limpias."""
+    def __init__(self, maxsize=10, timeout=5):
         self._libres = queue.LifoQueue(maxsize=maxsize)
+        self._maxsize = maxsize
+        self._timeout = timeout
+        self._creadas = 0
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _cerrada(conn):
+        # Los tests usan MagicMock como conexión aislada. No se los reutiliza
+        # entre requests para que cada fixture conserve su cursor esperado.
+        if type(conn).__module__.startswith('unittest.mock'):
+            return True
+        estado = getattr(conn, 'closed', True)
+        # psycopg2 usa 0 para abierta. Los mocks no deben parecer cerrados.
+        return isinstance(estado, (bool, int)) and estado != 0
+
+    def _olvidar_conexion(self):
+        with self._lock:
+            self._creadas = max(0, self._creadas - 1)
 
     def getconn(self):
         while True:
             try:
                 conn = self._libres.get_nowait()
+                if not self._cerrada(conn):
+                    return conn
+                self._olvidar_conexion()
+                continue
             except queue.Empty:
-                return psycopg2.connect(DATABASE_URL)
-            if not conn.closed:
+                pass
+
+            with self._lock:
+                crear = self._creadas < self._maxsize
+                if crear:
+                    self._creadas += 1
+            if crear:
+                try:
+                    return psycopg2.connect(DATABASE_URL)
+                except Exception:
+                    self._olvidar_conexion()
+                    raise
+
+            try:
+                conn = self._libres.get(timeout=self._timeout)
+            except queue.Empty as exc:
+                raise RuntimeError('Pool de conexiones agotado') from exc
+            if not self._cerrada(conn):
                 return conn
+            self._olvidar_conexion()
 
     def putconn(self, conn):
+        if conn is None:
+            return
         try:
+            if self._cerrada(conn):
+                self._olvidar_conexion()
+                return
+            # Un SELECT también abre una transacción en psycopg2. Siempre se
+            # devuelve limpia para que el siguiente endpoint no herede estado.
+            conn.rollback()
             self._libres.put_nowait(conn)
-        except queue.Full:
-            conn.close()
+        except Exception:
+            try:
+                conn.close()
+            finally:
+                self._olvidar_conexion()
 
 
 _pool_conexiones = _PoolConexiones()
@@ -360,6 +414,11 @@ def obtener_hotspots(request: Request):
     finally:
         _pool_conexiones.putconn(conn)
 
+    # Una instalación recién creada puede no tener hotspots todavía. Es un
+    # estado válido de la aplicación, no una entrada válida para sklearn.
+    if not resultado:
+        return []
+
     ahora = datetime.now(ZONA_CABA)
     hora_actual = ahora.hour
     dia_actual = ahora.strftime('%A')
@@ -431,18 +490,18 @@ def obtener_hotspots(request: Request):
 
 
 class ContextoSiniestro(BaseModel):
-    hora: int
+    hora: int = Field(ge=0, le=23)
     dia_semana: str
     comuna: str
     tipo_de_via: str
     contraparte: str
-    edad_victima: float = 32.0
+    edad_victima: float = Field(default=32.0, ge=14, le=95)
     sexo_victima: str = "SD"
     # Si no se pasan, se usa el clima en vivo actual de CABA (ver obtener_clima_actual).
     # Se pueden pasar explícitos para simular un escenario ("¿y si llueve?").
     lluvia: str | None = None
-    temperatura: float | None = None
-    humedad: float | None = None
+    temperatura: float | None = Field(default=None, ge=-30, le=60)
+    humedad: float | None = Field(default=None, ge=0, le=100)
 
 
 @app.post("/predecir")
@@ -498,9 +557,13 @@ def _asegurar_tabla_reportes(conn):
             lng DOUBLE PRECISION NOT NULL,
             categoria VARCHAR(30) NOT NULL,
             autor_id VARCHAR(50) NOT NULL,
+            delete_token_hash VARCHAR(64),
             creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
         )
     """)
+    # Las filas creadas antes de la corrección no tienen token. Siguen siendo
+    # visibles hasta vencer, pero no se pueden borrar con un UUID público.
+    cur.execute("ALTER TABLE reportes_colaborativos ADD COLUMN IF NOT EXISTS delete_token_hash VARCHAR(64)")
     conn.commit()
     cur.close()
 
@@ -528,8 +591,8 @@ def _asegurar_tabla_confirmaciones(conn):
 
 
 class ReporteNuevo(BaseModel):
-    lat: float
-    lng: float
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
     categoria: Literal['robo', 'inseguro', 'pavimento', 'corte', 'iluminacion']
     # No es autenticacion de usuario -- es un identificador de dispositivo (UUID v4
     # generado por el frontend la primera vez que se abre la app y persistido en
@@ -545,21 +608,28 @@ class ReporteNuevo(BaseModel):
             uuid.UUID(valor)
         except (ValueError, AttributeError, TypeError):
             raise ValueError('autor_id debe ser un UUID valido')
-        return valor
+        return str(uuid.UUID(valor))
+
+
+def _hash_delete_token(token: str) -> str:
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
 
 
 @app.post("/reportes", status_code=201)
 @limiter.limit("20/minute")
 def crear_reporte(request: Request, reporte: ReporteNuevo):
+    # El token sólo se devuelve en esta respuesta. En la tabla se persiste su
+    # hash y GET /reportes nunca expone ni token ni autor_id.
+    delete_token = secrets.token_urlsafe(32)
     conn = _pool_conexiones.getconn()
     try:
         _asegurar_tabla_reportes(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            INSERT INTO reportes_colaborativos (lat, lng, categoria, autor_id)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id, lat, lng, categoria, autor_id, creado_en
-        """, (reporte.lat, reporte.lng, reporte.categoria, reporte.autor_id))
+            INSERT INTO reportes_colaborativos (lat, lng, categoria, autor_id, delete_token_hash)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, lat, lng, categoria, creado_en
+        """, (reporte.lat, reporte.lng, reporte.categoria, reporte.autor_id, _hash_delete_token(delete_token)))
         fila = cur.fetchone()
         conn.commit()
         cur.close()
@@ -572,7 +642,7 @@ def crear_reporte(request: Request, reporte: ReporteNuevo):
         raise
     finally:
         _pool_conexiones.putconn(conn)
-    return fila
+    return {**fila, "delete_token": delete_token}
 
 
 class ConfirmacionNueva(BaseModel):
@@ -590,7 +660,7 @@ class ConfirmacionNueva(BaseModel):
             uuid.UUID(valor)
         except (ValueError, AttributeError, TypeError):
             raise ValueError('autor_id debe ser un UUID valido')
-        return valor
+        return str(uuid.UUID(valor))
 
 
 @app.post("/reportes/{reporte_id}/confirmar", status_code=201)
@@ -645,7 +715,7 @@ def listar_reportes():
         _asegurar_tabla_confirmaciones(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT r.id, r.lat, r.lng, r.categoria, r.autor_id, r.creado_en,
+            SELECT r.id, r.lat, r.lng, r.categoria, r.creado_en,
                    COALESCE(SUM(CASE WHEN c.tipo = 'confirma' THEN 1 ELSE 0 END), 0) AS confirmaciones,
                    COALESCE(SUM(CASE WHEN c.tipo = 'desmiente' THEN 1 ELSE 0 END), 0) AS desmentidas
             FROM reportes_colaborativos r
@@ -675,25 +745,35 @@ def listar_reportes():
         )
         if retirado_por_consenso:
             continue
-        vigentes.append(fila)
+        # La identidad de dispositivo sólo se usa del lado servidor para
+        # impedir auto-voto; no forma parte del contrato público del mapa.
+        vigentes.append({
+            'id': fila['id'], 'lat': fila['lat'], 'lng': fila['lng'],
+            'categoria': fila['categoria'], 'creado_en': fila['creado_en'],
+            'confirmaciones': confirmaciones, 'desmentidas': desmentidas,
+        })
     return vigentes
 
 
-@app.delete("/reportes")
-def borrar_mis_reportes(autor_id: str):
-    """Borra solo los reportes de ese autor_id (ver nota sobre autor_id mas arriba:
-    no es autenticacion real, es lo minimo para que 'borrar mis reportes' borre los
-    del dispositivo que los creo y no los de otro usuario)."""
-    try:
-        uuid.UUID(autor_id)
-    except (ValueError, AttributeError, TypeError):
-        raise HTTPException(status_code=422, detail="autor_id debe ser un UUID valido")
+@app.delete("/reportes/{reporte_id}")
+def borrar_reporte(reporte_id: int, delete_token: str = Header(alias="X-Report-Delete-Token", min_length=32, max_length=256)):
+    """Borra un reporte sólo con el token secreto entregado al crearlo.
+
+    Un UUID de dispositivo identifica para moderación, pero no autoriza una
+    operación destructiva porque antes se exponía a cualquier lector del mapa.
+    Se devuelve 404 también ante token inválido para no revelar información.
+    """
     conn = _pool_conexiones.getconn()
     try:
         _asegurar_tabla_reportes(conn)
         cur = conn.cursor()
-        cur.execute("DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,))
-        eliminados = cur.rowcount
+        cur.execute(
+            "DELETE FROM reportes_colaborativos WHERE id = %s AND delete_token_hash = %s",
+            (reporte_id, _hash_delete_token(delete_token)),
+        )
+        eliminado = cur.rowcount
+        if not eliminado:
+            raise HTTPException(status_code=404, detail="Reporte no encontrado")
         conn.commit()
         cur.close()
     except Exception:
@@ -701,7 +781,7 @@ def borrar_mis_reportes(autor_id: str):
         raise
     finally:
         _pool_conexiones.putconn(conn)
-    return {"eliminados": eliminados}
+    return {"eliminado": True}
 
 
 # --- Reportes de prensa (corroborados por medios, no por usuarios) ---

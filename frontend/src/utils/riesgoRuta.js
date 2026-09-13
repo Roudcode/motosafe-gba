@@ -96,6 +96,11 @@ function nivelRelativoEnLote(score, indice, scoresDelLote) {
   if (score === 0) return 'bajo'
   if (scoresDelLote.length <= 1) return score <= 4 ? 'medio' : 'alto'
 
+  // Si todas las alternativas empatan con exposición positiva, ninguna es
+  // realmente "baja" respecto de las demás. indexOf antes daba rango cero a
+  // todas y terminaba etiquetándolas como bajo por accidente.
+  if (new Set(scoresDelLote).size === 1) return score <= 4 ? 'medio' : 'alto'
+
   const ordenados = [...scoresDelLote].sort((a, b) => a - b)
   const rank = ordenados.indexOf(score)
   const percentil = rank / (ordenados.length - 1)

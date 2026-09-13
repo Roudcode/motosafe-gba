@@ -79,6 +79,43 @@ function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExt
   return el
 }
 
+function urlExternaSegura(valor) {
+  try {
+    const url = new URL(valor)
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+function contenidoPopupPrensa(rep, etiquetaTipo, horaActual) {
+  const contenido = document.createElement('div')
+  contenido.className = 'popup-content'
+  const fuente = document.createElement('span')
+  fuente.className = 'popup-nivel popup-prensa-fuente'
+  fuente.textContent = `${etiquetaTipo} · ${rep.fuente || 'Fuente sin identificar'} · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
+  const titular = document.createElement('strong')
+  titular.textContent = rep.titular || 'Noticia sin titular'
+  const precision = document.createElement('span')
+  precision.className = 'popup-prensa-precision'
+  precision.textContent = ETIQUETA_NIVEL_PRECISION[rep.nivelPrecision] || ''
+  contenido.append(fuente, titular, precision)
+
+  const url = urlExternaSegura(rep.urlFuente)
+  if (url) {
+    const boton = document.createElement('button')
+    boton.className = 'popup-ver-noticia'
+    boton.type = 'button'
+    boton.textContent = 'Ver noticia completa'
+    boton.addEventListener('click', (evento) => {
+      evento.stopPropagation()
+      window.open(url, '_blank', 'noopener,noreferrer')
+    })
+    contenido.append(boton)
+  }
+  return contenido
+}
+
 // Marcador de un reporte de prensa (ver backend/scrapear_noticias_robos.py):
 // un ícono propio (no el círculo genérico de reportes de usuario) para que
 // se lea de un vistazo como "esto es una noticia, no algo que reportó
@@ -298,7 +335,6 @@ function MapaMotoSafeInner({
   reportes,
   onVotarReporte,
   reportesPrensa,
-  autorId,
   horaActual,
   rutasCalculadas,
   rutaSeleccionada,
@@ -736,7 +772,7 @@ function MapaMotoSafeInner({
     if (!map || version === 0) return
     let popup
     const markers = reportes.map((rep) => {
-      const color = rep.autorId === autorId ? '#FFC933' : '#B98CFF'
+      const color = rep.esPropio ? '#FFC933' : '#B98CFF'
       const vigenciaHoras = VIGENCIA_HORAS_POR_CATEGORIA[rep.categoria] || VIGENCIA_HORAS_DEFAULT
       const opacidad = opacidadPorAntiguedad(rep.creadoEn, vigenciaHoras, horaActual)
       const reciente = esReciente(rep.creadoEn, horaActual)
@@ -746,7 +782,7 @@ function MapaMotoSafeInner({
         e.stopPropagation()
         popup?.remove()
         const label = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)?.label || rep.categoria
-        const esPropio = rep.autorId === autorId
+        const esPropio = rep.esPropio
         // Verificacion social: no se puede votar el propio reporte (el backend
         // igual lo rechaza, ver confirmar_reporte en main.py -- esto solo evita
         // mostrar botones que van a fallar).
@@ -777,7 +813,7 @@ function MapaMotoSafeInner({
     })
     return () => { popup?.remove(); markers.forEach((m) => m.remove()) }
 
-  }, [reportes, autorId, horaActual, version, onVotarReporte])
+  }, [reportes, horaActual, version, onVotarReporte])
 
   // --- reportes de prensa (noticias de robos scrapeadas) --------------------
   // Capa separada de "reportes colaborativos": vigencia, semántica y fuente
@@ -797,19 +833,8 @@ function MapaMotoSafeInner({
         const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
         popup = new Popup({ closeButton: true, maxWidth: '260px' })
           .setLngLat([rep.lng, rep.lat])
-          .setHTML(`
-            <div class="popup-content">
-              <span class="popup-nivel popup-prensa-fuente">${etiquetaTipo} · ${rep.fuente} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
-              <strong>${rep.titular}</strong>
-              <span class="popup-prensa-precision">${ETIQUETA_NIVEL_PRECISION[rep.nivelPrecision] || ''}</span>
-              <button class="popup-ver-noticia" type="button">Ver noticia completa</button>
-            </div>
-          `)
+          .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActual))
           .addTo(map)
-        popup.getElement()?.querySelector('.popup-ver-noticia')?.addEventListener('click', (ev) => {
-          ev.stopPropagation()
-          window.open(rep.urlFuente, '_blank', 'noopener,noreferrer')
-        })
       })
       return new Marker({ element: el }).setLngLat([rep.lng, rep.lat]).addTo(map)
     })

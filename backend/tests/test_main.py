@@ -20,10 +20,38 @@ import main
 client = TestClient(main.app)
 
 
+class _ConexionFalsaPool:
+    def __init__(self):
+        self.closed = 0
+        self.rollbacks = 0
+        self.cerrada = False
+
+    def rollback(self):
+        self.rollbacks += 1
+
+    def close(self):
+        self.closed = 1
+        self.cerrada = True
+
+
 def test_raiz_responde_ok():
     r = client.get("/")
     assert r.status_code == 200
     assert "mensaje" in r.json()
+
+
+def test_pool_no_supera_el_maximo_y_reutiliza_conexion_limpia():
+    primera, segunda = _ConexionFalsaPool(), _ConexionFalsaPool()
+    pool = main._PoolConexiones(maxsize=2, timeout=0)
+    with patch("main.psycopg2.connect", side_effect=[primera, segunda]) as conectar:
+        assert pool.getconn() is primera
+        assert pool.getconn() is segunda
+        with pytest.raises(RuntimeError, match="agotado"):
+            pool.getconn()
+        pool.putconn(primera)
+        assert pool.getconn() is primera
+    assert conectar.call_count == 2
+    assert primera.rollbacks == 1
 
 
 def test_predecir_devuelve_prediccion_valida():
@@ -342,7 +370,7 @@ def test_crear_reporte_devuelve_la_fila_creada():
     autor_id = "11111111-2222-4333-8444-555555555555"
     fila_creada = {
         "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "pavimento",
-        "autor_id": autor_id, "creado_en": "2026-09-04T12:00:00+00:00",
+        "creado_en": "2026-09-04T12:00:00+00:00",
     }
     with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchone_valor=fila_creada)):
         r = client.post("/reportes", json={
@@ -350,6 +378,15 @@ def test_crear_reporte_devuelve_la_fila_creada():
         })
     assert r.status_code == 201
     assert r.json()["categoria"] == "pavimento"
+    assert len(r.json()["delete_token"]) >= 32
+
+
+def test_crear_reporte_rechaza_coordenadas_fuera_del_mundo():
+    autor_id = "11111111-2222-4333-8444-555555555555"
+    r = client.post("/reportes", json={
+        "lat": 999, "lng": -58.4, "categoria": "pavimento", "autor_id": autor_id,
+    })
+    assert r.status_code == 422
 
 
 def test_crear_reporte_rechaza_categoria_invalida():
@@ -390,21 +427,40 @@ def test_listar_reportes_excluye_los_vencidos_segun_su_categoria():
     assert ids == [2]
 
 
-def test_borrar_mis_reportes_solo_afecta_al_autor_pedido():
-    autor_id = "11111111-2222-4333-8444-555555555555"
-    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(rowcount=3)) as mock_connect:
-        r = client.request("DELETE", "/reportes", params={"autor_id": autor_id})
+def test_borrar_reporte_requiere_token_privado():
+    token = "x" * 32
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(rowcount=1)) as mock_connect:
+        r = client.delete("/reportes/7", headers={"X-Report-Delete-Token": token})
     assert r.status_code == 200
-    assert r.json() == {"eliminados": 3}
+    assert r.json() == {"eliminado": True}
     cursor_usado = mock_connect.return_value.cursor.return_value
     cursor_usado.execute.assert_any_call(
-        "DELETE FROM reportes_colaborativos WHERE autor_id = %s", (autor_id,)
+        "DELETE FROM reportes_colaborativos WHERE id = %s AND delete_token_hash = %s", (7, main._hash_delete_token(token))
     )
 
 
-def test_borrar_mis_reportes_rechaza_autor_id_no_uuid():
-    r = client.request("DELETE", "/reportes", params={"autor_id": "dispositivo-abc"})
+def test_borrar_reporte_no_acepta_un_token_de_otro_reporte():
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(rowcount=0)):
+        r = client.delete("/reportes/7", headers={"X-Report-Delete-Token": "x" * 32})
+    assert r.status_code == 404
+
+
+def test_borrar_reporte_rechaza_token_corto():
+    r = client.delete("/reportes/7", headers={"X-Report-Delete-Token": "corto"})
     assert r.status_code == 422
+
+
+def test_listar_reportes_no_expone_autor_id():
+    ahora = datetime.now(timezone.utc)
+    fila = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "robo",
+        "autor_id": "identidad-interna", "creado_en": ahora,
+        "confirmaciones": 0, "desmentidas": 0,
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(fetchall_valor=[fila])):
+        r = client.get("/reportes")
+    assert r.status_code == 200
+    assert "autor_id" not in r.json()[0]
 
 
 def test_confirmar_reporte_devuelve_el_voto_creado():
@@ -449,6 +505,21 @@ def test_confirmar_reporte_rechaza_tipo_invalido():
     with patch("main.psycopg2.connect", return_value=_mock_db_reportes()):
         r = client.post("/reportes/1/confirmar", json={"autor_id": otro_autor, "tipo": "me-gusta"})
     assert r.status_code == 422
+
+
+def test_predecir_rechaza_hora_y_edad_imposibles():
+    payload = {
+        "hora": 99, "dia_semana": "Friday", "comuna": "1", "tipo_de_via": "AVENIDA",
+        "contraparte": "AUTO", "edad_victima": -2, "sexo_victima": "M",
+    }
+    assert client.post("/predecir", json=payload).status_code == 422
+
+
+def test_hotspots_vacios_devuelve_lista_vacia():
+    with patch("main.psycopg2.connect", return_value=_mock_db([])):
+        r = client.get("/hotspots")
+    assert r.status_code == 200
+    assert r.json() == []
 
 
 def test_listar_reportes_retira_por_consenso_de_desmentidas():

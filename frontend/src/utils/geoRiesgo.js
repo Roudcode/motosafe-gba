@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, CODIGOS_LLUVIA, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
+import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
 
 export function distanciaKm(a, b) {
   const R = 6371
@@ -108,16 +108,16 @@ export function distanciaAPolilinea(punto, coords) {
   return min
 }
 
-export function calcularAjuste(zona, climaCode, reportes) {
+export function calcularAjuste(zona, reportes) {
   let idx = ORDEN_NIVELES.indexOf(zona.nivel)
   const motivos = []
-  const esLluvia = climaCode != null && CODIGOS_LLUVIA.includes(climaCode)
-  if (esLluvia && idx < 3) { idx += 1; motivos.push('lluvia actual') }
-  // "cercanos" incluye reportes de TODOS los usuarios, no solo los propios
-  // (desde que los reportes son colaborativos -- ver backend/main.py). El
-  // motivo no debe decir "tuyo": seria informacion falsa si el reporte lo
-  // puso otro usuario.
-  const reportesCercanos = reportes.filter((r) => distanciaKm(zona, r) <= UMBRAL_REPORTE_KM).length
+  // El modelo del backend ya incorpora clima; repetir lluvia en el navegador
+  // inflaba el nivel. Para el eje vial sólo se consideran reportes viales,
+  // no robo/inseguridad, que pertenecen a otra dimensión de riesgo.
+  const reportesCercanos = reportes.filter((r) => (
+    ['pavimento', 'corte', 'iluminacion'].includes(r.categoria)
+    && distanciaKm(zona, r) <= UMBRAL_REPORTE_KM
+  )).length
   if (reportesCercanos > 0 && idx < 3) { idx += 1; motivos.push(`${reportesCercanos} reporte${reportesCercanos > 1 ? 's' : ''} cerca`) }
   return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
 }

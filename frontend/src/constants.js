@@ -82,6 +82,9 @@ export const CLAVE_CAPA_PRENSA = 'motosafe_capa_prensa'
 // asi que recien se ve algo util a partir de este zoom (nivel de barrio/calle).
 export const UMBRAL_ZOOM_TRAFICO = 13
 export const CLAVE_AUTOR_ID = 'motosafe_autor_id'
+// Token privado por reporte: se recibe una única vez al crear el reporte y se
+// usa para borrarlo. Nunca se manda en GET ni se confunde con autor_id.
+export const CLAVE_TOKENS_REPORTES = 'motosafe_tokens_reportes'
 // Última respuesta buena de cada capa de riesgo, para tener algo que mostrar
 // si el celular se queda sin señal antes de que el backend responda (ver
 // cargarHotspots/cargarCorredores/cargarInseguridad en App.jsx) -- en vez de

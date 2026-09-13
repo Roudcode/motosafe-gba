@@ -489,6 +489,16 @@ PROVINCIAS_NO_GBA = [
     'Santiago del Estero', 'Chubut', 'Río Negro', 'Santa Cruz', 'Tierra del Fuego',
 ]
 
+# Algunos nombres del gazetteer tambien son palabras comunes. Solo se acepta
+# el barrio cuando el texto lo presenta como lugar; asi "robaron flores en
+# Quilmes" no genera un falso punto en Flores, CABA.
+BARRIOS_AMBIGUOS = {'Flores'}
+
+# "San Martin de los Andes" no sigue el patron "de <provincia>" anterior,
+# pero tampoco refiere al partido bonaerense. Se conserva como exclusion local
+# al match para no descartar otra ubicacion valida que aparezca en la nota.
+CONTINUACIONES_FUERA_GBA = [' de los andes']
+
 
 def normalizar(texto):
     """Sin acentos y en minuscula, para que el matching de palabras clave no
@@ -511,9 +521,20 @@ def categoria_de(titulo, descripcion):
     una nota menciona palabras de mas de una categoria)."""
     texto = normalizar(f"{titulo} {descripcion}")
     for categoria, palabras in CATEGORIAS_PALABRAS_CLAVE.items():
-        if any(normalizar(palabra) in texto for palabra in palabras):
+        if any(_contiene_termino(texto, palabra) for palabra in palabras):
             return categoria
     return None
+
+
+def _contiene_termino(texto_norm, termino):
+    """Busca una palabra o frase completa, sin confundir subcadenas.
+
+    Por ejemplo, ``robo`` debe encontrar "robo" y "robo," pero no
+    "aprobo". El mismo criterio se usa sobre slugs, que previamente se
+    normalizan reemplazando sus guiones por espacios.
+    """
+    termino_norm = normalizar(termino)
+    return re.search(rf'(?<!\w){re.escape(termino_norm)}(?!\w)', texto_norm) is not None
 
 
 def _es_de_otra_provincia(texto_norm, zona, pos_match):
@@ -524,7 +545,23 @@ def _es_de_otra_provincia(texto_norm, zona, pos_match):
     cualquier mencion de la provincia en el resto del articulo (ver el
     comentario largo sobre PROVINCIAS_NO_GBA)."""
     resto = texto_norm[pos_match:pos_match + 40]
-    return any(resto.startswith(f" de {normalizar(p)}") for p in PROVINCIAS_NO_GBA)
+    return (
+        any(resto.startswith(f" de {normalizar(p)}") for p in PROVINCIAS_NO_GBA)
+        or any(resto.startswith(continuacion) for continuacion in CONTINUACIONES_FUERA_GBA)
+    )
+
+
+def _es_barrio_ambiguo_en_contexto(texto_norm, zona, inicio):
+    """Exige una pista linguistica de lugar para barrios de nombre comun."""
+    if zona not in BARRIOS_AMBIGUOS:
+        return False
+    fin = inicio + len(normalizar(zona))
+    contexto = texto_norm[max(0, inicio - 14):min(len(texto_norm), fin + 14)]
+    zona_norm = normalizar(zona)
+    return not any(pista in contexto for pista in (
+        f'en {zona_norm}', f'de {zona_norm}', f'barrio {zona_norm}',
+        f'{zona_norm}, caba', f'{zona_norm} caba', f'{zona_norm} (caba',
+    ))
 
 
 def _oraciones(texto):
@@ -541,8 +578,9 @@ def _oraciones(texto):
 
 
 def encontrar_zona(texto):
-    """Primer barrio/partido del gazetteer que aparece en el texto, como
-    (nombre, "CABA" o "Buenos Aires"), o None. Se usa tanto como fallback de
+    """Primer partido o barrio válido del gazetteer, como
+    (nombre, "CABA" o "Buenos Aires"), o None. Los partidos se revisan antes
+    que los barrios para desambiguar calles homónimas. Se usa tanto como fallback de
     ubicacion (nivel 'barrio') como para acotar el geocode de una calle
     ambigua (nivel 'interseccion'/'calle') -- en el GBA hay calles "San
     Martín" en decenas de partidos distintos, sin esta pista Nominatim puede
@@ -560,20 +598,26 @@ def encontrar_zona(texto):
     sobre PROVINCIAS_NO_GBA, incluye el caso real de la regresion que
     este chequeo localizado vino a arreglar)."""
     texto_norm = normalizar(texto)
-    for zona in BARRIOS_CABA:
-        zona_norm = normalizar(zona)
-        pos = texto_norm.find(zona_norm)
-        while pos != -1:
-            if not _es_de_otra_provincia(texto_norm, zona, pos + len(zona_norm)):
-                return zona, 'CABA'
-            pos = texto_norm.find(zona_norm, pos + 1)
+
+    # Si una nota nombra un partido y un barrio de CABA, el partido es una
+    # referencia administrativa mas precisa para acotar una calle. Tambien
+    # resuelve casos como "San Martin y Belgrano, Moron", donde Belgrano es
+    # una calle y no el barrio porteno.
     for zona in PARTIDOS_GBA:
         zona_norm = normalizar(zona)
-        pos = texto_norm.find(zona_norm)
-        while pos != -1:
+        for match in re.finditer(rf'(?<!\w){re.escape(zona_norm)}(?!\w)', texto_norm):
+            pos = match.start()
             if not _es_de_otra_provincia(texto_norm, zona, pos + len(zona_norm)):
                 return zona, 'Buenos Aires'
-            pos = texto_norm.find(zona_norm, pos + 1)
+    for zona in BARRIOS_CABA:
+        zona_norm = normalizar(zona)
+        for match in re.finditer(rf'(?<!\w){re.escape(zona_norm)}(?!\w)', texto_norm):
+            pos = match.start()
+            if (
+                not _es_de_otra_provincia(texto_norm, zona, pos + len(zona_norm))
+                and not _es_barrio_ambiguo_en_contexto(texto_norm, zona, pos)
+            ):
+                return zona, 'CABA'
     return None
 
 

@@ -1,0 +1,1253 @@
+{
+  "versions": {
+    "fastapi": "0.115.0",
+    "pydantic": "2.9.2",
+    "pandas": "2.2.3",
+    "numpy": "2.5.2",
+    "scikit-learn": "1.5.2",
+    "joblib": "1.5.3",
+    "httpx": "0.27.2",
+    "psycopg2-binary": "2.9.9",
+    "slowapi": "0.1.10",
+    "pytest": "8.3.3",
+    "seaborn": "0.13.2",
+    "h3": "NO INSTALADO",
+    "scipy": "1.18.1"
+  },
+  "csv": {
+    "clima_historico.csv": {
+      "rows": 67296,
+      "columns": [
+        "fecha",
+        "hora",
+        "precipitacion",
+        "temperatura",
+        "humedad"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "fecha": {
+        "min": "2019-01-01 00:00:00",
+        "max": "2026-09-04 00:00:00",
+        "invalid": 0
+      }
+    },
+    "corredores_candidatos.csv": {
+      "rows": 243,
+      "columns": [
+        "cantidad_siniestros",
+        "mortales",
+        "graves",
+        "comuna_moda",
+        "tipo_via_moda",
+        "contraparte_moda",
+        "edad_promedio",
+        "sexo_moda",
+        "calle",
+        "tramo",
+        "tramos_totales",
+        "lat_a",
+        "lng_a",
+        "lat_b",
+        "lng_b"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "cantidad_siniestros": {
+        "sum": 11828,
+        "min": 30.0,
+        "max": 140.0
+      },
+      "mortales": {
+        "sum": 129,
+        "min": 0.0,
+        "max": 7.0
+      },
+      "graves": {
+        "sum": 713,
+        "min": 0.0,
+        "max": 14.0
+      }
+    },
+    "corredores_riesgo.csv": {
+      "rows": 243,
+      "columns": [
+        "cantidad_siniestros",
+        "mortales",
+        "graves",
+        "comuna_moda",
+        "tipo_via_moda",
+        "contraparte_moda",
+        "edad_promedio",
+        "sexo_moda",
+        "calle",
+        "tramo",
+        "tramos_totales",
+        "lat_a",
+        "lng_a",
+        "lat_b",
+        "lng_b",
+        "geometria"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "cantidad_siniestros": {
+        "sum": 11828,
+        "min": 30.0,
+        "max": 140.0
+      },
+      "mortales": {
+        "sum": 129,
+        "min": 0.0,
+        "max": 7.0
+      },
+      "graves": {
+        "sum": 713,
+        "min": 0.0,
+        "max": 14.0
+      }
+    },
+    "delitos_caba.csv": {
+      "rows": 1387622,
+      "columns": [
+        "comuna",
+        "barrio",
+        "latitud",
+        "longitud",
+        "fecha",
+        "franja_horaria",
+        "tipo_delito",
+        "subtipo_delito",
+        "uso_moto",
+        "anio_dataset"
+      ],
+      "duplicates": 17876,
+      "nulls": {
+        "comuna": 34768,
+        "barrio": 34766,
+        "latitud": 27986,
+        "longitud": 27986,
+        "franja_horaria": 2530
+      },
+      "anio_dataset": {
+        "2024": 158838,
+        "2023": 155897,
+        "2016": 154712,
+        "2019": 149524,
+        "2018": 149455,
+        "2017": 146938,
+        "2022": 140918,
+        "2025": 133203,
+        "2021": 111962,
+        "2020": 86175
+      },
+      "uso_moto": {
+        "NO": 1316826,
+        "SI": 70796
+      },
+      "tipo_delito": {
+        "Robo": 592817,
+        "Hurto": 471600,
+        "Lesiones": 127214,
+        "Amenazas": 98647,
+        "Vialidad": 96247,
+        "Homicidios": 1097
+      },
+      "fecha": {
+        "min": "2016-01-01 00:00:00",
+        "max": "2025-12-31 00:00:00",
+        "invalid": 0
+      },
+      "geo": {
+        "lat_min": -3.46420793383876e+17,
+        "lat_max": 0.0,
+        "lon_min": -5.852271080017089e+17,
+        "lon_max": 5840982.0,
+        "invalid": 27986,
+        "zero_zero": 6500,
+        "outside_bbox": 6512
+      },
+      "window_general": 408241,
+      "window_moto": 15759
+    },
+    "hotspots_contexto.csv": {
+      "rows": 740,
+      "columns": [
+        "cluster",
+        "comuna_moda",
+        "tipo_via_moda",
+        "contraparte_moda",
+        "edad_promedio",
+        "sexo_moda",
+        "indice_inseguridad",
+        "indice_inseguridad_moto"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "clusters": 740,
+      "noise": 0
+    },
+    "hotspots_inseguridad_general.csv": {
+      "rows": 633,
+      "columns": [
+        "cluster",
+        "latitud",
+        "longitud",
+        "cantidad_delitos",
+        "comuna_moda",
+        "tipo_delito_moda"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "clusters": 633,
+      "noise": 0,
+      "cantidad_delitos": {
+        "sum": 205110,
+        "min": 150.0,
+        "max": 2579.0
+      },
+      "geo": {
+        "lat_min": -34.69732498230563,
+        "lat_max": -34.53814304484138,
+        "lon_min": -58.52907557408066,
+        "lon_max": -58.35639367541871,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "hotspots_inseguridad_general_h3_preview.csv": {
+      "rows": 2570,
+      "columns": [
+        "cluster",
+        "latitud",
+        "longitud",
+        "cantidad_delitos",
+        "comuna_moda",
+        "tipo_delito_moda"
+      ],
+      "duplicates": 0,
+      "nulls": {
+        "comuna_moda": 1
+      },
+      "clusters": 2570,
+      "noise": 0,
+      "cantidad_delitos": {
+        "sum": 411161,
+        "min": 8.0,
+        "max": 3463.0
+      },
+      "geo": {
+        "lat_min": -34.70455663426212,
+        "lat_max": 0.0005857701415158,
+        "lon_min": -58.53147176625768,
+        "lon_max": -0.0010418183700725,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 1
+      }
+    },
+    "hotspots_inseguridad_moto.csv": {
+      "rows": 502,
+      "columns": [
+        "cluster",
+        "latitud",
+        "longitud",
+        "cantidad_delitos",
+        "comuna_moda",
+        "tipo_delito_moda"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "clusters": 502,
+      "noise": 0,
+      "cantidad_delitos": {
+        "sum": 11707,
+        "min": 12.0,
+        "max": 124.0
+      },
+      "geo": {
+        "lat_min": -34.696289925882354,
+        "lat_max": -34.538332178666664,
+        "lon_min": -58.528293302,
+        "lon_max": -58.35927702,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "hotspots_inseguridad_moto_h3_preview.csv": {
+      "rows": 1172,
+      "columns": [
+        "cluster",
+        "latitud",
+        "longitud",
+        "cantidad_delitos",
+        "comuna_moda",
+        "tipo_delito_moda"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "clusters": 1172,
+      "noise": 0,
+      "cantidad_delitos": {
+        "sum": 13227,
+        "min": 5.0,
+        "max": 69.0
+      },
+      "geo": {
+        "lat_min": -34.695412537455084,
+        "lat_max": -34.53678982674268,
+        "lon_min": -58.52879683004021,
+        "lon_max": -58.35885381523285,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "hotspots_moto_caba.csv": {
+      "rows": 740,
+      "columns": [
+        "cluster",
+        "latitud",
+        "longitud",
+        "cantidad_siniestros",
+        "mortales",
+        "graves"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "clusters": 740,
+      "noise": 0,
+      "cantidad_siniestros": {
+        "sum": 17651,
+        "min": 12.0,
+        "max": 95.0
+      },
+      "mortales": {
+        "sum": 225,
+        "min": 0.0,
+        "max": 5.0
+      },
+      "graves": {
+        "sum": 988,
+        "min": 0.0,
+        "max": 7.0
+      },
+      "geo": {
+        "lat_min": -34.70399573914,
+        "lat_max": -34.53496664467787,
+        "lon_min": -58.53080656096976,
+        "lon_max": -58.35682321170117,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "hotspots_moto_caba_h3_preview.csv": {
+      "rows": 1517,
+      "columns": [
+        "cluster",
+        "latitud",
+        "longitud",
+        "cantidad_siniestros"
+      ],
+      "duplicates": 0,
+      "nulls": {},
+      "clusters": 1517,
+      "noise": 0,
+      "cantidad_siniestros": {
+        "sum": 21144,
+        "min": 5.0,
+        "max": 97.0
+      },
+      "geo": {
+        "lat_min": -34.70534628202764,
+        "lat_max": -34.53432104225647,
+        "lon_min": -58.53147176625768,
+        "lon_max": -58.35306703892387,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "indice_inseguridad_comuna.csv": {
+      "rows": 15,
+      "columns": [
+        "comuna",
+        "delitos_promedio_anual",
+        "delitos_moto_promedio_anual",
+        "indice_inseguridad",
+        "indice_inseguridad_moto"
+      ],
+      "duplicates": 0,
+      "nulls": {}
+    },
+    "motos_con_clusters.csv": {
+      "rows": 23343,
+      "columns": [
+        "id_siniestro",
+        "numero_total_de_victimas",
+        "numero_victimas_leve_siniestro",
+        "numero_victimas_grave_siniestro",
+        "numero_victimas_mortal_siniestro",
+        "fecha_siniestro",
+        "anio_siniestro",
+        "mes_siniestro",
+        "dia_siniestro",
+        "hora_siniestro",
+        "rango_horario",
+        "direccion_normalizada_siniestro",
+        "comuna_siniestro",
+        "tipo_de_via_siniestro",
+        "geocodificacion_plana",
+        "longitud_siniestro",
+        "latitud_siniestro",
+        "participantes_siniestro",
+        "modo_desplazamiento_victima",
+        "contraparte_siniestro",
+        "gravedad_siniestro",
+        "comuna",
+        "cluster"
+      ],
+      "duplicates": 0,
+      "nulls": {
+        "hora_siniestro": 5,
+        "rango_horario": 5,
+        "direccion_normalizada_siniestro": 4097,
+        "comuna_siniestro": 295,
+        "tipo_de_via_siniestro": 3941,
+        "comuna": 312
+      },
+      "anio_siniestro": {
+        "2025": 4448,
+        "2023": 3919,
+        "2019": 3743,
+        "2022": 3600,
+        "2024": 3331,
+        "2021": 2254,
+        "2020": 2048
+      },
+      "gravedad_siniestro": {
+        "LEVE": 21756,
+        "GRAVE": 1304,
+        "MORTAL": 283
+      },
+      "fecha_siniestro": {
+        "min": "2019-01-01 00:00:00",
+        "max": "2025-12-31 00:00:00",
+        "invalid": 0
+      },
+      "id_duplicates": 0,
+      "clusters": 740,
+      "noise": 5692,
+      "geo": {
+        "lat_min": -34.705249717475,
+        "lat_max": -34.534436,
+        "lon_min": -58.531218,
+        "lon_max": -58.353455902886,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "motos_limpio.csv": {
+      "rows": 23343,
+      "columns": [
+        "id_siniestro",
+        "numero_total_de_victimas",
+        "numero_victimas_leve_siniestro",
+        "numero_victimas_grave_siniestro",
+        "numero_victimas_mortal_siniestro",
+        "fecha_siniestro",
+        "anio_siniestro",
+        "mes_siniestro",
+        "dia_siniestro",
+        "hora_siniestro",
+        "rango_horario",
+        "direccion_normalizada_siniestro",
+        "comuna_siniestro",
+        "tipo_de_via_siniestro",
+        "geocodificacion_plana",
+        "longitud_siniestro",
+        "latitud_siniestro",
+        "participantes_siniestro",
+        "modo_desplazamiento_victima",
+        "contraparte_siniestro",
+        "gravedad_siniestro",
+        "comuna"
+      ],
+      "duplicates": 0,
+      "nulls": {
+        "hora_siniestro": 5,
+        "rango_horario": 5,
+        "direccion_normalizada_siniestro": 4097,
+        "comuna_siniestro": 295,
+        "tipo_de_via_siniestro": 3941,
+        "comuna": 312
+      },
+      "anio_siniestro": {
+        "2025": 4448,
+        "2023": 3919,
+        "2019": 3743,
+        "2022": 3600,
+        "2024": 3331,
+        "2021": 2254,
+        "2020": 2048
+      },
+      "gravedad_siniestro": {
+        "LEVE": 21756,
+        "GRAVE": 1304,
+        "MORTAL": 283
+      },
+      "fecha_siniestro": {
+        "min": "2019-01-01 00:00:00",
+        "max": "2025-12-31 00:00:00",
+        "invalid": 0
+      },
+      "id_duplicates": 0,
+      "geo": {
+        "lat_min": -34.705249717475,
+        "lat_max": -34.534436,
+        "lon_min": -58.531218,
+        "lon_max": -58.353455902886,
+        "invalid": 0,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "siniestros_viales_hechos.csv": {
+      "rows": 65818,
+      "columns": [
+        "id_siniestro",
+        "numero_total_de_victimas",
+        "numero_victimas_leve_siniestro",
+        "numero_victimas_grave_siniestro",
+        "numero_victimas_mortal_siniestro",
+        "fecha_siniestro",
+        "anio_siniestro",
+        "mes_siniestro",
+        "dia_siniestro",
+        "hora_siniestro",
+        "rango_horario",
+        "direccion_normalizada_siniestro",
+        "comuna_siniestro",
+        "tipo_de_via_siniestro",
+        "geocodificacion_plana",
+        "longitud_siniestro",
+        "latitud_siniestro",
+        "participantes_siniestro",
+        "modo_desplazamiento_victima",
+        "contraparte_siniestro",
+        "gravedad_siniestro"
+      ],
+      "duplicates": 0,
+      "nulls": {
+        "hora_siniestro": 77,
+        "rango_horario": 77,
+        "direccion_normalizada_siniestro": 12900,
+        "comuna_siniestro": 3017,
+        "tipo_de_via_siniestro": 12227,
+        "geocodificacion_plana": 2367,
+        "longitud_siniestro": 2378,
+        "latitud_siniestro": 2378
+      },
+      "anio_siniestro": {
+        "2025": 11752,
+        "2024": 10569,
+        "2019": 10155,
+        "2023": 9927,
+        "2022": 9536,
+        "2021": 7818,
+        "2020": 6061
+      },
+      "gravedad_siniestro": {
+        "LEVE": 62174,
+        "GRAVE": 2955,
+        "MORTAL": 689
+      },
+      "fecha_siniestro": {
+        "min": "2019-01-01 00:00:00",
+        "max": "2025-12-31 00:00:00",
+        "invalid": 0
+      },
+      "id_duplicates": 0,
+      "geo": {
+        "lat_min": -34.705249717475,
+        "lat_max": -34.534254,
+        "lon_min": -58.531218,
+        "lon_max": -58.351517,
+        "invalid": 3031,
+        "zero_zero": 0,
+        "outside_bbox": 0
+      }
+    },
+    "siniestros_viales_victimas.csv": {
+      "rows": 75197,
+      "columns": [
+        "id_siniestro",
+        "fecha_siniestro",
+        "anio_siniestro",
+        "modo_desplazamiento_victima",
+        "sexo_victima",
+        "edad_victima",
+        "GRAVEdad_victima",
+        "rol_victima",
+        "fecha_fallecimiento_victima"
+      ],
+      "duplicates": 1439,
+      "nulls": {
+        "id_siniestro": 4,
+        "fecha_siniestro": 4,
+        "anio_siniestro": 4,
+        "modo_desplazamiento_victima": 4,
+        "sexo_victima": 4,
+        "edad_victima": 4,
+        "GRAVEdad_victima": 4,
+        "rol_victima": 4,
+        "fecha_fallecimiento_victima": 74494
+      },
+      "anio_siniestro": {
+        "2025.0": 13115,
+        "2024.0": 12481,
+        "2019.0": 11886,
+        "2023.0": 11075,
+        "2022.0": 10647,
+        "2021.0": 9053,
+        "2020.0": 6936,
+        "nan": 4
+      },
+      "fecha_siniestro": {
+        "min": "2019-01-01 00:00:00",
+        "max": "2025-12-31 00:00:00",
+        "invalid": 4
+      },
+      "id_duplicates": 9378
+    }
+  },
+  "syntax": {
+    "backend\\cargar_corredores.py": "OK",
+    "backend\\cargar_hotspots.py": "OK",
+    "backend\\cargar_hotspots_inseguridad.py": "OK",
+    "backend\\main.py": "OK",
+    "backend\\scrapear_noticias_robos.py": "OK",
+    "backend\\tests\\test_main.py": "OK",
+    "backend\\tests\\__init__.py": "OK",
+    "notebooks\\calibrar_umbrales_riesgo.py": "OK",
+    "notebooks\\confirmar_hdbscan_general_completo.py": "OK",
+    "notebooks\\construir_indice_inseguridad.py": "OK",
+    "notebooks\\fetch_clima_historico.py": "OK",
+    "notebooks\\fetch_corredores_geometria.py": "OK",
+    "notebooks\\fetch_delitos_caba.py": "OK",
+    "notebooks\\identificar_corredores.py": "OK",
+    "notebooks\\identificar_hotspots_inseguridad.py": "OK",
+    "notebooks\\prototipo_gi_kde_hotspots.py": "OK",
+    "notebooks\\prototipo_h3_hotspots.py": "OK",
+    "notebooks\\reclusterizar_hotspots.py": "OK",
+    "notebooks\\reentrenar_modelo.py": "OK",
+    "notebooks\\sweep_hdbscan_inseguridad_general.py": "OK",
+    "notebooks\\tuning_rf.py": "OK",
+    "notebooks\\tuning_rf2.py": "OK",
+    "notebooks\\validar_temporal.py": "OK"
+  },
+  "notebook": {
+    "1": "OK",
+    "2": "OK",
+    "3": "OK",
+    "4": "invalid syntax (<unknown>, line 5)",
+    "5": "OK",
+    "6": "OK",
+    "8": "OK",
+    "9": "OK",
+    "10": "OK",
+    "12": "OK",
+    "14": "OK",
+    "16": "OK",
+    "17": "OK",
+    "18": "OK",
+    "20": "OK",
+    "22": "OK",
+    "23": "OK",
+    "24": "OK",
+    "25": "OK",
+    "27": "OK",
+    "29": "OK",
+    "31": "OK",
+    "32": "OK",
+    "33": "OK",
+    "34": "OK",
+    "35": "OK",
+    "37": "OK",
+    "39": "OK",
+    "40": "OK",
+    "42": "OK",
+    "43": "OK",
+    "45": "OK",
+    "46": "OK",
+    "48": "OK",
+    "50": "OK",
+    "51": "OK",
+    "53": "OK",
+    "55": "OK",
+    "56": "OK",
+    "58": "OK",
+    "60": "OK",
+    "62": "OK",
+    "64": "OK",
+    "65": "OK",
+    "66": "OK"
+  },
+  "artifacts": {
+    "modelo_final.pkl": {
+      "same_data_backend": true,
+      "sha256_backend": "f1fe06c2931a81e4501d3e373cc726f9ef133307c6f8c6c89e59c14607ee6115"
+    },
+    "columnas_modelo.pkl": {
+      "same_data_backend": true,
+      "sha256_backend": "433bb969ce0381b85338d9fff2f6594de08faa9db6ec830f138e82635454a991"
+    },
+    "hotspots_contexto.csv": {
+      "same_data_backend": true,
+      "sha256_backend": "e00889a88fba62193845ff67e9a1b53facdfb757aa0d6de3af34cbf1232b8ebf"
+    },
+    "indice_inseguridad_comuna.csv": {
+      "same_data_backend": true,
+      "sha256_backend": "98511c694160012bdf6f7be9e93226114d499d7e5cda821e8bdd010cbea0f4f6"
+    }
+  },
+  "checks": {
+    "invalid_prediction": {
+      "status": 200,
+      "body": {
+        "prediccion": "LEVE",
+        "probabilidades": {
+          "GRAVE": 0.368,
+          "LEVE": 0.388,
+          "MORTAL": 0.244
+        },
+        "clima_usado": {
+          "lluvia": "NO",
+          "temperatura": 17.6,
+          "humedad": 72.1
+        }
+      }
+    },
+    "pool_maxsize_2_borrow_5": {
+      "connect_calls": 5,
+      "borrowed": 5
+    },
+    "empty_hotspots": {
+      "exception": "ValueError",
+      "message": "Found array with 0 sample(s) (shape=(0, 55)) while a minimum of 1 is required by RandomForestClassifier."
+    },
+    "invalid_coordinates_accepted": {
+      "lat": 999.0,
+      "lng": 999.0,
+      "categoria": "robo",
+      "autor_id": "11111111-1111-4111-8111-111111111111"
+    },
+    "scraper_false_positive": {
+      "Robaron en San Martin de los Andes": {
+        "category": "robo",
+        "location": [
+          "San Mart\u00edn, Buenos Aires, Argentina",
+          "barrio",
+          800
+        ]
+      },
+      "Robaron flores en una casa de Quilmes": {
+        "category": "robo",
+        "location": [
+          "Flores, CABA, Argentina",
+          "barrio",
+          800
+        ]
+      },
+      "Choque en San Martin y Belgrano, Moron": {
+        "category": "choque",
+        "location": [
+          "San Martin y Belgrano, Belgrano, CABA, Argentina",
+          "interseccion",
+          80
+        ]
+      },
+      "Aprobo el examen en Palermo": {
+        "category": "robo",
+        "location": [
+          "Palermo, CABA, Argentina",
+          "barrio",
+          800
+        ]
+      }
+    },
+    "source_count": 19
+  },
+  "docx": {
+    "1_Guia_DETALLADA.docx": {
+      "paragraphs": 192,
+      "text": "MotoSafe GBA \u2014 Gu\u00eda Completa del Proyecto (explicada desde cero)\nC\u00f3mo leer este documento\nEste documento asume que no sab\u00e9s nada de programaci\u00f3n, ni de bases de datos, ni de Inteligencia Artificial. Cada vez que aparece un concepto t\u00e9cnico, se explica antes de usarlo. Si en alg\u00fan momento sent\u00eds que \u201cya sab\u00e9s esto\u201d, pod\u00e9s saltar el bloque \u2014 est\u00e1 marcado con un t\u00edtulo claro para que puedas ubicarte.\nLa idea es que, al terminar de leer, entiendas: qu\u00e9 construiste, por qu\u00e9 cada pieza existe, c\u00f3mo se conectan entre s\u00ed, y qu\u00e9 es real versus qu\u00e9 es una simplificaci\u00f3n temporal.\n\nParte 1 \u2014 El proyecto, explicado sin tecnicismos\n\u00bfQu\u00e9 es MotoSafe GBA?\nEs una aplicaci\u00f3n (un programa que corre en una p\u00e1gina web) pensada para motociclistas del Gran Buenos Aires. Muestra un mapa donde algunas zonas est\u00e1n pintadas de verde, amarillo, naranja o rojo, seg\u00fan qu\u00e9 tan riesgoso es circular por ah\u00ed en moto. Ese color no est\u00e1 puesto \u201ca ojo\u201d \u2014 sale de un c\u00e1lculo hecho por una Inteligencia Artificial que aprendi\u00f3, mirando miles de siniestros reales que ya ocurrieron, a predecir qu\u00e9 tan grave suele ser un accidente en cada tipo de situaci\u00f3n.\nAdem\u00e1s del mapa de riesgo, la aplicaci\u00f3n permite: - Trazar una ruta entre dos puntos (como Google Maps), y te dice si esa ruta pasa por zonas peligrosas. - Reportar un problema en la v\u00eda (un pozo, falta de luz, etc.) desde tu celular. - Ver el clima actual, porque llover aumenta el riesgo. - Activar un \u201cModo Viaje\u201d que te avisa en tiempo real si te est\u00e1s acercando a una zona peligrosa mientras and\u00e1s.\n\u00bfPor qu\u00e9 existe este proyecto?\nEs tu trabajo final de la carrera de Ingenier\u00eda en Inform\u00e1tica. La idea original (documentada en los primeros cap\u00edtulos de tu tesis) era construir algo que combine tres fuentes de informaci\u00f3n \u2014 el historial de siniestros, el clima del momento, y reportes de otros motociclistas \u2014 para calcular un \u201criesgo din\u00e1mico\u201d que ninguna app de navegaci\u00f3n existente (ni Waze, ni Google Maps) calcula espec\u00edficamente para motos.\n\nParte 2 \u2014 Conceptos b\u00e1sicos que necesit\u00e1s para entender el resto\nSi alguno de estos t\u00e9rminos ya te resulta familiar, salte\u00e1lo. Est\u00e1n ac\u00e1 para quien no tenga ning\u00fan contacto previo con programaci\u00f3n.\n\u00bfQu\u00e9 es \u201cc\u00f3digo\u201d o \u201cprogramar\u201d?\nProgramar es escribir instrucciones, en un idioma muy estricto y preciso (un \u201clenguaje de programaci\u00f3n\u201d), que una computadora puede ejecutar paso a paso. A diferencia de hablarle a una persona, la computadora no interpreta ni adivina \u2014 si la instrucci\u00f3n tiene un error de sintaxis (una coma de m\u00e1s, una palabra mal escrita), directamente no funciona.\n\u00bfQu\u00e9 es una \u201cterminal\u201d o \u201cconsola\u201d?\nEs una ventana negra (o de otro color) donde en vez de hacer clic en botones, escrib\u00eds comandos de texto para darle \u00f3rdenes a la computadora. Es m\u00e1s r\u00e1pida y potente que usar el mouse para tareas t\u00e9cnicas, pero exige escribir exactamente bien \u2014 un espacio de m\u00e1s, o estar \u201cparado\u201d en la carpeta equivocada, hace que el comando falle.\n\u00bfQu\u00e9 es un \u201cservidor\u201d?\nUn servidor es, en esencia, un programa que queda \u201cescuchando\u201d pedidos y respondiendo con informaci\u00f3n. Pensalo como un mozo de restaurante: se queda esperando, y cuando alguien le pide algo, va, lo busca, y lo trae. En este proyecto ten\u00e9s dos servidores corriendo en tu propia computadora (no en internet, todav\u00eda): uno que sirve la parte visual (lo que ves en el navegador) y otro que sirve los datos (los puntos del mapa, las predicciones).\n\u00bfQu\u00e9 es una \u201cbase de datos\u201d?\nEs un sistema organizado para guardar informaci\u00f3n de forma que se pueda buscar y consultar r\u00e1pido, como una biblioteca con fichas ordenadas en vez de libros tirados en el piso. En este proyecto, la base de datos guarda los 740 puntos de riesgo del mapa (ubicaci\u00f3n, cantidad de siniestros hist\u00f3ricos, etc.).\n\u00bfQu\u00e9 es una \u201cAPI\u201d?\nAPI es la forma en que dos programas se hablan entre s\u00ed. Si el servidor es el mozo, la API es el men\u00fa: una lista fija de \u201ccosas que pod\u00e9s pedir\u201d y en qu\u00e9 formato. En este proyecto, el navegador (frontend) le pide cosas al servidor de datos (backend) usando su API \u2014 por ejemplo, \u201cdame la lista de zonas de riesgo\u201d es un pedido a la API.\n\u00bfQu\u00e9 es \u201cMachine Learning\u201d (Aprendizaje Autom\u00e1tico)?\nEs una rama de la Inteligencia Artificial donde, en vez de escribirle a la computadora una regla fija (\u201csi llueve, sube el riesgo un nivel\u201d), le mostr\u00e1s miles de ejemplos reales del pasado y dej\u00e1s que ella misma descubra los patrones. Por ejemplo: le mostr\u00e1s 23.343 siniestros reales de motociclistas, con toda la informaci\u00f3n que se tiene de cada uno (hora, d\u00eda, tipo de calle, con qu\u00e9 choc\u00f3, edad del motociclista, y qu\u00e9 tan grave termin\u00f3 siendo), y el algoritmo \u201caprende\u201d solo qu\u00e9 combinaciones de esos factores suelen terminar en accidentes graves.\n\u00bfQu\u00e9 es \u201centrenar un modelo\u201d?\nEs el proceso de mostrarle al algoritmo esos miles de ejemplos reales para que aprenda el patr\u00f3n. El resultado de ese entrenamiento es un archivo (en este proyecto, modelo_final.pkl) que contiene ese \u201cconocimiento aprendido\u201d, listo para usarse en predicciones nuevas.\n\u00bfQu\u00e9 es \u201cpredecir\u201d?\nUna vez entrenado, el modelo puede recibir una situaci\u00f3n nueva (que nunca vio en los datos de entrenamiento) y estimar qu\u00e9 tan probable es que termine siendo leve, grave o mortal. Por ejemplo: \u201ces viernes a las 22hs, en una avenida, choc\u00f3 con un auto, el motociclista tiene 25 a\u00f1os\u201d \u2014 el modelo devuelve una probabilidad para cada resultado posible.\n\nParte 3 \u2014 La historia completa del proyecto, en orden\nFase 1 \u2014 Preparar la computadora (desde cero, PC reci\u00e9n formateada)\nSe instal\u00f3 todo el software necesario: un programa para manejar bases de datos (Docker + PostgreSQL), el lenguaje de programaci\u00f3n Python, el entorno para construir la parte visual (Node.js), un editor de c\u00f3digo (VS Code), y un programa para inspeccionar bases de datos visualmente (DBeaver).\nFase 2 \u2014 Construir la interfaz visual (el \u201cfrontend\u201d)\nSe arm\u00f3 el mapa interactivo que ves en el navegador: primero con datos de ejemplo inventados (para poder mostrar c\u00f3mo se ver\u00eda la aplicaci\u00f3n terminada), y con todas las funciones (b\u00fasqueda, filtros, rutas, reportes, clima) construidas sobre esa base temporal.\nFase 3 \u2014 Conseguir y limpiar los datos reales\nSe descargaron los datos oficiales del gobierno de la Ciudad de Buenos Aires: un registro de 65.818 siniestros viales ocurridos entre 2019 y 2025, con su ubicaci\u00f3n exacta, y otro registro de las 75.197 v\u00edctimas de esos siniestros (una persona puede estar involucrada sin que sea \u201csu\u201d siniestro si hubo m\u00e1s de un afectado).\nEstos datos, tal como los entrega el gobierno, tienen errores t\u00edpicos de cualquier base real: texto con may\u00fasculas y min\u00fasculas mezcladas para la misma categor\u00eda (por ejemplo, \u201cMOTO\u201d y \u201cmoto\u201d contados como cosas distintas), un error de exportaci\u00f3n de Excel que dej\u00f3 basura en una fila, y edades de v\u00edctimas fuera de rango humano posible (0 a\u00f1os, 116 a\u00f1os). Todo esto se identific\u00f3 y se corrigi\u00f3.\nFase 4 \u2014 Encontrar los puntos de riesgo real (clustering)\nCon los 23.343 siniestros de motociclistas ya limpios, se us\u00f3 un algoritmo llamado DBSCAN para encontrar agrupaciones geogr\u00e1ficas reales \u2014 es decir, esquinas o tramos de avenida donde los siniestros no son casualidad aislada, sino que se repiten una y otra vez en el mismo lugar. El primer intento agrup\u00f3 \u201cdemasiado\u201d (toda la ciudad en un solo grupo gigante, por un error de calibraci\u00f3n), pero ajustando los par\u00e1metros se lleg\u00f3 a zonas de riesgo reales y bien definidas.\nEsta calibraci\u00f3n se revis\u00f3 m\u00e1s adelante con un barrido sistem\u00e1tico (probando 60 combinaciones de radio y cantidad m\u00ednima de siniestros por zona) en vez de quedarse con el primer ajuste manual que funcion\u00f3. El resultado: con radio de 100 metros y m\u00ednimo 12 siniestros por zona, la cobertura subi\u00f3 de 32.1% a 49.9% de los siniestros hist\u00f3ricos, sin volver a caer en el problema de fusionar toda la ciudad en un cluster gigante \u2014 pero segu\u00eda quedando m\u00e1s de la mitad de los siniestros sin zona.\nDespu\u00e9s de esa primera vuelta se prob\u00f3 un algoritmo distinto, HDBSCAN, que en vez de usar un \u00fanico radio fijo para toda la ciudad se adapta a la densidad local de cada zona (una esquina con siniestros muy pegados entre s\u00ed y un tramo de avenida con siniestros m\u00e1s dispersos pueden formar zonas igual de v\u00e1lidas, cada una con su propia \u201cescala\u201d). Se evalu\u00f3 igual que DBSCAN, chequeando en cada combinaci\u00f3n de par\u00e1metros el tama\u00f1o del cluster m\u00e1s grande como porcentaje del total (para descartar el mismo riesgo de \u201cblob\u201d que motiv\u00f3 la calibraci\u00f3n anterior). Con min_cluster_size=12 (mismo piso de siniestros reales por zona que antes, ahora garantizado de forma nativa por el algoritmo, sin post-proceso) y min_samples=3, se lleg\u00f3 a 740 zonas de riesgo, con una cobertura del 75.6% de los siniestros hist\u00f3ricos, y con el cluster m\u00e1s grande ocupando apenas 0.41% del total (m\u00e1s chico incluso que el 0.73% de la versi\u00f3n con DBSCAN). Es la configuraci\u00f3n final: mejor cobertura y, seg\u00fan esta misma medida de seguridad, m\u00e1s conservadora que la anterior.\nFase 5 \u2014 Entrenar el modelo predictivo\nCon esos datos reales, se entrenaron y compararon cuatro versiones distintas de modelos de Machine Learning, probando dos algoritmos distintos (Random Forest y XGBoost) y dos conjuntos de informaci\u00f3n distinta (solo contexto del lugar, versus contexto m\u00e1s datos de la v\u00edctima como edad y sexo). Se midi\u00f3 cu\u00e1l predec\u00eda mejor los casos graves y mortales \u2014 que son los que menos casos tienen mientras que los leves son en su mayor\u00eda los que hay en la base de datos, as\u00ed que hac\u00eda falta usar formas espec\u00edficas de medir esto (no simplemente \u201ccu\u00e1ntas veces acert\u00f3 en total\u201d, que hubiera sido enga\u00f1oso).\nEl mejor resultado fue el Random Forest que incluye edad y sexo de la v\u00edctima \u2014 se guard\u00f3 como el modelo definitivo.\nFase 6 \u2014 Conectar todo: el mapa ahora usa el modelo real\nFinalmente, se conect\u00f3 el modelo entrenado al servidor de datos, de forma que cada vez que el mapa pide \u201cdame las zonas de riesgo\u201d, el servidor le pregunta al modelo real \u2014en el momento, con la hora y el d\u00eda actuales\u2014 qu\u00e9 probabilidad de gravedad tiene cada una de las 740 zonas, y pinta el mapa con ese resultado. Ya no es un color fijo inventado: es la salida en vivo de una Inteligencia Artificial entrenada con datos reales.\nFase 7 \u2014 Corredores de riesgo (avenidas completas, no solo puntos)\nLos 740 hotspots son puntos aislados, pero el riesgo real de una avenida no se vive punto por punto: se vive como un tramo completo. Se agreg\u00f3 una segunda forma de ver el mapa donde, en vez de c\u00edrculos sueltos, avenidas enteras (9 de Julio, Rivadavia, Corrientes, etc.) se pintan de punta a punta seg\u00fan un score de riesgo calculado sobre todos los siniestros que caen dentro de un radio de esa avenida. Esto se sirve desde un endpoint nuevo del backend (/corredores) y se puede alternar en el mapa junto con la vista de clusters y el mapa de calor.\nFase 8 \u2014 Reportes colaborativos reales (dejaron de vivir solo en tu navegador)\nLos reportes que un usuario manda desde la app (un pozo, falta de luz, un corte) dejaron de guardarse solo en la memoria del navegador de quien los carga: ahora se guardan en la base de datos del backend (POST /reportes), as\u00ed que cualquiera que abra la app los ve, no solo quien los report\u00f3. Cada reporte tiene una categor\u00eda con una vigencia distinta seg\u00fan qu\u00e9 tan r\u00e1pido deja de ser \u00fatil esa informaci\u00f3n (un corte de calle vence en 12 horas, un problema de iluminaci\u00f3n o pavimento tarda 30 d\u00edas en vencer) \u2014 pasado ese tiempo, el reporte se descarta solo. Mientras un reporte est\u00e1 vigente, se muestra cada vez m\u00e1s transparente a medida que envejece, as\u00ed se distingue de un vistazo un reporte fresco de uno que ya casi vence.\nFase 9 \u2014 El eje de inseguridad: un segundo tipo de riesgo, aparte del siniestro vial\nHasta ac\u00e1 todo el riesgo calculado era de siniestralidad vial (choques, ca\u00eddas). Pero para un motociclista real, la inseguridad (robos, arrebatos) es un riesgo igual de concreto y de naturaleza distinta. Se incorpor\u00f3 un dataset p\u00fablico de delitos de la Ciudad de Buenos Aires (1.387.622 delitos registrados), del cual se aplic\u00f3 el mismo proceso de clustering que se us\u00f3 originalmente para los siniestros, pero recalibrado \u2014 porque los delitos se concentran de forma distinta en el mapa que los choques, y usar los mismos par\u00e1metros hubiera generado hotspots mal formados. De ese proceso salieron 805 hotspots de inseguridad: 303 de delito general (DBSCAN) y 502 de robos con moto (HDBSCAN, despu\u00e9s de una segunda vuelta de calibraci\u00f3n \u2014 ver la nota m\u00e1s abajo), guardados como dos capas independientes (no una es subconjunto filtrado de la otra en la interfaz, aunque en los datos s\u00ed lo sea, porque un usuario puede querer ver un panorama general o espec\u00edficamente el patr\u00f3n de robos a motociclistas, y mezclar ambos en el mapa solo duplicar\u00eda puntos sobre los mismos hechos).\nAdem\u00e1s, se arm\u00f3 un \u00edndice de inseguridad por comuna, pensado como una capa de contexto adicional (a diferencia de los hotspots, que son puntuales y salen de clustering, el \u00edndice es una foto por comuna completa, calculada una sola vez y actualizada manualmente cuando el dataset de delitos se refresca, no en vivo como las predicciones del modelo de siniestros).\nFase 10 \u2014 Integrar inseguridad a lo que ya importaba: rutas y alertas en viaje\nTener el dato de inseguridad en el mapa no alcanzaba si el c\u00e1lculo de ruta y las alertas en tiempo real lo segu\u00edan ignorando. Se unific\u00f3 el modelo de riesgo: cada zona (sea de siniestro o de inseguridad) ya usa la misma escala ordinal de severidad (bajo/medio/alto/cr\u00edtico, calculada por percentiles dentro de su propio dataset), as\u00ed que sumar sus pesos para armar un score total de ruta es matem\u00e1ticamente razonable \u2014 sumar cantidades crudas de siniestros y delitos no lo hubiera sido, porque son magnitudes de naturaleza distinta.\nCon esa base, cada opci\u00f3n de ruta ahora muestra un score total, pero siempre desglosado: cu\u00e1ntas zonas de siniestro cruza y cu\u00e1ntas de inseguridad, por separado, adem\u00e1s del nivel m\u00e1s grave que atraviesa. Fusionar todo en un solo n\u00famero sin mostrar el desglose hubiera ocultado informaci\u00f3n importante para la decisi\u00f3n del usuario (no es lo mismo una ruta con mucho riesgo de choque que una con mucho riesgo de robo). Las alertas en viaje tambi\u00e9n se diferenciaron: si te acerc\u00e1s a una zona de siniestro suena una alerta de riesgo vial, si te acerc\u00e1s a una zona de inseguridad suena una alerta distinta, con \u00edcono y patr\u00f3n de vibraci\u00f3n propios.\nFase 11 \u2014 Un panel \u00fanico para controlar qu\u00e9 se ve en el mapa\nCon dos ejes de riesgo (siniestro e inseguridad) y tres formas de ver el de siniestro (clusters, mapa de calor, corredores), la interfaz empezaba a acumular botones sueltos sin una l\u00f3gica clara. Se redise\u00f1\u00f3 como un \u00fanico \u201cPanel de Capas\u201d: un lado controla qu\u00e9 vista de fondo se usa para siniestros, el otro controla si se muestra inseguridad y con qu\u00e9 dataset (apagada, delito general, o robos con moto \u2014 mutuamente excluyentes, no combinables). La capa de inseguridad se dibuja con una paleta de violeta/magenta deliberadamente distinta de la paleta verde-amarillo-naranja-rojo de siniestros, para que se distinga de un vistazo incluso superpuesta a las otras capas, y cuando est\u00e1 activa el resto del mapa se aten\u00faa (baja de opacidad) para que la capa reci\u00e9n activada quede en primer plano visual. Tambi\u00e9n se agreg\u00f3 agrupamiento por zoom (clustering de marcadores) a la capa de inseguridad, que hasta ese momento dibujaba cada punto individual sin importar qu\u00e9 tan alejado estuvieras \u2014 algo que la vista de clusters de siniestros ya ten\u00eda resuelto desde antes.\nFase 12 \u2014 Tr\u00e1fico en vivo y rutas reales con TomTom (reemplazando al servidor de pruebas OSRM)\nHasta ac\u00e1, el trazado de la ruta en el mapa (qu\u00e9 calles seguir para ir de un punto a otro) sal\u00eda de OSRM, un servicio gratuito y p\u00fablico, pero pensado expl\u00edcitamente para pruebas: no da ninguna garant\u00eda de que vaya a estar disponible ni de cu\u00e1nto se puede usar antes de que empiece a fallar. Serv\u00eda perfecto mientras el proyecto se probaba en una sola computadora, pero no era algo sobre lo que construir una app real.\nSe sum\u00f3 una cuenta propia en TomTom (una empresa que, entre otras cosas, vende exactamente este tipo de servicio: calcular rutas y saber qu\u00e9 tan congestionada est\u00e1 cada calle en este momento) y se migr\u00f3 a ella en dos pasos. Primero se agreg\u00f3 una capa visual opcional en el mapa que muestra, con l\u00edneas de color, qu\u00e9 tan lento est\u00e1 el tr\u00e1nsito en cada calle ahora mismo (igual que en Google Maps o Waze) \u2014 una capa que el usuario prende o apaga a gusto, sin afectar nada del c\u00e1lculo de riesgo. Despu\u00e9s se reemplaz\u00f3 el c\u00e1lculo de ruta en s\u00ed: en vez de pedirle el trazado a OSRM y por separado un tiempo estimado a TomTom (que pod\u00edan no coincidir del todo, porque cada uno elige sus propias calles), ahora un \u00fanico pedido a TomTom trae el trazado, las alternativas, el tiempo de viaje con y sin tr\u00e1fico en vivo, y las indicaciones de manejo (doblar en tal calle, entrar a la rotonda, etc.) todo junto y consistente entre s\u00ed.\nUn detalle de dise\u00f1o importante: la clave de acceso a TomTom nunca llega al navegador. Todos los pedidos pasan primero por el backend propio, que es quien de verdad le habla a TomTom \u2014 si la clave viajara hasta el navegador, cualquiera podr\u00eda copiarla desde ah\u00ed y gastar la cuota gratuita del proyecto.\nFase 13 \u2014 Segunda vuelta de calibraci\u00f3n: HDBSCAN tambi\u00e9n para los hotspots de robos con moto\nDespu\u00e9s de pasar los hotspots de siniestro a HDBSCAN (Fase 4), qued\u00f3 la duda de si conven\u00eda hacer lo mismo con los dos hotspots de inseguridad (delito general y robos con moto), que segu\u00edan con la calibraci\u00f3n manual original de DBSCAN, sin el barrido sistem\u00e1tico que s\u00ed se le hizo a los de siniestros.\nAntes de tocar nada se midi\u00f3 la cobertura real de cada uno (algo que no estaba documentado con un n\u00famero exacto hasta ese momento): delito general ven\u00eda en 29.2%, pero robos con moto en apenas 14.1% \u2014 bastante bajo. Se prob\u00f3 un barrido de HDBSCAN sobre robos con moto (un dataset de unos 16 mil casos, tama\u00f1o parecido al de los siniestros de moto) y el resultado fue contundente: 74.3% de cobertura, m\u00e1s del qu\u00edntuple de lo que daba DBSCAN, con el cluster m\u00e1s grande en apenas 0.79% del total (m\u00e1s seguro que el 3% que toleraba la calibraci\u00f3n anterior). Se actualiz\u00f3 notebooks/identificar_hotspots_inseguridad.py para usar HDBSCAN ah\u00ed.\nCon delito general fue distinto: es un dataset mucho m\u00e1s grande (m\u00e1s de 400 mil casos, casi 20 veces m\u00e1s denso que robos con moto), y HDBSCAN no lleg\u00f3 a terminar ni una sola combinaci\u00f3n en el entorno de trabajo usado para esta migraci\u00f3n, ni esperando varios minutos. Es probable que en una computadora normal s\u00ed termine, solo que tardando m\u00e1s de lo razonable para probarlo a mano varias veces seguidas, as\u00ed que se dej\u00f3 armado un script aparte (notebooks/sweep_hdbscan_inseguridad_general.py) para correrlo una sola vez, sin apuro, y decidir despu\u00e9s si vale la pena migrar esa capa tambi\u00e9n. Por ahora delito general sigue con DBSCAN.\n\nParte 4 \u2014 C\u00f3mo se conecta todo, explicado con una analog\u00eda\nImaginate un restaurante:\nEl frontend (lo que ves en el navegador) es el sal\u00f3n del restaurante y el men\u00fa: la parte con la que interactu\u00e1s directamente, donde ves el mapa, toc\u00e1s botones, escrib\u00eds direcciones.\nEl backend (el servidor de datos) es la cocina: no lo ves directamente, pero es quien recibe tu pedido (\u201cquiero ver las zonas de riesgo\u201d), lo procesa, y te devuelve el resultado.\nLa base de datos es la despensa: donde est\u00e1n guardados los ingredientes base (los 740 puntos de riesgo, su ubicaci\u00f3n, su historial).\nEl modelo de Machine Learning es el chef con experiencia: alguien que, despu\u00e9s de haber visto miles de platos servidos antes (los 23.343 siniestros hist\u00f3ricos), sabe estimar \u201ccon esta combinaci\u00f3n de ingredientes, este plato probablemente sale as\u00ed de bueno o malo\u201d \u2014 sin tener que consultar un libro de recetas fijas, porque aprendi\u00f3 el patr\u00f3n con la pr\u00e1ctica.\nCuando abr\u00eds la aplicaci\u00f3n: el sal\u00f3n (frontend) le pide a la cocina (backend) el men\u00fa del d\u00eda. La cocina va a la despensa (base de datos), saca los 740 ingredientes base, y para cada uno le pregunta al chef (modelo) \u201ccon este ingrediente, en este momento del d\u00eda, \u00bfqu\u00e9 tan bien va a salir?\u201d. El chef responde con su estimaci\u00f3n, y la cocina arma el plato final (el color de cada zona) que el sal\u00f3n te muestra en el mapa.\n\nParte 5 \u2014 Los programas instalados, uno por uno, explicados\nPrograma\nQu\u00e9 es, en criollo\nPara qu\u00e9 se usa ac\u00e1\nDocker Desktop\nUn programa que te deja correr \u201ccajas\u201d con software ya preparado adentro, sin instalar ese software directo en tu Windows.\nLevanta la base de datos sin tener que instalar PostgreSQL a mano.\nPostgreSQL + PostGIS\nUn sistema de base de datos, con un agregado (PostGIS) que sabe manejar coordenadas geogr\u00e1ficas de forma eficiente.\nGuarda los 740 puntos de riesgo con su ubicaci\u00f3n exacta.\nPython\nUn lenguaje de programaci\u00f3n, uno de los m\u00e1s usados para an\u00e1lisis de datos e Inteligencia Artificial.\nEl lenguaje en el que est\u00e1 escrito todo el an\u00e1lisis, el modelo, y el servidor de datos.\nNode.js\nUn entorno que permite correr JavaScript (otro lenguaje de programaci\u00f3n) fuera del navegador.\nNecesario para construir y probar la parte visual (el mapa).\nVisual Studio Code (VS Code)\nUn editor de texto especializado en escribir c\u00f3digo, con ayudas visuales (colores, sugerencias).\nDonde escribiste y modificaste todos los archivos del proyecto.\nDBeaver\nUn programa con botones e interfaz visual para mirar bases de datos sin escribir comandos a mano.\nPara confirmar que los datos se cargaron bien en la base.\nGit y GitHub\nGit es un sistema que guarda el \u201chistorial de cambios\u201d de tu c\u00f3digo. GitHub es una copia de ese historial guardada en internet.\nRespaldo de todo el proyecto \u2014 si tu computadora se rompe, el c\u00f3digo no se pierde.\nJupyter Notebook\nUn programa que te deja escribir y ejecutar c\u00f3digo Python \u201cde a pedazos\u201d (celdas), viendo el resultado de cada pedazo al instante.\nDonde se hizo todo el trabajo de limpieza de datos y entrenamiento del modelo.\n\nParte 6 \u2014 El diagrama completo del sistema\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u2502   TU NAVEGADOR     \u2502   \u2190 ac\u00e1 interactu\u00e1s vos, con el mouse y el teclado\u2502  (el mapa que ves)  \u2502\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518          \u2502          \u2502  \"dame las zonas de riesgo\"          \u25bc\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u2502  El servidor de       \u2502   \u2190 recibe el pedido, lo procesa\u2502  datos (backend)      \u2502\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518          \u2502          \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba Le pregunta a la base de datos:          \u2502                \"\u00bfcu\u00e1les son los 740 puntos de riesgo?\"          \u2502          \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba Para cada uno, le pregunta al modelo entrenado:                            \"con este contexto y la hora de ahora,                             \u00bfqu\u00e9 probabilidad de gravedad hay?\"                                       \u2502                                       \u25bc                            El modelo responde con un n\u00famero                            (por ejemplo: 45% grave, 38% leve, 17% mortal)                                       \u2502                                       \u25bc          El servidor traduce eso a un color (verde/amarillo/naranja/rojo)          y se lo devuelve al navegador, que pinta el mapa.\nEl mismo backend expone hoy m\u00e1s pedidos posibles que \u201cdame las zonas de riesgo\u201d: entre otros, /corredores (avenidas completas con score de riesgo), /hotspots-inseguridad (los 805 hotspots de delitos), y /reportes (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga).\nAdem\u00e1s, el navegador le habla directamente a dos servicios externos, aplicaciones gratuitas de terceros que se usan como piezas: - Open-Meteo: te da el clima real del momento. - Nominatim: convierte una direcci\u00f3n escrita (\u201cAv. Rivadavia 1200\u201d) en coordenadas.\nEl c\u00e1lculo de ruta y el tr\u00e1fico en vivo (TomTom) son distintos: no se le habla directo desde el navegador, sino que el backend hace ese pedido por vos (ver Fase 12) \u2014 as\u00ed la clave de acceso a TomTom nunca queda expuesta en el navegador.\n\nParte 7 \u2014 Qu\u00e9 es 100% real, y qu\u00e9 es una simplificaci\u00f3n consciente\nEs importante que tengas esto clar\u00edsimo, porque en alg\u00fan momento (en la defensa de tu tesis, por ejemplo) te pueden preguntar exactamente esto.\nLo que es genuinamente real:\nLos 65.818 siniestros descargados del gobierno son datos oficiales, no inventados.\nLos 23.343 casos de motociclistas usados para entrenar el modelo son reales.\nLos 740 puntos de riesgo en el mapa salen de un an\u00e1lisis matem\u00e1tico real (HDBSCAN, con par\u00e1metros elegidos tras comparar contra DBSCAN en un barrido sistem\u00e1tico, no a mano) sobre esos datos, no fueron puestos a mano.\nEl modelo que predice cada nivel de riesgo fue entrenado de verdad con esos 23.343 casos, y evaluado correctamente para ver qu\u00e9 tan bien predice.\nLas predicciones que ves ahora mismo en el mapa son la respuesta real de ese modelo, calculada en el momento \u2014 no son un color fijo escrito en el c\u00f3digo.\nEl clima que aparece arriba es el clima real de Buenos Aires en este instante.\nLos 805 hotspots de inseguridad (303 de delito general con DBSCAN, 502 de robos con moto con HDBSCAN) salen de un proceso real de clustering aplicado sobre delitos oficiales de la Ciudad, recalibrado para este dataset porque los delitos se agrupan geogr\u00e1ficamente distinto que los siniestros.\nEl score de riesgo de cada ruta suma de verdad ambos ejes (siniestro e inseguridad) y siempre lo muestra desglosado por tipo, no es una etiqueta decorativa: la suma es v\u00e1lida porque ambos ejes ya est\u00e1n en la misma escala ordinal de severidad calculada por percentiles.\nEl trazado de cada ruta, sus alternativas, el tiempo con tr\u00e1fico en vivo y la capa de congesti\u00f3n que se ve en el mapa salen de la Routing API real de TomTom, no de una estimaci\u00f3n fija \u2014 se actualizan en cada pedido.\nLo que es una simplificaci\u00f3n consciente (no un enga\u00f1o, una decisi\u00f3n de alcance):\nCobertura de hotspots del 75.6%, no del 100%: casi un cuarto de los siniestros hist\u00f3ricos de moto (24.4%) quedan \u201caislados\u201d, sin caer dentro de ning\u00fan hotspot \u2014 casos demasiado dispersos como para formar una zona compacta bajo cualquier calibraci\u00f3n razonable. Es una mejora real frente al 49.9% que daba la calibraci\u00f3n anterior con DBSCAN, lograda al pasar a HDBSCAN, pero sigue siendo un trade-off consciente entre cobertura y precisi\u00f3n geogr\u00e1fica: forzar coberturas m\u00e1s altas todav\u00eda empieza a arriesgar el mismo problema de fusionar zonas distintas en una sola que ya se hab\u00eda descartado antes, verificado en ambos casos chequeando el tama\u00f1o del cluster m\u00e1s grande como % del total.\nEl modelo prioriza detectar casos graves y mortales por sobre la precisi\u00f3n general, a prop\u00f3sito: se probaron varias configuraciones del Random Forest contra un holdout temporal real (2025, nunca visto durante el ajuste) y se eligi\u00f3 una (class_weight=\"balanced_subsample\", hojas m\u00ednimas de 5 en vez de 1) que casi duplica la detecci\u00f3n de casos graves y mortales a cambio de una accuracy general m\u00e1s baja y m\u00e1s falsas alarmas en casos leves. Para una app de seguridad vial es la decisi\u00f3n correcta, pero es una decisi\u00f3n de producto expl\u00edcita, no la que un ajuste autom\u00e1tico ciego hubiera elegido (de hecho, un ajuste autom\u00e1tico por validaci\u00f3n cruzada encontr\u00f3 una configuraci\u00f3n que rend\u00eda mejor en el propio per\u00edodo de entrenamiento pero mucho peor contra datos futuros reales \u2014 sobreajuste puro).\nAlcance geogr\u00e1fico: el proyecto cubre solo la Ciudad de Buenos Aires (CABA). No se encontraron datos p\u00fablicos y geolocalizados equivalentes para el resto del Gran Buenos Aires, a pesar de haberlos buscado.\nEl modelo usa el \u201cperfil t\u00edpico\u201d de cada zona, no la situaci\u00f3n exacta del momento: cuando el sistema calcula el riesgo de una zona, usa la hora actual (correcto) pero el tipo de contraparte, edad y sexo \u201cm\u00e1s comunes\u201d en el historial de esa zona (una aproximaci\u00f3n razonable, pero no la situaci\u00f3n exacta de la persona que est\u00e1 mirando el mapa ahora mismo).\nUn 40% de las edades de v\u00edctimas usadas para entrenar el modelo son estimadas, no reales \u2014 esa informaci\u00f3n faltaba en un 40% de los registros originales del gobierno, y en vez de descartar esos casos se complet\u00f3 con un valor promedio, dejando marcado cu\u00e1les eran estimados.\nEl \u00edndice de inseguridad por comuna no es un c\u00e1lculo en vivo: a diferencia de las predicciones de siniestro (que se recalculan en cada pedido con la hora actual) o de los hotspots (que salen de clustering sobre datos ya cargados), el \u00edndice se actualiza manualmente cuando se refresca el dataset de delitos, algo que hoy ocurre una vez al a\u00f1o porque as\u00ed se publica el dataset oficial. Esto est\u00e1 expl\u00edcito en la interfaz, no oculto.\nLos hotspots de \u201cdelito general\u201d y de \u201crobos con moto\u201d son capas separadas y mutuamente excluyentes en el mapa, no combinables: es una decisi\u00f3n de dise\u00f1o (mostrar ambas juntas duplicar\u00eda puntos sobre los mismos hechos, porque el robo con moto es un subconjunto del delito general), no una limitaci\u00f3n t\u00e9cnica evaluada a fondo contra otras alternativas de presentaci\u00f3n.\nTus filtros elegidos en el mapa se guardan solo en tu propia computadora (en la memoria del navegador). Los reportes que mand\u00e1s s\u00ed dejaron de ser as\u00ed: desde que se conectaron al backend, se guardan en la base de datos y los ve cualquiera que abra la app, no solo quien los carg\u00f3.\n\nParte 8 \u2014 Glosario completo\nT\u00e9rmino\nExplicaci\u00f3n simple\nFrontend\nLa parte de una aplicaci\u00f3n que ves e interactu\u00e1s directamente (botones, mapa, texto).\nBackend\nLa parte de una aplicaci\u00f3n que corre \u201cdetr\u00e1s de escena\u201d, procesando pedidos y sirviendo datos.\nEndpoint\nUna direcci\u00f3n espec\u00edfica dentro de una API a la que le ped\u00eds algo puntual.\nBase de datos\nSistema organizado para guardar y consultar informaci\u00f3n.\nModelo (de Machine Learning)\nEl resultado de entrenar un algoritmo con datos hist\u00f3ricos; queda \u201cguardado\u201d y listo para predecir casos nuevos.\nEntrenar\nEl proceso de mostrarle datos hist\u00f3ricos a un algoritmo para que aprenda un patr\u00f3n.\nPredecir / Predicci\u00f3n\nUsar un modelo ya entrenado para estimar un resultado sobre una situaci\u00f3n nueva.\nDataset\nUn conjunto de datos, generalmente organizado como una tabla (filas y columnas).\nLimpieza de datos\nEl proceso de corregir errores, inconsistencias y datos faltantes antes de usarlos.\nClustering / Agrupamiento\nT\u00e9cnica para encontrar grupos de puntos que est\u00e1n cerca entre s\u00ed.\nHDBSCAN\nEl algoritmo espec\u00edfico de clustering usado para encontrar los 740 hotspots de siniestro. A diferencia de DBSCAN (que usa un radio fijo), se adapta a la densidad local de cada zona.\nRandom Forest / XGBoost\nDos algoritmos distintos de Machine Learning, ambos usados y comparados en este proyecto.\nHotspot\nUna zona donde se repiten siniestros con m\u00e1s frecuencia de lo normal.\nAPI\nLa forma en que dos programas se comunican entre s\u00ed, con reglas fijas de qu\u00e9 se puede pedir.\nRepositorio (repo)\nLa carpeta completa de un proyecto, tal como la ve Git.\nCommit\nUna \u201cfoto\u201d guardada del estado del c\u00f3digo en un momento determinado.\nPush\nMandar tus commits guardados localmente hacia GitHub.\nTerminal / Consola\nVentana donde escrib\u00eds comandos de texto para darle instrucciones a la computadora.\nServidor\nUn programa que queda esperando pedidos y respondiendo con informaci\u00f3n.\nLocalhost\nUna forma de decir \u201cesta misma computadora\u201d \u2014 no es internet, es tu propia PC.\n\u00cdndice de inseguridad\nUn valor por comuna que resume qu\u00e9 tan inseguro es un \u00e1rea en general, calculado una vez sobre el dataset de delitos y actualizado manualmente, no en vivo.\nHotspot de inseguridad\nUna zona donde se repiten delitos con m\u00e1s frecuencia de lo normal. Delito general usa DBSCAN; robos con moto pas\u00f3 a HDBSCAN (mismo algoritmo que los siniestros) despu\u00e9s de una segunda calibraci\u00f3n, porque el dataset es de tama\u00f1o parecido al de siniestros y se beneficiaba de lo mismo.\nScore de ruta / desglose\nEl n\u00famero total de riesgo que suma una opci\u00f3n de ruta, siempre mostrado junto con cu\u00e1nto de ese total corresponde a siniestro y cu\u00e1nto a inseguridad, para no ocultar de qu\u00e9 tipo es el riesgo.\nPercentil (para nivel de riesgo)\nLa posici\u00f3n relativa de un valor dentro de su propio dataset (por ejemplo, \u201cest\u00e1 en el percentil 95\u201d significa que es m\u00e1s alto que el 95% de los dem\u00e1s casos). Se usa para definir los cortes entre bajo/medio/alto/cr\u00edtico dentro de cada eje de riesgo.\n\nParte 9 \u2014 Preguntas frecuentes\n\u00bfSi apago la computadora, se pierde todo? No.\u00a0El c\u00f3digo est\u00e1 guardado en tu disco duro y tambi\u00e9n respaldado en GitHub. Lo \u00fanico que se \u201capaga\u201d es que los programas dejan de estar corriendo \u2014 hay que volver a levantarlos siguiendo el Manual de Operaci\u00f3n.\n\u00bfOtra persona podr\u00eda usar esta aplicaci\u00f3n desde su celular ahora mismo? No todav\u00eda. Hoy todo corre \u00fanicamente en tu computadora. Para que otra persona pueda usarlo desde afuera, habr\u00eda que \u201cpublicar\u201d (deploy) el proyecto en un servidor de internet \u2014 no forma parte de lo construido hasta ahora.\n\u00bfEl modelo va a seguir prediciendo bien para siempre? No necesariamente \u2014 fue entrenado con datos hasta 2025. Si cambian los patrones de siniestralidad, habr\u00eda que volver a entrenarlo con datos m\u00e1s nuevos.\n\u00bfQu\u00e9 pasa si quiero agregar el conurbano bonaerense m\u00e1s adelante? Habr\u00eda que encontrar un dataset con la misma estructura para la Provincia de Buenos Aires, y repetir el mismo proceso de limpieza, clustering y entrenamiento que se hizo para CABA.\n\u00bfLa capa de inseguridad se actualiza en vivo como la de siniestros? No de la misma forma. Los hotspots de inseguridad y el \u00edndice por comuna salen de un dataset de delitos que el gobierno publica con periodicidad anual, as\u00ed que se recalculan cuando ese dataset se refresca, no en cada pedido al mapa como s\u00ed ocurre con las predicciones del modelo de siniestros. Esto queda expl\u00edcito en el panel de capas de la aplicaci\u00f3n."
+    },
+    "1_Guia_RESUMEN.docx": {
+      "paragraphs": 103,
+      "text": "MotoSafe GBA \u2014 Gu\u00eda Completa del Proyecto\nEste documento explica qu\u00e9 es el proyecto, c\u00f3mo est\u00e1 armado hoy, y qu\u00e9 de todo lo que ves funcionando es real y qu\u00e9 sigue siendo una simplificaci\u00f3n. Es el documento para entender el panorama completo, no para ejecutar comandos (eso est\u00e1 en el Manual de Operaci\u00f3n).\n\n1. Qu\u00e9 es MotoSafe GBA, en una frase\nUna aplicaci\u00f3n que muestra en un mapa qu\u00e9 tan riesgoso es circular en moto por distintas zonas de CABA, combinando un modelo de Machine Learning entrenado con datos reales de siniestros, clima en tiempo real, reportes de los propios usuarios, y un segundo eje de riesgo (inseguridad: delitos reales del GCBA) que ahora tambi\u00e9n entra en el c\u00e1lculo de la ruta m\u00e1s segura y en las alertas en viaje, no solo en el mapa.\nEstado real a esta altura: ya no es una maqueta. El mapa muestra predicciones calculadas en vivo por un modelo entrenado con 23.343 siniestros reales (que ahora tambi\u00e9n incluye el \u00edndice de inseguridad de cada comuna como variable) \u2014 no una regla inventada. Adem\u00e1s de los hotspots puntuales, la app tiene una vista de corredores (avenidas completas con score de riesgo) y una capa de inseguridad hist\u00f3rica con sus propios hotspots (delito general y robos con moto, calculados con DBSCAN; los de siniestros usan HDBSCAN, ver m\u00e1s abajo).\n\n2. El diagrama completo, actualizado\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u2502   TU NAVEGADOR     \u2502\u2502  (localhost:5173)  \u2502\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518          \u2502          \u25bc\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u2502  Frontend React     \u2502 \u2500\u2500\u2500\u2500 \u2502   Backend FastAPI    \u2502 \u2500\u2500\u2500\u2500 \u2502  PostgreSQL +      \u2502\u2502  (Vite + Leaflet)   \u2502      \u2502   (localhost:8000)   \u2502      \u2502  PostGIS (Docker)  \u2502\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518        \u2502  tabla:            \u2502          \u2502                            \u2502                    \u2502  hotspots_riesgo   \u2502          \u2502                            \u25bc                    \u2502  (740 filas)       \u2502          \u25bc                  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518   Open-Meteo API            \u2502  Modelo entrenado    \u2502   (clima real)               \u2502  (Random Forest,      \u2502          \u2502                    \u2502  modelo_final.pkl)    \u2502          \u25bc                  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518   Nominatim (direcciones)              \u25b2          \u2502                            \u2502          \u25bc                  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   Backend \u2192 TomTom          \u2502  hotspots_contexto.csv \u2502   (rutas + tr\u00e1fico vivo)    \u2502  (comuna/v\u00eda/contra-   \u2502                              \u2502  parte t\u00edpica por zona)\u2502                              \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\nC\u00f3mo funciona un pedido al mapa, de punta a punta: 1. El frontend le pide /hotspots al backend. 2. El backend trae los 740 hotspots de la base de datos (PostGIS). 3. Para cada uno, arma el contexto t\u00edpico de esa zona (desde hotspots_contexto.csv: comuna, tipo de v\u00eda, contraparte m\u00e1s com\u00fan, edad/sexo promedio) m\u00e1s la hora y el d\u00eda actuales. 4. Le pasa ese contexto al modelo entrenado (modelo_final.pkl), que devuelve una probabilidad de leve/grave/mortal. 5. El backend traduce esa probabilidad a un nivel (bajo/medio/alto/cr\u00edtico) y se lo manda al frontend. 6. El frontend pinta el mapa con esos niveles reales.\n\n3. Qu\u00e9 es 100% real, y qu\u00e9 sigue siendo simplificaci\u00f3n\nReal, con datos y procesamiento genuinos:\nLos 65.818 siniestros de CABA descargados de data.buenosaires.gob.ar (2019-2025).\nLos 23.343 casos de motociclistas, limpios, con coordenadas v\u00e1lidas.\nLos 740 hotspots, identificados con HDBSCAN (min_cluster_size=12, min_samples=3) tras evaluar tambi\u00e9n DBSCAN con un barrido sistem\u00e1tico de par\u00e1metros (eps 40-120m x min_samples 6-15, que lleg\u00f3 a 412 hotspots/49.9% de cobertura como mejor punto seguro). HDBSCAN no usa un radio fijo, as\u00ed que se adapta a la densidad local de cada zona en vez de forzar un \u00fanico radio para toda la ciudad, y esto permiti\u00f3 llegar al 75.6% de cobertura de los siniestros hist\u00f3ricos sin arriesgar el efecto de \u201cblob\u201d (el cluster m\u00e1s grande queda en 0.41% del total, m\u00e1s seguro incluso que el 0.73% de la versi\u00f3n DBSCAN).\nEl modelo Random Forest, entrenado con esos 23.343 casos, evaluado con F1-score y matriz de confusi\u00f3n (no accuracy, que hubiera mentido por el desbalance de clases), y adem\u00e1s validado con un split temporal real (entrenar con 2019-2024, testear contra 2025 completo, nunca visto), no solo con el split aleatorio habitual.\nLas predicciones que ves en el mapa: son la salida real del modelo, no un n\u00famero fijo.\nEl clima (Open-Meteo), la geocodificaci\u00f3n de direcciones (Nominatim) y el c\u00e1lculo de rutas con tr\u00e1fico en vivo (TomTom, v\u00eda el backend): servicios externos reales, no simulados.\nLos 805 hotspots de inseguridad (303 de delito general con DBSCAN + 502 de robos con moto con HDBSCAN, tras una segunda calibraci\u00f3n que llev\u00f3 su cobertura de 14.1% a 74.3%), sobre delitos reales descargados de data.buenosaires.gob.ar.\nEl score de riesgo de cada ruta ahora suma siniestros e inseguridad de verdad (no es cosm\u00e9tico): la ruta \u201cm\u00e1s segura\u201d y las alertas en viaje consideran las dos fuentes, con desglose visible de cu\u00e1nto aporta cada una.\nSimplificaci\u00f3n consciente, documentada:\nLa hora y el d\u00eda son iguales para las 740 zonas en cada pedido (la hora actual del servidor). Esto significa que buena parte de la variaci\u00f3n de riesgo entre zonas viene de su comuna/v\u00eda/contraparte t\u00edpica, no de un patr\u00f3n horario propio de cada lugar. Es una limitaci\u00f3n real, no un error.\n40% de las edades de v\u00edctimas son estimadas (mediana), no datos reales \u2014 el dataset original solo tiene edad para el 60% de los casos de moto.\nEl \u201cqui\u00e9n\u201d que usa el backend para predecir es el promedio hist\u00f3rico de cada zona, no la persona real que est\u00e1 mirando el mapa en ese momento.\nLos reportes ahora son colaborativos de verdad: se guardan en la base (tabla reportes_colaborativos) y los ve cualquier usuario, no solo quien los cre\u00f3. Cada categor\u00eda tiene su propia vigencia (un corte vence en 12hs, un pozo en el pavimento en 30 d\u00edas) \u2014 pasado ese tiempo dejan de aparecer en el mapa aunque sigan en la base como hist\u00f3rico.\nLos filtros de nivel, favoritos y tema siguen viviendo en el navegador de cada usuario (localStorage) \u2014 eso s\u00ed es preferencia individual, no dato colaborativo, y no tendr\u00eda sentido compartirlo entre usuarios distintos.\nAlcance geogr\u00e1fico: solo CABA. El conurbano bonaerense no tiene un dataset geolocalizado equivalente disponible p\u00fablicamente (se busc\u00f3 y no se encontr\u00f3).\nLa cobertura de hotspots de siniestro es del 75.6%, no del 100%: casi un cuarto de los siniestros hist\u00f3ricos (24.4%) caen fuera de cualquier hotspot (\u201caislados\u201d), casos demasiado dispersos como para formar una zona compacta. Es una mejora real frente al 49.9% de la calibraci\u00f3n anterior con DBSCAN, lograda al pasar a HDBSCAN (que se adapta a la densidad local en vez de usar un radio fijo), pero seguir subiendo la cobertura sin l\u00edmite empieza a arriesgar el mismo efecto de \u201cblob\u201d que se descart\u00f3 al calibrar DBSCAN \u2014 es un trade-off consciente entre cobertura y precisi\u00f3n geogr\u00e1fica, no una limitaci\u00f3n que se pueda simplemente subir a cero.\nEl modelo prioriza recall de casos graves/mortales por sobre accuracy general, a prop\u00f3sito: la configuraci\u00f3n elegida (class_weight=\"balanced_subsample\", hojas m\u00ednimas de 5) detecta m\u00e1s casos graves y mortales que una configuraci\u00f3n est\u00e1ndar, a cambio de generar m\u00e1s falsas alarmas en casos leves y una accuracy general m\u00e1s baja. Es la decisi\u00f3n correcta para una app de seguridad vial (perderse un caso grave es peor que una falsa alarma), pero es una decisi\u00f3n de producto expl\u00edcita, no la que un benchmark ciego hubiera elegido.\nEl \u00edndice de inseguridad es hist\u00f3rico y anual, no en vivo: se calcula una vez sobre los \u00faltimos 3 a\u00f1os completos de delitos por comuna, y se actualiza a mano cuando el GCBA publica el a\u00f1o siguiente \u2014 a diferencia del clima o de la hora, que s\u00ed son en vivo en cada predicci\u00f3n. Esto est\u00e1 expl\u00edcito en la interfaz (panel de Capas) para que no se confunda con un dato en tiempo real.\nSiniestros e inseguridad no se fusionan en un \u00fanico n\u00famero inventado: se suman porque ambos ya est\u00e1n en la misma escala ordinal (percentiles calculados dentro de cada dataset por separado), pero se muestran siempre desglosados \u2014 no hay una ponderaci\u00f3n arbitraria entre \u201ccu\u00e1nto pesa un choque contra cu\u00e1nto pesa un robo\u201d, porque no hay datos que la justifiquen.\n\n4. El stack completo, y para qu\u00e9 sirve cada pieza\nPieza\nQu\u00e9 es\nPara qu\u00e9 sirve ac\u00e1\nDocker Desktop\nCorre \u201ccajas\u201d (contenedores) con software preinstalado\nLevanta PostgreSQL sin instalarlo directo en Windows\nPostgreSQL + PostGIS\nBase de datos con soporte geoespacial\nGuarda los 740 hotspots con sus coordenadas\nPython 3.12\nLenguaje del backend y del an\u00e1lisis de datos\nTodo el EDA, el modelo, y la API\nFastAPI\nFramework para construir APIs en Python\nSirve /hotspots y /predecir\nscikit-learn\nLibrer\u00eda de Machine Learning\nEntrena y ejecuta el Random Forest\npandas\nManipulaci\u00f3n de tablas de datos\nLimpieza, transformaci\u00f3n, todo el EDA\nJupyter\nEntorno de c\u00f3digo interactivo por celdas\nDonde se hizo todo el an\u00e1lisis y entrenamiento\nReact + Vite\nLibrer\u00eda/herramienta para la interfaz visual\nEl mapa y toda la UI\nLeaflet + react-leaflet-cluster\nLibrer\u00eda de mapas y agrupamiento de puntos\nEl mapa en s\u00ed, con los 740 puntos agrupados\nGit + GitHub\nControl de versiones y respaldo remoto\nHistorial del proyecto, respaldo fuera de tu PC\n\n5. Estructura de carpetas, actualizada\nmotosafe-gba/\u251c\u2500\u2500 backend/\u2502   \u251c\u2500\u2500 venv/                        \u2192 librer\u00edas Python de este proyecto\u2502   \u251c\u2500\u2500 main.py                      \u2192 la API (hotspots, corredores, hotspots-inseguridad, predecir, reportes)\u2502   \u251c\u2500\u2500 cargar_hotspots.py           \u2192 script que carg\u00f3 los 740 hotspots a la base\u2502   \u251c\u2500\u2500 cargar_corredores.py         \u2192 carga la tabla de corredores de riesgo\u2502   \u251c\u2500\u2500 cargar_hotspots_inseguridad.py \u2192 carga la tabla de hotspots de inseguridad\u2502   \u251c\u2500\u2500 modelo_final.pkl             \u2192 el modelo entrenado (Random Forest, con \u00edndice de inseguridad)\u2502   \u251c\u2500\u2500 columnas_modelo.pkl          \u2192 el orden de columnas que el modelo necesita\u2502   \u251c\u2500\u2500 hotspots_contexto.csv        \u2192 comuna/v\u00eda/contraparte t\u00edpica por zona\u2502   \u251c\u2500\u2500 indice_inseguridad_comuna.csv \u2192 \u00edndice de inseguridad por comuna (0-1)\u2502   \u2514\u2500\u2500 tests/test_main.py           \u2192 24 tests de la API\u251c\u2500\u2500 frontend/\u2502   \u2514\u2500\u2500 src/\u2502       \u251c\u2500\u2500 App.jsx                  \u2192 l\u00f3gica e interfaz principal\u2502       \u251c\u2500\u2500 App.css                  \u2192 estilos\u2502       \u251c\u2500\u2500 constants.js             \u2192 umbrales, paletas, cat\u00e1logos fijos\u2502       \u251c\u2500\u2500 components/              \u2192 CapasPanel, CapaCalor, Onboarding, etc.\u2502       \u2514\u2500\u2500 utils/                   \u2192 geoRiesgo.js, tiempo.js, ui.js\u251c\u2500\u2500 notebooks/\u2502   \u251c\u2500\u2500 01_eda_hotspots_moto.ipynb   \u2192 limpieza, clustering y modelos originales\u2502   \u251c\u2500\u2500 fetch_delitos_caba.py        \u2192 descarga delitos de CABA (correr a mano, necesita internet real)\u2502   \u251c\u2500\u2500 construir_indice_inseguridad.py \u2192 arma el \u00edndice de inseguridad por comuna\u2502   \u251c\u2500\u2500 identificar_hotspots_inseguridad.py \u2192 DBSCAN sobre delitos (general y con moto)\u2502   \u2514\u2500\u2500 reentrenar_modelo.py         \u2192 reproduce el entrenamiento sumando el \u00edndice de inseguridad\u251c\u2500\u2500 data/                            \u2192 CSV pesados, NO se suben a GitHub\u2502   \u251c\u2500\u2500 motos_limpio.csv / motos_con_clusters.csv / hotspots_moto_caba.csv\u2502   \u251c\u2500\u2500 delitos_caba.csv             \u2192 1.387.622 delitos, 2016-2025\u2502   \u251c\u2500\u2500 hotspots_inseguridad_general.csv / _moto.csv\u2502   \u251c\u2500\u2500 indice_inseguridad_comuna.csv\u2502   \u2514\u2500\u2500 siniestros_viales_hechos.csv / victimas.csv (los originales del gobierno)\u251c\u2500\u2500 docker-compose.yml\u251c\u2500\u2500 requirements.txt\u2514\u2500\u2500 .gitignore\n\n6. Glosario r\u00e1pido\nT\u00e9rmino\nQu\u00e9 significa\nEndpoint\nUna direcci\u00f3n de la API a la que le ped\u00eds algo puntual (/hotspots, /predecir)\nHDBSCAN\nAlgoritmo que agrupa puntos geogr\u00e1ficos cercanos adapt\u00e1ndose a la densidad local \u2014 as\u00ed se armaron los 740 hotspots de siniestro (los de inseguridad siguen con DBSCAN, un radio fijo)\nRandom Forest\nAlgoritmo de Machine Learning que combina muchos \u201c\u00e1rboles de decisi\u00f3n\u201d\nF1-score / recall\nM\u00e9tricas para medir qu\u00e9 tan bien predice un modelo, mejores que \u201caccuracy\u201d cuando hay pocas muestras de una clase (ac\u00e1, pocos casos mortales)\nOne-hot encoding\nConvertir una categor\u00eda de texto (\u201cAUTO\u201d, \u201cMOTO\u201d) en columnas de 0/1 que un modelo pueda usar\nHardcodeado\nUn valor escrito fijo en el c\u00f3digo en vez de venir de una base de datos o c\u00e1lculo real\nlocalStorage\nMemoria del propio navegador \u2014 lo que se guarda ah\u00ed no viaja a ning\u00fan servidor\n\u00cdndice de inseguridad\nN\u00famero (0-1) por comuna, calculado sobre los \u00faltimos 3 a\u00f1os de delitos del GCBA; entra al modelo como una variable num\u00e9rica m\u00e1s\nHotspot de inseguridad\nZona con delitos concentrados, encontrada con DBSCAN sobre el dataset de delitos (igual m\u00e9todo que los hotspots de siniestros, dataset distinto)\nScore de ruta / desglose\nEl puntaje de riesgo de una ruta trazada, que suma siniestros e inseguridad cruzados pero siempre muestra cu\u00e1nto aporta cada eje por separado\nPercentil (para nivel de riesgo)\nEl nivel bajo/medio/alto/cr\u00edtico de cada zona no es un umbral fijo, es relativo: se calcula seg\u00fan en qu\u00e9 percentil (25/75/95) cae esa zona dentro de su propio dataset\n\n7. Lo que falta, con honestidad\nConurbano bonaerense \u2014 sigue sin resolverse. Alcance real: CABA, tanto para siniestros como para inseguridad.\nLa limitaci\u00f3n de \u201chora/d\u00eda iguales para todas las zonas\u201d \u2014 se podr\u00eda refinar pidi\u00e9ndole al modelo predicciones por franja horaria espec\u00edfica en vez de solo \u201cahora\u201d.\nDocumentado, no resuelto: el modelo predice mejor \u201cleve\u201d que \u201cgrave\u201d/\u201cmortal\u201d por separado \u2014 es una limitaci\u00f3n real de las variables disponibles (falta velocidad, uso de casco, alcohol \u2014 datos que el dataset del gobierno no tiene).\nEl \u00edndice de inseguridad se actualiza a mano, una vez al a\u00f1o \u2014 no hay una API en vivo del GCBA para delitos, as\u00ed que no se puede automatizar como el clima.\nLa capa de inseguridad general y la de robos con moto son excluyentes en el mapa (no se pueden ver juntas): se decidi\u00f3 as\u00ed porque se superponen bastante y mostrarlas a la vez solo duplicar\u00eda puntos sobre el mismo hecho, pero no est\u00e1 evaluado a fondo si convendr\u00eda una tercera vista combinada."
+    },
+    "2_Manual_DETALLADO.docx": {
+      "paragraphs": 111,
+      "text": "MotoSafe GBA \u2014 Manual de Operaci\u00f3n (explicado paso a paso)\nAntes de empezar: qu\u00e9 es una terminal y c\u00f3mo se usa\nUna terminal (tambi\u00e9n llamada consola, o PowerShell en Windows) es una ventana donde le escrib\u00eds \u00f3rdenes a la computadora en forma de texto, en vez de hacer clic con el mouse. Cada l\u00ednea que escrib\u00eds se llama \u201ccomando\u201d. Apret\u00e1s Enter, y la computadora ejecuta esa orden.\nCosas importantes para entenderla:\nLa computadora siempre est\u00e1 \u201cparada\u201d en una carpeta espec\u00edfica. Si le ped\u00eds algo que est\u00e1 en otra carpeta sin decirle antes que se mueva ah\u00ed, no lo va a encontrar.\nEl comando cd (de \u201cchange directory\u201d, cambiar de carpeta) es c\u00f3mo le dec\u00eds \u201cmovete a esta otra carpeta\u201d.\nTodo tiene que estar escrito exactamente bien \u2014 may\u00fasculas, espacios, barras \u2014 porque la computadora no adivina lo que quisiste decir.\nEn este proyecto vas a usar varias terminales al mismo tiempo, cada una corriendo una parte distinta del sistema, sin cerrarse entre s\u00ed.\n\n1. Levantar todo desde cero (despu\u00e9s de reiniciar la PC)\nEl proyecto tiene tres piezas que tienen que estar corriendo al mismo tiempo, cada una en su propia terminal, para que la aplicaci\u00f3n funcione completa. El orden importa.\nPaso 1 \u2014 Abrir Docker Desktop\nQu\u00e9 es y por qu\u00e9 hace falta: Docker Desktop es el programa que hace posible que tu base de datos exista y est\u00e9 disponible. Sin \u00e9l corriendo, nada de lo dem\u00e1s va a poder guardar ni leer datos.\nC\u00f3mo hacerlo: and\u00e1 al men\u00fa Inicio de Windows, escrib\u00ed \u201cDocker Desktop\u201d, y hac\u00e9 clic para abrirlo. Este programa no arranca solo con Windows \u2014 hay que abrirlo a mano cada vez que reinici\u00e1s la PC (a menos que hayas activado la opci\u00f3n de que arranque autom\u00e1tico en su configuraci\u00f3n).\nC\u00f3mo saber si ya est\u00e1 listo: en la ventana de Docker Desktop, abajo a la izquierda, tiene que decir \u201cEngine running\u201d en verde. Puede tardar entre 30 segundos y 2 minutos la primera vez despu\u00e9s de un reinicio \u2014 no lo cierres ni intentes nada m\u00e1s mientras carga.\nPaso 2 \u2014 Levantar la base de datos\nCon Docker ya listo, abr\u00ed una terminal (o us\u00e1 la que tengas abierta) y escrib\u00ed, l\u00ednea por l\u00ednea:\ncd $HOME\\Desktop\\motosafe-gbadocker compose up -ddocker ps\nQu\u00e9 hace cada l\u00ednea:\ncd $HOME\\Desktop\\motosafe-gba: le dice a la terminal \u201cmovete a la carpeta del proyecto\u201d.\ndocker compose up -d: lee un archivo llamado docker-compose.yml (que ya est\u00e1 preparado) y levanta la base de datos seg\u00fan esas instrucciones. El -d significa que se ejecuta \u201cde fondo\u201d, sin ocupar la terminal.\ndocker ps: muestra una lista de todo lo que Docker tiene corriendo en este momento. Tiene que aparecer una fila con el nombre motosafe-db y la palabra \u201cUp\u201d en su estado \u2014 eso confirma que la base de datos est\u00e1 viva y disponible.\nPaso 3 \u2014 Levantar el backend (el servidor de datos)\nAbr\u00ed una terminal nueva (no reutilices la anterior, dejala corriendo Docker) y escrib\u00ed:\ncd $HOME\\Desktop\\motosafe-gba\\backend.\\venv\\Scripts\\activateuvicorn main:app --reload\nQu\u00e9 hace cada l\u00ednea:\ncd ...\\backend: te mov\u00e9s a la carpeta donde vive el servidor de datos.\n.\\venv\\Scripts\\activate: activa el \u201centorno virtual\u201d de Python \u2014 una carpeta especial donde est\u00e1n instaladas todas las librer\u00edas que este proyecto necesita, separadas de cualquier otro programa Python que tengas en la PC. Si funcion\u00f3, vas a ver que el principio de la l\u00ednea de comandos ahora empieza con (venv).\nuvicorn main:app --reload: arranca el servidor de datos en s\u00ed. main:app le dice qu\u00e9 archivo de c\u00f3digo correr (main.py, donde est\u00e1 escrita toda la l\u00f3gica del servidor). --reload hace que, si modific\u00e1s el c\u00f3digo mientras el servidor est\u00e1 corriendo, se reinicie solo.\nC\u00f3mo saber si funcion\u00f3: tiene que aparecer, entre otras l\u00edneas, el texto \u201cApplication startup complete.\u201d Si eso aparece, el servidor est\u00e1 listo y escuchando pedidos. Dej\u00e1 esta terminal abierta y no le escribas nada m\u00e1s \u2014 mientras est\u00e9 abierta, el servidor sigue funcionando; si la cerr\u00e1s, se apaga.\nPaso 4 \u2014 Levantar el frontend (la parte visual)\nAbr\u00ed otra terminal nueva (ya ten\u00e9s dos abiertas: Docker/base de datos, y el backend; esta es la tercera):\ncd $HOME\\Desktop\\motosafe-gba\\frontendnpm run dev\nQu\u00e9 hace: levanta un mini-servidor que te sirve la p\u00e1gina web del mapa en tu navegador, y va actualiz\u00e1ndola autom\u00e1ticamente cada vez que se modifica el c\u00f3digo visual.\nC\u00f3mo saber si funcion\u00f3: la terminal te va a mostrar una direcci\u00f3n web, normalmente http://localhost:5173/. Copi\u00e1 esa direcci\u00f3n (o hacele clic si tu terminal lo permite) y pegala en el navegador. Dej\u00e1 esta terminal abierta tambi\u00e9n.\nPaso 5 \u2014 Confirmar que todo est\u00e1 funcionando junto\nEn el navegador, con la direcci\u00f3n del paso 4 abierta, ten\u00e9s que ver el mapa cargado con puntos de colores (verde, amarillo, naranja, rojo) repartidos por la ciudad, y en la esquina de abajo a la izquierda una leyenda con n\u00fameros al lado de cada color. Si en cambio ves \u201c0 zonas registradas\u201d o un cartel de \u201csin conexi\u00f3n\u201d, and\u00e1 a la secci\u00f3n de problemas de este mismo documento.\n\n2. Levantar Jupyter (para trabajar en el an\u00e1lisis o el modelo)\nJupyter es un programa aparte que no reemplaza al backend ni al frontend \u2014 es para cuando quer\u00e9s seguir trabajando en el an\u00e1lisis de datos o en el modelo de Machine Learning, no para usar la aplicaci\u00f3n en s\u00ed.\nAbr\u00ed una terminal nueva (pod\u00e9s tener Docker, backend, frontend, y esta cuarta terminal, todas abiertas al mismo tiempo sin problema):\ncd $HOME\\Desktop\\motosafe-gba\\backend.\\venv\\Scripts\\activatecd ..\\notebooksjupyter notebook\nEsto abre una pesta\u00f1a nueva en tu navegador con la interfaz de Jupyter. Hac\u00e9 clic en el archivo 01_eda_hotspots_moto.ipynb para abrir el notebook donde est\u00e1 todo el trabajo hecho.\nC\u00f3mo se usa un notebook, en resumen: el archivo est\u00e1 dividido en \u201cceldas\u201d, cada una con un pedacito de c\u00f3digo. Hac\u00e9s clic en una celda y apret\u00e1s Shift + Enter para ejecutar solo esa celda y pasar a la siguiente. El resultado de cada celda aparece justo debajo, antes de la pr\u00f3xima.\n\n3. Comandos de Git m\u00e1s usados (guardar y respaldar cambios)\nGit es el sistema que guarda el historial de tu proyecto. Cada vez que hac\u00e9s cambios importantes y quer\u00e9s guardarlos de forma permanente (tanto en tu compu como en internet, en GitHub), us\u00e1s esta secuencia:\ncd $HOME\\Desktop\\motosafe-gbagit add .git commit -m \"descripci\u00f3n corta de lo que cambiaste\"git push\nQu\u00e9 hace cada l\u00ednea:\ngit add .: le dice a Git \u201cprepar\u00e1 todos los archivos que cambi\u00e9 para guardarlos\u201d (el punto significa \u201ctodos, en esta carpeta y sus subcarpetas\u201d).\ngit commit -m \"...\": guarda esa \u201cfoto\u201d del proyecto de forma permanente en tu computadora, con una etiqueta de texto que describe qu\u00e9 cambi\u00f3. El texto entre comillas es libre, pero conviene que sea claro (por ejemplo: \"agrego el boton de compartir ruta\").\ngit push: manda esa foto guardada hacia GitHub, la copia en internet.\nPara ver si ten\u00e9s cambios sin guardar:\ngit status\nSi dice \u201cnothing to commit, working tree clean\u201d, no hay nada pendiente.\nPara ver el historial de cambios guardados:\ngit log --oneline -10\nTe muestra los \u00faltimos 10 cambios guardados, cada uno con su descripci\u00f3n.\n\n4. C\u00f3mo reentrenar o modificar el modelo de Machine Learning\nSi en alg\u00fan momento quer\u00e9s cambiar algo del modelo (agregar una variable nueva, probar otro algoritmo, etc.):\nLevantar Jupyter (secci\u00f3n 2 de este documento).\nAbrir el notebook, ir a las celdas correspondientes al modelo, hacer los cambios.\nSi el modelo se reentrena, hay que guardarlo de nuevo con estas dos l\u00edneas dentro de una celda del notebook:\njoblib.dump(modelo_final, '../data/modelo_final.pkl')joblib.dump(X3.columns.tolist(), '../data/columnas_modelo.pkl')\nCopiar los archivos actualizados a la carpeta donde el backend los necesita:\ncd $HOME\\Desktop\\motosafe-gbacopy data\\modelo_final.pkl backend\\copy data\\columnas_modelo.pkl backend\\\nReiniciar el backend: ir a su terminal, apretar Ctrl + C (esto lo corta), y volver a escribir uvicorn main:app --reload. Esto es necesario porque, aunque el servidor se recarga solo cuando cambia el c\u00f3digo (main.py), no se entera solo si cambi\u00e1s el archivo del modelo \u2014 hay que reiniciarlo a mano para que cargue la versi\u00f3n nueva.\n\n5. Problemas que ya pasaron durante esta sesi\u00f3n, y c\u00f3mo se resuelven\nEsta secci\u00f3n existe porque cada uno de estos errores ya ocurri\u00f3 al menos una vez mientras se constru\u00eda el proyecto. Si te aparece alguno, seguramente la soluci\u00f3n est\u00e1 ac\u00e1.\n\u201cfailed to connect to the docker API\u2026 npipe\u2026 El sistema no puede encontrar el archivo especificado\u201d\nPor qu\u00e9 pasa: Docker Desktop no est\u00e1 abierto, o est\u00e1 abierto pero todav\u00eda no termin\u00f3 de cargar su \u201cmotor\u201d interno. Soluci\u00f3n: abrir Docker Desktop a mano (men\u00fa Inicio) y esperar a que la ventana diga \u201cEngine running\u201d antes de tocar cualquier terminal.\n\u201cuvicorn no se reconoce como nombre de un cmdlet, funci\u00f3n, archivo de script\u2026\u201d\nPor qu\u00e9 pasa: dos causas posibles.\nEl entorno virtual de Python no est\u00e1 activado (el principio de la l\u00ednea no dice (venv)) \u2192 correr .\\venv\\Scripts\\activate.\nEst\u00e1s parado en la carpeta equivocada. uvicorn solo funciona si est\u00e1s dentro de backend/ \u2192 correr cd backend primero.\n\u201ccd backend\u201d dice que la ruta no existe\nPor qu\u00e9 pasa: est\u00e1s parado en tu carpeta de usuario general (C:\\Users\\tunombre), no en el proyecto. Soluci\u00f3n: empezar siempre escribiendo la ruta completa: cd $HOME\\Desktop\\motosafe-gba\\backend.\nEl frontend muestra \u201cSin conexi\u00f3n con el backend\u201d\nPor qu\u00e9 pasa: el servidor de datos (backend) intent\u00f3 conectarse a la base de datos en un momento en que Docker todav\u00eda no hab\u00eda terminado de levantarla. Soluci\u00f3n: confirmar con docker ps que motosafe-db diga \u201cUp\u201d. Despu\u00e9s, ir a la terminal donde corre uvicorn, apretar Ctrl + C, y volver a escribir uvicorn main:app --reload.\nEl mapa muestra \u201c0 zonas registradas\u201d aunque el backend parece andar bien\nPor qu\u00e9 pasa: puede ser un error en el c\u00f3digo de la parte visual donde algo no se actualiza correctamente cuando llegan datos nuevos. Soluci\u00f3n: abrir las herramientas de desarrollador del navegador (tecla F12), ir a la pesta\u00f1a \u201cConsole\u201d, y buscar alg\u00fan mensaje en rojo (error). Si no hay ning\u00fan error visible, probar un refresco fuerte de la p\u00e1gina con Ctrl + Shift + R.\nAl ejecutar git add, git commit y git push juntos con && entre ellos, da error de sintaxis\nPor qu\u00e9 pasa: && para unir comandos en una sola l\u00ednea es una sintaxis de otros sistemas (bash, cmd), pero PowerShell (la terminal de Windows) no la reconoce de la misma forma. Soluci\u00f3n: escribir cada comando en su propia l\u00ednea, uno abajo del otro, en vez de todos juntos con &&.\nAl ejecutar una celda del notebook, aparece \u201cModuleNotFoundError: No module named \u2018\u2026\u2019\u201d\nPor qu\u00e9 pasa: falta instalar esa librer\u00eda espec\u00edfica de Python en el entorno virtual. Soluci\u00f3n:\ncd $HOME\\Desktop\\motosafe-gba\\backend.\\venv\\Scripts\\activatepip install nombre-de-la-libreria\nDespu\u00e9s, en Jupyter, ir al men\u00fa Kernel \u2192 Restart Kernel and Run All Cells. Instalar la librer\u00eda sola no alcanza \u2014 el \u201ckernel\u201d (el proceso de Python que ya est\u00e1 corriendo dentro del notebook) no se entera de la librer\u00eda nueva hasta que se reinicia.\nJupyter tira \u201cNameError: name \u2018\u2026\u2019 is not defined\u201d\nPor qu\u00e9 pasa: el kernel se reinici\u00f3 (por ejemplo, despu\u00e9s de instalar una librer\u00eda nueva), y las celdas de arriba, que defin\u00edan esa variable, no se volvieron a ejecutar. Soluci\u00f3n: ir al men\u00fa Run \u2192 Run All Cells (o Kernel \u2192 Restart Kernel and Run All Cells), para que todo el notebook se ejecute de punta a punta, en orden, desde el principio.\n\n6. Mapa de rutas del proyecto, para no perderte\nQu\u00e9 busc\u00e1s\nD\u00f3nde est\u00e1\nLa carpeta completa del proyecto\nC:\\Users\\<tu usuario>\\Desktop\\motosafe-gba\\\nEl c\u00f3digo del servidor de datos\n...\\motosafe-gba\\backend\\main.py\nEl c\u00f3digo de la parte visual\n...\\motosafe-gba\\frontend\\src\\App.jsx\nEl notebook con todo el an\u00e1lisis\n...\\motosafe-gba\\notebooks\\01_eda_hotspots_moto.ipynb\nLos datos (CSV, no se suben a GitHub)\n...\\motosafe-gba\\data\\\nLa aplicaci\u00f3n funcionando en el navegador\nhttp://localhost:5173\nEl servidor de datos, para probarlo directo\nhttp://localhost:8000/docs\nEl respaldo en internet del proyecto\nhttps://github.com/Roudcode/motosafe-gba (repositorio privado)"
+    },
+    "2_Manual_RESUMEN.docx": {
+      "paragraphs": 52,
+      "text": "MotoSafe GBA \u2014 Manual de Operaci\u00f3n\n1. Levantar todo desde cero (despu\u00e9s de reiniciar la PC)\nOrden importante: Docker siempre primero.\nPaso 1 \u2014 Docker Desktop\nAbrirlo a mano (men\u00fa Inicio \u2192 \u201cDocker Desktop\u201d). No arranca solo con Windows. Esperar a \u201cEngine running\u201d.\nPaso 2 \u2014 Base de datos\ncd $HOME\\Desktop\\motosafe-gbadocker compose up -ddocker ps\nPaso 3 \u2014 Backend (terminal nueva)\ncd $HOME\\Desktop\\motosafe-gba\\backend.\\venv\\Scripts\\activateuvicorn main:app --reload\nEsperar a \u201cApplication startup complete.\u201d Dejar la terminal abierta.\nPaso 4 \u2014 Frontend (otra terminal nueva)\ncd $HOME\\Desktop\\motosafe-gba\\frontendnpm run dev\nEntrar a la URL que muestra (normalmente http://localhost:5173/). Dejar la terminal abierta.\nPaso 5 \u2014 Confirmar\nEl mapa tiene que cargar con puntos de colores y la leyenda con n\u00fameros.\n2. Levantar Jupyter\ncd $HOME\\Desktop\\motosafe-gba\\backend.\\venv\\Scripts\\activatecd ..\\notebooksjupyter notebook\n3. Comandos de Git m\u00e1s usados\ncd $HOME\\Desktop\\motosafe-gbagit add .git commit -m \"descripci\u00f3n corta de lo que cambiaste\"git push\nVer si hay algo sin guardar: git status Ver el historial: git log --oneline -10\n4. Reentrenar o modificar el modelo\nLevantar Jupyter.\nModificar y reentrenar en el notebook.\nGuardar: joblib.dump(modelo_final, '../data/modelo_final.pkl')\nCopiar al backend: copy data\\modelo_final.pkl backend\\\nReiniciar el backend.\n5. Problemas comunes y soluci\u00f3n\n\u201cfailed to connect to docker API\u201d: Docker Desktop no est\u00e1 abierto. Abrirlo y esperar a \u201cEngine running\u201d.\n\u201cuvicorn no se reconoce\u2026\u201d: venv no activado, o est\u00e1s en la carpeta equivocada.\n\u201ccd backend\u201d dice que no existe: est\u00e1s parado en la carpeta de usuario, no en el proyecto.\n\u201cSin conexi\u00f3n con el backend\u201d: el backend arranc\u00f3 antes que Docker terminara de cargar. Reiniciar el backend.\n\u201c0 zonas registradas\u201d: revisar la consola del navegador (F12) por errores, o refrescar fuerte (Ctrl+Shift+R).\n&& entre comandos da error: en PowerShell no se usa &&; poner cada comando en su propia l\u00ednea.\nModuleNotFoundError en Jupyter: instalar la librer\u00eda con pip, y reiniciar el kernel (Kernel \u2192 Restart Kernel and Run All Cells).\nNameError en Jupyter: el kernel se reinici\u00f3; correr todo el notebook de nuevo (Run \u2192 Run All Cells).\n6. Rutas importantes\nQu\u00e9\nD\u00f3nde\nProyecto completo\nC:\\Users\\<usuario>\\Desktop\\motosafe-gba\\\nBackend\n...\\backend\\main.py\nFrontend\n...\\frontend\\src\\App.jsx\nNotebook\n...\\notebooks\\01_eda_hotspots_moto.ipynb\nApp corriendo\nhttp://localhost:5173\nAPI corriendo\nhttp://localhost:8000/docs\nRepo en GitHub\nhttps://github.com/Roudcode/motosafe-gba"
+    },
+    "3_Resultados_DETALLADO.docx": {
+      "paragraphs": 141,
+      "text": "MotoSafe GBA \u2014 Resultados del Modelo Predictivo (explicado desde cero)\nEste documento explica, sin dar por sabido nada de Machine Learning, qu\u00e9 se hizo con los datos y c\u00f3mo se lleg\u00f3 al modelo final. Est\u00e1 escrito para poder usarse tanto para entender el trabajo como base directa de la secci\u00f3n de resultados de la tesis.\n\n1. Conceptos de Machine Learning que hacen falta para entender el resto\n\u00bfQu\u00e9 significa \u201centrenar\u201d un modelo, en la pr\u00e1ctica?\nImaginate que le mostr\u00e1s a alguien 23.343 fichas, cada una describiendo un accidente real de moto (a qu\u00e9 hora fue, en qu\u00e9 tipo de calle, con qu\u00e9 choc\u00f3, qu\u00e9 edad ten\u00eda el motociclista) y, al reverso de cada ficha, c\u00f3mo termin\u00f3 (leve, grave, o mortal). Despu\u00e9s de mirar todas esas fichas, esa persona empieza a \u201cintuir\u201d patrones: por ejemplo, que los choques contra camiones de noche suelen ser m\u00e1s graves que los choques contra autos de d\u00eda. Un modelo de Machine Learning hace algo parecido, pero de forma matem\u00e1tica y con mucha m\u00e1s precisi\u00f3n y volumen de lo que una persona podr\u00eda procesar a mano.\n\u00bfQu\u00e9 es \u201cevaluar\u201d un modelo, y por qu\u00e9 no alcanza con ver si \u201cacert\u00f3 mucho\u201d?\nUna vez entrenado, hay que comprobar qu\u00e9 tan bien predice, pero usando datos que no vio durante el entrenamiento \u2014 si lo evalu\u00e1s con los mismos ejemplos que ya memoriz\u00f3, no es una prueba real, es como corregir un examen con las respuestas ya dadas.\nAc\u00e1 aparece un problema importante en este proyecto en particular: de los 23.343 casos, el 93% son leves, el 5,6% graves, y solo el 1,2% mortales. Si un modelo fuera tan \u201cvago\u201d que simplemente dijera \u201ctodo es leve\u201d sin analizar nada, acertar\u00eda el 93% de las veces \u2014 un n\u00famero que suena bien pero que en realidad no sirve para nada, porque el objetivo real es detectar los casos graves y mortales, no los leves (que son f\u00e1ciles de adivinar por ser la mayor\u00eda).\nPor eso, en vez de medir \u201ccu\u00e1ntas veces acert\u00f3 en total\u201d (a esto se le llama accuracy), se usan otras dos medidas m\u00e1s espec\u00edficas:\nPrecisi\u00f3n: de todas las veces que el modelo dijo \u201cesto va a ser grave\u201d, \u00bfen cu\u00e1ntas realmente lo fue? (mide qu\u00e9 tan confiable es cuando alarma)\nRecall (sensibilidad): de todos los casos que realmente fueron graves, \u00bfen cu\u00e1ntos el modelo se dio cuenta? (mide qu\u00e9 tan bueno es para no dejar pasar casos importantes)\nPara este proyecto, el recall es la m\u00e9trica m\u00e1s importante \u2014 en una app de seguridad, es mucho peor \u201cno avisar\u201d de un caso grave real que generar alguna falsa alarma de m\u00e1s.\n\u00bfQu\u00e9 son Random Forest y XGBoost?\nSon dos algoritmos distintos, ambos populares para este tipo de tarea. Simplificando mucho: los dos construyen muchos \u201c\u00e1rboles de decisi\u00f3n\u201d (una serie de preguntas encadenadas, tipo \u201c\u00bfes de noche? \u2192 s\u00ed \u2192 \u00bffue en autopista? \u2192 s\u00ed \u2192 probablemente grave\u201d) y combinan las respuestas de todos esos \u00e1rboles para dar una predicci\u00f3n final m\u00e1s confiable que un \u00fanico \u00e1rbol solo. Se diferencian en c\u00f3mo construyen y combinan esos \u00e1rboles \u2014 cada uno tiene ventajas seg\u00fan el tipo de datos.\n\n2. De d\u00f3nde salieron los datos, y c\u00f3mo se prepararon\nFuente: el portal de datos abiertos del Gobierno de la Ciudad de Buenos Aires (data.buenosaires.gob.ar), dataset \u201cSiniestros viales\u201d, de la Secretar\u00eda de Transporte. Son datos p\u00fablicos y oficiales, no encuestas ni estimaciones \u2014 cada registro corresponde a un siniestro real reportado a las autoridades.\nSe descargaron dos archivos: - \u201cHechos\u201d: 65.818 siniestros ocurridos entre 2019 y septiembre de 2025, con su ubicaci\u00f3n geogr\u00e1fica exacta. - \u201cV\u00edctimas\u201d: 75.197 registros de personas afectadas (un mismo siniestro puede tener m\u00e1s de una v\u00edctima, por eso hay m\u00e1s filas de v\u00edctimas que de hechos).\nLa limpieza necesaria (cualquier dato real del mundo tiene errores)\nSe encontr\u00f3 una fila con basura de un error de exportaci\u00f3n de Excel (#\u00a1REF!) \u2014 se descart\u00f3.\nVarias columnas de texto ten\u00edan la misma categor\u00eda escrita de formas distintas (por ejemplo \u201cMOTO\u201d y \u201cmoto\u201d contadas como cosas separadas) \u2014 se unific\u00f3 todo a may\u00fasculas.\nLa columna de \u201ccomuna\u201d ven\u00eda a veces como \"Comuna 1\" y otras veces solo como \"1\" \u2014 se normaliz\u00f3 a un \u00fanico formato num\u00e9rico.\nSe descartaron los registros sin coordenadas geogr\u00e1ficas v\u00e1lidas (quedaron 62.787 de 65.817, el 95,4%).\nAl filtrar espec\u00edficamente los casos de motociclistas con coordenadas v\u00e1lidas, qued\u00f3 la base de trabajo definitiva: 23.343 siniestros.\n\n3. Encontrar los \u201cpuntos calientes\u201d (clustering con DBSCAN)\nEl problema que resuelve\nCon 23.343 puntos dispersos por el mapa, no todos representan el mismo tipo de informaci\u00f3n. Algunos son casos aislados (mala suerte puntual, sin patr\u00f3n), y otros se repiten una y otra vez en el mismo lugar exacto \u2014 esos \u00faltimos son los que realmente importa identificar, porque se\u00f1alan un problema estructural del lugar (mal dise\u00f1o de la esquina, falta de sem\u00e1foro, etc.), no un accidente casual.\nC\u00f3mo se hizo\nSe us\u00f3 un algoritmo llamado DBSCAN, que agrupa puntos que est\u00e1n muy cerca entre s\u00ed en el espacio. Hay que decirle dos cosas: qu\u00e9 tan cerca tienen que estar los puntos para considerarse \u201cdel mismo grupo\u201d (el radio), y cu\u00e1ntos puntos m\u00ednimo hacen falta para que se considere un grupo real y no ruido.\nPrimer intento (radio de 300 metros): sali\u00f3 mal \u2014 casi todos los 23.343 puntos terminaron agrupados en un \u00fanico cluster gigante que cubr\u00eda gran parte de la ciudad. Esto pasa porque, en una ciudad con calles muy densas, cualquier punto tiene otro punto cerca a 300 metros, y esa cercan\u00eda se va \u201cencadenando\u201d hasta unir zonas que en realidad no tienen nada que ver entre s\u00ed.\nAjuste final (radio de 60 metros, m\u00ednimo 10 casos): dio un resultado mucho m\u00e1s razonable \u2014 430 zonas de riesgo bien definidas, cada una correspondiendo realmente a una esquina o tramo de calle espec\u00edfico con historial repetido de siniestros. El 67,9% de los 23.343 siniestros qued\u00f3 clasificado como \u201ccaso aislado\u201d (sin patr\u00f3n geogr\u00e1fico repetido) \u2014 es un n\u00famero esperable y realista, no un error.\nUn hallazgo concreto que sali\u00f3 de este an\u00e1lisis: el punto con m\u00e1s muertes registradas (una calle en el barrio de Saavedra, con 4 casos mortales sobre 52 siniestros totales) no es el punto con m\u00e1s siniestros en total (una avenida, tambi\u00e9n en Saavedra, con 88 siniestros pero solo 3 mortales). Esto demuestra con datos reales algo importante: la cantidad de siniestros y la gravedad de esos siniestros son dos cosas distintas, y un sistema que solo mire \u201ccu\u00e1ntos siniestros hubo\u201d sin mirar \u201cqu\u00e9 tan graves fueron\u201d se perder\u00eda justamente el punto m\u00e1s peligroso de los dos.\n\n4. Entrenamiento y comparaci\u00f3n de modelos\nVariable que se busca predecir\nLa gravedad del siniestro, con tres posibles resultados: LEVE, GRAVE, o MORTAL.\nEl desbalance de clases, en n\u00fameros concretos\nResultado\nCantidad de casos\nPorcentaje\nLEVE\n21.756\n93,2%\nGRAVE\n1.304\n5,6%\nMORTAL\n283\n1,2%\nInformaci\u00f3n que se le dio al modelo (variables predictoras)\nPrimera versi\u00f3n (\u201ccontexto del lugar y momento\u201d): hora del siniestro, d\u00eda de la semana, comuna, tipo de v\u00eda, y con qu\u00e9 contraparte choc\u00f3 (auto, cami\u00f3n, otra moto, etc.). En total, despu\u00e9s de convertir las categor\u00edas de texto en un formato que el modelo pueda procesar (t\u00e9cnica llamada \u201ccodificaci\u00f3n one-hot\u201d), esto se convierte en 61 columnas de datos.\nSegunda versi\u00f3n (\u201ccontexto + datos de la v\u00edctima\u201d): se agregaron la edad y el sexo del motociclista, obtenidos cruzando el archivo de \u201chechos\u201d con el de \u201cv\u00edctimas\u201d. Con esto, la matriz de datos crece a 66 columnas.\nUn problema real que hubo que resolver: la edad de la v\u00edctima solo estaba disponible en el 60% de los casos (14.088 de 23.338). En vez de descartar el 40% restante (perdiendo informaci\u00f3n valiosa), se complet\u00f3 ese dato faltante con el valor promedio (32 a\u00f1os), y se agreg\u00f3 una columna extra que marca \u201cesta edad es una estimaci\u00f3n, no un dato real\u201d \u2014 para que el modelo pueda distinguir entre informaci\u00f3n confiable e informaci\u00f3n completada. Adem\u00e1s, se descartaron edades imposibles para un conductor de moto (menores de 14 a\u00f1os, mayores de 95 a\u00f1os), que eran errores de carga del dataset original.\nLos cuatro modelos entrenados y comparados\nTodos entrenados dejando un 20% de los datos aparte, sin usar para entrenar, exclusivamente para evaluar despu\u00e9s (esto se llama \u201cconjunto de prueba\u201d). Adem\u00e1s, se us\u00f3 una t\u00e9cnica para compensar el desbalance de clases (que el modelo no ignore los pocos casos mortales solo porque son pocos).\n#\nAlgoritmo\nVariables usadas\nRecall en MORTAL\nRecall en GRAVE\n1\nRandom Forest\nSolo contexto\n0,39 (detecta 39 de cada 100 mortales reales)\n0,12 (detecta 12 de cada 100 graves reales)\n2\nXGBoost\nSolo contexto\n0,38\n0,35\n3\nRandom Forest\nContexto + edad/sexo\n0,45\n0,73\n4\nXGBoost\nContexto + edad/sexo\n0,29\n0,52\nEl modelo elegido: el #3\nEs el que mejor detecta tanto los casos graves como los mortales, con una mejora grande y consistente respecto a las otras versiones (no solo en un n\u00famero aislado). Es el que qued\u00f3 guardado como modelo_final.pkl, y es el que hoy usa la aplicaci\u00f3n en producci\u00f3n.\nUn experimento adicional: \u00bfsimplificar el problema mejora los resultados?\nSe prob\u00f3 tambi\u00e9n combinar \u201cgrave\u201d y \u201cmortal\u201d en una sola categor\u00eda llamada \u201cserio\u201d (dejando solo dos posibilidades: leve o serio), pensando que quiz\u00e1s el problema era demasiado dif\u00edcil con tres categor\u00edas separadas. El resultado fue peor (recall de \u201cserio\u201d: 0,30) que el mejor modelo de tres categor\u00edas \u2014 es decir, simplificar el problema en este caso no ayud\u00f3, contradiciendo la intuici\u00f3n inicial. Es un resultado v\u00e1lido para documentar tal como sali\u00f3, no algo que haya que ocultar por no ser el esperado.\n\n5. C\u00f3mo se traduce la probabilidad del modelo en un nivel de riesgo (bajo/medio/alto/cr\u00edtico)\nEl modelo entrenado predice probabilidades por clase (LEVE/GRAVE/MORTAL), no un nivel de riesgo categ\u00f3rico. La funci\u00f3n nivel_desde_probabilidades() en backend/main.py hace esa traducci\u00f3n, con los siguientes cortes:\nCondici\u00f3n\nNivel resultante\np(MORTAL) \u2265 0.20\nCr\u00edtico\np(MORTAL) \u2265 0.10 o p(GRAVE) \u2265 0.40\nAlto\np(GRAVE) \u2265 0.20\nMedio\nNinguna de las anteriores\nBajo\nJustificaci\u00f3n de la asimetr\u00eda entre los umbrales de MORTAL y GRAVE. Como se detalla en la secci\u00f3n de comparaci\u00f3n de modelos, el modelo elegido tiene una precisi\u00f3n baja para la clase GRAVE (0.11, y no supera 0.15 en ninguna de las cuatro versiones evaluadas): produce bastantes falsos positivos de \u201cgrave\u201d sobre casos que en la realidad fueron leves. Esa limitaci\u00f3n se acepta de forma consciente porque, en un sistema de alerta de seguridad vial, es preferible sobre-alertar que dejar pasar un caso serio sin avisar. Esa misma l\u00f3gica se traslada al dise\u00f1o de los umbrales: como la se\u00f1al de GRAVE es m\u00e1s ruidosa, se le exige una probabilidad acumulada m\u00e1s alta (0.40, o 0.20 para el nivel intermedio) que a MORTAL (0.10-0.20) para que el sistema escale el nivel de riesgo mostrado en el mapa. No es un ajuste arbitrario de constantes: es la misma decisi\u00f3n de \u201cpriorizar recall sobre precisi\u00f3n\u201d que ya se justific\u00f3 al elegir el modelo, aplicada tambi\u00e9n en la capa de presentaci\u00f3n.\nQu\u00e9 pasa cuando falta el contexto propio de un hotspot. Cada uno de los 430 hotspots necesita, para pasar por el modelo, un perfil t\u00edpico de esa zona (comuna, tipo de v\u00eda, contraparte y edad/sexo promedio de sus v\u00edctimas hist\u00f3ricas), calculado una sola vez y guardado en hotspots_contexto.csv. En una primera versi\u00f3n del sistema, cuando un hotspot no ten\u00eda fila propia en ese archivo, el backend se quedaba con un nivel de riesgo calculado con una f\u00f3rmula completamente distinta (una heur\u00edstica simple sobre cantidad de siniestros, mortales y graves, usada solo para poblar la base de datos inicialmente) \u2014 es decir, conviv\u00edan dos criterios de \u201criesgo\u201d distintos en el mismo mapa sin que el usuario (ni el jurado revisando el c\u00f3digo) pudiera distinguir cu\u00e1l se estaba usando en cada punto. Se corrigi\u00f3 para que el modelo sea la \u00fanica fuente de verdad: si falta el contexto propio del hotspot, se usa el perfil promedio de toda la ciudad como entrada al mismo modelo, y la respuesta de la API marca ese caso expl\u00edcitamente con contexto_estimado: true, de forma que la limitaci\u00f3n quede documentada y trazable en vez de oculta.\n6. Qu\u00e9 variables importan m\u00e1s para predecir la gravedad\nAnalizando el modelo base (sin edad/sexo, para entender primero el peso de las variables de contexto), se encontr\u00f3:\nVariable\nPeso relativo en la predicci\u00f3n\nHora del siniestro\nLa m\u00e1s influyente, con bastante diferencia sobre el resto\nContraparte = AUTO\nSegunda m\u00e1s influyente\nContraparte = CAMI\u00d3N\nTercera\nTipo de v\u00eda = AUTOPISTA\nCuarta\nContraparte = OBJETO FIJO\nQuinta\nD\u00eda de la semana (cualquiera)\nAporte bajo, muy parejo entre todos los d\u00edas\nConclusi\u00f3n, con implicancia pr\u00e1ctica: la hora del d\u00eda y el tipo de veh\u00edculo con el que se choca predicen mucho mejor la gravedad que el d\u00eda de la semana. Esto va en contra de una hip\u00f3tesis intuitiva (\u201clos fines de semana es m\u00e1s peligroso\u201d), y es exactamente el tipo de hallazgo que vale la pena reportar tal cual sali\u00f3, aunque no confirme lo que se esperaba de entrada.\n\n7. Limitaciones del modelo, para declarar con honestidad\nLa precisi\u00f3n al predecir \u201cgrave\u201d se mantiene baja en todas las versiones probadas (nunca supera 0,15) \u2014 el modelo genera bastantes falsas alarmas de \u201cesto va a ser grave\u201d sobre casos que en realidad terminaron siendo leves. En un contexto de seguridad vial, sobre-alertar es preferible a no alertar, pero es una limitaci\u00f3n real que hay que reconocer, no ocultar.\nEl 40% de las edades usadas para entrenar son estimadas, no reales.\nFaltan variables que probablemente tendr\u00edan mucho peso predictivo y que el dataset del gobierno no incluye: velocidad al momento del choque, uso de casco, presencia de alcohol, estado del pavimento (mojado o seco), y nivel real de iluminaci\u00f3n del lugar en ese momento espec\u00edfico.\nEl modelo se entren\u00f3 y evalu\u00f3 exclusivamente con datos de CABA \u2014 no hay ninguna validaci\u00f3n de c\u00f3mo se comportar\u00eda con datos del conurbano bonaerense.\nEn el uso actual dentro de la aplicaci\u00f3n, la hora y el d\u00eda que recibe el modelo son siempre los del momento real de la consulta, pero el resto del contexto (contraparte, edad, sexo) usa el \u201cperfil t\u00edpico hist\u00f3rico\u201d de cada zona, no la situaci\u00f3n espec\u00edfica de la persona que est\u00e1 mirando el mapa en ese momento \u2014 es una aproximaci\u00f3n razonable, pero conviene tenerla presente y declarada.\n\n8. Archivos que quedaron generados (en la carpeta data/, y copiados a backend/ los que la aplicaci\u00f3n usa en vivo)\nArchivo\nQu\u00e9 contiene\nmotos_limpio.csv\nLos 23.343 siniestros de moto, ya limpios\nmotos_con_clusters.csv\nLos mismos datos, con el n\u00famero de zona (cluster) asignado a cada uno\nhotspots_moto_caba.csv\nResumen de las 430 zonas: ubicaci\u00f3n, cantidad de siniestros, gravedad\nhotspots_contexto.csv\nComuna, tipo de v\u00eda, contraparte, edad y sexo t\u00edpicos de cada una de las 430 zonas\nmodelo_final.pkl\nEl modelo #3 (el elegido), listo para usarse \u2014 este es el que corre en la aplicaci\u00f3n real\ncolumnas_modelo.pkl\nEl orden exacto de las 66 columnas que el modelo necesita para poder predecir correctamente"
+    },
+    "3_Resultados_RESUMEN.docx": {
+      "paragraphs": 121,
+      "text": "MotoSafe GBA \u2014 Resultados del Modelo Predictivo\nEste documento re\u00fane la metodolog\u00eda y los resultados del an\u00e1lisis de datos y el modelo de Machine Learning. Est\u00e1 escrito para poder usarse directamente como base de la secci\u00f3n de resultados de la tesis.\n\n1. Fuente y preparaci\u00f3n de los datos\nFuente: data.buenosaires.gob.ar, dataset \u201cSiniestros viales\u201d (Secretar\u00eda de Transporte, Observatorio de Movilidad y Seguridad Vial), dos archivos: - Hechos: 65.818 siniestros, 2019\u2013septiembre 2025, con coordenadas. - V\u00edctimas: 75.197 registros (relaci\u00f3n 1 a N con hechos), con modo de desplazamiento, edad y sexo.\nLimpieza aplicada: - 1 fila con error de exportaci\u00f3n de Excel (#\u00a1REF!) descartada. - Normalizaci\u00f3n de may\u00fasculas/min\u00fasculas inconsistentes en columnas categ\u00f3ricas (MOTO vs moto, etc.). - Normalizaci\u00f3n del campo comuna, que ven\u00eda en dos formatos mezclados (\"Comuna 1\" y \"1\"). - Filtrado a coordenadas v\u00e1lidas: 62.787 de 65.817 (95,4%). - Filtrado a v\u00edctimas en moto: 23.343 siniestros con coordenadas v\u00e1lidas \u2014 la base de trabajo.\n\n2. Identificaci\u00f3n de hotspots (DBSCAN)\nPrimer intento (300m de radio, m\u00ednimo 10 casos): fusion\u00f3 casi toda la ciudad en un solo cluster de 23.068 puntos \u2014 efecto de \u201cencadenamiento\u201d t\u00edpico de DBSCAN en zonas urbanas densas.\nPar\u00e1metros finales: 60 metros de radio, m\u00ednimo 10 casos por cluster. Resultado: 430 hotspots geogr\u00e1ficamente coherentes, 67,9% de los siniestros clasificados como \u201caislados\u201d (sin recurrencia puntual) \u2014 resultado esperable y realista, no todo punto de una ciudad concentra siniestralidad repetida.\nHallazgo destacado: el hotspot con m\u00e1s muertes (Donado, Saavedra \u2014 4 mortales en 52 casos) no es el de mayor volumen (Av. Ricardo Balb\u00edn, Saavedra \u2014 88 casos, 3 mortales). Confirma con datos reales que frecuencia y severidad son dimensiones distintas del riesgo.\n\n3. Modelo predictivo \u2014 variables utilizadas\nVariable objetivo: gravedad del siniestro (LEVE / GRAVE / MORTAL).\nDistribuci\u00f3n real (fuerte desbalance de clases): | Clase | Casos | % | |\u2014|\u2014|\u2014| | LEVE | 21.756 | 93,2% | | GRAVE | 1.304 | 5,6% | | MORTAL | 283 | 1,2% |\nVariables predictoras, dos versiones:\nVersi\u00f3n 1 (contexto): hora, d\u00eda de la semana, comuna, tipo de v\u00eda, contraparte del siniestro. 61 variables tras codificaci\u00f3n (one-hot encoding).\nVersi\u00f3n 2 (contexto + v\u00edctima): se agregan edad y sexo del motociclista, obtenidos del archivo de v\u00edctimas y unidos por id_siniestro. 66 variables.\nLimitaci\u00f3n documentada: edad disponible en 60% de los casos (14.088 de 23.338); el 40% restante se complet\u00f3 con la mediana (32 a\u00f1os) y se marc\u00f3 con un indicador binario de \u201cedad estimada\u201d para que el modelo distinga entre dato real y estimado. Se filtraron edades imposibles (menores de 14 o mayores de 95 a\u00f1os) antes de imputar.\n\n4. Comparaci\u00f3n de modelos\nTodos entrenados con train_test_split estratificado (80/20), random_state=42, y compensaci\u00f3n de desbalance (class_weight='balanced' en Random Forest, sample_weight calculado con compute_sample_weight en XGBoost).\n#\nModelo\nVariables\nRecall MORTAL\nRecall GRAVE\nPrecision GRAVE\n1\nRandom Forest\nContexto (5 var.)\n0,39\n0,12\n0,09\n2\nXGBoost\nContexto (5 var.)\n0,38\n0,35\n0,08\n3\nRandom Forest\nContexto + edad/sexo\n0,45\n0,73\n0,11\n4\nXGBoost\nContexto + edad/sexo\n0,29\n0,52\n0,15\nModelo elegido: #3 (Random Forest con edad/sexo), guardado en modelo_final.pkl.\nTambi\u00e9n se prob\u00f3 una versi\u00f3n binaria (LEVE vs.\u00a0GRAVE+MORTAL combinadas) con el modelo #1: dio peor resultado (recall SERIO: 0,30) que el modelo de 3 clases \u2014 simplificar el problema no mejor\u00f3 la detecci\u00f3n de casos serios, en este caso espec\u00edfico.\n\n5. C\u00f3mo se traduce la probabilidad del modelo en un nivel de riesgo (bajo/medio/alto/cr\u00edtico)\nEl modelo no devuelve \u201cbajo/medio/alto/cr\u00edtico\u201d directamente: devuelve una probabilidad para cada clase (LEVE/GRAVE/MORTAL). El backend (nivel_desde_probabilidades en main.py) traduce esas probabilidades a un nivel con estos cortes:\nCondici\u00f3n\nNivel\np(MORTAL) \u2265 0.20\nCr\u00edtico\np(MORTAL) \u2265 0.10 o p(GRAVE) \u2265 0.40\nAlto\np(GRAVE) \u2265 0.20\nMedio\nresto\nBajo\nPor qu\u00e9 el umbral de MORTAL es m\u00e1s bajo que el de GRAVE: como se document\u00f3 en la secci\u00f3n anterior, la precisi\u00f3n de GRAVE se mantiene baja (0.08\u20130.15) en las cuatro versiones probadas \u2014 el modelo genera bastantes falsas alarmas de \u201cgrave\u201d. Frente a esa limitaci\u00f3n, se decidi\u00f3 priorizar no perder se\u00f1al de MORTAL aun a costa de m\u00e1s falsos positivos: alcanza con menos probabilidad acumulada de MORTAL que de GRAVE para escalar el nivel de riesgo mostrado en el mapa. Es una decisi\u00f3n de dise\u00f1o expl\u00edcita, no un valor arbitrario, coherente con el criterio de \u201cmejor sobre-alertar que no alertar\u201d en seguridad vial.\nCobertura de contexto: para calcular estas probabilidades, cada uno de los 430 hotspots necesita un perfil t\u00edpico (comuna, tipo de v\u00eda, contraparte, edad/sexo promedio de las v\u00edctimas hist\u00f3ricas de esa zona), guardado en hotspots_contexto.csv. Si un hotspot no tiene ese perfil propio, el backend usa el perfil promedio de toda la ciudad en su lugar y lo marca expl\u00edcitamente con contexto_estimado: true en la respuesta de la API \u2014 as\u00ed queda trazable cu\u00e1les predicciones se basan en el historial espec\u00edfico de la zona y cu\u00e1les en un perfil gen\u00e9rico, en vez de mostrar un nivel de riesgo calculado con un criterio distinto sin aviso.\n6. Por qu\u00e9 el modelo #3 es el elegido\nMejora sustancial y consistente en las dos clases m\u00e1s importantes (detectar graves y mortales), no solo en una m\u00e9trica aislada.\nConfirma la hip\u00f3tesis de que \u201cqui\u00e9n\u201d (edad, sexo de la v\u00edctima) aporta m\u00e1s informaci\u00f3n que \u201cd\u00f3nde y cu\u00e1ndo\u201d solamente.\nLa mejora no se sostuvo al cambiar de algoritmo (XGBoost con las mismas variables nuevas empeor\u00f3) \u2014 evidencia de que la combinaci\u00f3n espec\u00edfica algoritmo+variables importa, no cualquier receta gen\u00e9rica.\n\n7. Importancia de variables (modelo base, sin edad/sexo)\nVariable\nImportancia relativa\nHora del siniestro\n0,182 (la m\u00e1s influyente, con diferencia)\nContraparte = AUTO\n0,099\nContraparte = CAMI\u00d3N\n0,085\nTipo de v\u00eda = AUTOPISTA\n0,068\nContraparte = OBJETO FIJO\n0,055\nD\u00eda de la semana (cualquiera)\n0,017 \u2013 0,021 cada uno (aporte marginal, casi parejo)\nConclusi\u00f3n citable: el momento del d\u00eda y el tipo de veh\u00edculo contraparte predicen la gravedad mucho mejor que el d\u00eda de la semana o la comuna \u2014 contraintuitivo respecto a la hip\u00f3tesis inicial de que \u201cel fin de semana es m\u00e1s peligroso\u201d.\n\n8. Limitaciones honestas del modelo, para declarar en la tesis\nPrecisi\u00f3n de GRAVE se mantiene baja en todas las versiones (m\u00e1ximo 0,15) \u2014 el modelo genera bastantes falsas alarmas de \u201cgrave\u201d sobre casos que en realidad fueron leves. Aceptable en un contexto de seguridad (mejor sobre-alertar que no alertar), pero es una limitaci\u00f3n real a declarar.\n40% de las edades son estimadas, no reales \u2014 impacta la calidad de la se\u00f1al que aporta esa variable.\nFaltan variables con probable alto poder predictivo que el dataset del gobierno no incluye: velocidad del veh\u00edculo, uso de casco, presencia de alcohol, condici\u00f3n de la v\u00eda (mojada/seca), iluminaci\u00f3n real del lugar y momento.\nEl modelo se entren\u00f3 y evalu\u00f3 sobre CABA exclusivamente \u2014 no hay validaci\u00f3n sobre datos del conurbano bonaerense.\nEn el uso actual en producci\u00f3n (API /hotspots), el contexto de \u201chora\u201d y \u201cd\u00eda\u201d es el mismo para las 430 zonas en cada consulta (el momento actual real), por lo que la variaci\u00f3n de riesgo entre zonas refleja mayormente su perfil hist\u00f3rico (comuna, v\u00eda, contraparte t\u00edpica) m\u00e1s que un patr\u00f3n horario espec\u00edfico de cada lugar.\n\n9. Archivos generados (ubicados en data/ y copiados a backend/)\nArchivo\nContenido\nmotos_limpio.csv\n23.343 siniestros de moto, limpios\nmotos_con_clusters.csv\nLos mismos, con el hotspot (cluster) asignado\nhotspots_moto_caba.csv\nResumen de los 430 hotspots (ubicaci\u00f3n, cantidad, gravedad)\nhotspots_contexto.csv\nComuna/v\u00eda/contraparte/edad/sexo t\u00edpicos por hotspot (usado en producci\u00f3n)\nmodelo_random_forest.pkl\nModelo #1 (contexto solo)\nmodelo_xgboost.pkl\nModelo #2\nmodelo_random_forest_v2.pkl\nModelo #3, primera versi\u00f3n (comuna sin limpiar)\nmodelo_xgboost_v2.pkl (no guardado expl\u00edcitamente, descartado)\nModelo #4\nmodelo_final.pkl\nEl modelo #3 definitivo, en producci\u00f3n (comuna limpia)\ncolumnas_modelo.pkl\nOrden exacto de las 66 columnas que el modelo espera"
+    }
+  },
+  "model": {
+    "class": "RandomForestClassifier",
+    "params": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": "balanced_subsample",
+      "criterion": "gini",
+      "max_depth": 12,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 5,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 300,
+      "n_jobs": -1,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "classes": [
+      "GRAVE",
+      "LEVE",
+      "MORTAL"
+    ],
+    "features": [
+      "hora",
+      "edad_victima",
+      "edad_desconocida",
+      "temperatura",
+      "humedad",
+      "indice_inseguridad",
+      "dia_semana_Friday",
+      "dia_semana_Monday",
+      "dia_semana_Saturday",
+      "dia_semana_Sunday",
+      "dia_semana_Thursday",
+      "dia_semana_Tuesday",
+      "dia_semana_Wednesday",
+      "comuna_1",
+      "comuna_10",
+      "comuna_11",
+      "comuna_12",
+      "comuna_13",
+      "comuna_14",
+      "comuna_15",
+      "comuna_2",
+      "comuna_3",
+      "comuna_4",
+      "comuna_5",
+      "comuna_6",
+      "comuna_7",
+      "comuna_8",
+      "comuna_9",
+      "comuna_<NA>",
+      "tipo_de_via_siniestro_AUTOPISTA",
+      "tipo_de_via_siniestro_AV. GRAL. PAZ",
+      "tipo_de_via_siniestro_AVENIDA",
+      "tipo_de_via_siniestro_CALLE",
+      "tipo_de_via_siniestro_SD",
+      "contraparte_siniestro_AUTO",
+      "contraparte_siniestro_BICICLETA",
+      "contraparte_siniestro_CAMION",
+      "contraparte_siniestro_CAMIONETA",
+      "contraparte_siniestro_MONOPATIN",
+      "contraparte_siniestro_MOTO",
+      "contraparte_siniestro_MOVIL",
+      "contraparte_siniestro_MULTIPLE",
+      "contraparte_siniestro_OBJETO FIJO",
+      "contraparte_siniestro_OTRO",
+      "contraparte_siniestro_PEATON",
+      "contraparte_siniestro_SD",
+      "contraparte_siniestro_TAXI",
+      "contraparte_siniestro_TRANSPORTE PUBLICO",
+      "contraparte_siniestro_TREN",
+      "contraparte_siniestro_UTILITARIO",
+      "sexo_victima_F",
+      "sexo_victima_M",
+      "sexo_victima_SD",
+      "lluvia_NO",
+      "lluvia_SI"
+    ],
+    "feature_importance": [
+      [
+        "edad_desconocida",
+        0.11707124448537595
+      ],
+      [
+        "sexo_victima_SD",
+        0.09787187612682885
+      ],
+      [
+        "hora",
+        0.07553556207858227
+      ],
+      [
+        "edad_victima",
+        0.06861863056754747
+      ],
+      [
+        "contraparte_siniestro_AUTO",
+        0.06801509683575749
+      ],
+      [
+        "humedad",
+        0.06379307278552279
+      ],
+      [
+        "temperatura",
+        0.06185846561620614
+      ],
+      [
+        "contraparte_siniestro_CAMION",
+        0.052243134721815784
+      ],
+      [
+        "sexo_victima_M",
+        0.04432945738525776
+      ],
+      [
+        "tipo_de_via_siniestro_AUTOPISTA",
+        0.03896254114881672
+      ],
+      [
+        "indice_inseguridad",
+        0.03631330183492919
+      ],
+      [
+        "contraparte_siniestro_OBJETO FIJO",
+        0.028458832968218762
+      ],
+      [
+        "comuna_<NA>",
+        0.017665273900261617
+      ],
+      [
+        "sexo_victima_F",
+        0.015865700934438755
+      ],
+      [
+        "tipo_de_via_siniestro_AVENIDA",
+        0.015576231070884733
+      ],
+      [
+        "tipo_de_via_siniestro_CALLE",
+        0.014144619350290578
+      ],
+      [
+        "contraparte_siniestro_TRANSPORTE PUBLICO",
+        0.012313603278446847
+      ],
+      [
+        "contraparte_siniestro_SD",
+        0.010789904043673549
+      ],
+      [
+        "dia_semana_Thursday",
+        0.00864696347492107
+      ],
+      [
+        "dia_semana_Wednesday",
+        0.008560700706888833
+      ],
+      [
+        "dia_semana_Friday",
+        0.007788248345271111
+      ],
+      [
+        "dia_semana_Monday",
+        0.007460267944306292
+      ],
+      [
+        "dia_semana_Tuesday",
+        0.007381312326399388
+      ],
+      [
+        "contraparte_siniestro_UTILITARIO",
+        0.007241462700886351
+      ],
+      [
+        "dia_semana_Saturday",
+        0.00701965613356556
+      ],
+      [
+        "comuna_4",
+        0.006815352523307942
+      ],
+      [
+        "comuna_8",
+        0.006794642404806946
+      ],
+      [
+        "tipo_de_via_siniestro_AV. GRAL. PAZ",
+        0.006504108418349712
+      ],
+      [
+        "dia_semana_Sunday",
+        0.006199790704371519
+      ],
+      [
+        "comuna_12",
+        0.005958759224673157
+      ],
+      [
+        "contraparte_siniestro_TAXI",
+        0.005674698522486568
+      ],
+      [
+        "comuna_10",
+        0.005447927882339702
+      ],
+      [
+        "comuna_15",
+        0.0051212937890865754
+      ],
+      [
+        "comuna_14",
+        0.00507294313071453
+      ],
+      [
+        "comuna_1",
+        0.004727634903213353
+      ],
+      [
+        "lluvia_SI",
+        0.004613889265792123
+      ],
+      [
+        "contraparte_siniestro_MOTO",
+        0.004610503297768063
+      ],
+      [
+        "contraparte_siniestro_MULTIPLE",
+        0.004509897660317721
+      ],
+      [
+        "comuna_7",
+        0.00438890021669653
+      ],
+      [
+        "comuna_11",
+        0.004352614396829992
+      ],
+      [
+        "comuna_13",
+        0.0041393511475575516
+      ],
+      [
+        "lluvia_NO",
+        0.0039859741424547734
+      ],
+      [
+        "contraparte_siniestro_MOVIL",
+        0.00371163604364552
+      ],
+      [
+        "comuna_5",
+        0.0030486957147411306
+      ],
+      [
+        "comuna_9",
+        0.0030099997122315274
+      ],
+      [
+        "comuna_6",
+        0.0026847105460054213
+      ],
+      [
+        "comuna_3",
+        0.0025321095886655554
+      ],
+      [
+        "comuna_2",
+        0.001967434903771079
+      ],
+      [
+        "contraparte_siniestro_OTRO",
+        0.0004918738624626615
+      ],
+      [
+        "contraparte_siniestro_BICICLETA",
+        7.078548283196047e-05
+      ],
+      [
+        "contraparte_siniestro_PEATON",
+        3.2156808818901965e-05
+      ],
+      [
+        "contraparte_siniestro_CAMIONETA",
+        7.154940965564863e-06
+      ],
+      [
+        "tipo_de_via_siniestro_SD",
+        0.0
+      ],
+      [
+        "contraparte_siniestro_MONOPATIN",
+        0.0
+      ],
+      [
+        "contraparte_siniestro_TREN",
+        0.0
+      ]
+    ]
+  },
+  "training_data": {
+    "rows": 23338,
+    "years": {
+      "2025": 4448,
+      "2023": 3915,
+      "2019": 3742,
+      "2022": 3600,
+      "2024": 3331,
+      "2021": 2254,
+      "2020": 2048
+    },
+    "classes": {
+      "LEVE": 21756,
+      "GRAVE": 1300,
+      "MORTAL": 282
+    },
+    "by_year_class": {
+      "GRAVE": {
+        "2019": 176,
+        "2020": 70,
+        "2021": 127,
+        "2022": 223,
+        "2023": 156,
+        "2024": 210,
+        "2025": 338
+      },
+      "LEVE": {
+        "2019": 3517,
+        "2020": 1952,
+        "2021": 2082,
+        "2022": 3326,
+        "2023": 3723,
+        "2024": 3078,
+        "2025": 4078
+      },
+      "MORTAL": {
+        "2019": 49,
+        "2020": 26,
+        "2021": 45,
+        "2022": 51,
+        "2023": 36,
+        "2024": 43,
+        "2025": 32
+      }
+    },
+    "unknown_age_by_class": {
+      "0": {
+        "GRAVE": 1285,
+        "LEVE": 12485,
+        "MORTAL": 274
+      },
+      "1": {
+        "GRAVE": 15,
+        "LEVE": 9271,
+        "MORTAL": 8
+      }
+    },
+    "sex_by_class": {
+      "F": {
+        "GRAVE": 192,
+        "LEVE": 2588,
+        "MORTAL": 35
+      },
+      "M": {
+        "GRAVE": 1098,
+        "LEVE": 11513,
+        "MORTAL": 246
+      },
+      "SD": {
+        "GRAVE": 10,
+        "LEVE": 7655,
+        "MORTAL": 1
+      }
+    }
+  },
+  "stored_model_random_split_reconstruction": {
+    "caveat": "Reconstruccion del split declarado, no test independiente ni prueba de procedencia del artefacto",
+    "rows": 4668,
+    "report": {
+      "GRAVE": {
+        "precision": 0.11072463768115942,
+        "recall": 0.7346153846153847,
+        "f1-score": 0.1924433249370277,
+        "support": 260.0
+      },
+      "LEVE": {
+        "precision": 0.9841328413284133,
+        "recall": 0.6128216911764706,
+        "f1-score": 0.7553101104502974,
+        "support": 4352.0
+      },
+      "MORTAL": {
+        "precision": 0.11587982832618025,
+        "recall": 0.48214285714285715,
+        "f1-score": 0.18685121107266436,
+        "support": 56.0
+      },
+      "accuracy": 0.6180377035132819,
+      "macro avg": {
+        "precision": 0.4035791024452509,
+        "recall": 0.6098599776449042,
+        "f1-score": 0.3782015488199965,
+        "support": 4668.0
+      },
+      "weighted avg": {
+        "precision": 0.9250693662477767,
+        "recall": 0.6180377035132819,
+        "f1-score": 0.7171397885568531,
+        "support": 4668.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        191,
+        37,
+        32
+      ],
+      [
+        1511,
+        2667,
+        174
+      ],
+      [
+        23,
+        6,
+        27
+      ]
+    ],
+    "labels": [
+      "GRAVE",
+      "LEVE",
+      "MORTAL"
+    ]
+  }
+}

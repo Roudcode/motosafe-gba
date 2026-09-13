@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { esFranjaPicoInseguridad, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm, buscarSugerencias } from './geoRiesgo'
+import { esFranjaPicoInseguridad, calcularAjuste, calcularAjustePorFranjaHoraria, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm, buscarSugerencias } from './geoRiesgo'
+
+describe('calcularAjuste', () => {
+  it('solo aplica reportes viales al eje de siniestros', () => {
+    const zona = { lat: -34.6, lng: -58.4, nivel: 'medio' }
+    const ajuste = calcularAjuste(zona, [
+      { lat: -34.6, lng: -58.4, categoria: 'robo' },
+      { lat: -34.6, lng: -58.4, categoria: 'pavimento' },
+    ])
+    expect(ajuste.nivel).toBe('alto')
+    expect(ajuste.reportesCercanos).toBe(1)
+  })
+})
 
 const FRANJA_MOTO = { desde: 19, hasta: 24 }
 const FRANJA_GENERAL = { desde: 17, hasta: 22 }

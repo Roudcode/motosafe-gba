@@ -10,7 +10,7 @@ import {
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   RADIO_ALERTA_REPORTE_KM, MINUTOS_ALERTA_REPORTE_RECIENTE, CATEGORIAS_ALERTA_PROXIMIDAD,
-  API_URL, CLAVE_AUTOR_ID, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
+  API_URL, CLAVE_AUTOR_ID, CLAVE_TOKENS_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
   CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
   CLAVE_CAPA_PRENSA,
@@ -147,10 +147,11 @@ function App() {
     let id = cargarDeLocalStorage(CLAVE_AUTOR_ID, null)
     if (!id) {
       id = crypto.randomUUID ? crypto.randomUUID() : generarUuidV4Fallback()
-      localStorage.setItem(CLAVE_AUTOR_ID, JSON.stringify(id))
+      guardarEnLocalStorage(CLAVE_AUTOR_ID, id)
     }
     return id
   })
+  const [tokensReportes, setTokensReportes] = useState(() => cargarDeLocalStorage(CLAVE_TOKENS_REPORTES, {}))
   const [favoritos, setFavoritos] = useState(() => cargarDeLocalStorage(CLAVE_FAVORITOS, { casa: null, trabajo: null }))
   const [miUbicacion, setMiUbicacion] = useState(null)
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false)
@@ -388,6 +389,10 @@ function App() {
       .catch(() => {
         setBackendError(true)
         setCargandoHotspots(false)
+        // En una primera visita sin cache no hay mapa para mostrar, pero sí
+        // tiene que quedar visible el mensaje con reintento; el loader no
+        // puede tapar indefinidamente la única salida disponible.
+        setPrimeraVezListo(true)
       })
   }
 
@@ -423,21 +428,21 @@ function App() {
       .catch(() => {})
   }, [])
 
-  const cargarReportes = () => {
+  const cargarReportes = useCallback(() => {
     fetch(`${API_URL}/reportes`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setReportes(data.map((r) => ({
-        id: r.id,
+        .then((data) => setReportes(data.map((r) => ({
+          id: r.id,
         lat: r.lat,
         lng: r.lng,
         categoria: r.categoria,
-        autorId: r.autor_id,
+          esPropio: Boolean(tokensReportes[String(r.id)]),
         creadoEn: r.creado_en,
         confirmaciones: r.confirmaciones || 0,
         desmentidas: r.desmentidas || 0,
       }))))
       .catch(() => { /* backend caido: se mantienen los reportes que ya estaban cargados */ })
-  }
+  }, [tokensReportes])
 
   useEffect(() => {
     cargarReportes()
@@ -445,7 +450,7 @@ function App() {
     // se refresca cada 30s para que el mapa los muestre sin recargar la pagina.
     const id = setInterval(cargarReportes, 30000)
     return () => clearInterval(id)
-  }, [])
+  }, [cargarReportes])
 
   useEffect(() => {
     // Reportes de prensa (scrapeados a mano/tarea programada, no en vivo, ver
@@ -482,33 +487,40 @@ function App() {
   }, [backendError])
 
   useEffect(() => {
+    // Hotspots incluyen hora y clima actuales: renovar aunque el pedido
+    // anterior haya funcionado evita llamar "en vivo" a una respuesta vieja.
+    const id = setInterval(cargarHotspots, 5 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${CENTRO_GBA.lat}&longitude=${CENTRO_GBA.lng}&current_weather=true`)
       .then((r) => r.json())
       .then((data) => setClima(data.current_weather))
       .catch(() => setClima(null))
   }, [])
 
-  useEffect(() => { localStorage.setItem(CLAVE_NIVELES, JSON.stringify([...nivelesActivos])) }, [nivelesActivos])
-  useEffect(() => { localStorage.setItem(CLAVE_FAVORITOS, JSON.stringify(favoritos)) }, [favoritos])
+  useEffect(() => { guardarEnLocalStorage(CLAVE_NIVELES, [...nivelesActivos]) }, [nivelesActivos])
+  useEffect(() => { guardarEnLocalStorage(CLAVE_FAVORITOS, favoritos) }, [favoritos])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema)
-    localStorage.setItem(CLAVE_TEMA, JSON.stringify(tema))
+    guardarEnLocalStorage(CLAVE_TEMA, tema)
   }, [tema])
   useEffect(() => {
-    localStorage.setItem(CLAVE_CAPA_MAPA, JSON.stringify(capaMapa))
+    guardarEnLocalStorage(CLAVE_CAPA_MAPA, capaMapa)
   }, [capaMapa])
 
   useEffect(() => {
-    localStorage.setItem(CLAVE_CAPA_INSEGURIDAD, JSON.stringify(capaInseguridad))
+    guardarEnLocalStorage(CLAVE_CAPA_INSEGURIDAD, capaInseguridad)
   }, [capaInseguridad])
 
   useEffect(() => {
-    localStorage.setItem(CLAVE_CAPA_TRAFICO, JSON.stringify(capaTrafico))
+    guardarEnLocalStorage(CLAVE_CAPA_TRAFICO, capaTrafico)
   }, [capaTrafico])
 
   useEffect(() => {
-    localStorage.setItem(CLAVE_CAPA_PRENSA, JSON.stringify(capaPrensa))
+    guardarEnLocalStorage(CLAVE_CAPA_PRENSA, capaPrensa)
   }, [capaPrensa])
 
   useEffect(() => {
@@ -623,6 +635,13 @@ function App() {
         const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         const heading = pos.coords.heading
         const velocidadGps = pos.coords.speed
+        // Cada fix reemplaza la lectura anterior: conservar un valor viejo
+        // al detenerse convertía un semáforo en una velocidad/ETA ficticias.
+        setVelocidadActual(
+          velocidadGps != null && !Number.isNaN(velocidadGps) && velocidadGps > 0.5
+            ? velocidadGps
+            : null
+        )
         const hayVelocidadConfiable = velocidadGps != null && !Number.isNaN(velocidadGps) && velocidadGps >= VELOCIDAD_MIN_PARA_RUMBO_GPS
         if (heading != null && !Number.isNaN(heading) && hayVelocidadConfiable) {
           // El GPS ya viene con rumbo calculado (lo más confiable mientras
@@ -650,13 +669,6 @@ function App() {
           return
         }
         setMiUbicacion(punto)
-        // pos.coords.speed viene en m/s y es null en varios navegadores/con
-        // poca señal -- se ignora ese caso en vez de mostrar un ETA basado en
-        // 0 (que leería como "nunca llegás"), y calcularEtaInfo cae al
-        // reparto proporcional por distancia total como fallback.
-        if (pos.coords.speed != null && !Number.isNaN(pos.coords.speed) && pos.coords.speed > 0.5) {
-          setVelocidadActual(pos.coords.speed)
-        }
       },
       () => mostrarToast('No se pudo obtener tu ubicación en vivo'),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -747,20 +759,49 @@ function App() {
           lat: creado.lat,
           lng: creado.lng,
           categoria: creado.categoria,
-          autorId: creado.autor_id,
+          esPropio: true,
           creadoEn: creado.creado_en,
           confirmaciones: 0,
           desmentidas: 0,
         }, ...prev])
+        if (creado.delete_token) {
+          setTokensReportes((anteriores) => {
+            const actualizados = { ...anteriores, [String(creado.id)]: creado.delete_token }
+            guardarEnLocalStorage(CLAVE_TOKENS_REPORTES, actualizados)
+            return actualizados
+          })
+        }
         mostrarToast('Reporte enviado — gracias por sumar el dato')
       })
       .catch(() => mostrarToast('No se pudo enviar el reporte (¿backend caído?)'))
   }
 
-  const borrarReportes = () => {
-    fetch(`${API_URL}/reportes?autor_id=${encodeURIComponent(autorId)}`, { method: 'DELETE' })
-      .then(() => setReportes((prev) => prev.filter((r) => r.autorId !== autorId)))
-      .catch(() => mostrarToast('No se pudo borrar (¿backend caído?)'))
+  const borrarReportes = async () => {
+    const borrables = misReportes.filter((r) => tokensReportes[String(r.id)])
+    if (borrables.length === 0) {
+      mostrarToast('Estos reportes son anteriores a la protección actual y ya no se pueden borrar desde el dispositivo')
+      return
+    }
+    try {
+      const resultados = await Promise.all(borrables.map(async (reporte) => {
+        const respuesta = await fetch(`${API_URL}/reportes/${reporte.id}`, {
+          method: 'DELETE',
+          headers: { 'X-Report-Delete-Token': tokensReportes[String(reporte.id)] },
+        })
+        if (!respuesta.ok) throw new Error('No se pudo borrar el reporte')
+        return reporte.id
+      }))
+      const eliminados = new Set(resultados)
+      setReportes((prev) => prev.filter((r) => !eliminados.has(r.id)))
+      setTokensReportes((anteriores) => {
+        const actualizados = Object.fromEntries(Object.entries(anteriores).filter(([id]) => !eliminados.has(Number(id))))
+        guardarEnLocalStorage(CLAVE_TOKENS_REPORTES, actualizados)
+        return actualizados
+      })
+      mostrarToast(`${resultados.length} reporte${resultados.length === 1 ? '' : 's'} eliminado${resultados.length === 1 ? '' : 's'}`)
+    } catch {
+      mostrarToast('No se pudieron borrar todos los reportes; volvé a intentar')
+    }
     setActividadAbierta(false)
   }
 
@@ -932,13 +973,13 @@ function App() {
   }
 
   const misReportes = useMemo(
-    () => reportes.filter((r) => r.autorId === autorId),
-    [reportes, autorId]
+    () => reportes.filter((r) => r.esPropio || tokensReportes[String(r.id)]),
+    [reportes, tokensReportes]
   )
 
   const zonasAjustadas = useMemo(() => {
-    return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, clima?.weathercode, reportes) }))
-  }, [ZONAS_RIESGO, clima, reportes])
+    return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, reportes) }))
+  }, [ZONAS_RIESGO, reportes])
 
   // La lógica de unificación de ejes de riesgo vive en utils/riesgoRuta.js
   // (funciones puras, testeadas aparte). nivel ya viene en la misma escala
@@ -1548,7 +1589,6 @@ function App() {
           reportes={reportes}
           onVotarReporte={votarReporte}
           reportesPrensa={capaPrensa ? reportesPrensa : []}
-          autorId={autorId}
           horaActual={horaActual}
           rutasCalculadas={rutasCalculadas}
           rutaSeleccionada={rutaSeleccionada}
@@ -1599,16 +1639,16 @@ function App() {
               {rutasConScore.length >= 3 && (
                 <button className={rutaSeleccionada === idxEquilibrada ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxEquilibrada)}><Scale size={12} /> Equilibrada</button>
               )}
-              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)}><ShieldCheck size={12} /> Segura</button>
+              <button className={rutaSeleccionada === idxMasSegura ? 'activa' : ''} onClick={() => setRutaSeleccionada(idxMasSegura)} title="Menor exposición registrada entre estas alternativas"><ShieldCheck size={12} /> Menor exposición</button>
             </div>
           )}
           {rutasConScore.map((r, i) => (
             <button key={i} className={`ruta-opcion ${i === rutaSeleccionada ? 'activa' : ''}`} onClick={() => setRutaSeleccionada(i)}>
               <span className="ruta-opcion-num">
                 Ruta {i + 1}
-                {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas"><Zap size={10} /><ShieldCheck size={10} /> recomendada</span>}
+                {i === idxMasRapida && i === idxMasSegura && <span className="ruta-opcion-badge badge-ambas"><Zap size={10} /><ShieldCheck size={10} /> rápida y menor exposición</span>}
                 {i === idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-rapida"><Zap size={10} /> rápida</span>}
-                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> segura</span>}
+                {i === idxMasSegura && i !== idxMasRapida && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> menor exposición</span>}
                 {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada"><Scale size={10} /> equilibrada</span>}
               </span>
               <span className="ruta-opcion-datos">
@@ -1621,8 +1661,8 @@ function App() {
               </span>
               <span className={`ruta-opcion-riesgo ${r.riesgo === 0 ? 'ok' : `nivel-${r.nivelRelativo}`}`}>
                 {r.riesgo === 0
-                  ? <><CircleCheck size={12} /> sin cruces</>
-                  : <><TriangleAlert size={12} /> riesgo {NIVELES[r.nivelRelativo]?.label.toLowerCase()}</>}
+                  ? <><CircleCheck size={12} /> sin zonas registradas cerca</>
+                  : <><TriangleAlert size={12} /> exposición {NIVELES[r.nivelRelativo]?.label.toLowerCase()} entre alternativas</>}
               </span>
               {r.riesgo > 0 && (
                 <span className="ruta-opcion-desglose">
