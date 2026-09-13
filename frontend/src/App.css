@@ -2,6 +2,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
+button:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 3px solid var(--azul);
+  outline-offset: 3px;
+}
 /* El meta viewport (maximum-scale=1 + user-scalable=no en index.html) ya no
    alcanza: Safari en iOS lo ignora desde hace rato por accesibilidad, así
    que el pinch-zoom seguía zoomeando toda la interfaz aunque el meta tag

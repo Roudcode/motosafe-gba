@@ -77,6 +77,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: `npm run lint` y 73 pruebas de Vitest aprobadas.
 - Límite: es un reintento global; quedan pendientes controles individuales y edad visible de cada fuente.
 
+## 2026-09-13 — SES-009 — Foco visible
+
+- IDs: A23.
+- Cambio: botones, campos y enlaces muestran un contorno visible al recibir foco por teclado.
+- Límite: falta revisión visual en viewports y navegación completa por teclado.
+
 ## Plantilla reutilizable
 
 ### AAAA-MM-DD — SES-XXX — Título
