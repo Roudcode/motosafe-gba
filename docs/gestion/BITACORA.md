@@ -281,6 +281,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: lint y Vitest (80 pruebas) aprobados; `git diff --check` aprobado.
 - Límite: la agrupación hace visible la cantidad, pero no corrige por sí sola ubicaciones de precisión barrial compartida ni duplicación semántica.
 
+## 2026-09-13 — SES-043 — Noticias coincidentes seleccionables
+
+- IDs: A09, A11, V08.
+- Cambio: las noticias con la misma coordenada aproximada se reúnen en un marcador oscuro con ícono de diario y contador. Al abrirlo se presenta una lista desplazable con todas las notas del grupo; elegir una abre su detalle y fuente. Los agrupamientos al alejarse usan el mismo lenguaje visual de prensa, separado de los círculos de riesgo.
+- Pruebas: `npm.cmd run lint`, Vitest (80 pruebas) y `git diff --check` aprobados.
+- Límite: el grupo representa una coordenada compartida, no una ubicación exacta del hecho. La precisión geográfica y la deduplicación semántica siguen siendo trabajo pendiente de A09/A11.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

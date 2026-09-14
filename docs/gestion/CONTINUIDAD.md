@@ -55,6 +55,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-040 confirmó la corrida completa: 560 candidatas, 289 ubicadas, 267 guardadas y 99 candidatas de motos. Las búsquedas agregadas aportaron 234 guardadas; se necesita revisión humana y deduplicación semántica antes de interpretar el volumen como incidencia.
 - SES-041 muestra en el panel Prensa el total cargado y el visible según filtro. Las noticias de precisión barrial pueden seguir superpuestas hasta implementar agrupación visual.
 - SES-042 agrupa las noticias cercanas con contador y permite abrir los puntos individuales al acercarse.
+- SES-043 evita que las notas de una misma coordenada queden ocultas: el marcador de diario oscuro muestra su cantidad y abre una lista para elegir cada noticia. El color queda diferenciado de las zonas de riesgo.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

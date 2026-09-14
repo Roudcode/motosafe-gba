@@ -1150,18 +1150,59 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 
 .marker-prensa-cluster {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 2px solid #d7a400;
-  border-radius: 50%;
-  color: #2b2305;
-  background: #ffd65a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 38px;
+  height: 32px;
+  padding: 0 7px;
+  border: 2px solid #c9cdd3;
+  border-radius: 8px;
+  color: #fff;
+  background: #3a3f4b;
   box-shadow: 0 2px 8px rgba(0, 0, 0, .28);
   font-size: 13px;
   font-weight: 800;
 }
+
+.marker-prensa-cluster span { font-size: 16px; line-height: 1; }
+
+.marker-prensa-grupo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 34px;
+  min-height: 28px;
+  padding: 4px 7px;
+  border: 2px solid #c9cdd3;
+  border-radius: 8px;
+  color: #fff;
+  background: #3a3f4b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .38);
+  font-size: 12px;
+}
+
+.marker-prensa-grupo span { font-size: 16px; line-height: 1; }
+.marker-prensa-grupo strong { font-size: 12px; }
+
+.popup-grupo-prensa { max-height: 290px; overflow-y: auto; }
+.popup-grupo-prensa-item {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px;
+  border: 1px solid #d8dce1;
+  border-radius: 7px;
+  color: #20252b;
+  background: #f8f9fa;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+.popup-grupo-prensa-item:hover { background: #fff3c4; }
 
 [data-theme='dark'] .capas-prensa-filtros button.activa {
   color: #221a00;

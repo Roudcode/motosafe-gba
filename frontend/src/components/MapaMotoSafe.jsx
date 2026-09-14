@@ -116,6 +116,29 @@ function contenidoPopupPrensa(rep, etiquetaTipo, horaActual) {
   return contenido
 }
 
+function contenidoGrupoPrensa(noticias, horaActual, alElegir) {
+  const contenido = document.createElement('div')
+  contenido.className = 'popup-content popup-grupo-prensa'
+  const titulo = document.createElement('strong')
+  titulo.textContent = `${noticias.length} noticias en esta ubicación aproximada`
+  const nota = document.createElement('span')
+  nota.className = 'popup-prensa-precision'
+  nota.textContent = 'Elegí una para ver su detalle y fuente'
+  contenido.append(titulo, nota)
+  for (const noticia of noticias) {
+    const boton = document.createElement('button')
+    boton.className = 'popup-grupo-prensa-item'
+    boton.type = 'button'
+    boton.textContent = `${ETIQUETA_TIPO_INCIDENTE[noticia.tipoIncidente] ?? 'Noticia'} · ${noticia.titular}`
+    boton.addEventListener('click', (evento) => {
+      evento.stopPropagation()
+      alElegir(noticia)
+    })
+    contenido.append(boton)
+  }
+  return contenido
+}
+
 // Marcador de un reporte de prensa (ver backend/scrapear_noticias_robos.py):
 // un ícono propio (no el círculo genérico de reportes de usuario) para que
 // se lea de un vistazo como "esto es una noticia, no algo que reportó
@@ -173,6 +196,14 @@ function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
   wrapper.appendChild(icono)
   wrapper.style.cursor = 'pointer'
   return wrapper
+}
+
+function elementoGrupoPrensa(cantidad) {
+  const el = document.createElement('div')
+  el.className = 'marker-prensa-grupo'
+  el.innerHTML = `<span aria-hidden="true">▤</span><strong>${cantidad}</strong>`
+  el.style.cursor = 'pointer'
+  return el
 }
 
 const ETIQUETA_TIPO_INCIDENTE = { robo: 'Robo', choque: 'Choque' }
@@ -827,20 +858,35 @@ function MapaMotoSafeInner({
     const map = mapRef.current
     if (!map || version === 0) return
     let popup
-    const prensaPorId = new Map((reportesPrensa || []).map((rep) => [String(rep.id), rep]))
-    const features = (reportesPrensa || []).map((rep) => ({
+    const grupos = new Map()
+    for (const rep of reportesPrensa || []) {
+      const clave = `${Number(rep.lat).toFixed(6)},${Number(rep.lng).toFixed(6)}`
+      const grupo = grupos.get(clave) || { clave, coords: [rep.lng, rep.lat], noticias: [] }
+      grupo.noticias.push(rep)
+      grupos.set(clave, grupo)
+    }
+    const features = [...grupos.values()].map((grupo) => ({
       type: 'Feature',
-      geometry: { type: 'Point', coordinates: [rep.lng, rep.lat] },
-      properties: { id: String(rep.id) },
+      geometry: { type: 'Point', coordinates: grupo.coords },
+      properties: { id: grupo.clave },
     }))
-    const abrirNoticia = (id, coords) => {
-      const rep = prensaPorId.get(String(id))
+    const abrirNoticia = (rep, coords = [rep.lng, rep.lat]) => {
       if (!rep) return
       popup?.remove()
       const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
       popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '260px' })
         .setLngLat(coords)
         .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current))
+        .addTo(map)
+    }
+    const abrirGrupo = (id, coords) => {
+      const grupo = grupos.get(String(id))
+      if (!grupo) return
+      if (grupo.noticias.length === 1) return abrirNoticia(grupo.noticias[0], coords)
+      popup?.remove()
+      popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '320px' })
+        .setLngLat(coords)
+        .setDOMContent(contenidoGrupoPrensa(grupo.noticias, horaActualRef.current, abrirNoticia))
         .addTo(map)
     }
     const limpiar = montarCapaClusterizada(map, {
@@ -850,17 +896,19 @@ function MapaMotoSafeInner({
       maxZoom: 14,
       renderBubble: (_niveles, cantidad) => ({
         size: 38,
-        html: `<div class="marker-prensa-cluster">${cantidad}</div>`,
+        html: `<div class="marker-prensa-cluster"><span aria-hidden="true">▤</span><strong>${cantidad}</strong></div>`,
       }),
       renderPunto: (props) => {
-        const rep = prensaPorId.get(String(props.id))
-        const el = elementoMarcadorPrensa(rep?.nivelPrecision, rep?.tipoIncidente)
+        const grupo = grupos.get(String(props.id))
+        const el = grupo?.noticias.length > 1
+          ? elementoGrupoPrensa(grupo.noticias.length)
+          : elementoMarcadorPrensa(grupo?.noticias[0]?.nivelPrecision, grupo?.noticias[0]?.tipoIncidente)
         const detenerPropagacion = (e) => e.stopPropagation()
         el.addEventListener('mousedown', detenerPropagacion)
         el.addEventListener('touchstart', detenerPropagacion, { passive: false })
         return el
       },
-      onClickPunto: abrirNoticia,
+      onClickPunto: abrirGrupo,
     })
     return () => { popup?.remove(); limpiar() }
 
