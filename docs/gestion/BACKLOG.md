@@ -45,6 +45,7 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | A23 | En curso | Foco visible, zoom nativo y movimiento reducido están implementados; se agregó matriz QA. Falta ejecución real con teclado, zoom, temas y dispositivos. |
 | G03 | Validado parcialmente | Matriz objetivo–evidencia–límite centralizada. Falta contrastarla con requisitos institucionales no presentes en el repositorio. |
 | G04 | Validado parcialmente | Guion de demo y condiciones de reproducción documentados. Falta ensayo medido con servicios disponibles. |
+| G05 | En curso | Registro único de actas de tutor creado; no hay reuniones ni aprobaciones documentadas todavía. Falta completar una primera acta verificable. |
 
 ## Hallazgos existentes
 
@@ -146,6 +147,7 @@ Funciones opcionales deben justificar mantenimiento, datos y compatibilidad. Fav
 | G02 | Pruebas con usuarios mediante tareas concretas | P2/M | V01/V06 | Registrar errores y comprensión, no solo opiniones; muestra y límites explícitos. |
 | G03 | Matriz objetivos académicos–evidencias | P2/M | Documentación institucional | Cada objetivo tiene implementación, prueba y límite; vacíos visibles. |
 | G04 | Demo reproducible con escenarios preparados | P2/M | A19/A22/T02 | Guion, datos de prueba, fallos simulados y tiempos medidos; demo identificada como tal. |
+| G05 | Actas y seguimiento con tutor | P1/S | Agenda y evidencia de reunión | Cada reunión registra devolución, decisión, responsable y fecha; no se inventan aprobaciones. |
 
 ## Qué conviene evitar por ahora
 

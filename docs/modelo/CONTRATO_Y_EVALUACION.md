@@ -1,8 +1,12 @@
 # Contrato académico y evaluación del modelo de gravedad
 
-**Estado:** protocolo implementado; resultados pendientes de una ejecución reproducible con el entorno de Python reparado.  
-**Ítems:** A01, A02, A03, A04, D01, D02.  
+**Estado:** protocolo temporal implementado; evaluación interna del artefacto vigente reproducida. La evaluación temporal independiente sigue pendiente.
+**Ítems:** A01, A02, A03, A04, D01, D02.
 **Actualizado:** 2026-09-13.
+
+## Referencia vigente del artefacto
+
+La ficha [MODELO_VIGENTE_2026-09-07.md](MODELO_VIGENTE_2026-09-07.md) es la única referencia para hiperparámetros y métricas del pickle que carga el backend. Registra 55 columnas, 300 árboles, profundidad 12, hojas mínimas de 5, `balanced_subsample` y la reproducción del split interno. Los resultados de Fase 4 pertenecen a un modelo anterior de 66 columnas y no deben mezclarse con esta versión.
 
 ## Qué estima y qué no estima
 

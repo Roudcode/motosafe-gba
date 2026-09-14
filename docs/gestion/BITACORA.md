@@ -360,3 +360,11 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Comparabilidad: la corrida histórica del 2026-09-13 (560 candidatas, 289 ubicadas y 267 guardadas) incorporaba 234 guardadas desde Google Noticias. Se preserva como evidencia histórica de un alcance retirado y no se usa como referencia de cobertura vigente.
 - Documentación: `INGESTA_PRENSA_MULTIFUENTE.md` explica el retiro y sus límites; `02_INDICE_PROPUESTO.md` y el borrador maestro ahora separan Capítulo 3 Marco teórico y tecnológico, Capítulo 4 Arquitectura y diseño, Capítulo 5 económico, y los futuros capítulos 6 Riesgos, 7 Resultados y 8 Conclusiones.
 - Validación: prueba real completa del scraper contra fuentes directas, con guardado en PostgreSQL. Pendiente: muestra humana de precisión, deduplicación semántica y ampliar fuentes con vías permitidas.
+
+## 2026-09-14 — SES-048 — Identificación del modelo vigente y actas
+
+- IDs: A01–A04, D01, G05.
+- Cambio: se reprodujo `backend/modelo_final.pkl` sin reentrenar ni sobrescribir datos. El artefacto vigente usa 23.338 filas, 55 columnas, Random Forest de 300 árboles, profundidad 12, mínimo 5 muestras por hoja y `balanced_subsample`.
+- Resultado reproducido: split interno estratificado 80/20 con semilla 42; F1 macro 0,3782; GRAVE precision/recall 0,1107/0,7346; MORTAL precision/recall 0,1159/0,4821. Los valores de Fase 4 corresponden al modelo previo de 66 columnas y no se deben mezclar.
+- Documentación: se creó `docs/modelo/MODELO_VIGENTE_2026-09-07.md` como referencia única para la tesis y `docs/gestion/ACTAS_TUTOR.md` como registro central actualmente vacío.
+- Límite: se reprodujo una evaluación interna, no una evaluación temporal independiente. No hay actas ni aprobación de tutor verificables registradas.
