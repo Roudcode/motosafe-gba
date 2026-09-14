@@ -7,6 +7,8 @@ COPY . ./
 RUN npm run build
 
 FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# La imagen oficial procesa plantillas en este directorio al iniciar. Así cada
+# plataforma inyecta el hostname privado real de la API sin reconstruir web.
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

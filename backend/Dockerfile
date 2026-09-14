@@ -14,4 +14,4 @@ RUN chmod +x /app/entrypoint.sh /app/scraper-loop.sh
 
 EXPOSE 8000
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["/app/entrypoint.sh"]

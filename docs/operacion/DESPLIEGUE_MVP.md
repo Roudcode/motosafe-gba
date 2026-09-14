@@ -56,6 +56,30 @@ una base PostgreSQL/PostGIS administrada y una tarea programada que ejecute
 se usa el contenedor `scraper` en ciclo: el scheduler del proveedor evita que
 se dupliquen ejecuciones.
 
+## Ruta rápida en Render
+
+El repositorio incluye `render.yaml`, un Blueprint que crea los recursos sin
+copiar contraseñas al repositorio: API privada, sitio web público, cron de
+prensa cada tres horas y PostgreSQL 16. Render permite PostGIS en PostgreSQL
+administrado; la migración `002_postgis.sql` lo habilita al iniciar.
+
+1. Entrar a [Render](https://dashboard.render.com), iniciar sesión con GitHub
+   y elegir **New → Blueprint**.
+2. Elegir el repositorio `Roudcode/motosafe-gba` y la rama `main`.
+3. Confirmar el Blueprint. Render pedirá únicamente `TOMTOM_API_KEY`; no pegar
+   la clave en GitHub ni en el chat.
+4. Esperar los builds y abrir la URL `onrender.com` de `motosafe-web`.
+5. En el panel de la base, ejecutar una vez `CREATE EXTENSION IF NOT EXISTS
+   postgis;` sólo si el log de la migración indicara que no tuvo permisos. En
+   condiciones normales la migración lo ejecuta automáticamente.
+6. Abrir el historial del cron `motosafe-scraper` y lanzar una corrida manual;
+   confirmar que finaliza y que las noticias aparecen en el mapa.
+
+El Blueprint configura la base con plan gratuito sólo para publicar y validar
+rápidamente. Según Render, una base gratuita vence a los 30 días, por lo que
+no es una operación sostenida. Antes de presentar el MVP como productivo hay
+que mover la base a un plan persistente, activar backups y definir presupuesto.
+
 ## Operación segura
 
 - Publicar con HTTPS y redirigir HTTP a HTTPS. La geolocalización móvil exige

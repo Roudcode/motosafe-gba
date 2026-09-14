@@ -57,6 +57,7 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 - SES-042 agrupa las noticias cercanas con contador y permite abrir los puntos individuales al acercarse.
 - SES-043 evita que las notas de una misma coordenada queden ocultas: el marcador de diario oscuro muestra su cantidad y abre una lista para elegir cada noticia. El color queda diferenciado de las zonas de riesgo.
 - SES-044 prepara el MVP para no depender de la PC: Compose productivo separa web/API/PostGIS/scraper, aplica migraciones al arrancar y conserva secretos fuera de Git. Falta validar la composición con Docker/PostGIS, publicar HTTPS, programar el scraper en el proveedor y ensayar backup/restauración antes de llamarlo productivo.
+- SES-045 agrega un Blueprint de Render para publicar rápido desde GitHub. Requiere que Rodo inicie sesión en Render, autorice el repositorio y cargue la clave privada de TomTom; la base gratuita propuesta es sólo de prueba y vence a los 30 días.
 - SES-021 formalizó el contrato de gravedad condicionada y añadió un evaluador temporal que evita fuga de preprocesamiento, mide ablaciones, faltantes, calibración e incertidumbre. No modifica el modelo productivo. Se verificó su sintaxis con Python alternativo; no se generaron métricas nuevas porque el `venv` local depende de un intérprete base inexistente.
 
 ## Problemas que deben permanecer visibles

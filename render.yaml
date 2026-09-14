@@ -1,0 +1,53 @@
+# Blueprint para crear un MVP público en Render desde este repositorio.
+# Las claves se solicitan en el panel (sync: false) y no se almacenan aquí.
+services:
+  - type: pserv
+    name: motosafe-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: /app/entrypoint.sh
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: motosafe-db
+          property: connectionString
+      - key: OPEN_METEO_BASE_URL
+        value: https://api.open-meteo.com/v1/forecast
+      - key: TOMTOM_API_KEY
+        sync: false
+
+  - type: web
+    name: motosafe-web
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    autoDeployTrigger: checksPass
+    healthCheckPath: /
+    envVars:
+      - key: API_UPSTREAM
+        fromService:
+          name: motosafe-api
+          type: pserv
+          property: hostport
+
+  - type: cron
+    name: motosafe-scraper
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: /bin/sh -c 'python migrar.py && python scrapear_noticias_robos.py --guardar'
+    schedule: "15 */3 * * *"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: motosafe-db
+          property: connectionString
+
+databases:
+  - name: motosafe-db
+    plan: free
+    databaseName: motosafe_gba
+    user: motosafe
+    postgresMajorVersion: "16"

@@ -296,6 +296,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: frontend lint, Vitest (80 pruebas) y build aprobados; backend `pytest` (61 pruebas) y compilación sintáctica aprobados; `git diff --check` aprobado.
 - Límite: la sesión de Codex no dispone del ejecutable `docker`, por lo que no pudo ejecutar `docker compose ... config`, construir las imágenes ni ensayar PostGIS. No hay despliegue cloud, dominio, TLS, backup/restauración ni scheduler externo validados aún.
 
+## 2026-09-13 — SES-045 — Blueprint de publicación rápida
+
+- IDs: A14, T01, T04, T05, T06, A22.
+- Cambio: se agregó `render.yaml` para aprovisionar desde GitHub una API privada, sitio público, cron de prensa y PostgreSQL 16. El frontend recibe el host interno de API en tiempo de ejecución; se añadió la migración versionada de PostGIS y se corrigieron las imágenes Docker para que una plataforma pueda reemplazar el comando de arranque del cron.
+- Evidencia externa: documentación oficial de Render confirma Docker, Postgres con PostGIS y cron con ejecución exclusiva. El Blueprint usa base gratuita sólo para la validación inicial; no se declara producción sostenida porque vence a los 30 días.
+- Pruebas: frontend lint, Vitest (80 pruebas) y build aprobados; backend `pytest` (61 pruebas) y compilación sintáctica aprobados; `git diff --check` aprobado. La sesión sigue sin Docker CLI para validar imagen o Blueprint contra el proveedor.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.
