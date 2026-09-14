@@ -35,8 +35,7 @@ def test_rss_conserva_fecha_de_publicacion():
     assert item['publicado_en'].isoformat() == '2026-09-13T15:30:00-03:00'
 
 
-def test_firma_de_agregador_descarta_solo_el_sufijo_de_medio():
-    assert firma_titular('Robo de una moto en Quilmes - Diario Local', 'Google Noticias GBA - motos') == 'robo de una moto en quilmes'
+def test_firma_conserva_titulo_editorial_de_fuente_directa():
     assert firma_titular('Robo de una moto en Quilmes - Diario Local', 'Diario Local') == 'robo de una moto en quilmes - diario local'
 
 

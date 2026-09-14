@@ -15,6 +15,16 @@ Separar decisiones tomadas de recomendaciones. Una propuesta de Codex/Claude no 
 | DEC-006 | 2026-09-11 | Pendiente | Alcance de defensa centrado en CABA, distinguiendo ruteo GBA de cobertura de datos. | Alinear título, objetivos, interfaz y evaluación según decisión académica. |
 | DEC-007 | 2026-09-13 | Adoptada | Rodo autorizó avanzar y corroborar el funcionamiento. Se inicia por integridad de reportes, contenido externo, entradas, actualización y recuperación, sin declarar cerrado el catálogo completo. | Se implementan y prueban cambios incrementales; los asuntos metodológicos A01–A04 siguen abiertos. |
 
+### DEC-011 — Retiro de Google Noticias de la ingesta de prensa
+
+- Fecha / estado / autor de la decisión: 2026-09-14 / Adoptada / Rodolfo.
+- Problema e IDs relacionados: A09, SES-031 a SES-040. La mayor parte de la corrida histórica del 2026-09-13 provenía de RSS de Google Noticias.
+- Opciones consideradas: mantener el agregador y declarar la restricción; o retirar sus RSS y conservar sólo medios directos.
+- Decisión y motivo: se retiran todas las consultas RSS de Google Noticias porque su `robots.txt` restringe `/rss/`. Se prioriza trazabilidad y cumplimiento de las condiciones de las fuentes sobre el volumen de hallazgos.
+- Evidencia o instrucción de Rodo que la respalda: confirmación expresa de la opción A en la conversación del 2026-09-14.
+- Efectos, límites y costo de mantenimiento: la cobertura de prensa disminuye de forma marcada. La corrida histórica de 267 guardadas incluía 234 del agregador y no puede compararse con la base directa. La ampliación futura exige RSS, sitemap, API o exportación expresamente permitidos.
+- Qué queda pendiente y cuándo revisarla: medir precisión y cobertura de medios directos con muestra humana; incorporar nuevas fuentes sólo tras comprobar sus condiciones de uso.
+
 ## Plantilla
 
 ### DEC-XXX — Título

@@ -303,6 +303,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Evidencia externa: documentación oficial de Render confirma Docker, Postgres con PostGIS y cron con ejecución exclusiva. El Blueprint usa base gratuita sólo para la validación inicial; no se declara producción sostenida porque vence a los 30 días.
 - Pruebas: frontend lint, Vitest (80 pruebas) y build aprobados; backend `pytest` (61 pruebas) y compilación sintáctica aprobados; `git diff --check` aprobado. La sesión sigue sin Docker CLI para validar imagen o Blueprint contra el proveedor.
 
+## 2026-09-13 — SES-046 — Reconstrucción académica con trazabilidad
+
+- Alcance: se inició la reconstrucción de la tesis con las clases de Blackboard, la devolución docente, el proyecto vigente y el material anterior como fuente de errores a evitar.
+- Cambio: se creó la matriz de requisitos/evidencia, el índice propuesto hasta Capítulo 5 y un registro inicial de declaración de uso de IA. Se separan explícitamente hechos comprobados, validaciones pendientes y supuestos económicos.
+- Límite: aún falta completar la bibliografía primaria, decisiones económicas de Rodolfo y evidencia empírica/de despliegue. No se declara redactada ni validada la tesis final.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.
@@ -346,3 +352,11 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Decisiones relacionadas:
 - Pendientes / próximo paso:
 - Commit o “sin commit”; ramas/despliegues si corresponden:
+# SES-047 — 2026-09-14 — Integridad de fuentes de prensa y estructura de tesis
+
+- Alcance: A09, G01 y reconstrucción de tesis.
+- Decisión: Rodo confirmó retirar Google Noticias como fuente de ingesta; la decisión se registra como DEC-011. Se eliminaron las seis consultas RSS del scraper y la normalización exclusiva del agregador.
+- Corrida real posterior: con sólo fuentes directas, `scrapear_noticias_robos.py --guardar` encontró 122 candidatas (16 choque, 37 inseguridad y 69 robo), omitió 1 duplicada, ubicó 57 y guardó 4 noticias nuevas. Se detectaron 20 candidatas relacionadas con moto. Por fuente, las cuatro inserciones nuevas provinieron de 0221 (3) e Infocielo (1).
+- Comparabilidad: la corrida histórica del 2026-09-13 (560 candidatas, 289 ubicadas y 267 guardadas) incorporaba 234 guardadas desde Google Noticias. Se preserva como evidencia histórica de un alcance retirado y no se usa como referencia de cobertura vigente.
+- Documentación: `INGESTA_PRENSA_MULTIFUENTE.md` explica el retiro y sus límites; `02_INDICE_PROPUESTO.md` y el borrador maestro ahora separan Capítulo 3 Marco teórico y tecnológico, Capítulo 4 Arquitectura y diseño, Capítulo 5 económico, y los futuros capítulos 6 Riesgos, 7 Resultados y 8 Conclusiones.
+- Validación: prueba real completa del scraper contra fuentes directas, con guardado en PostgreSQL. Pendiente: muestra humana de precisión, deduplicación semántica y ampliar fuentes con vías permitidas.

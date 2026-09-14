@@ -1,10 +1,10 @@
 # Ingesta de prensa multifluente
 
-Actualizado: 2026-09-13. Esta guía describe la capa de noticias de MotoSafe GBA; no es una fuente estadística oficial ni reemplaza los datos históricos de siniestros o delitos.
+Actualizado: 2026-09-14. Esta guía describe la capa de noticias de MotoSafe GBA; no es una fuente estadística oficial ni reemplaza los datos históricos de siniestros o delitos.
 
 ## Qué entra a la capa
 
-`backend/scrapear_noticias_robos.py` consulta fuentes públicas mediante RSS, sitemap o secciones periodísticas. Además de los medios directos, incorpora consultas públicas de Google Noticias para seguridad, motos y las zonas norte, oeste, sur y La Plata. Su función es descubrir medios locales que no publican un feed propio. Cada punto conserva el enlace de origen y la fuente que lo entregó.
+`backend/scrapear_noticias_robos.py` consulta únicamente fuentes periodísticas directas mediante RSS, sitemap o secciones públicas. Cada punto conserva el enlace de origen y la fuente que lo entregó.
 
 El proceso acepta sólo noticias con una categoría textual y una ubicación plausible dentro del área acotada. Clasifica el hecho como `robo`, `inseguridad` o `choque`. `relacionado_moto` es otro atributo: vale verdadero sólo cuando el título o la descripción mencionan explícitamente una motocicleta, moto o motociclista; no se infiere desde una zona, una foto ni el medio. La expresión “moto de agua” queda excluida. En RSS se conserva `pubDate`; en páginas HTML se toma `article:published_time`, `datePublished` o JSON-LD. La vigencia, el orden y la antigüedad visible usan esa fecha real y recurren a la fecha de ingesta sólo si la fuente no la entrega.
 
@@ -13,18 +13,22 @@ Esto permite que el filtro **Motos** muestre robos, inseguridad y choques vincul
 ## Controles de calidad y volumen
 
 - Las URL repetidas no se insertan por la restricción única de base.
-- `url_fuente` usa tipo `TEXT`: los enlaces con redirección del agregador pueden superar 500 caracteres y se conservan completos.
-- Durante una corrida se omite el mismo titular normalizado dentro de la misma categoría antes de geocodificarlo. Para el agregador se descarta únicamente su sufijo “- medio”, por lo que una nota del feed directo coincide con su copia agregada sin fusionar titulares distintos por similitud.
+- `url_fuente` usa tipo `TEXT` para conservar enlaces de fuentes directas sin truncamiento.
+- Durante una corrida se omite el mismo titular normalizado dentro de la misma categoría antes de geocodificarlo. La firma conserva el titular editorial completo y no aplica deduplicación semántica.
 - El geocodificador está limitado al área de CABA/GBA y se conserva el radio de precisión: intersección (80 m), calle (150 m) o barrio/partido (800 m).
 - Cada medio tiene un límite de URLs por corrida y pausas entre peticiones. Aumentar volumen significa sumar ejecuciones regulares y fuentes permitidas, no descargar de forma agresiva un sitio.
 - Al finalizar, el scraper informa candidatas, duplicadas, ubicadas, vinculadas a motos y el desglose por fuente. Ese resumen debe conservarse al evaluar si una nueva fuente agrega cobertura real o sólo repite notas.
 - Cada inserción está aislada por un savepoint: una URL o fila inválida se informa y se omite sin revertir las noticias válidas de la corrida.
 
-La fuente agregadora puede repetir una nota ya vista en un medio directo, alterar títulos o enlazar una redirección. Por eso no debe considerarse un conteo de incidentes ni alimentar directamente el modelo predictivo. A09 sigue abierto hasta medir precisión, duplicación semántica y error geográfico con un conjunto humano etiquetado.
+La capa de prensa no debe considerarse un conteo de incidentes ni alimentar directamente el modelo predictivo. A09 sigue abierto hasta medir precisión, duplicación semántica y error geográfico con un conjunto humano etiquetado.
 
 ### Evidencia de corrida del 2026-09-13
 
-La primera corrida completa posterior a la ampliación encontró 560 candidatas, ubicó 289 y guardó 267; 99 candidatas estuvieron vinculadas a motos. Las consultas de Google Noticias aportaron 234 guardadas. Es evidencia de alcance operativo, no de precisión ni de representatividad: debe usarse para seleccionar una muestra humana por fuente antes de tomar decisiones sobre peso, permanencia o cobertura.
+La corrida histórica previa al retiro de Google Noticias encontró 560 candidatas, ubicó 289 y guardó 267; 99 candidatas estuvieron vinculadas a motos. De las 267 guardadas, 234 provinieron del agregador. Esa corrida no es comparable con las corridas posteriores y no representa la cobertura vigente. Se conserva como evidencia histórica del cambio de alcance, no como medición de precisión o representatividad.
+
+### Retiro de Google Noticias
+
+El 2026-09-14 se retiraron todas las consultas RSS de Google Noticias. La decisión responde a la restricción declarada por su `robots.txt` para `/rss/` y al criterio de no sostener la ingesta en una vía cuya automatización no está permitida. La caída de volumen es parte de la limitación explícita de cobertura: de las 267 guardadas en la corrida histórica, 234 provenían del agregador y sólo 33 de medios directos. La primera corrida sin el agregador encontró 122 candidatas, ubicó 57 y guardó 4 filas nuevas; el número de inserciones refleja que muchas notas directas ya estaban en la base. Las futuras comparaciones deben indicar el conjunto de fuentes utilizado; un menor volumen posterior no implica por sí mismo una falla del scraper.
 
 ## Redes sociales y nuevas fuentes
 

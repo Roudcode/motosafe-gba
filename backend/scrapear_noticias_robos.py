@@ -335,17 +335,6 @@ FUENTES_RSS = [
     # RSS 2.0 real con ?alt=rss, no un Atom disfrazado).
     ("Zona Sur Diario", "https://www.zonasurdiario.com.ar/feeds/posts/default/-/Policiales?alt=rss"),
     ("Zona Oeste Diario", "https://www.zonaoestediario.com.ar/feeds/posts/default/-/Policiales?alt=rss"),
-    # Agregador público: complementa a los medios directos con notas de medios
-    # locales que no exponen RSS propio. No reemplaza la URL original: cada item
-    # conserva su enlace y el deduplicador evita repetir titulares entre fuentes.
-    ("Google Noticias GBA - seguridad", "https://news.google.com/rss/search?q=(robo+OR+asalto+OR+motochorro)+%28GBA+OR+Buenos+Aires%29&hl=es-419&gl=AR&ceid=AR:es-419"),
-    ("Google Noticias GBA - motos", "https://news.google.com/rss/search?q=(moto+OR+motocicleta+OR+motociclista)+%28choque+OR+robo+OR+siniestro%29+%28GBA+OR+Buenos+Aires%29&hl=es-419&gl=AR&ceid=AR:es-419"),
-    # Consultas zonales: amplían descubrimiento de medios barriales que no
-    # suelen aparecer con una búsqueda provincial genérica.
-    ("Google Noticias zona norte", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28Tigre+OR+San+Isidro+OR+Vicente+Lopez+OR+San+Fernando%29&hl=es-419&gl=AR&ceid=AR:es-419"),
-    ("Google Noticias zona oeste", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28Moron+OR+Merlo+OR+La+Matanza+OR+Ituzaingo%29&hl=es-419&gl=AR&ceid=AR:es-419"),
-    ("Google Noticias zona sur", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28Quilmes+OR+Lanus+OR+Avellaneda+OR+Lomas+de+Zamora%29&hl=es-419&gl=AR&ceid=AR:es-419"),
-    ("Google Noticias La Plata", "https://news.google.com/rss/search?q=(robo+OR+motochorro+OR+choque)+%28La+Plata+OR+Berisso+OR+Ensenada%29&hl=es-419&gl=AR&ceid=AR:es-419"),
 ]
 # Sitemap general (mezcla todas las secciones) + segmento de URL a filtrar
 # antes de aplicar el prefiltro de slug de siempre -- ver la nota larga al
@@ -562,15 +551,12 @@ def relacionado_con_moto(titulo, descripcion):
 def firma_titular(titulo, nombre_fuente):
     """Clave conservadora para deduplicar dentro de una corrida.
 
-    Google Noticias agrega habitualmente `` - Nombre del medio`` al título.
-    Se elimina ese sufijo sólo cuando el propio agregador entregó el item, de
-    modo que no se borra información editorial de los feeds directos ni se
-    intenta una deduplicación semántica que podría mezclar incidentes reales.
+    La firma conserva el título editorial completo de cada fuente directa.
+    No intenta deduplicación semántica: dos titulares parecidos pueden
+    describir incidentes distintos.
     """
-    limpio = titulo
-    if nombre_fuente.startswith('Google Noticias'):
-        limpio = re.sub(r'\s+-\s+[^-]{2,100}$', '', limpio).strip()
-    return normalizar(limpio)
+    del nombre_fuente
+    return normalizar(titulo)
 
 
 def _contiene_termino(texto_norm, termino):
