@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - motosafe_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    # No se publica el puerto: API y scraper acceden por la red interna.
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerida}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS requerido}
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://api.open-meteo.com/v1/forecast}
+      TOMTOM_API_KEY: ${TOMTOM_API_KEY:?TOMTOM_API_KEY requerida}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  scraper:
+    build: ./backend
+    restart: unless-stopped
+    command: ["/app/scraper-loop.sh"]
+    entrypoint: ["/bin/sh", "-c", "python migrar.py && exec /app/scraper-loop.sh"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerida}
+      SCRAPER_INTERVAL_MINUTES: ${SCRAPER_INTERVAL_MINUTES:-180}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${MOTOSAFE_WEB_PORT:-8080}:80"
+
+volumes:
+  motosafe_postgres_data:

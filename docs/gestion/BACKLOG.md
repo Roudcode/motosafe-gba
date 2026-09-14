@@ -32,10 +32,10 @@ Estados permitidos: propuesto → seleccionado → en curso → validado; altern
 | D04 | En curso | Se definió la evidencia para variar radio/pesos; faltan corridas y reporte de sensibilidad real. |
 | A12 | Validado parcialmente | Pool con máximo físico, espera acotada, rollback y prueba unitaria. `/health` reporta estado de DB sin secretos. Falta integración contra PostgreSQL real. |
 | A13 | Validado | Límites de coordenadas/hora/edad y respuesta vacía de hotspots probados. |
-| A14 | En curso | Se agregó `backend/migrar.py`, migración versionada y procedimiento de ejecución. La tabla de prensa admite URLs largas de agregadores y el scraper aísla fallos por fila; falta PostgreSQL aislado para ejecutar migración y retirar compatibilidad transitoria. |
+| A14 | En curso | Se agregó `backend/migrar.py`, migración versionada y procedimiento de ejecución. La tabla de prensa admite URLs largas de agregadores y el scraper aísla fallos por fila. La composición productiva ejecuta migraciones antes de API/scraper; falta PostgreSQL aislado para validar migración y retirar compatibilidad transitoria. |
 | T04 | Validado parcialmente | `/health` informa servicio, disponibilidad de base y hora UTC sin datos personales. Faltan métricas de latencia/error por servicio y retención de logs. |
 | T05 | Validado parcialmente | CI en GitHub valida lint, tests y build frontend, más sintaxis backend en Python 3.12. Falta corrida confirmada en GitHub e integración con PostgreSQL. |
-| T06 | En curso | Procedimiento documentado de dump/restauración aislada; falta ejecutar y registrar un ensayo real. |
+| T06 | En curso | Procedimiento documentado de dump/restauración aislada y composición con volumen persistente; falta ejecutar y registrar un ensayo real. |
 | A15 | Validado parcialmente | La primera carga se libera ante fallo de hotspots; las capas secundarias conservan caché, identifican cuáles fallaron, muestran última consulta y se reintentan sin recargar toda la página. Faltan estados de fecha de origen desde backend. |
 | F08 | En curso | La actividad identifica reportes propios vigentes. Faltan contratos backend y pantalla para vencidos, retirados por consenso y desmentidos. |
 | A16 | Validado parcialmente | Velocidad/ETA se limpian al detenerse y el progreso se proyecta sobre segmentos, evitando saltos entre vértices largos. Faltan trazas GPS reales de parada, giro, desvío, pérdida y llegada. |

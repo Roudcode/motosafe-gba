@@ -13,6 +13,7 @@ venv/
 __pycache__/
 *.pyc
 .env
+.env.production
 .ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 

@@ -288,6 +288,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pruebas: `npm.cmd run lint`, Vitest (80 pruebas) y `git diff --check` aprobados.
 - Límite: el grupo representa una coordenada compartida, no una ubicación exacta del hecho. La precisión geográfica y la deduplicación semántica siguen siendo trabajo pendiente de A09/A11.
 
+## 2026-09-13 — SES-044 — Base reproducible para despliegue del MVP
+
+- IDs: A12, A14, T01, T04, T06, A22.
+- Cambio: se incorporaron imágenes de API y frontend, proxy same-origin `/api`, PostgreSQL/PostGIS privado, migraciones de arranque, healthcheck, volumen persistente y un proceso independiente de scraper configurable por intervalo. Se añadió ejemplo de secretos de producción, exclusiones de contexto Docker y guía de arquitectura, operación, backups y costos sin fijar precios variables.
+- Corrección detectada al verificar: `/reportes-prensa` fallaba ante filas históricas sin `publicado_en`; ahora conserva `creado_en` como fecha de respaldo también en respuestas de transición.
+- Pruebas: frontend lint, Vitest (80 pruebas) y build aprobados; backend `pytest` (61 pruebas) y compilación sintáctica aprobados; `git diff --check` aprobado.
+- Límite: la sesión de Codex no dispone del ejecutable `docker`, por lo que no pudo ejecutar `docker compose ... config`, construir las imágenes ni ensayar PostGIS. No hay despliegue cloud, dominio, TLS, backup/restauración ni scheduler externo validados aún.
+
 ## 2026-09-13 — SES-016 — Movimiento reducido
 
 - IDs: A23, V09.

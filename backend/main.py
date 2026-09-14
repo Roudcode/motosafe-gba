@@ -900,7 +900,10 @@ def listar_reportes_prensa():
     ahora = datetime.now(timezone.utc)
     return [
         fila for fila in filas
-        if (ahora - (fila['publicado_en'] or fila['creado_en'])).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
+        # Las filas previas a la columna publicado_en siguen siendo válidas:
+        # usar .get evita que una respuesta histórica o una migración parcial
+        # derribe toda la capa de prensa y conserva creado_en como respaldo.
+        if (ahora - (fila.get('publicado_en') or fila['creado_en'])).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
     ]
 
 

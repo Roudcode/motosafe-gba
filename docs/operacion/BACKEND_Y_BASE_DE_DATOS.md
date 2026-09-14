@@ -1,7 +1,9 @@
 # Operación del backend y base de datos
 
 **Ítems:** A12, A14, T01, T04, T05, T06.  
-**Estado:** procedimientos y CI incorporados; falta ensayo contra PostgreSQL aislado.
+**Estado:** procedimientos y CI incorporados; la composición productiva está
+preparada en `docker-compose.production.yml`, pero falta ensayo contra
+PostgreSQL aislado y despliegue HTTPS real. Ver `DESPLIEGUE_MVP.md`.
 
 ## Inicio seguro
 
@@ -40,3 +42,11 @@ datos.
 `.github/workflows/ci.yml` ejecuta lint, pruebas y build del frontend, más
 sintaxis del backend en Python 3.12. No reemplaza T01: la CI actual no levanta
 PostgreSQL ni servicios externos.
+
+## Entorno productivo
+
+`docker-compose.production.yml` separa web, API, scraper y PostGIS. No publica
+el puerto de la base y deja el frontend como único puerto expuesto. La API
+ejecuta migraciones al iniciar; el scraper aplica las mismas migraciones antes
+de su ciclo. Copiar `.env.production.example` a `.env.production`, que está
+ignorado por Git, y no reutilizar secretos de desarrollo.
