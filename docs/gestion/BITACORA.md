@@ -510,3 +510,15 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: `validate.py --original` sin errores (673 párrafos, +72 respecto de la versión anterior), render completo a PDF (44 páginas), revisión visual de las tres páginas nuevas de A.3 y del índice antes de entregar.
 - Commit: se comiteó por separado el retiro del material de SES-058 (sin atribución de Claude, porque el contenido y la decisión de retirarlo fueron de Codex) y los resultados reales de A.3 (con atribución de Claude).
 - Pendiente / próximo paso: ampliar la muestra de motociclistas más allá del círculo directo de contactos si el tiempo lo permite; push de los commits pendientes (autenticación de git a cargo de Rodo); A09 (calidad del extractor de prensa) sigue bloqueado por límites de este entorno remoto, a ejecutar desde la máquina de Rodo.
+
+## 2026-09-15 — SES-060 — Capturas reales de la sección 4.9 (Figuras 4.4 a 4.6) (Claude)
+
+- Alcance: Rodo pasó 4 capturas de la app corriendo en su entorno local; se incorporaron 3 de las 4 figuras pendientes de 4.9 (Prototipo funcional: evidencia visual). La cuarta (4.7) es opcional y sigue pendiente.
+- Figura 4.4: de las dos primeras capturas, se usó la que muestra "Clusters de siniestros" y "Robos con moto" activos al mismo tiempo (ambas capas visibles en el mapa), porque es la única que cumple el requisito de "al menos dos capas de riesgo activas simultáneamente". La otra captura (solo clusters de siniestros, con inseguridad apagada) no se incorporó por mostrar una sola capa; queda disponible si se necesita para otro punto del documento.
+- Figura 4.5: panel de prensa con el filtro "Motos" aplicado, mostrando una noticia real clasificada como robo ("Detuvieron a tres jóvenes por intentar robar una moto en Barracas"), 33 de 168 resultados filtrados.
+- Figura 4.6: comparador de tres rutas alternativas con el porcentaje de cobertura por fuente (siniestros e inseguridad) y el nivel de exposición relativo de cada una.
+- Las tres imágenes se embebieron en el Word (no como enlaces), con pie de figura, fecha (15/09/2026) y aclaración de ejecución local. Se actualizó la tabla de figuras pendientes (4.4, 4.5 y 4.6 pasan de "(pendiente)" a "(incorporada)") y la nota interna, que ahora solo menciona la 4.7 como opcional.
+- El agregado corrió el documento de 44 a 45 páginas; se recalculó el índice desde 4.10 hasta Apéndice B (offset uniforme de +1 página, verificado contra el PDF renderizado).
+- Verificación: `validate.py --original` sin errores (679 párrafos, +4 respecto de la versión anterior), render completo a PDF (45 páginas), revisión visual de la tabla de figuras, de las dos figuras nuevas y del índice antes de entregar.
+- Pendiente: Figura 4.7 (opcional, viewport móvil o capa en estado de error/caché) — Rodo no sabe cómo producirla; se le va a sugerir usar las herramientas de desarrollador de Chrome (modo dispositivo móvil) para la parte de viewport, y evaluar si vale el esfuerzo de simular la parte de red degradada dado que es opcional.
+- Commit: incluido junto con esta bitácora.
