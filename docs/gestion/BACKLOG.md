@@ -144,7 +144,7 @@ Funciones opcionales deben justificar mantenimiento, datos y compatibilidad. Fav
 | ID | Propuesta y valor | P / esfuerzo | Dependencia / tradeoff | Aceptación |
 |---|---|---|---|---|
 | G01 | Sincronizar guías, README y Word | P2/M | A01/A22/D01 | Cifras/tecnologías vigentes; versiones históricas identificadas; Word renderizado al regenerar. |
-| G02 | En curso: instrumento de encuesta y tareas preparado en `docs/tesis/03_INSTRUMENTOS_VALIDACION_USUARIOS.md`; SES-058 agregó 21 cuestionarios ficticios explícitamente simulados en docs/evidencias/2026-09-15/G02-T02/. Aún sin participantes ni resultados humanos. | P2/M | V01/V06 | Registrar errores y comprensión, no solo opiniones; muestra y límites explícitos. |
+| G02 | En curso: instrumento de encuesta y tareas preparado en `docs/tesis/03_INSTRUMENTOS_VALIDACION_USUARIOS.md`; Aún sin participantes ni resultados humanos. | P2/M | V01/V06 | Registrar errores y comprensión, no solo opiniones; muestra y límites explícitos. |
 | G03 | Matriz objetivos académicos–evidencias | P2/M | Documentación institucional | Cada objetivo tiene implementación, prueba y límite; vacíos visibles. |
 | G04 | Demo reproducible con escenarios preparados | P2/M | A19/A22/T02 | Guion, datos de prueba, fallos simulados y tiempos medidos; demo identificada como tal. |
 | G05 | Actas y seguimiento con tutor | P1/S | Agenda y evidencia de reunión | Cada reunión registra devolución, decisión, responsable y fecha; no se inventan aprobaciones. |

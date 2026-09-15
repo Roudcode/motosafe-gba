@@ -44,7 +44,6 @@
 
 Centralizar significa mantener este índice y estos registros como punto de entrada. Los datos y el código conservan sus ubicaciones de ejecución; no se duplican dentro de documentación.
 
-## Ensayo del instrumento — 2026-09-15
+## Pruebas técnicas — 2026-09-15
 
 - [Pruebas actuales y límites](evidencias/2026-09-15/G02-T02/PRUEBAS.md): 80 tests frontend y 65 backend aprobados; navegador bloqueado por certificado.
-- [21 cuestionarios simulados](evidencias/2026-09-15/G02-T02/21_CUESTIONARIOS_SIMULADOS.md): material sintético de preparación; no son resultados de validación humana (G02, SES-058).

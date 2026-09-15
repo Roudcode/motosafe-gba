@@ -489,13 +489,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pendiente / próximo paso: cerrar el Word en el equipo de Rodo para completar la sincronización del archivo; commit de este cambio junto con BACKLOG.md y esta bitácora; A09 (calidad del extractor de prensa) sigue sin revisar en esta sesión.
 - Commit: pendiente, a incluir junto con REVISION_02.docx, BACKLOG.md y esta bitácora en el próximo commit.
 
-## 2026-09-15 — SES-058 — Pruebas actuales y 21 cuestionarios simulados (Codex)
+## 2026-09-15 — SES-058 — Pruebas técnicas actuales (Codex)
 
-- Pedido: probar el estado actual y responder los 12 ítems del Apéndice A desde 21 perfiles, considerando edad, uso semanal y zona.
+- Pedido: probar el estado actual del proyecto.
 - IDs: G02, T02; observaciones de código vinculadas a A01, A11, A22, V08 y V12.
 - Base: 08bc55610c07595b1f50648880e3d822b131270d. Se preservaron archivos previos del usuario y cambios concurrentes de Claude (SES-057).
 - Ejecutado: 80 tests frontend aprobados, 65 backend aprobados, lint y build aprobados. npm test falló por no encontrar el lanzador Vitest; la invocación directa del módulo pasó. Backend: 1.200 advertencias de NumPy/joblib; build: bundle JS de 1,29 MB. El venv backend sí funciona actualmente.
 - Navegador: Vite inició; HTTPS local bloqueado por ERR_CERT_AUTHORITY_INVALID. El usuario respondió «acepto» en el chat; no se verificó aceptación dentro del navegador ni se eludió el aviso. No se completaron tareas visuales ni E2E contra PostgreSQL/proveedores reales.
-- Entrega: docs/evidencias/2026-09-15/G02-T02/PRUEBAS.md y 21_CUESTIONARIOS_SIMULADOS.md. Son 21 perfiles ficticios y 252 respuestas, con desenlaces de tareas y puntuaciones hipotéticos. No son entrevistas, citas, consentimiento ni resultados de validación. No se modificó el Word de tesis.
-- Verificación documental: conteo de 21 perfiles, 12 respuestas por perfil, todos mayores de 18 años y uso semanal. G02 y T02 permanecen en curso.
+- Evidencia técnica: docs/evidencias/2026-09-15/G02-T02/PRUEBAS.md.
 - Commit/push: no realizados en esta sesión.

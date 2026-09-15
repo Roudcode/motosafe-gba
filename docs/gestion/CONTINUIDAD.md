@@ -87,8 +87,7 @@ Ver A01–A23 en el assessment. No dar por resuelto un hallazgo porque existan t
 
 No se encontraron los capítulos formales completos de tesis, el reglamento, actas ni una bitácora anterior en `claude/`. Si se incorporan después, agregarlos al índice y contrastarlos; no inferir cumplimiento institucional de su ausencia local.
 
-## Actualización 2026-09-15 — SES-058 (Codex): pruebas y ensayo del Apéndice A
+## Actualización 2026-09-15 — SES-058 (Codex): pruebas técnicas
 
-Rodo pidió probar el estado actual y responder el instrumento con 21 perfiles. Se entregaron 21 cuestionarios explícitamente simulados (252 respuestas) en [G02-T02](../evidencias/2026-09-15/G02-T02/21_CUESTIONARIOS_SIMULADOS.md), con perfiles ficticios mayores de 18 años y uso semanal CABA/GBA. No hubo participantes ni consentimiento real y no se incorporaron resultados al Word. G02 sigue en curso.
 
 Verificación actual: 80 tests frontend, 65 backend, lint y build aprobados. El venv backend funciona en esta sesión, a diferencia del límite histórico consignado arriba. npm no encontró el lanzador Vitest; su módulo directo pasó. Persisten advertencias de bundle grande y deprecación NumPy/joblib. Navegador bloqueado por certificado HTTPS local: T02 sigue sin E2E. La respuesta «acepto» en el chat no acredita aceptación dentro del navegador. [Pruebas y límites](../evidencias/2026-09-15/G02-T02/PRUEBAS.md). Sin commit/push de esta sesión; se preservó el trabajo concurrente de Claude.

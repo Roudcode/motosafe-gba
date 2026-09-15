@@ -1,4 +1,4 @@
-# Pruebas del estado actual y ensayo del Apéndice A
+# Pruebas técnicas del estado actual
 
 Fecha: 2026-09-15. Evaluador: Codex (IA). Base Git: `08bc55610c07595b1f50648880e3d822b131270d`. IDs: G02, T02; observaciones relacionadas con A01, A11, A22, V08 y V12.
 
@@ -23,7 +23,7 @@ Resultados transcritos de las salidas de herramientas de esta sesión; no se adj
 | 4: buscar y activar capa | Código contiene entrada «Buscar zona o avenida» y panel de capas. | No ejecutada: acceso bloqueado antes de cargar la aplicación. |
 | 5: comparar dos rutas y explicar cobertura | Utilidades probadas; tarjetas, cobertura por fuente y aviso revisados en código. | No ejecutada con proveedor de rutas real. |
 | 6: Motos y abrir noticia | Código contiene activación de Prensa, filtro Motos, detalle con fuente y antigüedad. | No ejecutada; disponibilidad de noticias y apertura real no comprobadas. |
-| 7–10: percepción y comprensión | Se revisaron textos para elaborar hipótesis. | Sin evaluación humana ni verificación visual de legibilidad. |
+| 7–10: percepción y comprensión | Se revisaron textos del código. | Sin evaluación humana ni verificación visual de legibilidad. |
 
 El impedimento técnico no es un fracaso atribuible a un motociclista. No registrar estas tareas como «no completadas» por participantes reales: no hubo participantes.
 
@@ -35,10 +35,6 @@ El impedimento técnico no es un fracaso atribuible a un motociclista. No regist
 4. **Significado de cobertura (A11):** `frontend/src/utils/riesgoRuta.js` calcula proporción de vértices muestreados próximos a zonas; no mide exactamente porcentaje de kilómetros ni completitud del registro de siniestros. Si no hay zonas de una fuente devuelve `null`; eso por sí solo no distingue una fuente vacía de una que falló.
 5. **Fecha y precisión de prensa (A10/A11):** `MapaMotoSafe.jsx:96` y `:101` construyen texto con fuente, antigüedad y precisión. `App.jsx:490` usa publicación o, si falta, creación. No se comprobó el contenido vigente de la base.
 6. **Ejecución local (A22/T02):** el lanzador npm no encontró Vitest, aunque la invocación directa del módulo sí pasó. El certificado impidió el recorrido de interfaz. Ambos límites deben resolverse antes de una sesión real.
-
-## Entrega de simulación
-
-[21_CUESTIONARIOS_SIMULADOS.md](21_CUESTIONARIOS_SIMULADOS.md) contiene 21 perfiles ficticios y 252 respuestas (12 por perfil), con edad mayor a 18, uso semanal y variedad de CABA/GBA. Las tareas y puntuaciones son hipótesis bajo las condiciones declaradas. No son 21 ejecuciones del sistema, entrevistas ni citas reales. No se calculan estadísticas de aceptación.
 
 ## Pendientes y alcance
 
