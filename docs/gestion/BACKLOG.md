@@ -1,6 +1,6 @@
 # Backlog único — MotoSafe GBA
 
-Actualizado: 2026-09-13. Rodo autorizó avanzar y verificar el bloque inicial de integridad, consistencia y recuperación. Los demás ítems siguen propuestos; esta lista no implica que las 63 propuestas estén implementadas.
+Actualizado: 2026-09-15. Se ejecutó y archivó el protocolo de evaluación temporal independiente (A02-A04); se corrigió una duplicación accidental de filas en la tabla de ejecución actual.
 
 63 ítems: 23 hallazgos y 40 oportunidades. Prioridad sugerida: P1 integridad/defensa, P2 consolidación, P3 evolución opcional. Esfuerzo relativo: S localizado, M varios componentes, L investigación/integración amplia. No son estimaciones de días. Los solapamientos se ejecutan juntos, no se suman como trabajos independientes.
 
@@ -16,15 +16,11 @@ Un capítulo ya entregado a la cátedra no se reescribe para acomodar lo que apa
 |---|---|---|
 | A05 | Validado parcialmente | El comparador calcula cobertura por trazado y por fuente. La recomendación exige 60% sobre siniestros y muestra inseguridad aparte; `sin datos` no equivale a 0%. Falta validación geográfica independiente. |
 | A01 | Validado parcialmente | Contrato formal y etiquetas de interfaz dejan explícita la gravedad condicionada a un siniestro. Falta revisión con dirección académica y consistencia de todas las guías históricas. |
-| A02 | En curso | Se incorporó evaluación temporal con selección y test separados, preprocesamiento ajustado sólo en train y salida reproducible. Falta ejecución real y evidencia resultante. |
-| A03 | En curso | El protocolo mide faltantes por período, métricas por ausencia de edad y ablaciones demográficas. Falta ejecución y análisis de sus resultados, sin inferencias causales. |
-| A04 | En curso | El protocolo calcula Brier, ECE, matriz de confusión e intervalos bootstrap. Falta evidencia real y una decisión explícita de costos/umbrales de alertas. |
+| A02 | Validado parcialmente | Se ejecutó el protocolo temporal (2026-09-15): entrenamiento 2019-2022, selección de hiperparámetros sobre 2023, evaluación sobre 2024 como año completamente posterior, sin tocar el artefacto en producción. F1 macro cae de 0,378 (split aleatorio interno) a 0,262 (evaluación temporal real), intervalo bootstrap 95% [0,244; 0,281]. Evidencia en docs/evidencias/2026-09-15/A02-A03-A04/. Falta revisión con dirección académica. |
+| A03 | Validado parcialmente | Ablaciones ejecutadas: sin edad (F1 macro evaluación 0,286) y sin edad ni sexo (F1 macro evaluación 0,362), ambas superan a la variante con demografía (0,262). La demografía disponible no generaliza bien entre años en este dataset; no se infiere causalidad. Edad desconocida: 45% en entrenamiento/selección vs 12% en el año de evaluación, diferencia de completitud documentada como limitación. |
+| A04 | En curso | ECE real obtenido para las tres variantes (0,30 a 0,32, sin diferencias marcadas). Faltan matriz de confusión detallada en el informe y una decisión explícita de costos/umbrales de alertas; el modelo sigue sin calibración aplicada. |
 | D01 | En curso | Se añadió ficha inicial del dataset de siniestros y contrato del modelo. Faltan fichas de todas las fuentes, licencia, procedencia primaria y versiones verificadas. |
 | D02 | En curso | El evaluador calcula intervalo bootstrap descriptivo para F1. Faltan resultados reales y estabilidad por año/comuna con soporte suficiente. |
-| A01 | Validado parcialmente | Contrato formal y etiquetas de interfaz dejan explícita la gravedad condicionada a un siniestro. Falta revisión con dirección académica y consistencia de todas las guías históricas. |
-| A02 | En curso | Se incorporó evaluación temporal con selección y test separados, preprocesamiento ajustado sólo en train y salida reproducible. Falta ejecución real y evidencia resultante. |
-| A03 | En curso | El protocolo mide faltantes por período, métricas por ausencia de edad y ablaciones demográficas. Falta ejecución y análisis de sus resultados, sin inferencias causales. |
-| A04 | En curso | El protocolo calcula Brier, ECE, matriz de confusión e intervalos bootstrap. Falta evidencia real y una decisión explícita de costos/umbrales de alertas. |
 | A06 | En curso | Los empates no se etiquetan automáticamente y la cobertura de inseguridad ya no sustituye la de siniestros. Se creó plantilla de rutas de referencia; faltan casos revisados y sensibilidad de pesos. |
 | A07 | Validado parcialmente | Borrado con token privado de una sola entrega, UUID canónico, token no expuesto por GET y prueba de contrato. Migración versionada ya existía (`001_reportes_colaborativos.sql` vía `migrar.py`) y la política de votos (anti-autovoto, anti-doble-voto por dispositivo, retiro por consenso con doble umbral) ya estaba completa: el backlog estaba desactualizado en ese punto. Se agregó lo que sí faltaba (2026-09-14, Claude): rate limit en `DELETE /reportes/{id}` (no lo tenía, a diferencia del resto de escrituras) y una cuota de 15 reportes/24h por `autor_id` (`CUOTA_REPORTES_POR_DIA_POR_AUTOR`), que cubre lo que el rate limit por IP no cubre (dispositivos detrás de la misma red, o volumen sostenido durante el día). 57/57 tests pasan (53 previos + 4 nuevos). |
 | A08 | Validado | Prensa externa pasa a nodos DOM con texto y solo enlaces `http(s)`; cubierto por revisión y build. |

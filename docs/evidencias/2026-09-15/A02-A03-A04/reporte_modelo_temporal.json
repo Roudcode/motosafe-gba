@@ -1,0 +1,294 @@
+{
+  "protocolo": {
+    "train_hasta": 2022,
+    "seleccion": 2023,
+    "evaluacion_independiente": 2024,
+    "indice_inseguridad": "excluido: no hay version temporalmente fechada"
+  },
+  "filas": {
+    "train": 11644,
+    "seleccion": 3915,
+    "evaluacion": 3331
+  },
+  "faltantes": {
+    "edad_train": 0.45302301614565443,
+    "edad_seleccion": 0.45644955300127715,
+    "edad_evaluacion": 0.12128489942960072
+  },
+  "resultados": [
+    {
+      "variante": "base",
+      "columnas": [
+        "hora",
+        "edad_victima",
+        "edad_desconocida",
+        "temperatura",
+        "humedad",
+        "dia_semana",
+        "comuna",
+        "tipo_de_via_siniestro",
+        "contraparte_siniestro",
+        "sexo_victima",
+        "lluvia"
+      ],
+      "f1_macro_seleccion": 0.34799738545727443,
+      "f1_macro_evaluacion": 0.2620730279400365,
+      "reporte_evaluacion": {
+        "GRAVE": {
+          "precision": 0.07943187795896896,
+          "recall": 0.719047619047619,
+          "f1-score": 0.14306016106110847,
+          "support": 210.0
+        },
+        "LEVE": {
+          "precision": 0.967713004484305,
+          "recall": 0.3505523066926576,
+          "f1-score": 0.5146673026472692,
+          "support": 3078.0
+        },
+        "MORTAL": {
+          "precision": 0.07301587301587302,
+          "recall": 0.5348837209302325,
+          "f1-score": 0.12849162011173185,
+          "support": 43.0
+        },
+        "accuracy": 0.37616331432002403,
+        "macro avg": {
+          "precision": 0.3733869184863823,
+          "recall": 0.5348278822235031,
+          "f1-score": 0.2620730279400365,
+          "support": 3331.0
+        },
+        "weighted avg": {
+          "precision": 0.9001624151047003,
+          "recall": 0.37616331432002403,
+          "f1-score": 0.48625449745900096,
+          "support": 3331.0
+        }
+      },
+      "matriz_confusion": [
+        [
+          151,
+          31,
+          28
+        ],
+        [
+          1735,
+          1079,
+          264
+        ],
+        [
+          15,
+          5,
+          23
+        ]
+      ],
+      "clases": [
+        "GRAVE",
+        "LEVE",
+        "MORTAL"
+      ],
+      "brier_por_clase": {
+        "GRAVE": 0.17861259384242428,
+        "LEVE": 0.32368205458673927,
+        "MORTAL": 0.04884354690922025
+      },
+      "ece_multiclase": 0.3179437077521756,
+      "intervalo_bootstrap_f1_macro_95": [
+        0.24389479933440533,
+        0.2814192279602331
+      ],
+      "metricas_por_edad_desconocida": {
+        "0": {
+          "filas": 2927,
+          "f1_macro": 0.22363692708399066
+        },
+        "1": {
+          "filas": 404,
+          "f1_macro": 0.4993804213135068
+        }
+      }
+    },
+    {
+      "variante": "sin_edad",
+      "columnas": [
+        "hora",
+        "temperatura",
+        "humedad",
+        "dia_semana",
+        "comuna",
+        "tipo_de_via_siniestro",
+        "contraparte_siniestro",
+        "sexo_victima",
+        "lluvia"
+      ],
+      "f1_macro_seleccion": 0.3169088935837932,
+      "f1_macro_evaluacion": 0.28587404101797426,
+      "reporte_evaluacion": {
+        "GRAVE": {
+          "precision": 0.07801857585139318,
+          "recall": 0.6,
+          "f1-score": 0.13808219178082193,
+          "support": 210.0
+        },
+        "LEVE": {
+          "precision": 0.9586656997824511,
+          "recall": 0.4294996751137102,
+          "f1-score": 0.5932241417994166,
+          "support": 3078.0
+        },
+        "MORTAL": {
+          "precision": 0.0712166172106825,
+          "recall": 0.5581395348837209,
+          "f1-score": 0.12631578947368421,
+          "support": 43.0
+        },
+        "accuracy": 0.4419093365355749,
+        "macro avg": {
+          "precision": 0.3693002976148423,
+          "recall": 0.5292130699991437,
+          "f1-score": 0.28587404101797426,
+          "support": 3331.0
+        },
+        "weighted avg": {
+          "precision": 0.8916899547881227,
+          "recall": 0.4419093365355749,
+          "f1-score": 0.5585027762473569,
+          "support": 3331.0
+        }
+      },
+      "matriz_confusion": [
+        [
+          126,
+          51,
+          33
+        ],
+        [
+          1476,
+          1322,
+          280
+        ],
+        [
+          13,
+          6,
+          24
+        ]
+      ],
+      "clases": [
+        "GRAVE",
+        "LEVE",
+        "MORTAL"
+      ],
+      "brier_por_clase": {
+        "GRAVE": 0.16631172767286087,
+        "LEVE": 0.3042545037943092,
+        "MORTAL": 0.04950637673775435
+      },
+      "ece_multiclase": 0.30390042407792267,
+      "intervalo_bootstrap_f1_macro_95": [
+        0.2692548921241917,
+        0.3046176275794605
+      ],
+      "metricas_por_edad_desconocida": {
+        "0": {
+          "filas": 2927,
+          "f1_macro": 0.2578093266075874
+        },
+        "1": {
+          "filas": 404,
+          "f1_macro": 0.375487900078064
+        }
+      }
+    },
+    {
+      "variante": "sin_demografia",
+      "columnas": [
+        "hora",
+        "temperatura",
+        "humedad",
+        "dia_semana",
+        "comuna",
+        "tipo_de_via_siniestro",
+        "contraparte_siniestro",
+        "lluvia"
+      ],
+      "f1_macro_seleccion": 0.4066329847888223,
+      "f1_macro_evaluacion": 0.36154254845603423,
+      "reporte_evaluacion": {
+        "GRAVE": {
+          "precision": 0.08421052631578947,
+          "recall": 0.19047619047619047,
+          "f1-score": 0.11678832116788321,
+          "support": 210.0
+        },
+        "LEVE": {
+          "precision": 0.9388077378602447,
+          "recall": 0.7725795971410007,
+          "f1-score": 0.8476207449652469,
+          "support": 3078.0
+        },
+        "MORTAL": {
+          "precision": 0.06811145510835913,
+          "recall": 0.5116279069767442,
+          "f1-score": 0.12021857923497267,
+          "support": 43.0
+        },
+        "accuracy": 0.7325127589312519,
+        "macro avg": {
+          "precision": 0.36370990642813106,
+          "recall": 0.4915612315313118,
+          "f1-score": 0.36154254845603423,
+          "support": 3331.0
+        },
+        "weighted avg": {
+          "precision": 0.8736905494535601,
+          "recall": 0.7325127589312519,
+          "f1-score": 0.7921559889989159,
+          "support": 3331.0
+        }
+      },
+      "matriz_confusion": [
+        [
+          40,
+          141,
+          29
+        ],
+        [
+          428,
+          2378,
+          272
+        ],
+        [
+          7,
+          14,
+          22
+        ]
+      ],
+      "clases": [
+        "GRAVE",
+        "LEVE",
+        "MORTAL"
+      ],
+      "brier_por_clase": {
+        "GRAVE": 0.15735275626718723,
+        "LEVE": 0.2852794537801698,
+        "MORTAL": 0.048361389645238895
+      },
+      "ece_multiclase": 0.3067249729454558,
+      "intervalo_bootstrap_f1_macro_95": [
+        0.3431573023210648,
+        0.3801603578224967
+      ],
+      "metricas_por_edad_desconocida": {
+        "0": {
+          "filas": 2927,
+          "f1_macro": 0.37499679599511054
+        },
+        "1": {
+          "filas": 404,
+          "f1_macro": 0.26677816141562366
+        }
+      }
+    }
+  ]
+}
