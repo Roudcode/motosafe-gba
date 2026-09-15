@@ -133,7 +133,7 @@ Funciones opcionales deben justificar mantenimiento, datos y compatibilidad. Fav
 | ID | Propuesta y valor | P / esfuerzo | Dependencia / tradeoff | Aceptación |
 |---|---|---|---|---|
 | T01 | Integración real con base efímera | P2/M | A12/A14 | Esquema, permisos, transacciones y recuperación probados sin tocar base personal. |
-| T02 | E2E de flujos de usuario | P2/M | A15/certificado local | Buscar/comparar/reportar/recuperar fallo reproducibles; upstream controlado. |
+| T02 | En curso: SES-058 verificó 80 tests frontend, 65 backend, lint y build; navegador bloqueado por certificado local. E2E pendiente; evidencia en docs/evidencias/2026-09-15/G02-T02/PRUEBAS.md. | P2/M | A15/certificado local | Buscar/comparar/reportar/recuperar fallo reproducibles; upstream controlado. |
 | T03 | Presupuesto de rendimiento móvil | P2/M | A17 | Línea base de carga, renders y memoria; objetivo acordado y medido. |
 | T04 | Observabilidad sin datos personales innecesarios | P2/M | A14 | Errores por servicio, edad de datos y latencia; logs sin claves ni GPS personal. |
 | T05 | Integración continua y manifiesto de entrega | P2/M | A22/T01 | Lint/tests/build automáticos; release asociada a hashes y documentación. |
@@ -144,7 +144,7 @@ Funciones opcionales deben justificar mantenimiento, datos y compatibilidad. Fav
 | ID | Propuesta y valor | P / esfuerzo | Dependencia / tradeoff | Aceptación |
 |---|---|---|---|---|
 | G01 | Sincronizar guías, README y Word | P2/M | A01/A22/D01 | Cifras/tecnologías vigentes; versiones históricas identificadas; Word renderizado al regenerar. |
-| G02 | En curso: instrumento de encuesta y tareas preparado en `docs/tesis/03_INSTRUMENTOS_VALIDACION_USUARIOS.md`; aún sin participantes ni resultados. | P2/M | V01/V06 | Registrar errores y comprensión, no solo opiniones; muestra y límites explícitos. |
+| G02 | En curso: instrumento de encuesta y tareas preparado en `docs/tesis/03_INSTRUMENTOS_VALIDACION_USUARIOS.md`; SES-058 agregó 21 cuestionarios ficticios explícitamente simulados en docs/evidencias/2026-09-15/G02-T02/. Aún sin participantes ni resultados humanos. | P2/M | V01/V06 | Registrar errores y comprensión, no solo opiniones; muestra y límites explícitos. |
 | G03 | Matriz objetivos académicos–evidencias | P2/M | Documentación institucional | Cada objetivo tiene implementación, prueba y límite; vacíos visibles. |
 | G04 | Demo reproducible con escenarios preparados | P2/M | A19/A22/T02 | Guion, datos de prueba, fallos simulados y tiempos medidos; demo identificada como tal. |
 | G05 | Actas y seguimiento con tutor | P1/S | Agenda y evidencia de reunión | Cada reunión registra devolución, decisión, responsable y fecha; no se inventan aprobaciones. |
