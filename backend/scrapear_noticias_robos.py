@@ -470,6 +470,29 @@ _RE_CALLE = r"[A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ'.]{2,}(?:\s(?:de\s)?[
 RE_INTERSECCION = re.compile(rf"({_RE_CALLE})\s(?:y|esquina)\s({_RE_CALLE})")
 RE_ALTURA = re.compile(rf"({_RE_CALLE})\s+al\s+(\d{{2,5}})")
 
+# Localidades de uso muy frecuente en prensa que NO son el nombre oficial de
+# ningun partido/barrio de PARTIDOS_GBA/BARRIOS_CABA, pero que en la practica
+# se usan todo el tiempo como si lo fueran (ej. "Lomas" por "Lomas de Zamora",
+# o "Virrey del Pino", que es una localidad DENTRO de La Matanza, no un
+# partido en si). Sin este alias una nota real que solo menciona "Lomas"
+# queda "[sin ubicar]" aunque el partido correcto sea inambiguo -- confirmado
+# con una corrida real evaluada a mano (A09, 2026-09-15, ver
+# docs/evidencias/2026-09-13/A09/). El valor es el nombre CANONICO que ya
+# existe en PARTIDOS_GBA (no un nombre nuevo): encontrar_zona devuelve ese
+# nombre canonico, nunca el alias, para no cambiar el query de
+# geocodificacion que ya se sabe que funciona para ese partido.
+ALIAS_LOCALIDAD_PARTIDO = {
+    'Lomas': 'Lomas de Zamora',
+    'Monte Grande': 'Esteban Echeverría',
+    'Temperley': 'Lomas de Zamora',
+    'Don Orione': 'Almirante Brown',
+    'Los Hornos': 'La Plata',
+    'Tolosa': 'La Plata',
+    'Virrey del Pino': 'La Matanza',
+    'Grand Bourg': 'Malvinas Argentinas',
+    'Castelar': 'Morón',
+}
+
 # Nombres de partido/barrio del GBA que TAMBIEN son nombre de una ciudad en
 # otra provincia (ambiguedad real del espanol: "San Martin" es un partido
 # del GBA pero tambien una ciudad de Tucuman/Mendoza/San Juan). Si el
@@ -651,6 +674,17 @@ def encontrar_zona(texto):
                 and not _es_barrio_ambiguo_en_contexto(texto_norm, zona, pos)
             ):
                 return zona, 'CABA'
+
+    # Alias de localidad (ver ALIAS_LOCALIDAD_PARTIDO) -- se revisan al final,
+    # despues de los nombres oficiales, para no cambiar ninguna resolucion que
+    # ya funcionaba por su nombre canonico. Devuelven el partido real, nunca
+    # el alias, para no romper el query de geocodificacion.
+    for alias, partido_real in ALIAS_LOCALIDAD_PARTIDO.items():
+        alias_norm = normalizar(alias)
+        for match in re.finditer(rf'(?<!\w){re.escape(alias_norm)}(?!\w)', texto_norm):
+            pos = match.start()
+            if not _es_de_otra_provincia(texto_norm, alias, pos + len(alias_norm)):
+                return partido_real, 'Buenos Aires'
     return None
 
 

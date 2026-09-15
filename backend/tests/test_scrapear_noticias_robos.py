@@ -42,3 +42,22 @@ def test_firma_conserva_titulo_editorial_de_fuente_directa():
 def test_html_conserva_fecha_editorial_y_no_inventa_una():
     assert extraer_fecha_publicacion('<meta property="article:published_time" content="2026-09-13T18:00:00-03:00">').isoformat() == '2026-09-13T18:00:00-03:00'
     assert extraer_fecha_publicacion('<html><title>Sin fecha</title></html>') is None
+
+
+def test_reconoce_alias_de_localidad_no_oficial():
+    # Confirmado con una corrida real evaluada a mano (A09, 2026-09-15): estos
+    # nombres de uso cotidiano en la prensa no estan en PARTIDOS_GBA/BARRIOS_CABA
+    # (que solo tienen el nombre oficial del partido) y antes de este alias
+    # quedaban "[sin ubicar]" pese a ser un partido GBA inambiguo.
+    assert encontrar_zona('Asaltaron a un joven para robarle la moto en Lomas') == ('Lomas de Zamora', 'Buenos Aires')
+    assert encontrar_zona('Un hecho ocurrido en Monte Grande') == ('Esteban Echeverría', 'Buenos Aires')
+    assert encontrar_zona('Un robo en Los Hornos') == ('La Plata', 'Buenos Aires')
+    assert encontrar_zona('Un robo en Tolosa') == ('La Plata', 'Buenos Aires')
+    assert encontrar_zona('Un tiroteo en Virrey del Pino') == ('La Matanza', 'Buenos Aires')
+
+
+def test_alias_de_localidad_no_rompe_la_exclusion_de_otra_provincia():
+    # Mismo chequeo que test_excluye_san_martin_de_los_andes pero para un
+    # alias: si el alias aparece pegado a "de <otra provincia>", no debe
+    # devolver el partido GBA de todas formas.
+    assert encontrar_zona('Un hecho en Lomas de Mendoza') is None
