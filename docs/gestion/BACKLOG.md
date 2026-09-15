@@ -6,6 +6,10 @@ Actualizado: 2026-09-13. Rodo autorizó avanzar y verificar el bloque inicial de
 
 Estados permitidos: propuesto → seleccionado → en curso → validado; alternativamente diferido o descartado con motivo. Para cambiar a validado, registrar evidencia y sesión en BITACORA. La prioridad no implica aprobación.
 
+## Principio de versionado del informe
+
+Un capítulo ya entregado a la cátedra no se reescribe para acomodar lo que aparece al avanzar con un capítulo posterior. Si surge una tensión (un dato, un supuesto, una decisión de arquitectura que un capítulo nuevo pone en duda), se registra acá como ítem nuevo, con fecha y el capítulo afectado, y se resuelve hacia adelante: en la próxima entrega, o como nota explícita en el capítulo correspondiente, nunca corrigiendo en silencio texto ya entregado. Una excepción a esto (el tutor pide corregir algo ya entregado) se documenta como tal en BITACORA.md, con fecha y motivo; no se aplica sin dejar registro.
+
 ## Ejecución actual
 
 | ID | Estado | Alcance real y evidencia |
