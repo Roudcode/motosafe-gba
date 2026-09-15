@@ -554,3 +554,9 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Documento: se actualizaron 4 puntos de la tesis que habían quedado desactualizados por la medición real de A09 (SES-062): 1.4 (ya no dice que la calidad de prensa "tampoco cuenta con una medición"), 1.6 (de las tres tareas pendientes de mayor impacto, ahora dos están resueltas y solo falta la reunión con el tutor), 4.10 (conteo de pruebas backend actualizado de 65 a 67, con las 2 nuevas de A09), y 4.11 (párrafo completo con precisión 0,84, recall 0,923, los 2 falsos positivos geográficos confirmados, la tasa de ubicación del 62% dentro de GBA y la corrección ya aplicada del gazetteer). El agregado no modificó la cantidad de páginas (45) ni corrió ningún encabezado del índice; se verificó cada heading afectado (1.6, 4.10, 4.11, 5.1) contra el PDF renderizado antes de entregar.
 - Verificación: `validate.py --original` sin errores (680 párrafos, sin cambio), render completo a PDF, revisión visual de las 4 secciones editadas.
 - Commit: código y documento en commits separados.
+
+## 2026-09-15 — SES-064 — Quinta mención desactualizada de A09 en 4.6 (Claude)
+
+- Al revisar el documento completo contra el trabajo del compañero (GoPilot) y los criterios de la cátedra, se encontró un quinto punto (además de los cuatro corregidos en SES-063) que seguía diciendo que la calidad del extractor "sigue sin medirse": el cierre de la sección 4.6 (Ingesta de prensa directa). Se corrigió en la misma línea que los otros cuatro, dejando explícito que la deduplicación semántica (no la precisión ni el error geográfico) es lo que sigue pendiente ahí.
+- Verificación: `validate.py --original` sin errores, 45 páginas sin cambio, revisión visual de la página 23.
+- Commit: incluido junto con esta bitácora.
