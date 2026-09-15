@@ -522,3 +522,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: `validate.py --original` sin errores (679 párrafos, +4 respecto de la versión anterior), render completo a PDF (45 páginas), revisión visual de la tabla de figuras, de las dos figuras nuevas y del índice antes de entregar.
 - Pendiente: Figura 4.7 (opcional, viewport móvil o capa en estado de error/caché) — Rodo no sabe cómo producirla; se le va a sugerir usar las herramientas de desarrollador de Chrome (modo dispositivo móvil) para la parte de viewport, y evaluar si vale el esfuerzo de simular la parte de red degradada dado que es opcional.
 - Commit: incluido junto con esta bitácora.
+
+## 2026-09-15 — SES-061 — Figura 4.7 y cierre de la sección 4.9 (Claude)
+
+- Alcance: Rodo pasó la captura faltante (viewport móvil real de la app, 402×860px) para la Figura 4.7, opcional y última de la sección 4.9. Con esta, las 4 figuras previstas quedan incorporadas.
+- Figura 4.7: vista de la app en un viewport móvil, con el mapa, la leyenda de nivel de riesgo y el botón de trazar ruta adaptados al ancho de pantalla. Se embebió como imagen real (no enlace), con pie de figura y fecha (15/09/2026).
+- Se actualizó la última celda de la tabla de figuras ("Figura 4.7 (pendiente, si está disponible)" → "(incorporada)") y se eliminó por completo la nota interna "NOTA PARA RODO" que quedaba en la sección, ya sin contenido pendiente que señalar.
+- Se revisó el resto del texto de 4.9 y se encontraron tres tramos que habían quedado desactualizados desde SES-059/SES-060 (seguían hablando de "capturas pendientes" y de una acción a cargo del autor para tomarlas, aunque las figuras ya estaban incorporadas): el párrafo introductorio de la sección, la frase que antecede a la tabla y el párrafo que sigue a la tabla. Los tres se reescribieron en tiempo presente/pasado para reflejar que las capturas ya están incorporadas, sin cambiar el contenido técnico que describen. También se ajustó la frase de cierre ("Alcance mostrado en la demo...") que todavía decía "independientemente de las capturas pendientes".
+- El agregado corrió el documento de 679 a 680 párrafos y no modificó la cantidad de páginas (se mantuvo en 45); no fue necesario recalcular el índice.
+- Verificación: `validate.py --original` sin errores, render completo a PDF, revisión visual de la figura 4.7, del espacio donde estaba la nota eliminada (sin párrafo vacío ni defecto de layout) y del texto reescrito de la sección antes de entregar.
+- Backlog: no hay ID dedicado a las capturas de 4.9 (solo se registra en bitácora); no requiere cambio en BACKLOG.md.
+- Commit: incluido junto con esta bitácora.
