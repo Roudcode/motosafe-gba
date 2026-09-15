@@ -399,6 +399,70 @@ def raiz():
     return {"mensaje": "MotoSafe GBA API funcionando"}
 
 
+# --- Métricas por ruta (T04) ---
+# Conteo de requests, errores 4xx/5xx y latencia por ruta, en memoria del
+# proceso (se pierde al reiniciar, no hace falta persistirlo: es para
+# observar el servicio corriendo, no para reportar historicos). Sin datos
+# personales, tokens ni configuracion -- solo ruta, status y tiempo.
+_metricas_lock = threading.Lock()
+_metricas_por_ruta = {}
+
+
+def _registrar_metrica(ruta, status_code, duracion_ms):
+    with _metricas_lock:
+        entrada = _metricas_por_ruta.setdefault(ruta, {
+            "conteo": 0, "errores_4xx": 0, "errores_5xx": 0, "latencia_total_ms": 0.0,
+        })
+        entrada["conteo"] += 1
+        entrada["latencia_total_ms"] += duracion_ms
+        if 400 <= status_code < 500:
+            entrada["errores_4xx"] += 1
+        elif status_code >= 500:
+            entrada["errores_5xx"] += 1
+
+
+@app.middleware("http")
+async def _middleware_metricas(request: Request, call_next):
+    inicio = time.monotonic()
+    # request.scope['route'] recien queda seteado despues de que el router
+    # matchea el path -- usar el template ("/reportes/{reporte_id}") y no la
+    # URL real evita una entrada distinta por cada id de reporte.
+    try:
+        respuesta = await call_next(request)
+    except Exception:
+        duracion_ms = (time.monotonic() - inicio) * 1000
+        ruta_obj = request.scope.get("route")
+        ruta = ruta_obj.path if ruta_obj is not None else request.url.path
+        _registrar_metrica(ruta, 500, duracion_ms)
+        raise
+    duracion_ms = (time.monotonic() - inicio) * 1000
+    ruta_obj = request.scope.get("route")
+    ruta = ruta_obj.path if ruta_obj is not None else request.url.path
+    _registrar_metrica(ruta, respuesta.status_code, duracion_ms)
+    return respuesta
+
+
+@app.get("/metrics")
+def metricas():
+    """Latencia promedio y errores por ruta desde que arrancó el proceso.
+
+    Sin claves, tokens, coordenadas de usuario ni configuracion -- solo
+    conteos y tiempos agregados por ruta, para observabilidad basica del
+    servicio (ver T04 en BACKLOG.md).
+    """
+    with _metricas_lock:
+        return {
+            ruta: {
+                "conteo": datos["conteo"],
+                "errores_4xx": datos["errores_4xx"],
+                "errores_5xx": datos["errores_5xx"],
+                "latencia_promedio_ms": round(datos["latencia_total_ms"] / datos["conteo"], 2)
+                    if datos["conteo"] else 0,
+            }
+            for ruta, datos in _metricas_por_ruta.items()
+        }
+
+
 @app.get("/health")
 def estado_salud():
     """Sonda mínima para despliegue: no devuelve configuración ni datos de usuarios."""
@@ -652,6 +716,14 @@ def _hash_delete_token(token: str) -> str:
     return hashlib.sha256(token.encode('utf-8')).hexdigest()
 
 
+# El rate limit de arriba es por IP (20/min): no distingue dos dispositivos
+# detras del mismo NAT/red, ni frena a alguien que reparte requests entre
+# varias redes. Esta cuota es la segunda barrera, por dispositivo (autor_id)
+# y por dia en vez de por minuto -- pensada para volumen anormal sostenido,
+# no para golpes rapidos (eso ya lo frena el rate limit).
+CUOTA_REPORTES_POR_DIA_POR_AUTOR = 15
+
+
 @app.post("/reportes", status_code=201)
 @limiter.limit("20/minute")
 def crear_reporte(request: Request, reporte: ReporteNuevo):
@@ -662,6 +734,19 @@ def crear_reporte(request: Request, reporte: ReporteNuevo):
     try:
         _asegurar_tabla_reportes(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT COUNT(*) AS cantidad FROM reportes_colaborativos
+            WHERE autor_id = %s AND creado_en > now() - interval '24 hours'
+        """, (reporte.autor_id,))
+        conteo_previo = cur.fetchone()['cantidad']
+        if conteo_previo >= CUOTA_REPORTES_POR_DIA_POR_AUTOR:
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    f"Alcanzaste el límite de {CUOTA_REPORTES_POR_DIA_POR_AUTOR} "
+                    "reportes por dispositivo en 24 horas. Probá de nuevo más tarde."
+                ),
+            )
         cur.execute("""
             INSERT INTO reportes_colaborativos (lat, lng, categoria, autor_id, delete_token_hash)
             VALUES (%s, %s, %s, %s, %s)
@@ -791,7 +876,8 @@ def listar_reportes():
 
 
 @app.delete("/reportes/{reporte_id}")
-def borrar_reporte(reporte_id: int, delete_token: str = Header(alias="X-Report-Delete-Token", min_length=32, max_length=256)):
+@limiter.limit("20/minute")
+def borrar_reporte(request: Request, reporte_id: int, delete_token: str = Header(alias="X-Report-Delete-Token", min_length=32, max_length=256)):
     """Borra un reporte sólo con el token secreto entregado al crearlo.
 
     Un UUID de dispositivo identifica para moderación, pero no autoriza una

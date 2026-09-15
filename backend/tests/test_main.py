@@ -50,6 +50,32 @@ def test_health_informa_estado_de_base_sin_exponer_configuracion():
     assert "DATABASE_URL" not in r.text
 
 
+def test_metrics_registra_conteo_y_latencia_de_una_ruta_sin_exponer_configuracion():
+    """Ver T04 en BACKLOG.md: /metrics agrega conteo, errores y latencia por
+    ruta. No debe filtrar DATABASE_URL ni ningun otro secreto de config."""
+    main._metricas_por_ruta.clear()
+    r1 = client.get("/")
+    assert r1.status_code == 200
+    r2 = client.get("/metrics")
+    assert r2.status_code == 200
+    cuerpo = r2.json()
+    assert "/" in cuerpo
+    assert cuerpo["/"]["conteo"] >= 1
+    assert cuerpo["/"]["errores_5xx"] == 0
+    assert cuerpo["/"]["latencia_promedio_ms"] >= 0
+    assert "DATABASE_URL" not in r2.text
+
+
+def test_metrics_cuenta_error_4xx_de_una_ruta_invalida():
+    main._metricas_por_ruta.clear()
+    r1 = client.delete("/reportes/7", headers={"X-Report-Delete-Token": "corto"})
+    assert r1.status_code == 422
+    r2 = client.get("/metrics")
+    ruta = "/reportes/{reporte_id}"
+    assert ruta in r2.json()
+    assert r2.json()[ruta]["errores_4xx"] >= 1
+
+
 def test_pool_no_supera_el_maximo_y_reutiliza_conexion_limpia():
     primera, segunda = _ConexionFalsaPool(), _ConexionFalsaPool()
     pool = main._PoolConexiones(maxsize=2, timeout=0)
@@ -377,12 +403,18 @@ def test_obtener_clima_actual_parsea_bien_una_respuesta_exitosa_de_open_meteo():
     main._cache_clima['timestamp'] = 0.0
 
 
-def _mock_db_reportes(fetchone_valor=None, fetchall_valor=None, rowcount=0):
+def _mock_db_reportes(fetchone_valor=None, fetchall_valor=None, rowcount=0, conteo_previo_autor=0):
     """Mock de conexion/cursor para los endpoints de reportes colaborativos.
     A diferencia de _mock_db (que solo mockea fetchall para /hotspots), esta
-    tabla usa fetchone (POST), fetchall (GET) y rowcount (DELETE)."""
+    tabla usa fetchone (POST), fetchall (GET) y rowcount (DELETE).
+
+    crear_reporte llama fetchone() dos veces: primero para el conteo de la
+    cuota diaria por autor_id, despues para el RETURNING del INSERT. Con
+    side_effect en vez de return_value, la primera llamada devuelve el
+    conteo y la segunda la fila creada -- en los tests que no pasan por
+    crear_reporte (GET/DELETE) simplemente no se consume el segundo valor."""
     cursor = MagicMock()
-    cursor.fetchone.return_value = fetchone_valor
+    cursor.fetchone.side_effect = [{"cantidad": conteo_previo_autor}, fetchone_valor]
     cursor.fetchall.return_value = fetchall_valor or []
     cursor.rowcount = rowcount
     conexion = MagicMock()
@@ -429,6 +461,36 @@ def test_crear_reporte_rechaza_autor_id_no_uuid():
             "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": "dispositivo-abc",
         })
     assert r.status_code == 422
+
+
+def test_crear_reporte_respeta_cuota_diaria_por_autor():
+    """Ver CUOTA_REPORTES_POR_DIA_POR_AUTOR: el rate limit de /reportes es por
+    IP y por minuto: no distingue dispositivos, ni frena volumen sostenido
+    durante el dia. Esta cuota es la segunda barrera, por autor_id."""
+    autor_id = "11111111-2222-4333-8444-555555555555"
+    conteo_al_limite = main.CUOTA_REPORTES_POR_DIA_POR_AUTOR
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(conteo_previo_autor=conteo_al_limite)):
+        r = client.post("/reportes", json={
+            "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": autor_id,
+        })
+    assert r.status_code == 429
+    assert str(conteo_al_limite) in r.json()["detail"]
+
+
+def test_crear_reporte_permite_uno_menos_del_limite_de_la_cuota():
+    autor_id = "11111111-2222-4333-8444-555555555555"
+    fila_creada = {
+        "id": 1, "lat": -34.6, "lng": -58.4, "categoria": "pavimento",
+        "creado_en": "2026-09-04T12:00:00+00:00",
+    }
+    conteo_bajo_el_limite = main.CUOTA_REPORTES_POR_DIA_POR_AUTOR - 1
+    with patch("main.psycopg2.connect", return_value=_mock_db_reportes(
+        fetchone_valor=fila_creada, conteo_previo_autor=conteo_bajo_el_limite,
+    )):
+        r = client.post("/reportes", json={
+            "lat": -34.6, "lng": -58.4, "categoria": "pavimento", "autor_id": autor_id,
+        })
+    assert r.status_code == 201
 
 
 def test_listar_reportes_excluye_los_vencidos_segun_su_categoria():
