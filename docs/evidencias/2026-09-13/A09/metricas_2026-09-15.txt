@@ -1,0 +1,24 @@
+Medición A09 -- corrida real del 2026-09-15 (dry-run, sin --guardar)
+Script: backend/scrapear_noticias_robos.py
+Evaluador: backend/evaluar_extractor_prensa.py sobre docs/evidencias/2026-09-13/A09/prensa_etiquetada.csv
+
+Filas revisadas: 105 (de 132 candidatas reales; 27 quedaron sin esperado_incidente
+por no ser determinables desde el título solo, ver observacion_revision de cada fila)
+Precisión de incidente: 0.840
+Recall de incidente: 0.923
+Abstenciones: 5/105
+Error geográfico: no medible sin geocodificación externa independiente (ver limitación
+metodológica en BITACORA SES-062); se usa en cambio una medición cualitativa de acierto
+de zona (esperado_ubicable vs estado_extractor en el CSV).
+
+Medición cualitativa de ubicación:
+- Fuera de GBA (esperado_ubicable=no): 36 casos. Abstención correcta: 31. Falsos
+  positivos geográficos confirmados: 2 (Mendoza, Río Negro geocodificados con
+  coordenadas GBA). 1 caso adicional (nota institucional sobre robos en trenes)
+  recibió un punto que no debería representar un lugar único, distinto de un
+  falso positivo geográfico propiamente dicho.
+- Dentro de GBA con pista de ubicación esperable (esperado_ubicable=sí): 85 casos.
+  Ubicados correctamente: 53 (62%). No ubicados: 32, mayormente por alias de
+  localidad no reconocidos por el gazetteer (Lomas, Monte Grande, Temperley,
+  Don Orione, Los Hornos, Tolosa, Virrey del Pino) o por fallas de geocodificación
+  externa en Nominatim sobre direcciones/intersecciones reales.
