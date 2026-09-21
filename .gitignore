@@ -27,3 +27,8 @@ dist/
 .DS_Store
 Thumbs.db
 sweep_log.txt
+
+# Material de referencia de terceros / outputs de trabajo, no van al repo
+Claude\ outputs/
+docs/tesis/NormanFunes-CASSIE_Comprehensive_Analysis_System.pdf
+docs/tesis/Salva_Gazzaneo_Sallaberry_Grupo3_Capitulo1.pdf
