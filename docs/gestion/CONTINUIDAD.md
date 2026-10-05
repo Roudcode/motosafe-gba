@@ -69,6 +69,8 @@ Centralizar auditoría, documentación, decisiones y cambios para poder retomar 
 
 El modelo estima gravedad condicionada a un siniestro, no ocurrencia por viaje. 2025 fue utilizado en selección de configuraciones. Los faltantes de demografía tienen asociación muy fuerte con la clase y se utilizan de forma diferente al inferir perfiles de zonas. Las rutas todavía pueden premiar falta de cobertura. A07, A09, A10, A12, A15 y A16 solo tienen correcciones parciales, detalladas en BACKLOG. El notebook histórico sigue sin ejecutarse de punta a punta.
 
+**Antes de hacer público el repositorio:** el hostname real de Tailscale Funnel quedó en el historial de Git (commit `d51fc30`, `tailscale/README.md`). Antes de cambiar la visibilidad, rotarlo en Tailscale (renombrar la máquina o el tailnet), porque el valor viejo sigue en el historial aunque el archivo actual tenga un placeholder.
+
 Ver A01–A23 en el assessment. No dar por resuelto un hallazgo porque existan tests verdes que no prueban ese escenario.
 
 ## Cómo continuar
