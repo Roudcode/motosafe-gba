@@ -1,12 +1,12 @@
 # Contrato académico y evaluación del modelo de gravedad
 
-**Estado:** protocolo temporal implementado; evaluación interna del artefacto vigente reproducida. La evaluación temporal independiente sigue pendiente.
+**Estado:** protocolo temporal implementado; evaluación interna y temporal del artefacto vigente reproducidas. Calibración de probabilidad evaluada y descartada como mecanismo de decisión (ver evidencia 2026-10-05).
 **Ítems:** A01, A02, A03, A04, D01, D02.
-**Actualizado:** 2026-09-13.
+**Actualizado:** 2026-10-05.
 
 ## Referencia vigente del artefacto
 
-La ficha [MODELO_VIGENTE_2026-09-07.md](MODELO_VIGENTE_2026-09-07.md) es la única referencia para hiperparámetros y métricas del pickle que carga el backend. Registra 55 columnas, 300 árboles, profundidad 12, hojas mínimas de 5, `balanced_subsample` y la reproducción del split interno. Los resultados de Fase 4 pertenecen a un modelo anterior de 66 columnas y no deben mezclarse con esta versión.
+La ficha [MODELO_VIGENTE_2026-09-07.md](MODELO_VIGENTE_2026-09-07.md) es la única referencia para hiperparámetros y métricas del pickle que carga el backend. Registra 53 columnas (sin edad de la víctima desde el 2026-10-05), 300 árboles, profundidad 12, hojas mínimas de 5, `balanced_subsample` y la reproducción del split interno. Los resultados de Fase 4 pertenecen a un modelo anterior de 66 columnas y no deben mezclarse con esta versión. La decisión de sacar la edad, con su evidencia completa, está en `docs/evidencias/2026-10-05/A02-A04-recalibracion/README.md`.
 
 ## Qué estima y qué no estima
 
@@ -64,6 +64,17 @@ No existe todavía una política aprobada de costos para alertas falsas frente a
 omisiones de gravedad. El script deja trazabilidad de la matriz de confusión;
 la elección de umbrales o acciones debe compararse bajo escenarios documentados
 y aprobarse antes de afectar alertas o recomendaciones.
+
+Se evaluó calibración de probabilidad (`CalibratedClassifierCV`, isotonic) sobre
+el holdout temporal real (2026-10-05): baja el ECE multiclase de 0,30 a 0,01, pero
+bajo decisión por argmax hunde el recall de GRAVE/MORTAL a menos de 0,07, porque la
+clase mayoritaria domina una vez que las probabilidades reflejan la frecuencia real.
+No se adoptó para la decisión de producción por esa razón — el sistema clasifica un
+score continuo (`2*P(MORTAL) + P(GRAVE)`) contra percentiles fijos, no por argmax, y
+ese mecanismo no se beneficia de la misma manera de la calibración absoluta. Queda
+documentada como evidencia de que el modelo sin calibrar tiene ECE alto, con la
+justificación explícita de por qué no se usa para decidir (ver
+`docs/evidencias/2026-10-05/A02-A04-recalibracion/README.md`).
 
 ## Ejecución cuando el entorno esté disponible
 

@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
+import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA } from '../constants'
 
 const CACHE_GEOCODIFICACION_TTL_MS = 5 * 60 * 1000
 const cacheGeocodificacion = new Map()
@@ -139,35 +139,12 @@ export function calcularAjuste(zona, reportes) {
   return { nivel: ORDEN_NIVELES[idx], subio: idx > ORDEN_NIVELES.indexOf(zona.nivel), motivos, reportesCercanos }
 }
 
-// Es franja de mayor riesgo segun la franja pasada (ver constants.js:
-// FRANJA_PICO_INSEGURIDAD_MOTO / _GENERAL, cada una calibrada con la
-// distribucion horaria real de su propio subtipo, no con un criterio
-// generico). Maneja el caso en que la franja cruce medianoche, por si en el
-// futuro se recalibra a un rango que la cruce.
-export function esFranjaPicoInseguridad(horaDelDia, franja = FRANJA_PICO_INSEGURIDAD_MOTO) {
-  if (horaDelDia == null) return false
-  return franja.desde > franja.hasta
-    ? horaDelDia >= franja.desde || horaDelDia < franja.hasta
-    : horaDelDia >= franja.desde && horaDelDia < franja.hasta
-}
-
-// Ajuste de inseguridad por franja horaria de mayor riesgo (no depende de
-// clima ni de reportes, esos ya se manejan aparte en calcularAjuste para
-// siniestros). franja es obligatorio: cada subtipo (general/moto) tiene su
-// propia franja pico calibrada con su propia distribucion horaria real (ver
-// constants.js) -- una franja compartida entre los dos subtipos no calzaba
-// bien con ninguno de los dos.
-export function calcularAjustePorFranjaHoraria(zona, horaDelDia, franja) {
-  const idxBase = ORDEN_NIVELES.indexOf(zona.nivel)
-  const enFranjaPico = esFranjaPicoInseguridad(horaDelDia, franja)
-  const idx = enFranjaPico && idxBase < 3 ? idxBase + 1 : idxBase
-  return {
-    nivel: ORDEN_NIVELES[idx],
-    subio: idx > idxBase,
-    enFranjaPico,
-    motivos: enFranjaPico && idx > idxBase ? ['franja horaria de mayor incidencia (dato real, no heurística)'] : [],
-  }
-}
+// El ajuste de inseguridad por franja horaria de mayor riesgo (esta funcion
+// y calcularAjustePorFranjaHoraria vivian acá) se migró al backend -- ver el
+// comentario largo en utils/riesgoRuta.js (unificarZonasInseguridad) y
+// FRANJA_PICO_INSEGURIDAD/_aplicar_ajuste_horario en backend/main.py. Queda
+// esta nota en vez de la función para quien busque "franja pico" en este
+// archivo por costumbre.
 
 function itemNominatimAPunto(item) {
   return {

@@ -616,6 +616,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .desglose-siniestro { color: var(--naranja); }
 .desglose-inseguridad { color: #FF3B7F; }
 .ruta-resumen-icono { color: var(--text-dimmer); flex-shrink: 0; }
+/* Por que esta zona subio de nivel (ajustadoPorHorario/ajustadoPorReciente,
+   ver unificarZonasInseguridad en utils/riesgoRuta.js) -- mismo color de
+   alerta que .popup-ajuste, chico porque va al lado del nombre de la zona,
+   no como linea propia. */
+.ruta-resumen-ajuste { color: #FF8C42; flex-shrink: 0; margin-left: 2px; }
 .desglose-pts { font-size: var(--fs-2xs); color: var(--text-dimmer); margin-left: 2px; opacity: 0.7; }
 .ruta-sin-alternativa { font-size: var(--fs-sm); color: var(--text-dimmer); margin-top: 4px; font-style: italic; }
 .ruta-cobertura-aviso { font-size: var(--fs-sm); color: var(--text-dimmer); margin: 8px 0 0; line-height: 1.35; }
@@ -809,6 +814,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .popup-nivel { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .popup-content strong { font-size: 14px; }
 .popup-content p { font-size: var(--fs-base); color: var(--text-dim); }
+/* Linea de "por que subio de nivel" (ajustado_por_reciente / ajustado_por_horario,
+   ver backend/main.py): discreta pero con color de alerta, no se confunde con
+   el resto del contenido fijo del popup (que no cambia con la hora/reportes). */
+.popup-ajuste { font-size: var(--fs-2xs); color: #FF8C42; font-style: italic; line-height: 1.3; }
 .popup-votos { display: flex; gap: 6px; margin-top: 4px; }
 .popup-voto-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;

@@ -341,8 +341,46 @@ def predecir_para_fila(comuna, tipo_via, hora, dia_semana, contraparte, edad, se
 # hora 11am da aproximadamente bajo=223 medio=500 alto=16 critico=1) -- eso es la
 # señal real que el modelo aprendio (de noche es mas grave), no un artefacto de
 # calculo, y ahora 'alto' significa lo mismo sin importar cuando se consulte.
-UMBRALES_HOTSPOTS = {'p25': 0.7097281275573558, 'p75': 0.8510277233152828, 'p95': 1.0168910028314664}
-UMBRALES_CORREDORES = {'p25': 0.7366849020697045, 'p75': 0.8824753817295781, 'p95': 1.0313856422589212}
+# Recalibrados el 05/10/2026 tras sacar edad_victima/edad_desconocida del
+# modelo (ver notebooks/reentrenar_modelo.py) -- un cambio de features cambia
+# la distribucion de scores de la poblacion de referencia, asi que estos
+# cortes HAY que volver a calcularlos cada vez que cambia el modelo o el
+# universo de hotspots/corredores (ver notebooks/calibrar_umbrales_riesgo.py
+# y el chequeo de huella en _verificar_umbrales_actualizados mas abajo, que
+# avisa en /health si estos valores quedaron desactualizados respecto a los
+# artefactos reales en vez de quedar desincronizados en silencio).
+UMBRALES_HOTSPOTS = {'p25': 0.6950040471874488, 'p75': 0.8270579939778988, 'p95': 1.0243031457262397}
+UMBRALES_CORREDORES = {'p25': 0.7188575554056662, 'p75': 0.8516986379914744, 'p95': 1.0372954984662501}
+
+
+def _huella_artefactos_riesgo():
+    """SHA256 de los artefactos que alimentaron la calibracion de UMBRALES_HOTSPOTS/
+    CORREDORES (ver notebooks/calibrar_umbrales_riesgo.py). Si estos bytes cambian
+    (se reentreno el modelo, se actualizo el contexto de hotspots o el indice de
+    inseguridad) sin que alguien vuelva a correr ese script y pegue los valores
+    nuevos acá, los cortes p25/p75/p95 quedan calibrados contra una poblacion que
+    ya no es la real -- esta huella detecta esa desincronizacion en vez de dejarla
+    pasar en silencio. A proposito NO recalibra sola: un sistema de riesgo vial
+    que se recalibra solo, sin que nadie revise el resultado antes de que se
+    sirva, es peor practica que uno que avisa y espera una accion deliberada (una
+    corrida de un script de segundos). Ver /health -> umbrales_riesgo_actualizados.
+    No cubre corredores_riesgo.csv (vive en data/, no en backend/, y los
+    corredores se sirven desde Postgres, no desde ese CSV en runtime): cubre el
+    disparador principal de un recalculo real, que es el modelo entrenado."""
+    h = hashlib.sha256()
+    for nombre in ('modelo_final.pkl', 'hotspots_contexto.csv', 'indice_inseguridad_comuna.csv'):
+        h.update((BASE_DIR / nombre).read_bytes())
+    return h.hexdigest()
+
+
+# Se pega a mano junto con los umbrales de arriba cada vez que se corre
+# calibrar_umbrales_riesgo.py (que ahora imprime esta huella al final). Si no
+# coincide con _huella_artefactos_riesgo() en runtime, /health lo expone.
+_HUELLA_UMBRALES_CALIBRADOS = '75fa3d611b18ac3a1eb2f6f5f988a984a2701f98c674d2e6673beca03719a536'
+try:
+    UMBRALES_RIESGO_ACTUALIZADOS = _huella_artefactos_riesgo() == _HUELLA_UMBRALES_CALIBRADOS
+except OSError:
+    UMBRALES_RIESGO_ACTUALIZADOS = True  # no se pudo leer un artefacto -- no bloquear el arranque por esto
 
 
 def niveles_relativos_desde_matriz(matriz_probabilidades, clases, cortes):
@@ -482,6 +520,13 @@ def estado_salud():
         "estado": "ok" if estado_db == "ok" else "degradado",
         "base_datos": estado_db,
         "servidor_utc": datetime.now(timezone.utc).isoformat(),
+        # Ver _huella_artefactos_riesgo arriba: false acá significa que el
+        # modelo/contexto/indice de inseguridad cambiaron desde la última vez
+        # que se corrió calibrar_umbrales_riesgo.py, y que UMBRALES_HOTSPOTS/
+        # CORREDORES quedaron calibrados contra una población que ya no es la
+        # real. No bloquea el servicio (sigue respondiendo con el último
+        # corte conocido) pero hay que recalibrar a la brevedad.
+        "umbrales_riesgo_actualizados": UMBRALES_RIESGO_ACTUALIZADOS,
     }
 
 
@@ -1154,6 +1199,77 @@ def _aplicar_ajuste_por_corredor(corredor, reportes, tipo_label):
         corredor['motivo_ajuste'] = None
 
 
+# --- Ajuste de riesgo por franja horaria (solo /hotspots-inseguridad) -----
+# Misma filosofia que el ajuste por reportes recientes de arriba: no se toca
+# el calculo base del nivel (percentiles de cantidad_delitos por tipo, ver
+# cargar_hotspots_inseguridad.py), se sube un escalon cuando corresponde y
+# queda marcado explicitamente (ajustado_por_horario/motivo_ajuste_horario)
+# para que se note en el frontend y en la tesis que no es el dato crudo.
+#
+# Por que hace falta esto y /hotspots y /corredores no lo necesitan: esos dos
+# ya reciben 'hora' como feature real de un modelo entrenado (Random Forest,
+# ver predecir_para_fila) -- el riesgo de SINIESTRO que muestran ya varia
+# segun la hora de la consulta. /hotspots-inseguridad en cambio es densidad
+# historica de DELITO sin componente horario: sin este ajuste, "evitar un
+# robo a esta hora" quedaba reducido a un mapa de calor plano que da el mismo
+# nivel a las 4am que a las 21hs, pese a que el propio dataset de Delitos del
+# GCBA muestra que no es asi (ver detalle abajo). Entrenar un modelo nuevo
+# para esto no se justifica todavia (es un problema distinto -- prediccion de
+# delito, no de siniestro -- y exigiria su propia evaluacion academica); este
+# ajuste por franja es la version honesta y chica del mismo principio que ya
+# se aplica a siniestros, usando el dato horario real que ya esta en el
+# dataset en vez de dejarlo sin usar.
+#
+# Las franjas pico salen de la distribucion REAL de franja_horaria en
+# data/delitos_caba.csv (columna que existia pero se perdia por un alias
+# incompleto en fetch_delitos_caba.py, corregido). Se probo primero una
+# heuristica generica de "horario nocturno" (22-6hs) y la distribucion real
+# la contradijo: 0-6hs es en realidad el tramo de MENOR incidencia en ambos
+# subtipos. Tampoco hay una franja compartida que calce bien para los dos:
+# - Robos con moto: pico marcado 19-23hs (20-21hs llegan a 7.3-7.5% de los
+#   casos vs. 4.2% esperado si fuera parejo en 24hs).
+# - Delito general: pico mas temprano y mas suave, 17-21hs (5.1-5.6% vs.
+#   4.17% esperado); a las 23hs ya volvio al baseline, a diferencia de robos
+#   con moto que sigue elevado hasta esa hora.
+#
+# Rango [desde, hasta] en hora de Buenos Aires (ZONA_CABA, misma fuente que
+# usan /hotspots y /corredores para 'hora_actual' -- nunca la hora del
+# sistema del servidor, que puede estar en UTC en un hosting real).
+FRANJA_PICO_INSEGURIDAD = {
+    'moto':    {'desde': 19, 'hasta': 23, 'etiqueta': '19-23hs'},
+    'general': {'desde': 17, 'hasta': 21, 'etiqueta': '17-21hs'},
+}
+
+
+def _en_franja_pico_inseguridad(tipo, hora):
+    franja = FRANJA_PICO_INSEGURIDAD.get(tipo)
+    if not franja:
+        return False
+    return franja['desde'] <= hora <= franja['hasta']
+
+
+def _aplicar_ajuste_horario(fila, tipo, hora_actual):
+    """Muta `fila` (dict, un hotspot de /hotspots-inseguridad) in-place: sube
+    nivel_riesgo un escalon si la hora actual (Buenos Aires) cae en la franja
+    pico calibrada para `tipo` (ver FRANJA_PICO_INSEGURIDAD). Se aplica
+    DESPUES del ajuste por reportes recientes, asi que se apilan: una zona
+    puede subir dos escalones si ademas hay un reporte reciente cerca (el
+    tope sigue siendo 'critico', _nivel_subido_un_escalon no pasa de ahi).
+    Deja siempre ajustado_por_horario presente, mismo criterio de
+    transparencia que el resto de los ajustes de esta capa."""
+    en_pico = _en_franja_pico_inseguridad(tipo, hora_actual)
+    fila['ajustado_por_horario'] = en_pico
+    if en_pico:
+        fila['nivel_riesgo'] = _nivel_subido_un_escalon(fila['nivel_riesgo'])
+        franja = FRANJA_PICO_INSEGURIDAD[tipo]
+        fila['motivo_ajuste_horario'] = (
+            f"Ahora ({hora_actual}hs) es franja de mayor incidencia histórica de este tipo de delito "
+            f"({franja['etiqueta']})"
+        )
+    else:
+        fila['motivo_ajuste_horario'] = None
+
+
 @app.get("/corredores")
 def obtener_corredores():
     """
@@ -1238,10 +1354,14 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
     amenazas, homicidios — no siniestros de moto), segun el dataset de Delitos
     del GCBA (ver notebooks/identificar_hotspots_inseguridad.py). Es una capa
     aparte de /hotspots y /corredores: esos predicen severidad de un siniestro
-    con el modelo entrenado; esto es densidad historica de inseguridad, no
-    pasa por el modelo ni depende del clima o la hora actual — el nivel de
-    riesgo ya viene calculado (percentiles relativos DENTRO de cada tipo, ver
-    cargar_hotspots_inseguridad.py) y no cambia entre un pedido y el siguiente.
+    con un modelo entrenado que ya usa 'hora' como feature; esto es densidad
+    historica de delito y no pasa por ningun modelo ni depende del clima,
+    pero SI depende de la hora actual desde el ajuste por franja horaria (ver
+    FRANJA_PICO_INSEGURIDAD/_aplicar_ajuste_horario mas abajo): la base
+    (percentiles relativos DENTRO de cada tipo, ver
+    cargar_hotspots_inseguridad.py) no cambia entre pedidos, pero el nivel
+    final que se devuelve puede subir un escalon segun la hora y los
+    reportes recientes cercanos, igual que en /hotspots y /corredores.
 
     tipo=general: todo delito salvo infracciones de transito.
     tipo=moto: delitos con uso de moto (en la practica, robos).
@@ -1268,8 +1388,10 @@ def obtener_hotspots_inseguridad(tipo: Literal["general", "moto"] = "general"):
         _obtener_reportes_recientes_por_tipo('robo')
         + _obtener_reportes_recientes_por_tipo('inseguridad')
     )
+    hora_actual = datetime.now(ZONA_CABA).hour
     for h in resultado:
         _aplicar_ajuste_riesgo(h, h['latitud'], h['longitud'], reportes_robo_recientes, 'robo')
+        _aplicar_ajuste_horario(h, tipo, hora_actual)
 
     return resultado
 

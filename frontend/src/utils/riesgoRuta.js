@@ -3,16 +3,28 @@
 // Extraído de App.jsx para poder testearlo sin renderizar componentes: son
 // funciones puras sobre datos planos, sin estado de React ni efectos.
 
-import { ORDEN_NIVELES, PESO_RIESGO, FRANJA_PICO_INSEGURIDAD_GENERAL, FRANJA_PICO_INSEGURIDAD_MOTO } from '../constants'
-import { distanciaAPolilinea, distanciaKm, calcularAjustePorFranjaHoraria } from './geoRiesgo'
+import { ORDEN_NIVELES, PESO_RIESGO } from '../constants'
+import { distanciaAPolilinea, distanciaKm } from './geoRiesgo'
 
 // Pasa los hotspots de inseguridad (general y moto, tal como los devuelve el
 // backend) a la misma forma que usan las zonas de siniestro: lat/lng/nivel.
-// horaDelDia es opcional (0-23): si no se pasa, no se aplica ningun ajuste
-// nocturno y el nivel queda tal como viene del backend (compatibilidad con
-// los tests existentes y con cualquier caller que todavia no la pase).
-export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, horaDelDia = null) {
-  const zonas = [
+//
+// El ajuste por franja horaria de mayor riesgo (antes se calculaba ACA, en
+// el navegador, con FRANJA_PICO_INSEGURIDAD_GENERAL/_MOTO y
+// calcularAjustePorFranjaHoraria -- ver historial de este archivo) se migró
+// al backend (ver FRANJA_PICO_INSEGURIDAD y _aplicar_ajuste_horario en
+// backend/main.py), mismo lugar donde ya vive el ajuste por reportes
+// recientes de esta misma capa. Motivo: tenerlo en los dos lados a la vez
+// hubiera significado DOS calibraciones independientes que mantener
+// sincronizadas a mano, y un bug real de doble ajuste (el backend sube un
+// escalón, el frontend volvía a subirlo encima) que no se nota mirando
+// solo el nivel final. nivel_riesgo que llega acá ya es el final (base +
+// reportes + horario); esta función solo le da forma, no vuelve a tocarlo
+// -- ajustadoPorHorario/motivoAjusteHorario y ajustadoPorReciente/
+// motivoAjuste se pasan tal cual para que la UI pueda explicar el por qué
+// sin recalcular nada de este lado.
+export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto) {
+  return [
     ...inseguridadGeneral.map((h) => ({
       id: `insg-general-${h.id}`,
       lat: h.latitud,
@@ -21,6 +33,10 @@ export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, ho
       tipoRiesgo: 'inseguridad',
       subtipoInseguridad: 'general',
       nombre: `Zona de inseguridad: ${h.cantidad_delitos} delitos (${h.tipo_delito_moda || 'varios'})`,
+      ajustadoPorHorario: h.ajustado_por_horario ?? false,
+      motivoAjusteHorario: h.motivo_ajuste_horario ?? null,
+      ajustadoPorReciente: h.ajustado_por_reciente ?? false,
+      motivoAjuste: h.motivo_ajuste ?? null,
     })),
     ...inseguridadMoto.map((h) => ({
       id: `insg-moto-${h.id}`,
@@ -30,19 +46,12 @@ export function unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, ho
       tipoRiesgo: 'inseguridad',
       subtipoInseguridad: 'moto',
       nombre: `Zona de robos con moto: ${h.cantidad_delitos} hechos`,
+      ajustadoPorHorario: h.ajustado_por_horario ?? false,
+      motivoAjusteHorario: h.motivo_ajuste_horario ?? null,
+      ajustadoPorReciente: h.ajustado_por_reciente ?? false,
+      motivoAjuste: h.motivo_ajuste ?? null,
     })),
   ]
-  if (horaDelDia == null) return zonas
-  // Se pisa el nivel base con el ajustado (franja horaria de mayor riesgo,
-  // calibrada con dato real, DISTINTA por subtipo -- ver constants.js y
-  // calcularAjustePorFranjaHoraria) pero se guarda el ajuste aparte para
-  // poder mostrar el motivo en la UI si hace falta, igual que hace
-  // calcularAjuste con las zonas de siniestro.
-  return zonas.map((z) => {
-    const franja = z.subtipoInseguridad === 'moto' ? FRANJA_PICO_INSEGURIDAD_MOTO : FRANJA_PICO_INSEGURIDAD_GENERAL
-    const ajusteHorario = calcularAjustePorFranjaHoraria(z, horaDelDia, franja)
-    return { ...z, nivel: ajusteHorario.nivel, ajusteHorario }
-  })
 }
 
 // Junta siniestros (con ajuste de clima/reportes ya aplicado) e inseguridad

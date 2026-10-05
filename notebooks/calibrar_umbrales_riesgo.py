@@ -34,7 +34,15 @@ sin importar cuando se consulta, en vez de recalibrarse cada vez.
 Uso: python3 calibrar_umbrales_riesgo.py
 Corre una sola vez cuando se re-entrena el modelo o cambia el universo de hotspots/
 corredores; los resultados se pegan a mano como constantes en backend/main.py.
+
+Ademas imprime la huella SHA256 de los artefactos usados (modelo_final.pkl +
+hotspots_contexto.csv + indice_inseguridad_comuna.csv), que tambien hay que
+pegar en _HUELLA_UMBRALES_CALIBRADOS en backend/main.py -- es lo que permite
+que /health avise cuando estos cortes quedaron desincronizados del modelo real
+en vez de recalibrarse solos sin que nadie lo revise (ver
+_huella_artefactos_riesgo en backend/main.py).
 """
+import hashlib
 import sys
 from pathlib import Path
 
@@ -154,9 +162,14 @@ def main():
         corredores['sexo_moda'], indice_corredores,
     )
 
+    h = hashlib.sha256()
+    for nombre in ('modelo_final.pkl', 'hotspots_contexto.csv', 'indice_inseguridad_comuna.csv'):
+        h.update((BASE_DIR / nombre).read_bytes())
+
     print('\n--- Para pegar en backend/main.py ---')
     print(f"UMBRALES_HOTSPOTS = {umbrales_hotspots}")
     print(f"UMBRALES_CORREDORES = {umbrales_corredores}")
+    print(f"_HUELLA_UMBRALES_CALIBRADOS = '{h.hexdigest()}'")
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
-  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight,
+  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper,
 } from 'lucide-react'
 
 import {
@@ -393,9 +393,24 @@ function App() {
           motivo: `${h.cantidad_siniestros} siniestros de motociclistas registrados, ${h.mortales} mortales, ${h.graves} graves.`,
           prediccionModelo: h.prediccion_modelo || null,
           contextoEstimado: !!h.contexto_estimado,
+          // Ajuste por choque reportado en prensa cerca (ver _aplicar_ajuste_riesgo
+          // en backend/main.py), ya presente en /hotspots pero que hasta ahora se
+          // descartaba acá -- sin esto un hotspot "crítico de toda la vida" y uno
+          // crítico recién por una noticia reciente se veían 100% idénticos en el
+          // mapa y en el panel de detalle (ver zonaSeleccionada.ajustadoPorReciente
+          // más abajo, y el borde propio en MapaMotoSafe.jsx). Eje distinto del de
+          // calcularAjuste/zona.ajuste (ese es por reportes comunitarios de
+          // pavimento/corte/iluminación): este viene calibrado por el modelo+prensa.
+          ajustadoPorReciente: !!h.ajustado_por_reciente,
+          motivoAjuste: h.motivo_ajuste || null,
         }))
         setZonasRiesgo(zonasFormateadas)
         guardarEnLocalStorage(CLAVE_CACHE_HOTSPOTS, zonasFormateadas)
+        // El clima es el mismo para los 740 hotspots (una sola ciudad, un
+        // solo momento) -- se toma del primero. Es el mismo objeto que ya
+        // usó el modelo para calcular nivel_riesgo, no un dato aparte: ver
+        // el comentario de iconoClima en utils/ui.js.
+        if (data[0]?.clima) setClima(data[0].clima)
         setCargandoHotspots(false)
         setPrimeraVezListo(true)
         setBackendError(false)
@@ -508,13 +523,6 @@ function App() {
     // anterior haya funcionado evita llamar "en vivo" a una respuesta vieja.
     const id = setInterval(cargarHotspots, 5 * 60 * 1000)
     return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${CENTRO_GBA.lat}&longitude=${CENTRO_GBA.lng}&current_weather=true`)
-      .then((r) => r.json())
-      .then((data) => setClima(data.current_weather))
-      .catch(() => setClima(null))
   }, [])
 
   useEffect(() => { guardarEnLocalStorage(CLAVE_NIVELES, [...nivelesActivos]) }, [nivelesActivos])
@@ -1004,8 +1012,11 @@ function App() {
   // ordinal en los tres casos (percentiles calculados dentro de cada
   // dataset), asi que sumar PESO_RIESGO entre tipos es valido.
   const zonasInseguridadUnificadas = useMemo(
-    () => unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto, new Date(horaActual).getHours()),
-    [inseguridadGeneral, inseguridadMoto, horaActual]
+    // El ajuste por franja horaria ya viene aplicado desde el backend (ver
+    // ajustado_por_horario/motivo_ajuste_horario en cada hotspot de
+    // /hotspots-inseguridad); no depende de horaActual de este lado.
+    () => unificarZonasInseguridad(inseguridadGeneral, inseguridadMoto),
+    [inseguridadGeneral, inseguridadMoto]
   )
 
   const zonasRiesgoTodas = useMemo(
@@ -1307,7 +1318,7 @@ function App() {
   else if (mostrarAlerta) textoTopbar = `${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''}`
   else textoTopbar = `${zonasFiltradas.length} zonas · hace ${segundos}s`
 
-  const climaInfo = clima ? iconoClima(clima.weathercode) : null
+  const climaInfo = iconoClima(clima)
   const ultimaConsultaCapas = Object.entries(actualizacionesCapas)
     .filter(([, momento]) => momento)
     .map(([capa, momento]) => `${({ corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto' }[capa] || capa)} ${new Date(momento).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`)
@@ -1353,9 +1364,12 @@ function App() {
               <Layers size={15} />
             </button>
           )}
-          {climaInfo && !vistaNavegacion && (
-            <div className="clima-badge" title={climaInfo.label}>
-              <climaInfo.Icon size={13} /> {Math.round(clima.temperature)}°C
+          {clima && !vistaNavegacion && (
+            <div
+              className="clima-badge"
+              title={`${climaInfo.label}: el nivel de riesgo que ves ya tiene en cuenta este clima`}
+            >
+              <climaInfo.Icon size={13} /> {Math.round(clima.temperatura)}°C
             </div>
           )}
           <div
@@ -1739,6 +1753,12 @@ function App() {
                   <span className="cercanas-dot" style={{ background: NIVELES[z.nivel].color }} />
                   {z.tipoRiesgo === 'inseguridad' ? <ShieldAlert size={11} className="ruta-resumen-icono" /> : <Siren size={11} className="ruta-resumen-icono" />}
                   {z.nombre}
+                  {z.ajustadoPorHorario && (
+                    <Clock size={11} className="ruta-resumen-ajuste" title={z.motivoAjusteHorario || 'Nivel subido por franja horaria'} />
+                  )}
+                  {z.ajustadoPorReciente && (
+                    <Newspaper size={11} className="ruta-resumen-ajuste" title={z.motivoAjuste || 'Nivel subido por un reporte de prensa reciente'} />
+                  )}
                 </div>
               ))}
               {zonasCruzadasOrdenadas.length > 6 && (
@@ -1826,6 +1846,9 @@ function App() {
               )}
               <p className="detalle-modelo-nota">No estima la probabilidad de sufrir un siniestro durante tu viaje.</p>
             </div>
+          )}
+          {zonaSeleccionada.ajustadoPorReciente && (
+            <p className="popup-ajuste">⬆ Nivel subido: {zonaSeleccionada.motivoAjuste}</p>
           )}
           {zonaSeleccionada.ajuste.subio && (
             <div className="detalle-ajuste">

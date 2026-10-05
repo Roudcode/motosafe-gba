@@ -79,6 +79,18 @@ function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExt
   return el
 }
 
+// motivo_ajuste (ver _aplicar_ajuste_riesgo en backend/main.py) incluye el
+// titular de una noticia SCRAPEADA de prensa externa, no un dato propio del
+// GCBA como el resto de los campos que ya se interpolan sin escapar en estos
+// popups (calle, comuna, tipo de delito) -- hace falta escapar antes de
+// meterlo en .setHTML, a diferencia de los popups de prensa que ya usan
+// textContent (seguro por diseño) para el titular.
+function escaparHtml(texto) {
+  const div = document.createElement('div')
+  div.textContent = texto ?? ''
+  return div.innerHTML
+}
+
 function urlExternaSegura(valor) {
   try {
     const url = new URL(valor)
@@ -653,13 +665,22 @@ function MapaMotoSafeInner({
         const zona = zonasPorId.get(String(props.id))
         const cruzada = zonasCruzadasIds.has(zona.id)
         const resaltada = zonaResaltada === zona.id
+        // zona.ajuste.subio: bump por reportes comunitarios de pavimento/corte/
+        // iluminación (calcularAjuste, eje vial). zona.ajustadoPorReciente: bump
+        // por choque reportado en prensa cerca (_aplicar_ajuste_riesgo en el
+        // backend, mismo mecanismo que ya distingue corredores/inseguridad). Son
+        // dos ejes distintos pero ambos dejan "esto no es el nivel de siempre",
+        // así que comparten el mismo borde más grueso en el mapa -- antes un
+        // crítico de toda la vida y uno crítico recién por una noticia se veían
+        // idénticos acá, solo se distinguían abriendo el panel de detalle.
+        const ajustada = zona.ajuste.subio || zona.ajustadoPorReciente
         const size = (resaltada ? 14 : zona.ajuste.nivel === 'critico' ? 11 : 8) * 2
         const color = cruzada || resaltada ? '#4FA8E8' : NIVELES[zona.ajuste.nivel].color
         const el = elementoCirculo({
           size, color,
           fillColor: NIVELES[zona.ajuste.nivel].color,
           fillOpacity: 0.75 * atenuarFondo,
-          weight: cruzada || zona.ajuste.subio || resaltada ? 3 : 2,
+          weight: cruzada || ajustada || resaltada ? 3 : 2,
         })
         el.className = `capa-fondo-nav ${zona.ajuste.nivel === 'critico' || resaltada ? 'pulse-marker' : ''}`
         return el
@@ -732,6 +753,7 @@ function MapaMotoSafeInner({
             <span class="popup-nivel" style="color:${NIVELES[c.nivel_riesgo]?.color}">${NIVELES[c.nivel_riesgo]?.label}</span>
             <strong>${c.calle}${c.tramos_totales > 1 ? ` — tramo ${c.tramo}/${c.tramos_totales}` : ''}</strong>
             <span>${c.cantidad_siniestros} siniestros históricos · ${c.mortales} mortales · ${c.graves} graves</span>
+            ${c.ajustado_por_reciente ? `<span class="popup-ajuste">⬆ Nivel subido: ${escaparHtml(c.motivo_ajuste)}</span>` : ''}
           </div>
         `)
         .addTo(map)
@@ -790,6 +812,8 @@ function MapaMotoSafeInner({
               <span class="popup-nivel" style="color:${NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo]}">${NIVELES[h.nivel_riesgo]?.label}</span>
               <strong>${h.cantidad_delitos} delitos históricos (${h.tipo_delito_moda || 'varios'})</strong>
               <span>Comuna ${h.comuna_moda} · datos oficiales del GCBA, últimos 3 años</span>
+              ${h.ajustado_por_horario ? `<span class="popup-ajuste">⬆ ${escaparHtml(h.motivo_ajuste_horario)}</span>` : ''}
+              ${h.ajustado_por_reciente ? `<span class="popup-ajuste">⬆ Nivel subido: ${escaparHtml(h.motivo_ajuste)}</span>` : ''}
             </div>
           `)
           .addTo(map)

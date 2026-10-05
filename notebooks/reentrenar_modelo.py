@@ -138,8 +138,45 @@ def main():
     # dato informativo, no es necesario tirarlo.
     columnas_numericas_con_indice = columnas_numericas_sin_indice + ["indice_inseguridad"]
 
-    _, _ = entrenar(motos_extendido, columnas_categoricas, columnas_numericas_sin_indice, "SIN indice de inseguridad (modelo anterior)")
-    modelo_final, X_final = entrenar(motos_extendido, columnas_categoricas, columnas_numericas_con_indice, "CON indice de inseguridad (modelo nuevo)")
+    # --- Edad de la victima: sacada del modelo en produccion (05/10/2026) ---
+    # El protocolo de evaluacion temporal independiente (train <2023, calibrar/
+    # seleccionar 2023, evaluar sobre 2024 nunca visto -- notebooks/
+    # evaluar_modelo_academico.py, extendido en esta sesion para incluir
+    # indice_inseguridad y asi comparar contra el MISMO set de features que usa
+    # produccion, no una version reducida) mostro que la variante CON edad (la
+    # que corria en produccion hasta esta fecha) generaliza peor entre anios que
+    # sacandola, exactamente igual que ya habia mostrado la ablacion academica
+    # sin indice_inseguridad (A02-A04, 15/09): F1 macro de evaluacion 0.2626 con
+    # edad+sexo vs 0.3045 sin edad (con sexo), y el recall de MORTAL -- la clase
+    # que mas importa no perder -- tambien sube (0.488 -> 0.535). El costo es
+    # recall de GRAVE mas bajo (0.70 -> 0.562, con precision igual de baja en
+    # ambos casos, ~0.08: ese problema de precision es estructural del
+    # desbalance de clases, no se resuelve sacando una feature). Sexo SI se
+    # conserva: sacarlo tambien (variante "sin_demografia") hundio MORTAL a
+    # recall 0, la peor de las tres variantes probadas.
+    #
+    # Se prefirio esto porque el numero que generaliza peor entre anios (el de
+    # produccion hasta ahora) es el menos defendible frente a un jurado que ya
+    # fue puesto sobre aviso de que el split aleatorio original estaba inflado
+    # por fuga de informacion entre anios (ver Capitulo 4). Evidencia completa
+    # en docs/evidencias/2026-10-05/A02-A04-recalibracion/.
+    #
+    # Se evaluo tambien calibracion de probabilidad (isotonic, CalibratedClassifierCV
+    # ajustado sobre el anio de seleccion 2023) para A04: mejora la honestidad de
+    # las probabilidades (ECE 0.31 -> 0.01-0.03), pero el recall de GRAVE/MORTAL
+    # se derrumba a casi cero (la clase mayoritaria LEVE domina el argmax tras
+    # calibrar) -- por eso NO se adopta para decidir nivel_riesgo, que ya no usa
+    # argmax sino un ranking por percentil sobre un score continuo (ver
+    # calibrar_umbrales_riesgo.py), menos sensible a esa falta de calibracion
+    # pero que tampoco la resuelve. Queda documentado como hallazgo cuantificado
+    # de A04 en la tesis, no como cambio de produccion.
+    columnas_numericas_con_indice_sin_edad = [
+        c for c in columnas_numericas_con_indice if c not in {"edad_victima", "edad_desconocida"}
+    ]
+
+    _, _ = entrenar(motos_extendido, columnas_categoricas, columnas_numericas_sin_indice, "SIN indice de inseguridad (modelo historico, solo referencia)")
+    _, _ = entrenar(motos_extendido, columnas_categoricas, columnas_numericas_con_indice, "CON indice de inseguridad Y edad (version anterior, solo referencia)")
+    modelo_final, X_final = entrenar(motos_extendido, columnas_categoricas, columnas_numericas_con_indice_sin_edad, "CON indice de inseguridad, SIN edad (modelo vigente)")
 
     joblib.dump(modelo_final, DATA / "modelo_final.pkl")
     joblib.dump(X_final.columns.tolist(), DATA / "columnas_modelo.pkl")

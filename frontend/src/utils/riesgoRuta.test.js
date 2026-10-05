@@ -33,44 +33,58 @@ describe('unificarZonasInseguridad', () => {
   })
 })
 
-describe('unificarZonasInseguridad con ajuste por franja horaria (distinta por subtipo)', () => {
+describe('unificarZonasInseguridad pasa el ajuste del backend tal cual (no vuelve a calcularlo)', () => {
+  // El ajuste por franja horaria y por reportes recientes ya vienen hechos
+  // en /hotspots-inseguridad (ver FRANJA_PICO_INSEGURIDAD y
+  // _aplicar_ajuste_horario/_aplicar_ajuste_riesgo en backend/main.py).
+  // Esta funcion no debe recalcular nada -- solo le da forma a lo que ya
+  // llego, para que no se repita el ajuste en los dos lados (ver el
+  // comentario largo en riesgoRuta.js sobre por que se migro el calculo).
   const general = [
-    { id: 1, latitud: -34.6, longitud: -58.4, nivel_riesgo: 'medio', cantidad_delitos: 40, tipo_delito_moda: 'robo' },
+    {
+      id: 1, latitud: -34.6, longitud: -58.4, nivel_riesgo: 'alto', cantidad_delitos: 40, tipo_delito_moda: 'robo',
+      ajustado_por_horario: true, motivo_ajuste_horario: 'Ahora (18hs) es franja de mayor incidencia histórica de este tipo de delito (17-21hs)',
+      ajustado_por_reciente: false, motivo_ajuste: null,
+    },
   ]
   const moto = [
-    { id: 7, latitud: -34.61, longitud: -58.41, nivel_riesgo: 'medio', cantidad_delitos: 12, tipo_delito_moda: null },
+    {
+      id: 7, latitud: -34.61, longitud: -58.41, nivel_riesgo: 'critico', cantidad_delitos: 12, tipo_delito_moda: null,
+      ajustado_por_horario: false, motivo_ajuste_horario: null,
+      ajustado_por_reciente: true, motivo_ajuste: '1 robo reportado en prensa en los últimos 7 días cerca de esta zona (más reciente: "Robo en Retiro")',
+    },
   ]
 
-  it('no aplica ningun ajuste si no se pasa horaDelDia (compatibilidad hacia atras)', () => {
+  it('usa el nivel_riesgo del backend sin modificarlo', () => {
     const zonas = unificarZonasInseguridad(general, moto)
-    expect(zonas[0].nivel).toBe('medio')
-    expect(zonas[0].ajusteHorario).toBeUndefined()
-  })
-
-  it('sube el nivel de general en su franja pico (17-21hs)', () => {
-    const zonas = unificarZonasInseguridad(general, [], 18)
     expect(zonas[0].nivel).toBe('alto')
-    expect(zonas[0].ajusteHorario.enFranjaPico).toBe(true)
+    expect(zonas[1].nivel).toBe('critico')
   })
 
-  it('sube el nivel de moto en su franja pico (19-23hs)', () => {
-    const zonas = unificarZonasInseguridad([], moto, 22)
-    expect(zonas[0].nivel).toBe('alto')
-    expect(zonas[0].ajusteHorario.enFranjaPico).toBe(true)
+  it('pasa ajustadoPorHorario/motivoAjusteHorario tal cual vienen del backend', () => {
+    const zonas = unificarZonasInseguridad(general, moto)
+    expect(zonas[0].ajustadoPorHorario).toBe(true)
+    expect(zonas[0].motivoAjusteHorario).toContain('18hs')
+    expect(zonas[1].ajustadoPorHorario).toBe(false)
+    expect(zonas[1].motivoAjusteHorario).toBeNull()
   })
 
-  it('a las 22hs, general ya no esta en su franja pico pero moto si (franjas distintas por subtipo)', () => {
-    const zonas = unificarZonasInseguridad(general, moto, 22)
-    const zonaGeneral = zonas.find((z) => z.subtipoInseguridad === 'general')
-    const zonaMoto = zonas.find((z) => z.subtipoInseguridad === 'moto')
-    expect(zonaGeneral.ajusteHorario.enFranjaPico).toBe(false)
-    expect(zonaMoto.ajusteHorario.enFranjaPico).toBe(true)
+  it('pasa ajustadoPorReciente/motivoAjuste tal cual vienen del backend', () => {
+    const zonas = unificarZonasInseguridad(general, moto)
+    expect(zonas[0].ajustadoPorReciente).toBe(false)
+    expect(zonas[1].ajustadoPorReciente).toBe(true)
+    expect(zonas[1].motivoAjuste).toContain('Robo en Retiro')
   })
 
-  it('no toca el nivel fuera de la franja pico', () => {
-    const zonas = unificarZonasInseguridad(general, [], 12)
-    expect(zonas[0].nivel).toBe('medio')
-    expect(zonas[0].ajusteHorario.enFranjaPico).toBe(false)
+  it('no rompe si el backend todavia no manda los campos de ajuste (defaults seguros)', () => {
+    const zonas = unificarZonasInseguridad(
+      [{ id: 1, latitud: -34.6, longitud: -58.4, nivel_riesgo: 'bajo', cantidad_delitos: 5 }],
+      []
+    )
+    expect(zonas[0].ajustadoPorHorario).toBe(false)
+    expect(zonas[0].motivoAjusteHorario).toBeNull()
+    expect(zonas[0].ajustadoPorReciente).toBe(false)
+    expect(zonas[0].motivoAjuste).toBeNull()
   })
 })
 

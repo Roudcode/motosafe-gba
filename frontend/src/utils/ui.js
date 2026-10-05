@@ -5,20 +5,28 @@
 // funciones, para usarlo con maplibregl.Marker).
 
 import {
-  Sun, CloudSun, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning, Thermometer,
+  Sun, CloudRain, Thermometer,
   Flag, Navigation, RefreshCw, ArrowLeft, ArrowRight, Undo2, ArrowUp,
 } from 'lucide-react'
 import { NIVELES, NIVELES_INSEGURIDAD_COLOR } from '../constants'
 
-export function iconoClima(code) {
-  if (code === 0) return { Icon: Sun, label: 'Despejado' }
-  if ([1, 2, 3].includes(code)) return { Icon: CloudSun, label: 'Parcialmente nublado' }
-  if ([45, 48].includes(code)) return { Icon: CloudFog, label: 'Niebla' }
-  if ([51, 53, 55, 56, 57].includes(code)) return { Icon: CloudDrizzle, label: 'Llovizna' }
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { Icon: CloudRain, label: 'Lluvia' }
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return { Icon: CloudSnow, label: 'Nieve' }
-  if ([95, 96, 99].includes(code)) return { Icon: CloudLightning, label: 'Tormenta' }
-  return { Icon: Thermometer, label: 'Sin datos' }
+// Antes esto tomaba un weathercode de un fetch aparte del navegador directo a
+// Open-Meteo (current_weather=true), desconectado del clima que el backend ya
+// usa como feature del modelo para calcular nivel_riesgo (current=precipitation,
+// temperature_2m,relative_humidity_2m, embebido en cada hotspot como h.clima).
+// Dos llamadas distintas a la misma API en momentos distintos podian mostrar
+// temperaturas distintas, y el badge no tenia relacion real con el nivel que
+// el usuario estaba mirando en el mapa.
+//
+// Ahora toma directamente el clima de /hotspots (mismo objeto que ya llega en
+// cada fila: {lluvia: 'SI'|'NO', temperatura, humedad}), asi que solo hay dos
+// estados posibles -- no hay como distinguir llovizna de tormenta porque el
+// modelo tampoco lo distingue, solo sabe "llueve" o "no llueve". Mostrar mas
+// granularidad que esa seria sugerir una precision que el sistema no tiene.
+export function iconoClima(clima) {
+  if (!clima) return { Icon: Thermometer, label: 'Sin datos' }
+  if (clima.lluvia === 'SI') return { Icon: CloudRain, label: 'Lluvia' }
+  return { Icon: Sun, label: 'Despejado' }
 }
 
 export function reproducirBeep() {

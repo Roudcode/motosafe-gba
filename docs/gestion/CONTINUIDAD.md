@@ -1,6 +1,6 @@
 # Continuidad del proyecto — leer primero
 
-**Actualizado:** 2026-09-14. **Responsable de producto:** Rodo. **Estado:** implementación incremental del bloque inicial y verificación; el catálogo completo sigue sin estar cerrado.
+**Actualizado:** 2026-10-05. **Responsable de producto:** Rodo. **Estado:** implementación incremental del bloque inicial y verificación; el catálogo completo sigue sin estar cerrado.
 
 ## Pedido actual de Rodo
 
@@ -91,3 +91,7 @@ No se encontraron los capítulos formales completos de tesis, el reglamento, act
 
 
 Verificación actual: 80 tests frontend, 65 backend, lint y build aprobados. El venv backend funciona en esta sesión, a diferencia del límite histórico consignado arriba. npm no encontró el lanzador Vitest; su módulo directo pasó. Persisten advertencias de bundle grande y deprecación NumPy/joblib. Navegador bloqueado por certificado HTTPS local: T02 sigue sin E2E. La respuesta «acepto» en el chat no acredita aceptación dentro del navegador. [Pruebas y límites](../evidencias/2026-09-15/G02-T02/PRUEBAS.md). Sin commit/push de esta sesión; se preservó el trabajo concurrente de Claude.
+
+## Actualización 2026-10-05 — SES-065 (Claude, vía Cowork)
+
+Calibración de probabilidad evaluada sobre el holdout temporal real y descartada para decisión en producción, con evidencia (ECE baja de 0,30 a 0,01 pero recall GRAVE/MORTAL colapsa bajo argmax; el sistema no decide por argmax). Modelo productivo cambiado a la variante sin edad (53 columnas), reentrenado, umbrales de percentil recalibrados, huella SHA256 verificable en `/health`. Fix de borde visual para distinguir crítico ajustado por prensa de crítico de base (antes el frontend descartaba el campo que el backend ya calculaba). Detalle completo en BITACORA.md, SES-065. `UMBRAL_CRUCE_KM`/`PESO_RIESGO` (A06) sigue pendiente de rutas de referencia reales de Rodo. Sin commit de esta sesión (ver motivo en BITACORA).

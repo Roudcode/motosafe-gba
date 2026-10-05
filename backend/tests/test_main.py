@@ -155,6 +155,33 @@ def _mock_db(filas):
     return conexion
 
 
+def _reloj_fijo(hora, minuto=0):
+    """Clase datetime con .now() congelado a esa hora (martes 6/1/2026, fecha
+    arbitraria sin relevancia), pensada para usarse con
+    patch("main.datetime", _reloj_fijo(HORA)) en cualquier test que dependa
+    de 'hora_actual' (siniestros/corredores via el modelo, o inseguridad via
+    FRANJA_PICO_INSEGURIDAD) sin quedar atado a la hora real de Buenos Aires
+    en el momento en que corre pytest. `hora` es en punto de referencia de
+    ZONA_CABA (main pasa el tz al llamar .now(tz), esta clase solo fija el
+    reloj, no reimplementa la conversion de zona)."""
+    from datetime import datetime as datetime_real
+
+    class _RelojFijoClase(datetime_real):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime_real(2026, 1, 6, hora, minuto, 0, tzinfo=tz)
+
+    return _RelojFijoClase
+
+
+# Reloj por defecto para tests que solo necesitan "una hora cualquiera FUERA
+# de las franjas pico de inseguridad" (ver FRANJA_PICO_INSEGURIDAD en
+# main.py: general 17-21hs, moto 19-23hs) -- 11am no cae en ninguna de las
+# dos, igual que ya se usaba de forma ad-hoc en
+# test_hotspots_con_choque_reciente_cerca_sube_un_escalon.
+_RelojFijo = _reloj_fijo(11)
+
+
 def test_hotspots_con_contexto_propio_usa_el_modelo():
     """Cluster 0 SI tiene fila en hotspots_contexto.csv: contexto_estimado debe ser False."""
     fila_db = {
@@ -773,20 +800,28 @@ def test_predecir_usa_el_indice_de_inseguridad_de_la_comuna():
 
 
 def test_hotspots_inseguridad_devuelve_lo_que_hay_en_la_base():
-    filas_db = [
-        {
-            "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
-            "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
-            "nivel_riesgo": "alto",
-        },
-    ]
-    with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
-        r = client.get("/hotspots-inseguridad")
+    # Hora congelada a las 11am (fuera de las dos franjas pico, ver
+    # FRANJA_PICO_INSEGURIDAD en main.py) para que este test no dependa de la
+    # hora real de Buenos Aires en el momento en que corre pytest -- sin
+    # esto, el mismo test fallaria de forma intermitente solo entre las
+    # 17-21hs, que es justo cuando el ajuste tiene que activarse (ver los
+    # tests dedicados mas abajo para ese comportamiento).
+    with patch("main.datetime", _RelojFijo):
+        filas_db = [
+            {
+                "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+                "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+                "nivel_riesgo": "alto",
+            },
+        ]
+        with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
+            r = client.get("/hotspots-inseguridad")
     assert r.status_code == 200
     datos = r.json()
     assert len(datos) == 1
     assert datos[0]["nivel_riesgo"] == "alto"
     assert datos[0]["cantidad_delitos"] == 120
+    assert datos[0]["ajustado_por_horario"] is False
 
 
 def test_hotspots_inseguridad_acepta_tipo_moto():
@@ -963,13 +998,6 @@ def test_hotspots_con_choque_reciente_cerca_sube_un_escalon():
     test_hotspots_diferencia_niveles_entre_si_no_todos_iguales) para que las
     dos llamadas (con y sin reporte cercano) usen el mismo contexto horario
     y sean comparables entre sí."""
-    from datetime import datetime as datetime_real
-
-    class _RelojFijo(datetime_real):
-        @classmethod
-        def now(cls, tz=None):
-            return datetime_real(2026, 1, 6, 11, 0, 0, tzinfo=tz)  # martes 11am
-
     fila_db = {
         "id": 1, "cluster": 0, "latitud": -34.6000, "longitud": -58.4000,
         "cantidad_siniestros": 50, "mortales": 1, "graves": 3, "nivel_riesgo": "bajo",
@@ -1029,19 +1057,107 @@ def test_corredores_con_choque_cerca_de_un_vertice_se_ajusta():
 
 
 def test_hotspots_inseguridad_con_robo_reciente_cerca_se_ajusta():
+    # Hora fija FUERA de la franja pico para aislar el efecto del ajuste por
+    # reporte reciente del de franja horaria (ver los tests dedicados a cada
+    # uno mas abajo, y el de abajo de todo que prueba que se apilan).
     fila_db = {
         "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
         "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
         "nivel_riesgo": "alto",
     }
     reporte_cercano = [{"lat": -34.6002, "lng": -58.4001, "titular": "Robo en Retiro"}]
-    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+    with patch("main.datetime", _RelojFijo), \
+         patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
          patch("main._obtener_reportes_recientes_por_tipo", return_value=reporte_cercano):
         r = client.get("/hotspots-inseguridad")
     hotspot = r.json()[0]
     assert hotspot["ajustado_por_reciente"] is True
-    assert hotspot["nivel_riesgo"] == "critico"  # alto -> critico
+    assert hotspot["ajustado_por_horario"] is False
+    assert hotspot["nivel_riesgo"] == "critico"  # alto -> critico (un escalon, por el reporte)
     assert "Robo en Retiro" in hotspot["motivo_ajuste"]
+
+
+# --- Ajuste de riesgo por franja horaria (solo /hotspots-inseguridad, ver
+# FRANJA_PICO_INSEGURIDAD y _aplicar_ajuste_horario en main.py) -----------
+
+def test_hotspots_inseguridad_en_franja_pico_general_sube_un_escalon():
+    fila_db = {
+        "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+        "nivel_riesgo": "medio",
+    }
+    with patch("main.datetime", _reloj_fijo(18)), \
+         patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=[]):
+        r = client.get("/hotspots-inseguridad")  # tipo=general por default
+    hotspot = r.json()[0]
+    assert hotspot["ajustado_por_horario"] is True
+    assert hotspot["nivel_riesgo"] == "alto"  # medio -> alto, 18hs cae en 17-21hs
+    assert "18hs" in hotspot["motivo_ajuste_horario"]
+
+
+def test_hotspots_inseguridad_fuera_de_franja_pico_no_se_ajusta_por_horario():
+    fila_db = {
+        "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+        "nivel_riesgo": "medio",
+    }
+    with patch("main.datetime", _reloj_fijo(11)), \
+         patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=[]):
+        r = client.get("/hotspots-inseguridad")
+    hotspot = r.json()[0]
+    assert hotspot["ajustado_por_horario"] is False
+    assert hotspot["motivo_ajuste_horario"] is None
+    assert hotspot["nivel_riesgo"] == "medio"  # sin cambios
+
+
+def test_hotspots_inseguridad_moto_usa_su_propia_franja_distinta_de_general():
+    # 22hs: dentro de la franja pico de MOTO (19-23hs) pero fuera de la de
+    # GENERAL (17-21hs) -- si el endpoint usara una sola franja compartida
+    # para los dos tipos (lo que la distribucion real del dataset de
+    # Delitos del GCBA contradice, ver el comentario de FRANJA_PICO_INSEGURIDAD),
+    # este test fallaria. Cada llamada usa su propio dict de fixture (no uno
+    # compartido): _aplicar_ajuste_horario muta la fila in-place, asi que
+    # reutilizar el mismo dict entre las dos llamadas haria que el ajuste de
+    # la primera (moto) contaminara el resultado de la segunda (general).
+    fila_moto = {
+        "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_delitos": 40, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+        "nivel_riesgo": "medio",
+    }
+    fila_general = dict(fila_moto)
+    with patch("main.datetime", _reloj_fijo(22)), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=[]):
+        with patch("main.psycopg2.connect", return_value=_mock_db([fila_moto])):
+            r_moto = client.get("/hotspots-inseguridad?tipo=moto")
+        with patch("main.psycopg2.connect", return_value=_mock_db([fila_general])):
+            r_general = client.get("/hotspots-inseguridad?tipo=general")
+    assert r_moto.json()[0]["ajustado_por_horario"] is True
+    assert r_moto.json()[0]["nivel_riesgo"] == "alto"
+    assert r_general.json()[0]["ajustado_por_horario"] is False
+    assert r_general.json()[0]["nivel_riesgo"] == "medio"
+
+
+def test_hotspots_inseguridad_ajuste_horario_y_reciente_se_apilan():
+    """En franja pico Y con un reporte reciente cerca, los dos ajustes se
+    suman: dos escalones, no uno. Arranca en 'bajo' (dos escalones libres
+    antes de topar en 'critico') para que el test pueda distinguir "se
+    aplico un ajuste" de "se aplicaron los dos"."""
+    fila_db = {
+        "id": 1, "cluster": 5, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_delitos": 120, "comuna_moda": "1", "tipo_delito_moda": "Robo",
+        "nivel_riesgo": "bajo",
+    }
+    reporte_cercano = [{"lat": -34.6002, "lng": -58.4001, "titular": "Robo en Retiro"}]
+    with patch("main.datetime", _reloj_fijo(18)), \
+         patch("main.psycopg2.connect", return_value=_mock_db([fila_db])), \
+         patch("main._obtener_reportes_recientes_por_tipo", return_value=reporte_cercano):
+        r = client.get("/hotspots-inseguridad")
+    hotspot = r.json()[0]
+    assert hotspot["ajustado_por_reciente"] is True
+    assert hotspot["ajustado_por_horario"] is True
+    assert hotspot["nivel_riesgo"] == "alto"  # bajo -> medio (reciente) -> alto (horario)
 
 
 def test_vertices_de_geometria_maneja_formatos_invalidos_sin_reventar():
