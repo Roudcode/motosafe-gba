@@ -48,6 +48,9 @@ def test_health_informa_estado_de_base_sin_exponer_configuracion():
     assert r.json()["estado"] == "ok"
     assert r.json()["base_datos"] == "ok"
     assert "DATABASE_URL" not in r.text
+    # Booleano sin versiones exactas: /health es público (ver A22).
+    assert isinstance(r.json()["version_sklearn_coincide"], bool)
+    assert main.sklearn.__version__ not in r.text
 
 
 def test_metrics_registra_conteo_y_latencia_de_una_ruta_sin_exponer_configuracion():

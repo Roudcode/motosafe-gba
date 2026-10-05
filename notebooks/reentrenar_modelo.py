@@ -31,6 +31,23 @@ DATA = BASE_DIR / "data"
 BACKEND = BASE_DIR / "backend"
 
 
+def verificar_version_sklearn():
+    """El pickle queda atado a la versión de scikit-learn con que se guarda. Dos
+    veces (07/09 y SES-065) se guardó con una distinta de la que sirve la API.
+    Se corta antes de entrenar si el entorno no es el de backend/requirements.txt."""
+    import re
+    import sklearn
+
+    texto = (BACKEND / "requirements.txt").read_text(encoding="utf-8")
+    declarada = re.search(r"^scikit-learn==(\S+)$", texto, re.M).group(1)
+    if sklearn.__version__ != declarada:
+        raise SystemExit(
+            f"scikit-learn instalado {sklearn.__version__} != {declarada} declarado en "
+            "backend/requirements.txt. Instalar `pip install -r requirements.txt` desde "
+            "la raíz del repo antes de reentrenar (ver docs/operacion/ENTORNO_REPRODUCIBLE.md)."
+        )
+
+
 def cargar_motos_extendido():
     """Reproduce motos_extendido tal como queda al final de la seccion 4 del
     notebook (motos_limpio + edad/sexo de victima + clima), justo antes de
@@ -110,6 +127,7 @@ def entrenar(motos_extendido, columnas_categoricas, columnas_numericas, etiqueta
 
 
 def main():
+    verificar_version_sklearn()
     motos_extendido = cargar_motos_extendido()
 
     indice = pd.read_csv(DATA / "indice_inseguridad_comuna.csv")

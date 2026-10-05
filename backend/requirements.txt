@@ -1,12 +1,22 @@
-fastapi>=0.115,<1
-uvicorn[standard]>=0.30,<1
-psycopg2-binary>=2.9,<3
-pandas>=2.2,<3
-scikit-learn>=1.5,<2
-joblib>=1.4,<2
-slowapi>=0.1.9,<1
-python-dotenv>=1.0,<2
-httpx>=0.27,<1
-pytest>=8,<9
-bcrypt>=4.1,<5
-itsdangerous>=2.2,<3
+# Versiones exactas: la API sirve un modelo serializado (modelo_final.pkl) y
+# scikit-learn no garantiza cargar un pickle en otra versión. scikit-learn tiene
+# que coincidir con la versión con que se entrenó (ver tests/test_entorno.py y
+# docs/operacion/ENTORNO_REPRODUCIBLE.md). numpy y scipy se fijan porque
+# sklearn calcula sobre ellos. Para cambiar una versión: actualizar acá,
+# instalar en un venv limpio y correr pytest antes de reemplazar el archivo.
+fastapi==0.142.1
+starlette==1.7.0
+pydantic==2.13.5
+uvicorn[standard]==0.54.0
+psycopg2-binary==2.9.13
+numpy==2.5.3
+scipy==1.18.1
+pandas==2.3.3
+scikit-learn==1.7.2
+joblib==1.6.0
+slowapi==0.1.10
+python-dotenv==1.2.3
+httpx==0.28.1
+pytest==8.4.2
+bcrypt==4.3.0
+itsdangerous==2.2.0

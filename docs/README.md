@@ -21,6 +21,7 @@
 | [Cobertura y procedencia de capas](riesgo/PROCEDENCIA_Y_COBERTURA.md) | Fuentes, cobertura por trazado, TTL y protocolo de validación de rutas y prensa. |
 | [Ingesta de prensa multifluente](riesgo/INGESTA_PRENSA_MULTIFUENTE.md) | Fuentes, clasificación de motos, límites de calidad y proceso para ampliar cobertura. |
 | [Operación de backend y base](operacion/BACKEND_Y_BASE_DE_DATOS.md) | Migraciones, salud, CI, backup y límites de la validación con PostgreSQL. |
+| [Entorno reproducible](operacion/ENTORNO_REPRODUCIBLE.md) | Versiones exactas, versión de scikit-learn del modelo, instalación limpia y hashes de artefactos. |
 | [Despliegue del MVP](operacion/DESPLIEGUE_MVP.md) | Arquitectura cloud, contenedores, secretos, operación y criterios para declarar un despliegue productivo. |
 | [QA de accesibilidad y visual](calidad/QA_ACCESIBILIDAD_VISUAL.md) | Matriz reproducible para teclado, zoom, temas, móvil, movimiento y red. |
 | [Matriz académica y demo](entrega/MATRIZ_ACADEMICA_Y_DEMO.md) | Objetivos, evidencia, límites y guion reproducible de presentación. |

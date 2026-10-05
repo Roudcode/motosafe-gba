@@ -22,8 +22,11 @@ import queue
 import threading
 from dotenv import load_dotenv
 import httpx
+import warnings
 import joblib
 import pandas as pd
+import sklearn
+from sklearn.exceptions import InconsistentVersionWarning
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -170,8 +173,26 @@ async def exigir_sesion(request: Request, call_next):
     return await call_next(request)
 
 
-# --- Modelo de Machine Learning (entrenado en notebooks/01_eda_hotspots_moto.ipynb) ---
-modelo_final = joblib.load(BASE_DIR / 'modelo_final.pkl')
+# --- Modelo de Machine Learning (entrenado con notebooks/reentrenar_modelo.py) ---
+# scikit-learn no garantiza que un pickle cargue igual en otra versión. Si la
+# versión instalada no es la del entrenamiento, sklearn emite
+# InconsistentVersionWarning al cargar: se captura acá para exponerla en
+# /health (version_sklearn_coincide) en vez de dejarla perdida en la consola.
+# No bloquea el arranque: la comparación de A22 (docs/evidencias/2026-10-05/
+# A22-entorno/) mostró niveles idénticos entre 1.7.2 y 1.9.1, pero eso no vale
+# para cualquier versión futura. requirements.txt fija la versión exacta.
+with warnings.catch_warnings(record=True) as _avisos_carga_modelo:
+    warnings.simplefilter('always', InconsistentVersionWarning)
+    modelo_final = joblib.load(BASE_DIR / 'modelo_final.pkl')
+SKLEARN_VERSION_ENTRENAMIENTO = next(
+    (a.message.original_sklearn_version for a in _avisos_carga_modelo
+     if isinstance(a.message, InconsistentVersionWarning)),
+    sklearn.__version__,
+)
+# Se re-emiten para que sigan viéndose en consola, uno por texto distinto (sin
+# esto saldría uno por cada uno de los 300 árboles del bosque).
+for _aviso in {str(a.message): a.message for a in _avisos_carga_modelo}.values():
+    warnings.warn(_aviso, stacklevel=1)
 columnas_modelo = joblib.load(BASE_DIR / 'columnas_modelo.pkl')
 contexto_hotspots = pd.read_csv(BASE_DIR / 'hotspots_contexto.csv')
 contexto_hotspots['comuna_moda'] = contexto_hotspots['comuna_moda'].astype(str)
@@ -548,6 +569,11 @@ def estado_salud():
         # real. No bloquea el servicio (sigue respondiendo con el último
         # corte conocido) pero hay que recalibrar a la brevedad.
         "umbrales_riesgo_actualizados": UMBRALES_RIESGO_ACTUALIZADOS,
+        # false: el modelo se entrenó con otra versión de scikit-learn que la
+        # instalada (ver carga del modelo arriba). Reinstalar requirements.txt.
+        # Solo el booleano: /health es público y no publica versiones exactas
+        # (el detalle queda en el aviso de la consola al arrancar).
+        "version_sklearn_coincide": SKLEARN_VERSION_ENTRENAMIENTO == sklearn.__version__,
     }
 
 

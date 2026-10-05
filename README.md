@@ -26,11 +26,13 @@ Levanta PostgreSQL con PostGIS en `localhost:5432` (ver credenciales en `docker-
 
 ```
 cd backend
-python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # Linux/Mac
+py -3.12 -m venv venv312        # Windows (Python 3.12; los .bat esperan este nombre)
+venv312\Scripts\activate
+# python3.12 -m venv venv312 && source venv312/bin/activate   # Linux/Mac
 pip install -r ../requirements.txt
 ```
+
+Las versiones son exactas y `scikit-learn` tiene que coincidir con la del modelo guardado; ver [docs/operacion/ENTORNO_REPRODUCIBLE.md](docs/operacion/ENTORNO_REPRODUCIBLE.md).
 
 Copiar `.env.example` a `.env` en `backend/` (o en la raíz, según corresponda) y completar `DATABASE_URL` si difiere del default de `docker-compose.yml`. `OPEN_METEO_BASE_URL` y `CORS_ALLOWED_ORIGINS` ya vienen con un default que funciona en desarrollo local, no hace falta tocarlos. `TOMTOM_API_KEY` es opcional: sin ella el backend arranca igual, pero la capa de tráfico en vivo (`/trafico/tiles`) y el cálculo de rutas (`/rutas`) no van a funcionar (ver [tomtom.com/developer](https://developer.tomtom.com) para sacar una key gratuita).
 

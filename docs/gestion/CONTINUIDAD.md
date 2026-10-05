@@ -97,3 +97,9 @@ Verificación actual: 80 tests frontend, 65 backend, lint y build aprobados. El 
 ## Actualización 2026-10-05 — SES-065 (Claude, vía Cowork)
 
 Calibración de probabilidad evaluada sobre el holdout temporal real y descartada para decisión en producción, con evidencia (ECE baja de 0,30 a 0,01 pero recall GRAVE/MORTAL colapsa bajo argmax; el sistema no decide por argmax). Modelo productivo cambiado a la variante sin edad (53 columnas), reentrenado, umbrales de percentil recalibrados, huella SHA256 verificable en `/health`. Fix de borde visual para distinguir crítico ajustado por prensa de crítico de base (antes el frontend descartaba el campo que el backend ya calculaba). Detalle completo en BITACORA.md, SES-065. `UMBRAL_CRUCE_KM`/`PESO_RIESGO` (A06) sigue pendiente de rutas de referencia reales de Rodo. Sin commit de esta sesión (ver motivo en BITACORA).
+
+## Actualización 2026-10-05 — SES-066 (Claude Code): A22 entorno reproducible
+
+El modelo vigente se guardó con scikit-learn 1.7.2, pero se declaraba 1.5.2 y el venv local tenía 1.9.1. Se fijaron versiones exactas en `backend/requirements.txt`, que el `requirements.txt` raíz ahora incluye. Un test compara la versión del pickle con la declarada, `/health` expone `version_sklearn_coincide` y el reentrenamiento se niega con otra versión. Predicciones entre 1.7.2 y 1.9.1 sin cambios de nivel (330.288 filas). La instalación limpia y la imagen Docker aprobaron 80 tests. Guía: `docs/operacion/ENTORNO_REPRODUCIBLE.md`. Sin commit, a revisión de Rodo.
+
+**Pendiente de decisión de Rodo:** `docker-compose.production.yml` y `render.yaml` no pasan las variables `AUTH_*`/`SESSION_SECRET`, que `auth.py` exige desde `d51fc30`. Esos despliegues no arrancan hasta decidir si el MVP publicado lleva login.

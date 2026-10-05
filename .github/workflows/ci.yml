@@ -31,3 +31,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m py_compile backend/main.py backend/migrar.py backend/evaluar_extractor_prensa.py
+      # Instalación limpia con las versiones fijadas (A22) y tests sin base de
+      # datos: incluye tests/test_entorno.py, que falla si el modelo guardado
+      # no coincide con la versión de scikit-learn declarada.
+      - run: pip install -r backend/requirements.txt
+      - run: python -m pytest -q
+        working-directory: backend

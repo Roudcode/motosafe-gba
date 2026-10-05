@@ -576,3 +576,30 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Commit: pendiente, a cargo de Rodo (no se hizo commit de esta sesión porque había trabajo propio sin commitear en el árbol — auth, LoginGate, tailscale — que no correspondía mezclar).
 - Agregado al commitear (Claude Code, mismo día): dos cambios del árbol que esta entrada no registraba y que entraron en el commit `65d40dd`. (1) El ajuste por franja horaria de `/hotspots-inseguridad` se movió del frontend (`calcularAjustePorFranjaHoraria` y las constantes `FRANJA_PICO_INSEGURIDAD_*`) al backend (`FRANJA_PICO_INSEGURIDAD` y `_aplicar_ajuste_horario` en `main.py`). La respuesta trae `ajustado_por_horario`/`motivo_ajuste_horario` y el frontend solo los muestra: se evita mantener dos calibraciones y el doble ajuste. Las pruebas pasaron de `geoRiesgo.test.js` a `test_main.py`. (2) El badge de clima ya no consulta Open-Meteo por su cuenta: usa el `clima` que viene en `/hotspots`, el mismo que usó el modelo, y por eso solo distingue lluvia de no lluvia.
 - Commits: `65d40dd` (SES-065) y `d51fc30` (login y Tailscale Funnel, trabajo de Rodo; incluye dos arreglos de integración: aislar el pool de conexiones en `test_auth.py` y quitar un `setState` síncrono en el efecto de `LoginGate.jsx`). Después se reemplazó por un placeholder el hostname real de Funnel en `tailscale/README.md`, que se había subido en `d51fc30`; el repositorio es privado.
+
+## 2026-10-05 — SES-066 — Entorno reproducible y versión de scikit-learn del modelo (A22) (Claude Code, sin supervisión)
+
+- Alcance: Rodo pidió elegir un ítem P1/P2 propuesto que no dependiera de una decisión suya ni de etiquetado manual. Se eligió A22 (P2/M, sin dependencias) porque cada carga del modelo emitía `InconsistentVersionWarning`.
+- Hallazgo: el modelo vigente (`65d40dd`, SES-065) se guardó con scikit-learn 1.7.2, según `_sklearn_version` en los bytes del pickle. El anterior se había guardado con 1.5.2. El `requirements.txt` raíz, que el README usa para instalar el backend, declaraba 1.5.2; `backend/requirements.txt`, que usa el Dockerfile, aceptaba `>=1.5,<2`; el `venv312` local tenía 1.9.1. Es la misma regresión que el README registró el 07/09. Además, `backend/.dockerignore` no excluía `venv312/` y el Dockerfile lo copiaba a la imagen.
+- Evidencia: `docs/evidencias/2026-10-05/A22-entorno/`. Se predijo la población de referencia de `calibrar_umbrales_riesgo.py` (330.288 filas) con 1.7.2, en un venv aislado en el scratchpad, y con 1.9.1, dejando numpy y pandas iguales. Diferencia máxima 4,4·10⁻¹⁶, 0 cambios de clase y 0 cambios de nivel. Con 1.7.2 los percentiles reproducen exactamente los umbrales de `main.py`, lo que confirma la calibración de SES-065.
+- Cambios:
+  - `backend/requirements.txt` fija versiones exactas, con `scikit-learn==1.7.2`, numpy y scipy. Son las del `venv312`, salvo scikit-learn.
+  - `requirements.txt` raíz hace `-r backend/requirements.txt` y deja solo los extras de notebooks.
+  - Nuevo `backend/tests/test_entorno.py` (3 tests): versión del pickle frente a la declarada, detección en `main` y versiones exactas.
+  - `main.py` captura el aviso de versión al cargar el modelo, lo reemite una vez por texto en lugar de 300 y expone en `/health` solo el booleano `version_sklearn_coincide`, sin versiones, porque `/health` es público.
+  - `notebooks/reentrenar_modelo.py` se niega a entrenar con otra versión.
+  - `.dockerignore` excluye `venv*/`.
+  - El CI instala `backend/requirements.txt` y corre pytest.
+  - Nueva guía `docs/operacion/ENTORNO_REPRODUCIBLE.md` con hashes SHA256 de artefactos; README de instalación actualizado a `venv312` con Python 3.12.
+- Verificación:
+  - `venv312` (1.9.1): 80 tests aprobados y `/health` con `version_sklearn_coincide: false`.
+  - Venv nuevo con Python 3.12.10: `pip check` sin conflictos y 80 tests aprobados sin aviso de versión. Con el requirements raíz importan geopandas, matplotlib y xgboost.
+  - Imagen Docker construida sin el venv dentro: 80 tests aprobados en Linux. La imagen de prueba se borró.
+  - No se reentrenó ni se tocaron artefactos.
+- Efecto para Rodo: la próxima vez que corra `backend\_iniciar_backend.bat`, el `pip install -r requirements.txt` va a bajar scikit-learn de 1.9.1 a 1.7.2 en `venv312`. Es el cambio buscado; las demás versiones ya coinciden.
+- Pendientes:
+  - Lock de dependencias transitivas.
+  - Paquetes no declarados de prototipos de notebooks (`h3`, `folium`, `libpysal`, `esda`).
+  - Corrida real del CI en GitHub (T05).
+- Fuera de alcance, requiere decisión de Rodo: desde el commit `d51fc30`, `auth.py` corta el arranque si faltan `AUTH_USERNAME`/`AUTH_PASSWORD_HASH`/`SESSION_SECRET`, y ni `docker-compose.production.yml` ni `render.yaml` los pasan, así que esos despliegues no arrancarían. Hay que decidir si el MVP publicado lleva login (y entonces declarar las variables) o si el login se vuelve opcional fuera de Tailscale. No se cambió.
+- Commit: no realizado, a revisión de Rodo.
