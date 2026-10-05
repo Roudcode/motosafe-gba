@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
 from fastapi import FastAPI, HTTPException, Request, Response, Header
+from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -148,6 +149,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Autenticacion de sesion -------------------------------------------------
+# La app puede quedar expuesta a internet (Tailscale Funnel), asi que todo lo
+# que no sea /health o /auth/* exige una cookie de sesion valida. Ver auth.py
+# para el detalle de login/logout y el formato de la cookie.
+import auth  # noqa: E402  (va aca para no reordenar los imports de arriba)
+
+app.include_router(auth.router)
+
+_RUTAS_PUBLICAS = {"/health", "/auth/login", "/auth/logout", "/auth/me"}
+
+
+@app.middleware("http")
+async def exigir_sesion(request: Request, call_next):
+    if request.method == "OPTIONS" or request.url.path in _RUTAS_PUBLICAS:
+        return await call_next(request)
+    if not auth.sesion_valida(request):
+        return JSONResponse(status_code=401, content={"detail": "No autenticado"})
+    return await call_next(request)
+
 
 # --- Modelo de Machine Learning (entrenado en notebooks/01_eda_hotspots_moto.ipynb) ---
 modelo_final = joblib.load(BASE_DIR / 'modelo_final.pkl')

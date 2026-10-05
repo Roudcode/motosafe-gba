@@ -11,7 +11,7 @@ if errorlevel 1 goto :sin_windows_terminal
 
 echo.
 echo Abriendo Docker, Backend, Frontend, Scraper y Tunel en pestanas de la misma ventana (Windows Terminal)...
-start "" wt -w 0 new-tab --title "MotoSafe - Docker" cmd /k "cd /d %~dp0 && docker compose up -d" ; new-tab --title "MotoSafe - Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && uvicorn main:app --reload" ; new-tab --title "MotoSafe - Frontend" cmd /k "cd /d %~dp0frontend && npm run dev" ; new-tab --title "MotoSafe - Scraper" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && python scrapear_noticias_robos.py --guardar" ; new-tab --title "MotoSafe - Tunel" cmd /k "cloudflared tunnel --url https://localhost:5173 --no-tls-verify"
+start "" wt -w 0 new-tab --title "MotoSafe - Docker" cmd /k "cd /d %~dp0 && docker compose up -d" ; new-tab --title "MotoSafe - Backend" cmd /k "%~dp0backend\_iniciar_backend.bat" ; new-tab --title "MotoSafe - Frontend" cmd /k "cd /d %~dp0frontend && npm run dev" ; new-tab --title "MotoSafe - Scraper" cmd /k "cd /d %~dp0backend && venv312\Scripts\activate && python scrapear_noticias_robos.py --guardar" ; new-tab --title "MotoSafe - Tunel" cmd /k "cloudflared tunnel --url https://localhost:5173 --no-tls-verify"
 
 echo.
 echo Listo. Se abrio una ventana de Windows Terminal con 5 pestanas (Docker, Backend, Frontend, Scraper y Tunel).
@@ -40,13 +40,13 @@ if errorlevel 1 (
 )
 
 echo [2/4] Backend (FastAPI) en una terminal nueva...
-start "MotoSafe - Backend" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && uvicorn main:app --reload"
+start "MotoSafe - Backend" cmd /k "%~dp0backend\_iniciar_backend.bat"
 
 echo [3/4] Frontend (Vite) en otra terminal nueva...
 start "MotoSafe - Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
 echo [4/5] Scraper de noticias en otra terminal nueva...
-start "MotoSafe - Scraper" cmd /k "cd /d %~dp0backend && venv\Scripts\activate && python scrapear_noticias_robos.py --guardar"
+start "MotoSafe - Scraper" cmd /k "cd /d %~dp0backend && venv312\Scripts\activate && python scrapear_noticias_robos.py --guardar"
 
 echo [5/5] Tunel (Cloudflare) en otra terminal nueva...
 start "MotoSafe - Tunel" cmd /k "cloudflared tunnel --url https://localhost:5173 --no-tls-verify"

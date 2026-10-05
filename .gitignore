@@ -32,3 +32,7 @@ sweep_log.txt
 Claude\ outputs/
 docs/tesis/NormanFunes-CASSIE_Comprehensive_Analysis_System.pdf
 docs/tesis/Salva_Gazzaneo_Sallaberry_Grupo3_Capitulo1.pdf
+
+# Estado generado por los scripts de Tailscale Funnel (ver tailscale/)
+tailscale/public_url.txt
+tailscale/_funnel_status.txt

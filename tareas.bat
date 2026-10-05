@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0backend"
-call venv\Scripts\activate
+call venv312\Scripts\activate
 
 :menu
 cls
