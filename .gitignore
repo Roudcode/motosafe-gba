@@ -36,3 +36,7 @@ docs/tesis/Salva_Gazzaneo_Sallaberry_Grupo3_Capitulo1.pdf
 # Estado generado por los scripts de Tailscale Funnel (ver tailscale/)
 tailscale/public_url.txt
 tailscale/_funnel_status.txt
+
+# Entornos y builds locales
+backend/venv312/
+frontend/dist_check_clima/

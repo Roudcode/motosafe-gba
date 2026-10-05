@@ -139,7 +139,7 @@ sí evita que la URL sea alcanzable desde cualquier IP de internet.
 ## Varios proyectos en la misma PC (ej: MotoSafe + Nexo)
 
 Tailscale Funnel es por **dispositivo**, no por app: esta PC tiene un solo
-nombre público (`desktop-ryzen.tail19f791.ts.net`). Si dos proyectos
+nombre público (`<tu-hostname>.ts.net`). Si dos proyectos
 corren `tailscale funnel --bg ...` sin especificar un puerto público
 distinto, el segundo pisa al primero -- quedan mapeados al mismo puerto
 público (443 por default) y el último comando gana.
@@ -147,12 +147,12 @@ público (443 por default) y el último comando gana.
 La solución: Tailscale Funnel admite hasta 3 puertos públicos por
 dispositivo (443, 8443 y 10000), cada uno con su propia URL:
 
-- **MotoSafe**: `--https=443` -> `https://desktop-ryzen.tail19f791.ts.net`
+- **MotoSafe**: `--https=443` -> `https://<tu-hostname>.ts.net`
   (puerto fijado explícito en `iniciar_funnel.bat`, no es el default
   implícito).
 - **Nexo** (u otro proyecto): `--https=8443` -> algo como
   `tailscale funnel --bg --https=8443 localhost:<puerto-de-nexo>`, URL
-  resultante `https://desktop-ryzen.tail19f791.ts.net:8443`.
+  resultante `https://<tu-hostname>.ts.net:8443`.
 
 Confirmar que ambos coexisten con `tailscale funnel status` -- tiene que
 listar las dos entradas, una por puerto. `tailscale\detener_funnel.bat` y
