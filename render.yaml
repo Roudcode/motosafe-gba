@@ -17,6 +17,9 @@ services:
         value: https://api.open-meteo.com/v1/forecast
       - key: TOMTOM_API_KEY
         sync: false
+      # Login solo para el acceso personal por Tailscale Funnel (backend/auth.py).
+      - key: AUTH_HABILITADO
+        value: "false"
 
   - type: web
     name: motosafe-web

@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
 MIGRACIONES_DIR = BASE_DIR / 'migrations'
+# Clave arbitraria y fija para pg_advisory_xact_lock.
+_LOCK_MIGRACIONES = 72_011_050
 
 
 def migraciones_disponibles():
@@ -30,6 +32,11 @@ def aplicar_migraciones(database_url=None):
 
     with psycopg2.connect(url) as conn:
         with conn.cursor() as cur:
+            # En Compose, api y scraper corren este script a la vez contra una
+            # base nueva: sin lock ambos intentan crear schema_migrations y uno
+            # falla (visto en el E2E de SES-067). El lock de transaccion hace
+            # esperar al segundo hasta el commit del primero.
+            cur.execute('SELECT pg_advisory_xact_lock(%s)', (_LOCK_MIGRACIONES,))
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS schema_migrations (
                     version VARCHAR(255) PRIMARY KEY,

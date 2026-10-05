@@ -59,6 +59,11 @@ python generar_password.py
 Te va a pedir la contraseña dos veces y te va a imprimir dos líneas
 (`AUTH_USERNAME=...` y `AUTH_PASSWORD_HASH=...`). Pegalas en `backend\.env`.
 
+El login está activado por defecto (`AUTH_HABILITADO` ausente o `true`). No
+pongas `AUTH_HABILITADO=false` en este `.env`: eso es solo para el MVP público
+(`docker-compose.production.yml`, `render.yaml`), y con Funnel dejaría la app
+abierta a internet.
+
 ### 2. Instalar Tailscale (si no lo tenés)
 
 Descargar de https://tailscale.com/download/windows e iniciar sesión con

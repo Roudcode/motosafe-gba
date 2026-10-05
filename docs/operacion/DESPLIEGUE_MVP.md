@@ -56,6 +56,21 @@ una base PostgreSQL/PostGIS administrada y una tarea programada que ejecute
 se usa el contenedor `scraper` en ciclo: el scheduler del proveedor evita que
 se dupliquen ejecuciones.
 
+### Login y datos (verificado el 2026-10-05, SES-067)
+
+- El login de `backend/auth.py` es solo para el acceso personal por Tailscale
+  Funnel. `docker-compose.production.yml` y `render.yaml` fijan
+  `AUTH_HABILITADO=false`, así que el MVP público no necesita `AUTH_*` ni
+  `SESSION_SECRET`. Si la variable falta, el login queda activado y la API no
+  arranca sin credenciales: así se evita exponer sin querer la app de Funnel.
+- Con una base nueva, el stack levantó sano (`/api/health` ok, migraciones
+  aplicadas una sola vez aunque `api` y `scraper` arranquen juntos), pero
+  `/api/hotspots`, `/api/corredores` y `/api/hotspots-inseguridad` responden
+  500 porque las tablas de datos (`hotspots_riesgo` y otras) las crean los
+  scripts `cargar_*.py`, que leen `../data/` y no forman parte de la imagen ni
+  del Blueprint. **Pendiente de decisión:** cómo llegan esos datos a producción
+  (incluirlos en la imagen, migración semilla o servicio de carga única).
+
 ## Ruta rápida en Render
 
 El repositorio incluye `render.yaml`, un Blueprint que crea los recursos sin

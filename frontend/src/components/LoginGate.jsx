@@ -6,7 +6,8 @@ import { API_URL } from '../constants'
 // (cookie HttpOnly, no se puede leer desde JS) -- este componente solo le
 // pregunta a /auth/me y reacciona.
 export function LoginGate({ children }) {
-  const [estado, setEstado] = useState('verificando') // verificando | logueado | anonimo
+  // verificando | logueado | anonimo | sin_login (despliegue publico, AUTH_HABILITADO=false)
+  const [estado, setEstado] = useState('verificando')
   const [usuario, setUsuario] = useState(null)
 
   const verificarSesion = useCallback(
@@ -15,7 +16,8 @@ export function LoginGate({ children }) {
         .then((respuesta) => (respuesta.ok ? respuesta.json() : null))
         .then((datos) => {
           setUsuario(datos?.usuario ?? null)
-          setEstado(datos ? 'logueado' : 'anonimo')
+          if (datos?.auth_habilitado === false) setEstado('sin_login')
+          else setEstado(datos ? 'logueado' : 'anonimo')
         })
         // Sin red o backend caido: no tiene sentido mostrar el login (no va a
         // poder loguear igual), pero tampoco dejar la pantalla en blanco.
@@ -39,6 +41,10 @@ export function LoginGate({ children }) {
 
   if (estado === 'anonimo') {
     return <FormularioLogin onLogin={verificarSesion} />
+  }
+
+  if (estado === 'sin_login') {
+    return children
   }
 
   return (

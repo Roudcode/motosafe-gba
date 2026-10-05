@@ -23,6 +23,9 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS requerido}
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://api.open-meteo.com/v1/forecast}
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:?TOMTOM_API_KEY requerida}
+      # El login (backend/auth.py) es solo para el acceso personal por
+      # Tailscale Funnel; el MVP publico corre sin login ni AUTH_*/SESSION_SECRET.
+      AUTH_HABILITADO: "false"
     depends_on:
       db:
         condition: service_healthy

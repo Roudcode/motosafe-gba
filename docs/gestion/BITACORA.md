@@ -603,3 +603,26 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Corrida real del CI en GitHub (T05).
 - Fuera de alcance, requiere decisión de Rodo: desde el commit `d51fc30`, `auth.py` corta el arranque si faltan `AUTH_USERNAME`/`AUTH_PASSWORD_HASH`/`SESSION_SECRET`, y ni `docker-compose.production.yml` ni `render.yaml` los pasan, así que esos despliegues no arrancarían. Hay que decidir si el MVP publicado lleva login (y entonces declarar las variables) o si el login se vuelve opcional fuera de Tailscale. No se cambió.
 - Commit: no realizado, a revisión de Rodo.
+
+## 2026-10-05 — SES-067 — Login opcional para el MVP público y E2E del compose de producción (Claude Code)
+
+- Alcance: Rodo aclaró que el login es solo para su acceso por Tailscale Funnel, no para el MVP público, y pidió que compose y Render arranquen sin `AUTH_*`/`SESSION_SECRET`.
+- Cambio:
+  - `backend/auth.py` lee `AUTH_HABILITADO`, que por defecto está activado: si la variable falta, sigue exigiendo credenciales. Así un `.env` local incompleto no deja abierta la app expuesta por Funnel.
+  - Con `AUTH_HABILITADO=false`: el middleware deja pasar todo, `/auth/login` responde 404 y `/auth/me` devuelve `auth_habilitado: false`.
+  - `LoginGate.jsx` muestra la app directamente en ese caso, sin formulario ni botón "Salir".
+  - `docker-compose.production.yml` y `render.yaml` fijan `AUTH_HABILITADO=false`.
+  - `.env.example` y `tailscale/README.md` lo documentan, con la advertencia de no apagarlo en el `.env` de Funnel. El `backend/.env` local de Rodo no tiene la variable, así que sigue con login.
+- Pruebas: 3 tests nuevos en `test_auth.py`.
+  - La app arranca sin variables de auth y no exige sesión.
+  - Con el valor por defecto y sin credenciales, no arranca.
+  - `/auth/me` informa `auth_habilitado`.
+  - Los subprocesos fijan las variables vacías para que `load_dotenv()` no traiga las credenciales reales de `backend/.env`.
+  - Resultado: 83 de backend, 68 de frontend y lint limpio.
+- E2E del compose de producción: proyecto aislado `motosafe-prodtest`, volumen propio y entorno con valores ficticios fuera del repo.
+  - Construyó db, api, scraper y web; `/api/health` ok, `version_sklearn_coincide: true` y `/api/auth/me` con `auth_habilitado: false`.
+  - Encontró dos problemas:
+    1. Migraciones concurrentes: `api` y `scraper` corrían `migrar.py` a la vez y uno fallaba con `UniqueViolation` sobre `schema_migrations`. La API se recuperaba solo porque se reinicia. Se agregó `pg_advisory_xact_lock` en `migrar.py`. Al recrear desde cero, la API aplicó las migraciones, el scraper informó «No hay migraciones pendientes» y hubo 0 reinicios.
+    2. Datos: con base nueva, `/hotspots`, `/corredores` y `/hotspots-inseguridad` devuelven 500 (`relation "hotspots_riesgo" does not exist`). Las tablas las crean los `cargar_*.py`, que leen `../data/`, fuera del contexto de build de la imagen y del Blueprint. **Pendiente de decisión de Rodo:** cómo llegan los datos a producción. Documentado en `DESPLIEGUE_MVP.md` y en A14.
+  - El stack de prueba, su volumen y la imagen web se eliminaron al terminar.
+- Observación para A09, sin cambios: en la corrida real del scraper dentro del stack, la nota «Monte Grande: un detenido por el robo de un auto» se ubicó en (-34.5285, -58.5081), que es zona norte y no Esteban Echeverría. Hay que revisar ese alias cuando se retome A09.

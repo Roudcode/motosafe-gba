@@ -104,3 +104,54 @@ def test_bloqueo_tras_varios_intentos_fallidos(client):
         json={"username": os.environ["AUTH_USERNAME"], "password": CONTRASENA_TEST},
     )
     assert respuesta.status_code == 429
+
+
+def _correr_sin_auth(codigo):
+    """Importa main en un proceso nuevo, sin AUTH_*/SESSION_SECRET: auth.py
+    lee las variables al importarse y en este proceso ya quedo importado con
+    las de conftest.py."""
+    import subprocess
+    import sys
+
+    entorno = {k: v for k, v in os.environ.items() if not k.startswith(("AUTH_", "SESSION_"))}
+    # Vacias y no ausentes: main.py llama a load_dotenv(), que completaria las
+    # ausentes con un backend/.env local; dotenv no pisa variables existentes.
+    entorno.update(AUTH_USERNAME="", AUTH_PASSWORD_HASH="", SESSION_SECRET="")
+    entorno["AUTH_HABILITADO"] = "false"
+    # Sin base: los endpoints probados no la necesitan para decidir el 401.
+    entorno["DATABASE_URL"] = "postgresql://nadie:nada@127.0.0.1:1/ninguna"
+    return subprocess.run(
+        [sys.executable, "-W", "ignore", "-c", codigo],
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        env=entorno, capture_output=True, text=True, timeout=120,
+    )
+
+
+def test_sin_login_la_app_arranca_sin_variables_de_auth_y_no_exige_sesion():
+    resultado = _correr_sin_auth(
+        "from fastapi.testclient import TestClient\n"
+        "import main\n"
+        "c = TestClient(main.app)\n"
+        "print(c.get('/auth/me').json())\n"
+        "print(c.get('/').status_code)\n"
+        "print(c.post('/auth/login', json={'username': 'x', 'password': 'y'}).status_code)\n"
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    me, raiz, login = resultado.stdout.strip().splitlines()[-3:]
+    assert me == "{'usuario': None, 'auth_habilitado': False}"
+    assert raiz == "200"
+    assert login == "404"
+
+
+def test_con_login_activado_por_defecto_faltan_variables_y_no_arranca():
+    resultado = _correr_sin_auth("import os; os.environ.pop('AUTH_HABILITADO'); import main")
+    assert resultado.returncode != 0
+    assert "AUTH_USERNAME" in resultado.stderr
+
+
+def test_me_informa_que_el_login_esta_habilitado(client):
+    client.post(
+        "/auth/login",
+        json={"username": os.environ["AUTH_USERNAME"], "password": CONTRASENA_TEST},
+    )
+    assert client.get("/auth/me").json()["auth_habilitado"] is True

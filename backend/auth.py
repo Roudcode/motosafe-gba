@@ -19,26 +19,35 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
 
+# El login protege el acceso personal por Tailscale Funnel. El MVP publico
+# (docker-compose.production.yml, render.yaml) corre sin login y lo apaga con
+# AUTH_HABILITADO=false. Por defecto queda ACTIVADO: si en el .env local falta
+# esta variable, la app expuesta por Funnel no queda abierta sin querer.
+_VALORES_FALSOS = {"0", "false", "no", "off"}
+AUTH_HABILITADO = os.getenv("AUTH_HABILITADO", "true").strip().lower() not in _VALORES_FALSOS
+
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "").strip()
 AUTH_PASSWORD_HASH = os.getenv("AUTH_PASSWORD_HASH", "").strip()
 SESSION_SECRET = os.getenv("SESSION_SECRET", "").strip()
 SESSION_COOKIE_NAME = "motosafe_session"
 SESSION_MAX_AGE_SECONDS = int(os.getenv("SESSION_MAX_AGE_HOURS", "12")) * 3600
 
-if not AUTH_USERNAME or not AUTH_PASSWORD_HASH:
+if AUTH_HABILITADO and (not AUTH_USERNAME or not AUTH_PASSWORD_HASH):
     raise RuntimeError(
         "Falta AUTH_USERNAME y/o AUTH_PASSWORD_HASH en el .env. Corre "
         "'python generar_password.py' en la carpeta backend para crearlos "
-        "antes de levantar el servidor."
+        "antes de levantar el servidor (o AUTH_HABILITADO=false si es un "
+        "despliegue publico sin login)."
     )
-if not SESSION_SECRET:
+if AUTH_HABILITADO and not SESSION_SECRET:
     raise RuntimeError(
         "Falta SESSION_SECRET en el .env. Genera uno con: "
         "python -c \"import secrets; print(secrets.token_hex(32))\" "
         "y pegalo en el .env."
     )
 
-_serializer = URLSafeTimedSerializer(SESSION_SECRET, salt="motosafe-session")
+# Sin login no se firma ninguna cookie.
+_serializer = URLSafeTimedSerializer(SESSION_SECRET, salt="motosafe-session") if AUTH_HABILITADO else None
 
 
 def _verificar_password(password: str, hash_guardado: str) -> bool:
@@ -97,6 +106,8 @@ def _crear_cookie_sesion(response: Response) -> None:
 
 
 def sesion_valida(request: Request) -> bool:
+    if not AUTH_HABILITADO:
+        return True
     token = request.cookies.get(SESSION_COOKIE_NAME)
     if not token:
         return False
@@ -109,6 +120,8 @@ def sesion_valida(request: Request) -> bool:
 
 @router.post("/auth/login")
 def login(body: LoginBody, request: Request, response: Response):
+    if not AUTH_HABILITADO:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Login deshabilitado")
     ip = request.client.host if request.client else "desconocida"
     if _ip_bloqueada(ip):
         raise HTTPException(
@@ -131,6 +144,9 @@ def logout(response: Response):
 
 @router.get("/auth/me")
 def me(request: Request):
+    # auth_habilitado le dice al frontend si tiene que mostrar login y "Salir".
+    if not AUTH_HABILITADO:
+        return {"usuario": None, "auth_habilitado": False}
     if not sesion_valida(request):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No autenticado")
-    return {"usuario": AUTH_USERNAME}
+    return {"usuario": AUTH_USERNAME, "auth_habilitado": True}
