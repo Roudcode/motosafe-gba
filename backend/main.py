@@ -1021,7 +1021,26 @@ VIGENCIA_HORAS_PRENSA = 24 * 30  # "ultimo mes", pedido explicito de Rodo -- no 
                                  # vivo, sirve como contexto/historico reciente
 
 
+_esquema_prensa_listo = False
+_lock_esquema_prensa = threading.Lock()
+
+
 def _asegurar_tabla_prensa(conn):
+    """Compatibilidad transitoria, una vez por proceso. Antes corría en cada
+    request de /hotspots, /corredores y /reportes-prensa: el ALTER TABLE toma
+    un lock exclusivo y, si el scraper tenía una transacción abierta sobre la
+    tabla, todas las lecturas quedaban encoladas detrás (504, SES-072)."""
+    global _esquema_prensa_listo
+    if _esquema_prensa_listo:
+        return
+    with _lock_esquema_prensa:
+        if _esquema_prensa_listo:
+            return
+        _crear_o_actualizar_tabla_prensa(conn)
+        _esquema_prensa_listo = True
+
+
+def _crear_o_actualizar_tabla_prensa(conn):
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS reportes_prensa (

@@ -1247,19 +1247,23 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
 
     if guardar:
         try:
-            cur.execute('SAVEPOINT insertar_prensa')
             cur.execute("""
                 INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (url_fuente) DO NOTHING
             """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en))
-            if cur.rowcount > 0:
+            guardada = cur.rowcount > 0
+            # Commit por fila: una transacción abierta toda la corrida retenía
+            # locks sobre reportes_prensa que, combinados con el DDL de la API,
+            # dejaban /hotspots y /corredores bloqueados (SES-072).
+            cur.connection.commit()
+            if guardada:
                 contadores['guardadas'] += 1
                 contadores['guardadas_por_fuente'][nombre_fuente] = contadores['guardadas_por_fuente'].get(nombre_fuente, 0) + 1
         except psycopg2.Error as err:
             # Una fila malformada no debe abortar la corrida completa ni
-            # revertir sus noticias válidas. Se vuelve al savepoint de esta fila.
-            cur.execute('ROLLBACK TO SAVEPOINT insertar_prensa')
+            # revertir las noticias válidas, que ya quedaron confirmadas.
+            cur.connection.rollback()
             print(f"  [error al guardar, se omite] {type(err).__name__}: {titulo}")
 
 
@@ -1289,6 +1293,11 @@ def main():
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
         _asegurar_tabla(cur)
+        # Commit inmediato del DDL: los ALTER TABLE toman un lock exclusivo sobre
+        # reportes_prensa y, sin este commit, lo retenían toda la corrida (minutos).
+        # Mientras tanto /hotspots y /corredores, que leen esa tabla, quedaban
+        # bloqueados (504 en el E2E del compose de producción, SES-072).
+        conn.commit()
 
     contadores = {
         'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0,

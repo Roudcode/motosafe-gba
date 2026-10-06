@@ -123,3 +123,7 @@ Tests de integración contra un PostGIS desechable: migraciones concurrentes, l�
 ## Actualización 2026-10-06 — SES-071: T06 backup ensayado
 
 Backup y restauración ensayados entre dos PostGIS desechables con el procedimiento documentado: copia idéntica y API funcionando sobre ella. Falta repetirlo con el volumen real y en el hosting.
+
+## Actualización 2026-10-06 — SES-072: carga inicial en producción
+
+Las capas se cargan solas al arrancar el contenedor si la base está vacía (CSV montados, no en la imagen). En Render hay un paso único documentado en `DESPLIEGUE_MVP.md`. Se corrigió además un bloqueo que dejaba `/hotspots` y `/corredores` en 504 mientras corría el scraper.

@@ -701,3 +701,23 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Contenedores, red y dump eliminados.
 - Estado: T06 validado parcialmente. Falta repetirlo con el volumen real y en el proveedor de hosting.
 - Nota: se descargó la imagen `alpine/socat` de Docker Hub para exponer los contenedores en localhost sin publicar puertos de Postgres en la red.
+
+## 2026-10-06 — SES-072 — Carga inicial de capas en producción y bloqueo scraper/API (A14) (Claude Code)
+
+- Decisión de Rodo: un script en el entrypoint del contenedor carga hotspots, corredores e inseguridad desde los CSV del repo solo si las tablas están vacías, sin meter los CSV en la imagen. Prensa sigue a cargo del scraper.
+- Cambio:
+  - Los tres `cargar_*.py` exponen `cargar(cur, dir_datos)`; como script se comportan igual que antes.
+  - Nuevo `backend/cargar_datos_iniciales.py`: una transacción por capa con lock consultivo, «sin CSV» no falla.
+  - `entrypoint.sh` lo corre después de `migrar.py`.
+  - `docker-compose.production.yml` monta `./data:/data:ro` con `MOTOSAFE_DATA_DIR=/data`.
+  - `.gitattributes` fuerza LF en `*.sh`: con `core.autocrlf=true`, un checkout podía romper `entrypoint.sh` en el contenedor.
+- Render no puede montar `data/`. Quedó documentado un paso único idempotente: correr el script desde una copia local con la URL externa de la base, que no se guarda en el repo.
+- Pruebas:
+  - Test de integración nuevo contra PostGIS desechable: sin CSV, primera carga (740/243/1.135), segunda sin recarga y sin pisar una fila editada, y recarga solo de la capa vaciada. 8/8 de integración y 93 + 8 salteados en la suite.
+  - Compose de producción con base vacía: cargó 740/243/1.135; tras `restart api`, «ya tenía».
+- Hallazgo del mismo E2E: con el scraper corriendo, `/hotspots` y `/corredores` daban 504 a los 60 s.
+  - Un primer arreglo, con commit del DDL al inicio del scraper, no alcanzó: la medición siguió mostrando 504.
+  - Causa real: `_asegurar_tabla_prensa` de la API corría `ALTER TABLE reportes_prensa` (lock exclusivo) en **cada** request, y el scraper mantenía abierta su transacción de inserts toda la corrida; las lecturas quedaban encoladas detrás del ALTER en espera.
+  - Arreglo: el DDL de prensa en la API corre una vez por proceso, con el mismo patrón que reportes, y el scraper hace commit por fila.
+  - Medición posterior, con el scraper guardando (13 → 24 filas): hotspots, corredores y prensa responden 200 en menos de 1,4 s durante toda la corrida.
+- El stack y las imágenes de prueba se eliminaron.

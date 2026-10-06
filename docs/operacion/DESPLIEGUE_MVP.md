@@ -63,13 +63,31 @@ se dupliquen ejecuciones.
   `AUTH_HABILITADO=false`, así que el MVP público no necesita `AUTH_*` ni
   `SESSION_SECRET`. Si la variable falta, el login queda activado y la API no
   arranca sin credenciales: así se evita exponer sin querer la app de Funnel.
-- Con una base nueva, el stack levantó sano (`/api/health` ok, migraciones
-  aplicadas una sola vez aunque `api` y `scraper` arranquen juntos), pero
-  `/api/hotspots`, `/api/corredores` y `/api/hotspots-inseguridad` responden
-  500 porque las tablas de datos (`hotspots_riesgo` y otras) las crean los
-  scripts `cargar_*.py`, que leen `../data/` y no forman parte de la imagen ni
-  del Blueprint. **Pendiente de decisión:** cómo llegan esos datos a producción
-  (incluirlos en la imagen, migración semilla o servicio de carga única).
+- **Carga inicial de capas (SES-072, decisión de Rodo):** `entrypoint.sh`
+  corre `cargar_datos_iniciales.py` después de las migraciones. Carga
+  hotspots, corredores e inseguridad desde los CSV de `MOTOSAFE_DATA_DIR`
+  **solo si la tabla está vacía**, así que reiniciar no recarga. Los CSV no van
+  en la imagen: en `docker-compose.production.yml` se monta `./data` en
+  `/data` (solo lectura). Prensa la sigue llenando el scraper. Verificado con
+  una base vacía: 740, 243 y 1.135 cargadas; tras reiniciar, «ya tenía».
+- **Render:** el Blueprint no puede montar `data/`, así que la carga inicial
+  informa «sin CSV» y las capas responden error hasta cargarlas. Paso único,
+  desde una copia del repositorio, con la *External Database URL* del panel de
+  Render (no pegarla en el repo ni en el chat):
+
+  ```powershell
+  cd backend
+  $env:DATABASE_URL = "<External Database URL de motosafe-db>"
+  python cargar_datos_iniciales.py
+  ```
+
+  Es idempotente: repetirlo no duplica nada.
+- **Scraper y API en paralelo (SES-072):** antes, mientras el scraper corría,
+  `/api/hotspots` y `/api/corredores` daban 504 a los 60 s. La API ejecutaba
+  `ALTER TABLE reportes_prensa` en cada request y el scraper mantenía una
+  transacción abierta toda la corrida. Ahora la API hace ese DDL una vez por
+  proceso y el scraper confirma cada fila. Con el scraper guardando notas,
+  las capas responden en menos de 1,4 s.
 
 ## Ruta rápida en Render
 

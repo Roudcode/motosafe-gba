@@ -26,6 +26,12 @@ services:
       # El login (backend/auth.py) es solo para el acceso personal por
       # Tailscale Funnel; el MVP publico corre sin login ni AUTH_*/SESSION_SECRET.
       AUTH_HABILITADO: "false"
+      # CSV de las capas para la carga inicial (backend/cargar_datos_iniciales.py):
+      # se montan desde el repo, no se copian a la imagen. Solo se cargan si las
+      # tablas están vacías.
+      MOTOSAFE_DATA_DIR: /data
+    volumes:
+      - ./data:/data:ro
     depends_on:
       db:
         condition: service_healthy

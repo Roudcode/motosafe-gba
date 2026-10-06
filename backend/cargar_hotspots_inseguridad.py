@@ -20,14 +20,15 @@ Uso:
     python cargar_hotspots_inseguridad.py
 """
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
 
-load_dotenv()
-DATABASE_URL = os.getenv('DATABASE_URL')
+DIR_DATOS_POR_DEFECTO = Path(__file__).resolve().parent.parent / 'data'
+MENSAJE = '\n{total} hotspots de inseguridad cargados en total'
 
 
 def nivel_por_percentiles(cantidades):
@@ -45,45 +46,52 @@ def nivel_por_percentiles(cantidades):
     return [nivel(c) for c in cantidades]
 
 
-conn = psycopg2.connect(DATABASE_URL)
-cur = conn.cursor()
+def cargar(cur, dir_datos=DIR_DATOS_POR_DEFECTO):
+    """Crea la tabla si falta, la vacía y carga general y moto. No hace commit.
+    Devuelve la cantidad total cargada."""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS hotspots_inseguridad (
+            id SERIAL PRIMARY KEY,
+            tipo VARCHAR(20) NOT NULL,
+            cluster INTEGER NOT NULL,
+            latitud DOUBLE PRECISION NOT NULL,
+            longitud DOUBLE PRECISION NOT NULL,
+            cantidad_delitos INTEGER NOT NULL,
+            comuna_moda VARCHAR(10),
+            tipo_delito_moda VARCHAR(50),
+            nivel_riesgo VARCHAR(20) NOT NULL,
+            ubicacion GEOGRAPHY(Point, 4326)
+        )
+    """)
 
-cur.execute("""
-    CREATE TABLE IF NOT EXISTS hotspots_inseguridad (
-        id SERIAL PRIMARY KEY,
-        tipo VARCHAR(20) NOT NULL,
-        cluster INTEGER NOT NULL,
-        latitud DOUBLE PRECISION NOT NULL,
-        longitud DOUBLE PRECISION NOT NULL,
-        cantidad_delitos INTEGER NOT NULL,
-        comuna_moda VARCHAR(10),
-        tipo_delito_moda VARCHAR(50),
-        nivel_riesgo VARCHAR(20) NOT NULL,
-        ubicacion GEOGRAPHY(Point, 4326)
-    )
-""")
+    cur.execute("DELETE FROM hotspots_inseguridad")
 
-cur.execute("DELETE FROM hotspots_inseguridad")
+    total = 0
+    for tipo, archivo in [('general', 'hotspots_inseguridad_general.csv'), ('moto', 'hotspots_inseguridad_moto.csv')]:
+        df = pd.read_csv(Path(dir_datos) / archivo)
+        niveles = nivel_por_percentiles(df['cantidad_delitos'].to_numpy())
 
-total = 0
-for tipo, archivo in [('general', '../data/hotspots_inseguridad_general.csv'), ('moto', '../data/hotspots_inseguridad_moto.csv')]:
-    df = pd.read_csv(archivo)
-    niveles = nivel_por_percentiles(df['cantidad_delitos'].to_numpy())
+        for (_, row), nivel in zip(df.iterrows(), niveles):
+            cur.execute("""
+                INSERT INTO hotspots_inseguridad
+                    (tipo, cluster, latitud, longitud, cantidad_delitos, comuna_moda, tipo_delito_moda, nivel_riesgo, ubicacion)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
+            """, (
+                tipo, int(row['cluster']), float(row['latitud']), float(row['longitud']),
+                int(row['cantidad_delitos']), str(row['comuna_moda']), row['tipo_delito_moda'], nivel,
+                float(row['longitud']), float(row['latitud']),
+            ))
+        total += len(df)
+        print(f"{tipo}: {len(df)} hotspots cargados")
+    return total
 
-    for (_, row), nivel in zip(df.iterrows(), niveles):
-        cur.execute("""
-            INSERT INTO hotspots_inseguridad
-                (tipo, cluster, latitud, longitud, cantidad_delitos, comuna_moda, tipo_delito_moda, nivel_riesgo, ubicacion)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
-        """, (
-            tipo, int(row['cluster']), float(row['latitud']), float(row['longitud']),
-            int(row['cantidad_delitos']), str(row['comuna_moda']), row['tipo_delito_moda'], nivel,
-            float(row['longitud']), float(row['latitud']),
-        ))
-    total += len(df)
-    print(f"{tipo}: {len(df)} hotspots cargados")
 
-conn.commit()
-print(f"\n{total} hotspots de inseguridad cargados en total")
-cur.close()
-conn.close()
+if __name__ == '__main__':
+    load_dotenv()
+    conn = psycopg2.connect(os.getenv('DATABASE_URL'))
+    cur = conn.cursor()
+    total = cargar(cur)
+    conn.commit()
+    print(MENSAJE.format(total=total))
+    cur.close()
+    conn.close()

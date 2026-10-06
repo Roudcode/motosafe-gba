@@ -158,3 +158,44 @@ def test_health_informa_base_ok_con_postgres_real(pool_real):
     r = TestClient(main.app).get('/health')
     assert r.status_code == 200
     assert r.json()['base_datos'] == 'ok'
+
+
+def test_carga_inicial_solo_llena_tablas_vacias(url_base, tmp_path):
+    import shutil
+
+    import cargar_datos_iniciales as carga
+
+    nombre = f'motosafe_test_carga_{uuid.uuid4().hex[:8]}'
+    admin = psycopg2.connect(URL_SERVIDOR)
+    admin.autocommit = True
+    admin.cursor().execute(f'CREATE DATABASE {nombre}')
+    url = _url_con_base(URL_SERVIDOR, nombre)
+    try:
+        migrar.aplicar_migraciones(url)
+        # Sin CSV: no falla, avisa.
+        assert set(carga.cargar_si_vacias(url, tmp_path).values()) == {'sin CSV'}
+
+        datos = carga.cargar_hotspots.DIR_DATOS_POR_DEFECTO
+        primera = carga.cargar_si_vacias(url, datos)
+        assert primera == {'hotspots_riesgo': 'cargada 740', 'corredores_riesgo': 'cargada 243',
+                           'hotspots_inseguridad': 'cargada 1135'}
+
+        # Idempotente: con datos no recarga (aunque una fila se haya editado).
+        with psycopg2.connect(url) as conn, conn.cursor() as cur:
+            cur.execute("UPDATE corredores_riesgo SET calle = 'EDITADA' WHERE id = (SELECT min(id) FROM corredores_riesgo)")
+        segunda = carga.cargar_si_vacias(url, datos)
+        assert segunda == {'hotspots_riesgo': 'ya tenía 740', 'corredores_riesgo': 'ya tenía 243',
+                           'hotspots_inseguridad': 'ya tenía 1135'}
+        assert _contar(url, "SELECT count(*) FROM corredores_riesgo WHERE calle = 'EDITADA'") == 1
+
+        # Solo la capa vacía se vuelve a cargar.
+        with psycopg2.connect(url) as conn, conn.cursor() as cur:
+            cur.execute('DELETE FROM hotspots_inseguridad')
+        tercera = carga.cargar_si_vacias(url, datos)
+        assert tercera['hotspots_inseguridad'] == 'cargada 1135'
+        assert tercera['corredores_riesgo'] == 'ya tenía 243'
+    finally:
+        cur = admin.cursor()
+        cur.execute('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s', (nombre,))
+        cur.execute(f'DROP DATABASE IF EXISTS {nombre}')
+        admin.close()
