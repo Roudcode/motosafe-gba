@@ -172,3 +172,5 @@ No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_m
 **Actualización SES-082:** la corrida programada ahora informa cuántas notas ya estaban en la base, y limpia `corrida_*.log` de más de 60 días antes de cada ejecución. Rodo decide la cadencia de 180 minutos con 3 o 4 corridas completas que incluyan el contador nuevo.
 
 **Actualización SES-083:** en celular, la atribución del mapa se colapsa al botón «i» y el «Salir» pasó al menú de herramientas. El build nuevo está publicado en el Funnel. Pendiente: revisar el solapamiento de «Salir» durante la navegación y la pasada general de UX.
+
+**Actualización SES-084:** pasada de UX sobre la búsqueda de ruta, la leyenda, la atribución y el modal de bienvenida. Pendientes: ítems 2, 5 y 7 de la auditoría (bundle, lupa y «Cerrar sesión» en viaje real). **Infraestructura:** la URL pública del Funnel depende de que el preview del 5175 siga vivo a mano; no es un servicio persistente.

@@ -191,7 +191,6 @@ function App() {
   // Trazar ruta como destino (ver buscarComoDestino más abajo).
   const sugBusqueda = useBusquedaDireccion()
   const [campoActivo, setCampoActivo] = useState(null)
-  const [geocodificando, setGeocodificando] = useState(false)
   const [rutasCalculadas, setRutasCalculadas] = useState([])
   const [rutaSeleccionada, setRutaSeleccionada] = useState(0)
   const [rutaCargando, setRutaCargando] = useState(false)
@@ -948,24 +947,20 @@ function App() {
     mostrarToast(`${label} guardado`)
   }
 
-  const buscarRuta = async () => {
+  // Un campo sin punto elegido no se resuelve a ciegas: se muestran las
+  // opciones y el usuario toca la correcta. Antes se tomaba el primer
+  // resultado, y con nombres ambiguos (Monte Grande existe en varios partidos)
+  // la ruta arrancaba en el lugar equivocado (SES-084).
+  const buscarRuta = () => {
     setRutaError(null)
     if (!origenTexto.trim() || !destinoTexto.trim()) { setRutaError('Completá origen y destino.'); return }
-    setGeocodificando(true)
-    try {
-      let a = origenPunto
-      let b = destinoPunto
-      if (!a) a = await geocodificar(origenTexto)
-      if (!b) b = await geocodificar(destinoTexto)
-      if (!a) { setRutaError(`No encontramos "${origenTexto}". Probá con más detalle (ej: "Av. Rivadavia 1200, Ramos Mejía").`); setGeocodificando(false); return }
-      if (!b) { setRutaError(`No encontramos "${destinoTexto}". Probá con más detalle.`); setGeocodificando(false); return }
-      setGeocodificando(false)
-      setRutaAbierta(false)
-      await calcularRuta(a, b)
-    } catch {
-      setGeocodificando(false)
-      setRutaError('Error buscando las direcciones. Probá de nuevo.')
+    if (!origenPunto || !destinoPunto) {
+      if (!origenPunto) sugOrigen.buscar(origenTexto)
+      if (!destinoPunto) sugDestino.buscar(destinoTexto)
+      return
     }
+    setRutaAbierta(false)
+    calcularRuta(origenPunto, destinoPunto)
   }
 
   const calcularRuta = async (a, b) => {
@@ -1553,7 +1548,7 @@ function App() {
       {!vistaNavegacion && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
+          <input type="text" placeholder="Buscar zona o avenida (Enter)..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
@@ -1634,9 +1629,7 @@ function App() {
           {rutaError && <p className="ruta-form-error">{rutaError}</p>}
           <div className="ruta-form-acciones">
             <button className="ruta-form-cancelar" onClick={cerrarTodoRuta}>Cancelar</button>
-            <button className="ruta-form-buscar" onClick={buscarRuta} disabled={geocodificando}>
-              {geocodificando ? <span className="spinner" /> : 'Buscar ruta'}
-            </button>
+            <button className="ruta-form-buscar" onClick={buscarRuta}>Buscar ruta</button>
           </div>
         </div>
       )}

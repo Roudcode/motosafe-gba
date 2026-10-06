@@ -1028,7 +1028,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      angosto eso la hacía invadir el panel de rutas/cercanas del otro lado
      (ambos pueden estar abiertos a la vez, ver captura real). Un ancho fijo
      fuerza al título a partirse en dos líneas en vez de ensancharse. */
-  .legend { left: 12px; bottom: calc(90px + var(--safe-bottom)); padding: 10px 12px; width: 140px; min-width: 0; }
+  .legend { left: 12px; bottom: calc(90px + var(--safe-bottom)); padding: 8px 10px; width: 124px; min-width: 0; }
+  .legend-title { font-size: var(--fs-sm); }
   .route-fab { right: 16px; bottom: var(--b3); }
   .herramientas-stack { right: 16px; bottom: calc(138px + var(--safe-bottom)); }
   .report-fab { right: 16px; bottom: var(--b1); padding: 12px 16px; }

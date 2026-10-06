@@ -465,10 +465,22 @@ function MapaMotoSafeInner({
     mapRef.current = map
 
     map.on('load', () => {
-      // MapLibre deja la atribución expandida al cargar, y en el celular tapa
-      // «Reportar» y los botones de abajo (SES-083). La colapsamos al botón «i»;
-      // el usuario la abre igual con ese botón.
-      map.getContainer().querySelector('.maplibregl-ctrl-attrib.maplibregl-compact-show')?.classList.remove('maplibregl-compact-show')
+      // En celular, MapLibre deja la atribución expandida al cargar y tapa
+      // «Reportar» y los botones de abajo (SES-083). Por debajo del breakpoint
+      // mobile se colapsa al botón «i» (el usuario la abre con ese botón). En
+      // escritorio queda abierta: hay espacio y es la atribución de los datos.
+      // MapLibre a veces vuelve a expandirla después del load (cuando termina de
+      // renderizar), así que se repite en el evento idle.
+      // La atribución es un <details>: lo que la muestra expandida es el atributo
+      // `open`, que MapLibre pone en celular al cargar (la clase sola no alcanza).
+      const colapsarAtribucionEnCelular = () => {
+        if (!window.matchMedia('(max-width: 480px)').matches) return
+        const atribucion = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
+        atribucion?.classList.remove('maplibregl-compact-show')
+        atribucion?.removeAttribute('open')
+      }
+      colapsarAtribucionEnCelular()
+      map.once('idle', colapsarAtribucionEnCelular)
       onReady?.(map)
       setVersion((v) => v + 1)
     })

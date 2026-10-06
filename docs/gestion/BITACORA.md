@@ -884,3 +884,16 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: lint sin errores; 71 tests de frontend; build sin errores. En el navegador en 375×812: «Reportar» libre, «Salir» ya no aparece abajo, «Cerrar sesión» figura en el menú de herramientas (no se hizo clic para no cerrar la sesión de prueba).
 - Nota: el build nuevo lo sirven también el preview 5175 del Funnel y el 5176, porque comparten `frontend/dist`. Los cambios ya están vivos en la URL pública.
 - Pendiente: el solapamiento de «Salir» de navegación (`nav-resumen-mini`) con «Reportar» durante un viaje, que no se probó. La pasada general de UX queda para después, según lo acordado.
+
+## 2026-10-06 — SES-084 — Pasada de UX: búsqueda de ruta, leyenda, atribución y modal (Claude Code)
+
+- Alcance acordado con Rodo: ítems 1, 3, 4, 6 y 8 de la auditoría. Quedan para después los ítems 2 (bundle de 1,3 MB), 5 (botón de la lupa) y 7 (solapamiento de «Cerrar sesión» en viaje real).
+- Cambios:
+  - Ítem 1 (regresión de SES-079): «Buscar ruta» ya no toma el primer resultado de un campo sin punto elegido. Muestra las opciones de ese campo y la ruta se calcula cuando el usuario toca la correcta. Se quitó el estado `geocodificando`, que ya no hacía falta.
+  - Ítem 3: la leyenda «Nivel de riesgo» en celular pasa de 140 a 124 px de ancho y reduce el padding y el título. Sigue ocupando un bloque del mapa; si hace falta más, se puede pasar a una versión colapsada.
+  - Ítem 4: el placeholder del buscador dice «(Enter)».
+  - Ítem 6: la atribución del mapa se colapsa al botón «i» solo por debajo de 480 px. En escritorio queda abierta.
+  - Ítem 8: el modal «Así funciona MotoSafe» se controla con `localStorage` (clave `CLAVE_ONBOARDING`). Aparece una vez por navegador y por origen. Por eso reapareció en `127.0.0.1:5176`: es otro origen que la URL del Funnel.
+- Causa real de la atribución expandida: MapLibre pone el atributo `open` en el `<details>` de la atribución al cargar en pantallas de hasta 640 px, y ese atributo es lo que la muestra. La clase `maplibregl-compact-show` no alcanza, y se quita también en el evento `idle`.
+- Verificación: lint sin errores; 71 tests; build sin errores. En el navegador a 375×812: la atribución queda en el «i», «Reportar» libre, placeholder con «(Enter)», y «Buscar ruta» con «Monte Grande» muestra las opciones sin calcular ruta.
+- Infraestructura, pendiente sin tocar: la URL pública del Funnel depende de que el preview del 5175 esté corriendo a mano. No es un servicio persistente. Se anota en CONTINUIDAD.
