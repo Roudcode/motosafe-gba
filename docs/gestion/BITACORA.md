@@ -1019,3 +1019,7 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - **Tarjeta de maniobra:** la distancia a la maniobra pasa a 22 px.
   - **Reportar:** durante el viaje queda solo como ícono redondo, arriba de la barra. Con `aria-label` para lectores de pantalla.
 - Verificación: lint sin errores; 77 pruebas; build sin errores. En el navegador de prueba el contenido de la barra es correcto: «29 KM/H · 27 min · 12,8 km · llegás 03:31 p. m. · Salir». No pude medir posiciones (el panel de prueba no dibuja en ese momento), así que la distribución visual queda por confirmar en el celular.
+
+- **SES-096 — marcador de posición en viaje:** durante el viaje el marcador es la flecha (puck) también en 2D, no solo en la vista inclinada. En 2D la flecha gira con el rumbo (`rotate` sobre el SVG); en la vista inclinada queda apuntando hacia arriba porque el mapa gira. Se pasa `modoViaje` al mapa. Las dependencias del efecto del marcador quedaron con `modoViaje`.
+- Verificación: lint sin errores; 77 pruebas; build sin errores.
+- **No verificado:** en el navegador de prueba no aparece ningún marcador de posición, ni siquiera fuera del viaje. Como el problema se ve también con las dependencias originales, lo más probable es que el arnés de prueba no fije la ubicación igual que la app real (el mismo flujo funcionó en capturas de celular). Hay que confirmar en el celular que la flecha aparece y gira.

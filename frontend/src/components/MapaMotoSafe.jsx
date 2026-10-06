@@ -397,6 +397,7 @@ function MapaMotoSafeInner({
   ubicacionReporte,
   miUbicacion,
   vistaNavegacion,
+  modoViaje,
   rumboActual,
   progresoRutaIndice,
   siguiendoUbicacion,
@@ -1107,6 +1108,7 @@ function MapaMotoSafeInner({
   // -- el desplazamiento entre fixes lo anima el efecto de abajo con
   // requestAnimationFrame, sin tocar la instancia del marker.
   const miUbicacionMarkerRef = useRef(null)
+  const tieneUbicacion = Boolean(miUbicacion)
   const miUbicacionMostradaRef = useRef(null)
   const miUbicacionAnimRef = useRef(null)
 
@@ -1119,7 +1121,7 @@ function MapaMotoSafeInner({
     }
     if (miUbicacion) {
       let el
-      if (vistaNavegacion) {
+      if (vistaNavegacion || modoViaje) {
         // Puck direccional tipo Waze/Google Maps en vez del punto pulsante
         // genérico: en navegación importa ver hacia dónde se apunta, no solo
         // dónde se está. El marker de MapLibre no rota con el bearing del
@@ -1162,7 +1164,14 @@ function MapaMotoSafeInner({
     // cuando la ubicación aparece/desaparece -- NO en cada coordenada nueva
     // (eso lo maneja el efecto de animación de abajo).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vistaNavegacion, version, !!miUbicacion])
+  }, [vistaNavegacion, version, modoViaje, !!miUbicacion])
+
+  // En 2D (sin vista inclinada) la flecha del viaje gira con el rumbo; en la
+  // vista inclinada el mapa ya gira y la flecha queda apuntando hacia arriba.
+  useEffect(() => {
+    const svg = miUbicacionMarkerRef.current?.getElement()?.querySelector('.puck-navegacion-svg')
+    if (svg) svg.style.transform = vistaNavegacion ? '' : `rotate(${rumboActual || 0}deg)`
+  }, [rumboActual, vistaNavegacion, modoViaje, tieneUbicacion])
 
   useEffect(() => {
     const marker = miUbicacionMarkerRef.current

@@ -1742,6 +1742,7 @@ function App() {
           ubicacionReporte={paso === 'eligiendo' ? ubicacionReporte : null}
           miUbicacion={miUbicacion}
           vistaNavegacion={vistaNavegacion}
+          modoViaje={modoViaje}
           rumboActual={rumboActual}
           progresoRutaIndice={progresoRuta?.indiceCercano ?? null}
           siguiendoUbicacion={siguiendoUbicacion}
