@@ -29,7 +29,7 @@ cd backend
 py -3.12 -m venv venv312        # Windows (Python 3.12; los .bat esperan este nombre)
 venv312\Scripts\activate
 # python3.12 -m venv venv312 && source venv312/bin/activate   # Linux/Mac
-pip install -r ../requirements.txt
+pip install --require-hashes -r ../requirements.lock
 ```
 
 Las versiones son exactas y `scikit-learn` tiene que coincidir con la del modelo guardado; ver [docs/operacion/ENTORNO_REPRODUCIBLE.md](docs/operacion/ENTORNO_REPRODUCIBLE.md).

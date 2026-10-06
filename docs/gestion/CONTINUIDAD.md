@@ -107,3 +107,7 @@ El modelo vigente se guardó con scikit-learn 1.7.2, pero se declaraba 1.5.2 y e
 ## Actualización 2026-10-05 — SES-067: login opcional y compose de producción
 
 El MVP público corre sin login (`AUTH_HABILITADO=false` en compose y Render). Por defecto el login sigue activado, como el acceso por Funnel. El compose de producción se levantó de verdad: arranca sano y se corrigió la carrera de migraciones. **Pendiente de decisión de Rodo:** en producción las capas de datos dan 500 con base nueva porque nada carga `hotspots_riesgo` y las demás tablas (ver `docs/operacion/DESPLIEGUE_MVP.md`).
+
+## Actualización 2026-10-06 — SES-068: lock, prototipos y primer E2E real
+
+Dependencias transitivas fijadas con hashes (`backend/requirements.lock`, `requirements.lock`) e instaladas con `--require-hashes` en Docker, CI y el lanzador local. Prototipos de notebooks declarados. El primer E2E real, aislado de Funnel y de la base personal, pasó 23/23 verificaciones HTTP. Corrigió dos fallas: el mapa en blanco en el build de producción (worker de MapLibre) y `cargar_hotspots.py` sin crear su tabla. **Pendiente de Rodo:** confirmar la primera corrida del CI en GitHub (repo privado, sin `gh` ni sesión en el navegador integrado). **Pendiente técnico:** E2E visual de los flujos del mapa con la ventana en primer plano.

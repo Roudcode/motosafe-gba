@@ -626,3 +626,27 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
     2. Datos: con base nueva, `/hotspots`, `/corredores` y `/hotspots-inseguridad` devuelven 500 (`relation "hotspots_riesgo" does not exist`). Las tablas las crean los `cargar_*.py`, que leen `../data/`, fuera del contexto de build de la imagen y del Blueprint. **Pendiente de decisión de Rodo:** cómo llegan los datos a producción. Documentado en `DESPLIEGUE_MVP.md` y en A14.
   - El stack de prueba, su volumen y la imagen web se eliminaron al terminar.
 - Observación para A09, sin cambios: en la corrida real del scraper dentro del stack, la nota «Monte Grande: un detenido por el robo de un auto» se ubicó en (-34.5285, -58.5081), que es zona norte y no Esteban Echeverría. Hay que revisar ese alias cuando se retome A09.
+
+## 2026-10-05/06 — SES-068 — Lock de dependencias, prototipos declarados y primer E2E real (A22, A14, T02, T05) (Claude Code)
+
+- Alcance: cerrar la deuda técnica de A22 y avanzar el E2E real en la máquina de Rodo. Pedido explícito de Rodo; A06 y todo lo relacionado con el tutor quedaron fuera.
+- Lock (A22):
+  - `backend/requirements.lock` y `requirements.lock` se generaron con `uv pip compile --universal --python-version 3.12 --generate-hashes`, con `uv` en un venv de herramientas del scratchpad. Fijan todas las dependencias transitivas con hashes, para Windows y Linux a la vez.
+  - El Dockerfile, el CI y `backend\_iniciar_backend.bat` instalan con `--require-hashes`.
+  - Nuevo test `test_lock_coincide_con_las_versiones_directas_y_tiene_hashes`.
+  - Verificado: venv nuevo de Windows desde el lock del backend (`pip check` limpio, 84 tests); venv nuevo desde el lock raíz (geopandas, xgboost, matplotlib, seaborn, jupyter importan); imagen Docker desde el lock (84 tests en Linux).
+- Notebooks:
+  - `notebooks/requirements-prototipos.txt` declara h3 4.5.0, folium 0.20.0, libpysal 4.15.0 y esda 2.10.0. Se verificó corriendo `prototipo_gi_kde_hotspots.py` completo, que solo imprime y no modificó `data/`, y comprobando las funciones h3 v4 de `prototipo_h3_hotspots.py`. Ese último no se ejecutó porque escribe archivos en `data/`.
+  - `geopandas` pasó a 1.2.0 porque libpysal exige `>=1.1`; ningún script lo importa.
+  - `seaborn` y `requests`, usados por el notebook histórico, quedaron declarados en el `requirements.txt` raíz.
+- CI (T05): **no se pudo confirmar en GitHub.** El repositorio es privado, `gh` no está instalado y el navegador integrado no tiene sesión de GitHub. No se usaron credenciales guardadas. Pendiente: que Rodo inicie sesión en el panel del navegador o revise Actions.
+- E2E (T02): montaje aislado porque Tailscale Funnel estaba activo publicando `:5173` → `:8000`. Se usaron PostGIS efímero en `127.0.0.1:55432`, backend en `:8100` con credenciales de prueba generadas en la sesión y build del frontend con `vite preview` en `:4173`. `vite.config.js` acepta `MOTOSAFE_API_TARGET` y `MOTOSAFE_SIN_HTTPS` y, sin ellas, se comporta igual que antes. Hallazgos:
+  1. `cargar_hotspots.py` hacía `DELETE` sobre una tabla que nada creaba. Una base nueva no se podía reconstruir desde el repo. Ahora la crea con el esquema de la base de desarrollo, leído con `\d`, solo lectura. Después se cargaron las 740 zonas.
+  2. **El build de producción dejaba el mapa en blanco.** MapLibre 6.8 calcula en tiempo de ejecución la URL de `maplibre-gl-worker.mjs`, `vite build` no la emitía y el servidor devolvía `index.html`. Afectaba al compose de producción y a Render; en `npm run dev` no se veía. Se corrigió con `?worker&url` y `setWorkerUrl`, solo en el build; después el mapa dibujó teselas y 38 marcadores.
+  3. El E2E HTTP (`docs/evidencias/2026-10-05/T02-E2E/e2e_http.py`) pasó 23 de 23 verificaciones a través del proxy, incluido el ciclo de reportes y rutas reales con TomTom. En la primera corrida dos expectativas del script estaban mal: el formato de `/predecir` y el voto repetido, que por diseño reemplaza al anterior. Se corrigieron en el script, no en la app.
+- Limitaciones:
+  - Después del arreglo del worker, el panel del navegador dejó de pintar (`requestAnimationFrame` detenido, ventana sin foco), así que no se verificaron flujos visuales sobre el mapa.
+  - `npm run dev` no se pudo verificar en el panel: tampoco dibujaba con el código original, por la misma causa. Por eso el arreglo quedó limitado a `import.meta.env.PROD`.
+  - El montaje, el contenedor y los procesos del E2E se eliminaron. El stack de Rodo (`:5173`, `:8000`) no se tocó.
+- Otros: `eslint.config.js` ignora `dist_*`, porque el build local `dist_check_clima/` rompía `npm run lint`.
+- Verificación final: 84 tests de backend, 68 de frontend, lint y build limpios.

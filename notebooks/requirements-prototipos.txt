@@ -1,0 +1,9 @@
+# Solo para notebooks/prototipo_h3_hotspots.py y prototipo_gi_kde_hotspots.py
+# (comparación exploratoria de métodos de hotspots; no los usa la API ni el
+# pipeline vigente). Verificado el 2026-10-05 con prototipo_gi_kde_hotspots.py
+# completo y las funciones h3 v4 que usa prototipo_h3_hotspots.py.
+-r ../requirements.txt
+h3==4.5.0
+folium==0.20.0
+libpysal==4.15.0
+esda==2.10.0

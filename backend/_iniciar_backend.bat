@@ -4,7 +4,7 @@ cd /d "%~dp0"
 call venv312\Scripts\activate
 
 echo Verificando dependencias de Python (rapido si ya estan instaladas)...
-pip install -q -r requirements.txt
+pip install -q --require-hashes -r requirements.lock
 
 python -c "import os,sys; from dotenv import load_dotenv; load_dotenv(); sys.exit(0 if (os.getenv('AUTH_USERNAME') and os.getenv('AUTH_PASSWORD_HASH')) else 1)"
 if errorlevel 1 (

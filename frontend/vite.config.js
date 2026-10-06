@@ -1,10 +1,18 @@
 import react from '@vitejs/plugin-react'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import { env } from 'node:process'
 import { defineConfig } from 'vite'
+
+// Para levantar una instancia aparte (por ejemplo un E2E contra otro backend,
+// sin tocar el :8000 que publica Tailscale Funnel): MOTOSAFE_API_TARGET cambia
+// el destino del proxy /api y MOTOSAFE_SIN_HTTPS=1 sirve por http (en
+// localhost la geolocalizacion funciona igual). Sin estas variables, nada cambia.
+const API_TARGET = env.MOTOSAFE_API_TARGET || 'http://127.0.0.1:8000'
+const CON_HTTPS = env.MOTOSAFE_SIN_HTTPS !== '1'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), basicSsl()],
+  plugins: [react(), ...(CON_HTTPS ? [basicSsl()] : [])],
   // host: true expone el server en la red local (no solo localhost), asi se
   // puede abrir desde el celular. https: true (via basic-ssl) es necesario
   // porque la Geolocation API del navegador exige contexto seguro -- y esa
@@ -19,7 +27,7 @@ export default defineConfig({
   // API_URL en constants.js, ahora relativo).
   server: {
     host: true,
-    https: true,
+    https: CON_HTTPS,
     // Vite bloquea por defecto cualquier Host header que no reconozca (para
     // frenar ataques de DNS rebinding) -- eso incluye el hostname que arma
     // un tunel temporal (cloudflared/ngrok) para probar desde el celular sin
@@ -29,7 +37,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: API_TARGET,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
@@ -41,5 +49,10 @@ export default defineConfig({
   // Vite intente pre-empaquetarla y el problema desaparece.
   optimizeDeps: {
     exclude: ['maplibre-gl'],
+  },
+  // El worker de MapLibre (ver setWorkerUrl en MapaMotoSafe.jsx) es un módulo
+  // ES y MapLibre lo crea con { type: 'module' }.
+  worker: {
+    format: 'es',
   },
 })

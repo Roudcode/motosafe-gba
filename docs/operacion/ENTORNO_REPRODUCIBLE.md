@@ -6,7 +6,7 @@ Actualizado: 2026-10-05 (SES-066). Evidencia: [docs/evidencias/2026-10-05/A22-en
 
 La API sirve un modelo serializado con `joblib` (`backend/modelo_final.pkl`). scikit-learn no garantiza que un pickle cargue igual en otra versión. Por eso:
 
-1. `backend/requirements.txt` fija **versiones exactas** (`==`). Lo usan el Dockerfile, el CI y la instalación local.
+1. `backend/requirements.txt` fija **versiones exactas** (`==`) de las dependencias directas y es el archivo que se edita a mano. `backend/requirements.lock` fija además todas las transitivas, con hashes SHA256, y es lo que instalan el Dockerfile, el CI y `backend\_iniciar_backend.bat` (`pip install --require-hashes -r requirements.lock`). Desde SES-068.
 2. La versión de `scikit-learn` declarada ahí tiene que ser **la misma con la que se guardó el modelo**. `backend/tests/test_entorno.py` lee la versión del propio pickle y falla si no coincide.
 3. `requirements.txt` de la raíz incluye el del backend y agrega solo dependencias de notebooks. Reentrenar o recalibrar usa la misma versión que sirve la API.
 4. `notebooks/reentrenar_modelo.py` se niega a entrenar si el scikit-learn instalado no es el declarado.
@@ -19,12 +19,23 @@ Python 3.12 (el mismo que la imagen `python:3.12-slim`). Desde la raíz del repo
 ```
 py -3.12 -m venv backend\venv312
 backend\venv312\Scripts\activate
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock
 cd backend
 python -m pytest -q
 ```
 
-`backend\venv312` es el nombre que esperan `iniciar.bat`, `iniciar_app.bat`, `tareas.bat` y `backend\_iniciar_backend.bat`. Para solo la API alcanza `pip install -r backend/requirements.txt`.
+`backend\venv312` es el nombre que esperan `iniciar.bat`, `iniciar_app.bat`, `tareas.bat` y `backend\_iniciar_backend.bat`. Para solo la API alcanza `pip install --require-hashes -r backend/requirements.lock`. Los prototipos de clustering (`notebooks/prototipo_*.py`) necesitan además `pip install -r notebooks/requirements-prototipos.txt` (h3, folium, libpysal, esda).
+
+### Regenerar los locks
+
+Después de cambiar `backend/requirements.txt` o `requirements.txt`, con [uv](https://docs.astral.sh/uv/) en cualquier entorno de herramientas:
+
+```
+uv pip compile --universal --python-version 3.12 --generate-hashes --no-header backend/requirements.txt -o backend/requirements.lock
+uv pip compile --universal --python-version 3.12 --generate-hashes --no-header requirements.txt -o requirements.lock
+```
+
+`--universal` resuelve para Windows y Linux a la vez (por ejemplo `colorama` en Windows y `uvloop` en Linux, ambos dependencias de `uvicorn[standard]`). `tests/test_entorno.py` falla si el lock del backend no coincide con las versiones directas o si algún paquete no tiene hash.
 
 Verificado el 2026-10-05 en un venv nuevo con Python 3.12.10: `pip check` sin conflictos, 80 tests aprobados y sin `InconsistentVersionWarning`. La imagen Docker del backend, construida con las mismas versiones, también aprobó los 80 tests en Linux.
 
@@ -48,6 +59,5 @@ Los umbrales `UMBRALES_HOTSPOTS`/`UMBRALES_CORREDORES` de `backend/main.py` se r
 
 ## Límites conocidos
 
-- Las versiones fijadas son las directas y numpy/scipy. Las dependencias transitivas restantes (por ejemplo `annotated-types`, `anyio`) no están fijadas; no afectan las predicciones, pero una instalación futura puede traer otras versiones. Un lock completo con hashes (`pip-tools`/`uv`) queda como mejora posible.
-- Varios scripts de `notebooks/` importan paquetes que no están declarados (`h3`, `folium`, `libpysal`, `esda`, usados por prototipos de clustering). No se agregaron sin probar esos scripts.
-- `xgboost`, `jupyter`, `geopandas` y `matplotlib` conservan las versiones que ya tenía el `requirements.txt` raíz. Se verificó que se instalan y se importan con numpy 2.5.3; no se ejecutó el notebook histórico.
+- `notebooks/requirements-prototipos.txt` no tiene lock: son prototipos exploratorios. Se verificó corriendo `prototipo_gi_kde_hotspots.py` completo y comprobando las funciones h3 v4 de `prototipo_h3_hotspots.py`; este último no se ejecutó porque escribe archivos `_h3_preview` en `data/`.
+- `geopandas` pasó de 1.0.1 a 1.2.0 porque libpysal 4.15 exige `>=1.1`; ningún script del repositorio lo importa. `seaborn` y `requests`, usados por el notebook histórico, quedaron declarados. No se ejecutó el notebook histórico.

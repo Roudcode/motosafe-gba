@@ -34,6 +34,6 @@ jobs:
       # Instalación limpia con las versiones fijadas (A22) y tests sin base de
       # datos: incluye tests/test_entorno.py, que falla si el modelo guardado
       # no coincide con la versión de scikit-learn declarada.
-      - run: pip install -r backend/requirements.txt
+      - run: pip install --require-hashes -r backend/requirements.lock
       - run: python -m pytest -q
         working-directory: backend

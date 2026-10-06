@@ -31,11 +31,21 @@
 import { useEffect, useRef, useState, memo } from 'react'
 // maplibre-gl no tiene export default (solo exports nombrados) -- ver
 // node_modules/maplibre-gl/dist/maplibre-gl.mjs.
-import { Map as MapaLibre, Marker, Popup } from 'maplibre-gl'
+import { Map as MapaLibre, Marker, Popup, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+// MapLibre 6 arma la URL de su worker en tiempo de ejecución
+// (new URL(`./${nombre}`, import.meta.url)), que Vite no detecta: en `vite build`
+// el worker no se copiaba a dist/, el servidor devolvía index.html y el mapa
+// quedaba en blanco (E2E de SES-068). `?worker&url` hace que Vite empaquete el
+// worker con sus imports y devuelva su URL. Solo en el build: en `npm run dev`
+// se conserva el comportamiento de siempre, que no se pudo verificar en el
+// navegador del E2E.
+import urlWorkerMaplibre from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { NIVELES, NIVELES_INSEGURIDAD_COLOR, CATEGORIAS_REPORTE, VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT } from '../constants'
 import { crearIconoCluster, crearIconoClusterInseguridad } from '../utils/ui'
 import { opacidadPorAntiguedad, esReciente, formatearAntiguedad } from '../utils/tiempo'
+
+if (import.meta.env.PROD) setWorkerUrl(urlWorkerMaplibre)
 
 const ESTILOS = {
   dark: 'https://tiles.openfreemap.org/styles/dark',

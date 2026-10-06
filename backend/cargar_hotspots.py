@@ -22,6 +22,22 @@ NIVEL_PLACEHOLDER = 'bajo'
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
+# Igual que corredores_riesgo y hotspots_inseguridad: la tabla se autocrea. Antes
+# se asumía creada a mano y una base nueva fallaba con "relation does not exist"
+# (E2E de SES-068). Esquema copiado del de la base de desarrollo existente.
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS hotspots_riesgo (
+        id SERIAL PRIMARY KEY,
+        cluster INTEGER,
+        latitud DOUBLE PRECISION,
+        longitud DOUBLE PRECISION,
+        cantidad_siniestros INTEGER,
+        mortales INTEGER,
+        graves INTEGER,
+        nivel_riesgo VARCHAR(20),
+        ubicacion GEOMETRY(Point, 4326)
+    )
+""")
 cur.execute("DELETE FROM hotspots_riesgo")
 
 for _, row in df.iterrows():

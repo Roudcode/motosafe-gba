@@ -46,3 +46,26 @@ def test_requirements_backend_fija_versiones_exactas():
     ]
     sueltas = [l for l in lineas if '==' not in l]
     assert not sueltas, f'Dependencias sin versión exacta: {sueltas}'
+
+
+def test_lock_coincide_con_las_versiones_directas_y_tiene_hashes():
+    # requirements.lock se genera desde requirements.txt (uv pip compile
+    # --universal --generate-hashes, ver docs/operacion/ENTORNO_REPRODUCIBLE.md).
+    # Si alguien cambia una versión directa sin regenerar el lock, el
+    # Dockerfile y el CI instalarían otra cosa que la declarada.
+    def normalizar(nombre):
+        return re.sub(r'[-_.]+', '-', nombre).lower()
+
+    lock = (BACKEND / 'requirements.lock').read_text(encoding='utf-8')
+    fijadas = {normalizar(n): v for n, v in re.findall(r'^([A-Za-z0-9_.\-]+)==(\S+)', lock, re.M)}
+    directas = re.findall(
+        r'^([A-Za-z0-9_.\-]+)(?:\[[^\]]*\])?==(\S+)$',
+        (BACKEND / 'requirements.txt').read_text(encoding='utf-8'), re.M,
+    )
+    distintas = {n: (v, fijadas.get(normalizar(n))) for n, v in directas if fijadas.get(normalizar(n)) != v}
+    assert not distintas, f'Lock desactualizado (declarada, lock): {distintas}'
+    sin_hash = [
+        bloque.split('==')[0] for bloque in re.split(r'\n(?=[A-Za-z])', lock)
+        if '==' in bloque and '--hash=sha256:' not in bloque
+    ]
+    assert not sin_hash, f'Paquetes sin hash en el lock: {sin_hash}'

@@ -2,10 +2,16 @@
 # scikit-learn tiene que coincidir con la del modelo guardado (ver
 # backend/requirements.txt y docs/operacion/ENTORNO_REPRODUCIBLE.md); los
 # notebooks que reentrenan o recalibran usan esta misma versión.
+# Versiones transitivas fijadas con hashes en requirements.lock (raíz) y
+# backend/requirements.lock: regenerarlos al cambiar este archivo.
 -r backend/requirements.txt
 
-# Datos y notebooks (no los usa la API)
-geopandas==1.0.1
+# Datos y notebooks (no los usa la API). geopandas 1.2.0 porque libpysal
+# (prototipos) exige >=1.1; ningún script del repo lo importa directamente.
+geopandas==1.2.0
 xgboost==2.1.1
 jupyter==1.1.1
 matplotlib==3.9.2
+# Usados por notebooks/01_eda_hotspots_moto.ipynb
+seaborn==0.13.2
+requests==2.34.2

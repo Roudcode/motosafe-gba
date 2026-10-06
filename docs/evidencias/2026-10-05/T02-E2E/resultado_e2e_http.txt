@@ -1,0 +1,25 @@
+OK  sin sesión /hotspots responde 401 — 401
+OK  login con contraseña incorrecta responde 401 — 401
+OK  login correcto responde 200 — 200
+OK  cookie de sesión HttpOnly, Secure y SameSite=Lax
+OK  /auth/me con sesión — {"usuario":"e2e","auth_habilitado":true}
+OK  /health ok, umbrales y scikit-learn coinciden — {'estado': 'ok', 'base_datos': 'ok', 'servidor_utc': '2026-10-06T00:00:06.132335+00:00', 'umbrales_riesgo_actualizados': True, 'version_sklearn_coincide': True}
+OK  /hotspots devuelve 740 zonas con nivel y clima — 740 zonas, niveles {'medio': 462, 'bajo': 225, 'alto': 51, 'critico': 2}
+OK  /corredores devuelve 243 — 200 243
+OK  /hotspots-inseguridad general devuelve 633 — 633; ajustadas por horario: 633
+OK  /hotspots-inseguridad moto devuelve 502 — 502; ajustadas por horario: 502
+OK  /predecir devuelve probabilidades que suman 1 — {'GRAVE': 0.041, 'LEVE': 0.957, 'MORTAL': 0.002}
+OK  crear reporte responde 201 con token de borrado — 201
+OK  GET /reportes lo lista sin exponer token ni autor
+OK  el autor no puede confirmar su propio reporte — 400
+OK  otro dispositivo confirma (201) — 201
+OK  cambiar el voto lo reemplaza: 0 confirmaciones y 1 desmentida — 201; confirmaciones=0 desmentidas=1
+OK  borrar con token inválido responde 404 — 404
+OK  borrar con el token correcto — 200
+OK  el reporte ya no aparece
+OK  /reportes-prensa responde 200 — 200, 0 filas
+OK  /rutas devuelve al menos una ruta con pasos — 200; 7.6 km 11 min; 6.4 km 13 min; 6.2 km 14 min
+OK  tesela de tráfico PNG — 200 image/png
+OK  después de salir /auth/me responde 401 — 401
+
+0 fallas
