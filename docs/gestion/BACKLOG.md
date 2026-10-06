@@ -163,3 +163,15 @@ Funciones opcionales deben justificar mantenimiento, datos y compatibilidad. Fav
 ## Referencia de accesibilidad
 
 Usar [WCAG 2.2](https://www.w3.org/TR/WCAG22/) como referencia para contraste, teclado, foco y tamaño de objetivos. Su criterio AA de tamaño mínimo contempla 24 píxeles CSS y excepciones; proponer 44 px para controles principales del producto es una decisión de diseño, no afirmar que todo objetivo inferior incumple automáticamente. Ver [explicación oficial de tamaño mínimo](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum). La conformidad requiere evaluación, no solo inspección CSS.
+
+## Registro del proceso (criterio de evaluación del Proyecto Final)
+
+Ítems separados, para que cada uno se pueda mostrar por su cuenta:
+
+| Ítem | Estado | Dónde está |
+|---|---|---|
+| Historial de commits | Disponible | `git log` del repositorio (`origin/main`). Cada bloque de trabajo tiene su commit con el número de sesión (SES-NNN) en el mensaje. |
+| Bitácora de sesiones | Disponible | `docs/gestion/BITACORA.md`, una entrada por sesión con alcance, cambios, verificación y límites. |
+| Backlog del proyecto | Disponible | Este archivo (`docs/gestion/BACKLOG.md`). |
+| Actas con el tutor | Pendiente (material de Rodo) | No se generan desde el repositorio. Las carga Rodo fuera del repo; no forman parte del trabajo de Claude. |
+| Decisiones registradas | Disponible | `docs/gestion/` (decisiones DEC-NNN, citadas en BACKLOG y BITACORA). |
