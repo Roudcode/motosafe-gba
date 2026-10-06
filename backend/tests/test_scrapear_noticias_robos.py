@@ -156,3 +156,26 @@ def test_nombre_de_partido_o_barrio_seguido_de_altura_es_una_calle():
     assert encontrar_zona('Asalto en Belgrano al 1500') is None
     # Sin altura sigue siendo la zona.
     assert encontrar_zona('Detuvieron a un ladrón en Almirante Brown') == ('Almirante Brown', 'Buenos Aires')
+
+
+def test_nota_ya_guardada_cuenta_como_ya_en_base_y_no_como_nueva(monkeypatch):
+    """SES-082: ON CONFLICT (url_fuente) DO NOTHING deja rowcount en 0. Antes la
+    nota se perdía en el conteo; ahora cuenta como 'ya en la base'."""
+    from unittest.mock import MagicMock
+    import scrapear_noticias_robos as scraper
+
+    cur = MagicMock()
+    cur.rowcount = 0  # el INSERT no insertó: la URL ya estaba
+    contadores = {
+        'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0, 'ya_en_base': 0,
+        'duplicadas': 0, 'fuera_de_zona': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
+        'candidatas_por_fuente': {}, 'ubicadas_por_fuente': {}, 'guardadas_por_fuente': {},
+    }
+    monkeypatch.setattr(scraper, 'extraer_ubicacion', lambda t, d: ('Quilmes, Buenos Aires, Argentina', 'barrio', 800))
+    monkeypatch.setattr(scraper, 'encontrar_zona', lambda t: ('Quilmes', 'Buenos Aires'))
+    monkeypatch.setattr(scraper, 'geocodificar_en_zona', lambda *a: ((-34.72, -58.26), 'ok'))
+
+    scraper._evaluar_y_guardar('Robaron a un jubilado en Quilmes', '', 'https://ejemplo.test/1', 'Fuente X', True, cur, contadores, None)
+
+    assert contadores['ya_en_base'] == 1
+    assert contadores['guardadas'] == 0

@@ -31,6 +31,9 @@ set "LOG=%LOG_DIR%\corrida_%MARCA%.log"
 set "MODO=--guardar"
 if /i "%~1"=="--seco" set "MODO="
 
+rem Limpieza: borra solo corrida_*.log de mas de 60 dias en logs\scraper, antes de correr.
+forfiles /P "%LOG_DIR%" /M corrida_*.log /D -60 /C "cmd /c echo [%date% %time%] limpieza: borrando @file & del /q @path" >> "%LOG%" 2>nul
+
 echo [%date% %time%] inicio (modo: %MODO%) >> "%LOG%"
 
 rem Docker Desktop arranca con el inicio de sesion pero tarda: esperamos hasta 5 minutos.
@@ -47,7 +50,7 @@ ping -n 11 127.0.0.1 >nul
 goto :esperar_docker
 
 :ejecutar
-docker compose --env-file .env.production -f docker-compose.production.yml run --rm --no-deps --entrypoint python scraper scrapear_noticias_robos.py %MODO% >> "%LOG%" 2>&1
+docker compose --env-file .env.production -f docker-compose.production.yml run --rm --build --quiet-build --no-deps --entrypoint python scraper scrapear_noticias_robos.py %MODO% >> "%LOG%" 2>&1
 set "CODIGO=%ERRORLEVEL%"
 echo [%date% %time%] fin codigo=%CODIGO% >> "%LOG%"
 exit /b %CODIGO%

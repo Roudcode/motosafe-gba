@@ -1260,6 +1260,10 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
             if guardada:
                 contadores['guardadas'] += 1
                 contadores['guardadas_por_fuente'][nombre_fuente] = contadores['guardadas_por_fuente'].get(nombre_fuente, 0) + 1
+            else:
+                # ON CONFLICT (url_fuente) DO NOTHING: la nota ya estaba. Antes
+                # esto no se contaba y el log no distinguía "ya estaba" de "no se guardó".
+                contadores['ya_en_base'] += 1
         except psycopg2.Error as err:
             # Una fila malformada no debe abortar la corrida completa ni
             # revertir las noticias válidas, que ya quedaron confirmadas.
@@ -1300,7 +1304,7 @@ def main():
         conn.commit()
 
     contadores = {
-        'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0,
+        'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0, 'ya_en_base': 0,
         'duplicadas': 0, 'fuera_de_zona': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
         'candidatas_por_fuente': {}, 'ubicadas_por_fuente': {}, 'guardadas_por_fuente': {},
     }
@@ -1396,7 +1400,7 @@ def main():
 
     desglose = ", ".join(f"{cant} {tipo}" for tipo, cant in sorted(contadores['candidatas_por_tipo'].items()))
     print(f"\n{contadores['candidatas']} noticias candidatas ({desglose}), {contadores['duplicadas']} duplicadas omitidas, {contadores['ubicadas']} pudieron ubicarse"
-          + (f", {contadores['guardadas']} nuevas guardadas en la base" if guardar
+          + (f", {contadores['guardadas']} nuevas guardadas en la base, {contadores['ya_en_base']} ya estaban en la base" if guardar
              else " (dry-run, no se guardo nada -- corré con --guardar para insertar)"))
     print(f"  Relacionadas con moto: {contadores['candidatas_moto']} candidatas")
     print(f"  Sin ubicar porque el geocode cayó fuera de la zona de la nota: {contadores['fuera_de_zona']}")

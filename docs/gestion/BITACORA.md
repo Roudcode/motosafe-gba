@@ -855,3 +855,17 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Límites conocidos: si la PC está apagada o nadie inicia sesión, no corre (se recupera al iniciar sesión por «ejecutar tan pronto como sea posible»). Cada corrida crea un archivo de log; ocho por día, sin rotación automática.
 - **Verificación de la primera corrida automática (SES-081):** se disparó sola a las 10:32:20, sin intervención, y terminó a las 10:36:31 con código 0 (≈4 min). Log `corrida_20261006_103220.log`: 138 candidatas, 80 ubicadas, 0 nuevas guardadas. Los 80 ya estaban en la base por URL; el contador de «duplicadas» solo cuenta repetidas dentro de la misma corrida, así que el log no distingue «ya estaba en la base». Pendiente, a pedido de Rodo: agregar ese contador si sirve para decidir la cadencia. La siguiente corrida está prevista para 13:32.
 - **Registro del proceso:** se agregó la sección «Registro del proceso» en BACKLOG, con historial de commits, bitácora, backlog y decisiones como ítems disponibles, y actas con el tutor como ítem pendiente de Rodo.
+
+## 2026-10-06 — SES-082 — Contador «ya en la base» y limpieza de logs de la corrida programada (Claude Code)
+
+- Pedido de Rodo: que el log distinga las notas que ya estaban en la base de las que no se guardaron, y limpiar logs viejos al inicio de cada corrida. No tocar nada más.
+- Cambios:
+  - `backend/scrapear_noticias_robos.py`: contador `ya_en_base`. Se incrementa cuando el `INSERT ... ON CONFLICT (url_fuente) DO NOTHING` no inserta. El resumen dice «N nuevas guardadas en la base, M ya estaban en la base». Solo aplica con `--guardar`.
+  - `scraper_programado.bat`: antes de cada corrida borra con `forfiles` solo `corrida_*.log` de más de 60 días en `logs\scraper`, y deja en el log de la corrida una línea por archivo borrado. La limpieza va antes del scraper, así que no depende de que la corrida termine bien.
+  - `scraper_programado.bat`: `run --build --quiet-build`. Sin `--build`, `docker compose run` usa la imagen que ya existe y el cambio del scraper no llegaría a la tarea programada.
+  - `backend/tests/test_scrapear_noticias_robos.py`: prueba de que una nota ya guardada cuenta como «ya en la base» y no como nueva.
+- Verificación:
+  - Pruebas de backend: 105 en verde.
+  - Limpieza en seco con archivos de prueba en `logs\scraper`: se borraron `corrida_20250101_000000.log` y `corrida_20250301_120000.log`; se conservaron `notas_viejas.log` (otro patrón) y los logs recientes. Se borró después el archivo de control.
+  - Corrida en seco con código 0, imagen reconstruida (`motosafe-gba-scraper`) con el contador.
+- No verificado: el contador en una corrida con `--guardar`. Se confirma con las próximas corridas programadas.
