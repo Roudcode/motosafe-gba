@@ -180,3 +180,5 @@ No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_m
 **Actualización SES-086:** cerrados los ítems 2 (code splitting: bundle principal de 269 kB), 5 (lupa visible) y 7 (viaje real probado en celular). Corregida la atribución que volvía a abrirse durante la navegación. Pendiente de revisar con Rodo: mejoras de diseño (leyenda, pista de la elección de origen, separación de «Reportar») y el chequeo en escritorio durante un viaje.
 
 **Actualización SES-087:** corregidos a partir de capturas reales: «Reportar» tapaba «Nueva ruta», el paso de navegación quedaba trabado cuando el GPS se saltaba una maniobra, la leyenda tapaba la zona abierta y los toasts cubrían la búsqueda. Pendiente: confirmar en un viaje real la distancia de la maniobra y la posición de los toasts; decidir sobre el tiempo estimado y el tamaño de la leyenda.
+
+**Actualización SES-088:** la barra de búsqueda ya no tapa los botones de arriba (la altura de la barra superior se medía mal). La búsqueda centra el mapa en el lugar elegido y lo deja como destino. Decisión pendiente: si la búsqueda debe abrir «Trazar ruta» directamente, como antes.

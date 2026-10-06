@@ -941,3 +941,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: lint sin errores; 75 pruebas (71 previas más 4 nuevas de `siguientePaso`); build sin errores.
 - No verificado en el navegador: la nueva posición de los toasts y la leyenda oculta con zona abierta. La captura de la distancia corregida requiere otra prueba de viaje con GPS que se salte una maniobra.
 - Pendiente de decisión de diseño: el tiempo estimado puede dispararse con velocidad baja (554 min en la captura). Y la leyenda ocupa mucho espacio en celular.
+
+## 2026-10-06 — SES-088 — Barra de búsqueda sobre los botones superiores y búsqueda de lugares (Claude Code)
+
+- Pedido de Rodo: la barra de búsqueda tapaba los botones redondos de arriba y el clima en celular, y la búsqueda debía encontrar lugares (local, calle), no zonas.
+- Causa del solapamiento: la variable `--topbar-h` (que ubica la barra de búsqueda y los demás paneles) usaba `contentRect` del `<header>`, que no incluye el padding. Medido en el navegador: la barra mide 105 px, la variable valía 62 px, y la barra de búsqueda quedaba encima de los botones. Además el observador no disparaba en la pestaña de prueba, así que la variable nunca se escribía. Ahora se mide al montar (`offsetHeight`), en cada `resize` de ventana, y con `ResizeObserver` para cambios de contenido.
+- Verificado en 375×812: los botones terminan en y=91 y la barra empieza en y=137 (46 px de separación).
+- Búsqueda: elegir un resultado centra el mapa en ese lugar (zoom 16), muestra «Ubicado: …» y deja el lugar cargado como destino de «Trazar ruta», sin abrir el panel que tapaba el mapa. El placeholder dice «Buscar lugar, calle o local (Enter)…». Verificado con «Café Tortoni»: encontrado y ubicado.
+- Verificación: lint sin errores; 75 pruebas; build sin errores.
+- Decisión a confirmar: la búsqueda ya no abre la ruta automáticamente (antes sí). Si preferís que abra «Trazar ruta» como antes, es un cambio de una línea.
+- Pendiente: la búsqueda de lugares depende de Nominatim (ver A18: su política no admite autocompletar, pero sí buscar al confirmar, que es como funciona ahora).

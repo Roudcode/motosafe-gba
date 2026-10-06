@@ -189,7 +189,7 @@ function App() {
   // servía para buscar una dirección que no fuera ya una zona del dataset
   // (una avenida cualquiera, por ejemplo) -- reusa el mismo geocoder que
   // origen/destino para eso, y "elegir" un resultado la manda directo a
-  // Trazar ruta como destino (ver buscarComoDestino más abajo).
+  // centra el mapa en el resultado (ver buscarEnMapa más abajo).
   const sugBusqueda = useBusquedaDireccion()
   const [campoActivo, setCampoActivo] = useState(null)
   const [rutasCalculadas, setRutasCalculadas] = useState([])
@@ -267,12 +267,19 @@ function App() {
   useEffect(() => {
     const el = topbarRef.current
     if (!el) return
-    const obs = new ResizeObserver((entries) => {
-      const alto = entries[0]?.contentRect?.height
+    // Altura total de la barra, con su padding (contentRect no lo incluye y dejaba
+    // la barra de busqueda encima de los botones redondos; SES-088). Se mide al
+    // montar y en cada resize de ventana, y ademas con ResizeObserver para los
+    // cambios de contenido (clima, estado) que la hacen cambiar de alto.
+    const medir = () => {
+      const alto = el.offsetHeight
       if (alto) document.documentElement.style.setProperty('--topbar-h', `${Math.round(alto)}px`)
-    })
+    }
+    medir()
+    window.addEventListener('resize', medir)
+    const obs = new ResizeObserver(medir)
     obs.observe(el)
-    return () => obs.disconnect()
+    return () => { obs.disconnect(); window.removeEventListener('resize', medir) }
   }, [])
 
   useEffect(() => {
@@ -928,15 +935,16 @@ function App() {
   const onClickZonaMapa = useCallback((zona) => { setZonaSeleccionada(zona); setCapasAbiertas(false) }, [])
 
   const usarFavorito = (fav) => { setDestinoTexto(fav.texto); setDestinoPunto(fav.punto) }
-  // Elegir una sugerencia de la barra de búsqueda de arriba abre "Trazar
-  // ruta" con ese resultado ya puesto de destino, en vez de solo centrar el
-  // mapa ahí -- lo que pidió Rodo (que buscar zona/avenida sirva para
-  // buscar el destino directamente).
-  const buscarComoDestino = (sug) => {
+  // Elegir un resultado de la búsqueda de arriba centra el mapa en ese lugar
+  // (como cualquier buscador) y lo deja cargado como destino para "Trazar ruta",
+  // sin abrir el panel de ruta que tapaba el mapa (SES-088).
+  const buscarEnMapa = (sug) => {
     setDestinoTexto(sug.label)
     setDestinoPunto({ lat: sug.lat, lng: sug.lng })
-    abrirPanelRuta()
+    setVuelo({ lat: sug.lat, lng: sug.lng, zoom: 16 })
     setBusqueda('')
+    sugBusqueda.limpiar()
+    mostrarToast(`Ubicado: ${sug.label}`)
   }
   const guardarFavorito = async (clave, label) => {
     let punto = destinoPunto
@@ -1553,15 +1561,15 @@ function App() {
       {!vistaNavegacion && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input type="text" placeholder="Buscar zona o avenida (Enter)..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
+          <input type="text" placeholder="Buscar lugar, calle o local (Enter)..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
             <ul className="ruta-form-sugerencias searchbar-sugerencias">
               {sugBusqueda.resultados.map((s, i) => (
                 <li key={i}>
-                  <button type="button" onMouseDown={() => buscarComoDestino(s)}>
-                    <Compass size={12} /> Ir a: {s.label}
+                  <button type="button" onMouseDown={() => buscarEnMapa(s)}>
+                    <MapPin size={12} /> {s.label}
                   </button>
                 </li>
               ))}
