@@ -818,3 +818,18 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - No verificado: la revisión visual con `npm run dev` (la hace Rodo). El hook no tiene test propio porque el proyecto no tiene `@testing-library/react`.
 - Registros: A18 pasa a «Resuelto» en BACKLOG; `FICHAS_FUENTES.md` actualiza la fila de Nominatim y los pendientes derivados.
 - Queda fuera de A18 y no bloquea: evaluar la cuota de Nominatim para producción o un proveedor propio.
+
+---
+
+## 2026-10-06 — SES-080 — Scraper en contenedor: tope por corrida y operación documentada (Claude Code)
+
+- Pedido de Rodo: que el scraper corra solo, en su propio servicio Docker, con pausa, reanudación y logs centralizados, sin reintroducir el bloqueo de transacciones.
+- Revisión previa: el servicio `scraper` ya existía en `docker-compose.production.yml` (ciclo con `restart: unless-stopped`, intervalo de `SCRAPER_INTERVAL_MINUTES`, 180 por defecto). No hizo falta crearlo. Se verificó que cada fila se confirma sola (`cur.connection.commit()` en `_evaluar_y_guardar`) y que no hay transacción abierta durante los pedidos de red.
+- Cambios:
+  - `backend/scraper-loop.sh`: cada corrida tiene un tope de `SCRAPER_TIMEOUT_MINUTES` (45 por defecto) con `timeout`. Si lo supera, queda como falla y se reintenta en el siguiente ciclo, sin trabar el loop.
+  - `docker-compose.production.yml`: expone `SCRAPER_TIMEOUT_MINUTES` con ese mismo valor por defecto.
+  - `docs/operacion/DESPLIEGUE_MVP.md`: sección «Operar el scraper» con `stop`/`start`/`logs -f`. Se usa `stop` y no `pause`: `pause` congela el proceso con la conexión a la base abierta.
+- Cadencia: se mantiene en 180 minutos. El repo no tiene un número real de notas guardadas por corrida, así que no se baja el intervalo sin datos. Decidir con `docker compose logs scraper` después de una semana.
+- Verificación: `sh -n` sobre `scraper-loop.sh` sin errores; `docker compose config` del compose de producción con variables de ejemplo, con `SCRAPER_TIMEOUT_MINUTES=45` y `SCRAPER_INTERVAL_MINUTES=180`.
+- No verificado: una corrida real dentro del contenedor, y que `timeout` corte un proceso colgado. Quedan para la primera corrida en el despliegue.
+- Hallazgo de calidad, sin cambios: en la base local hay 450 notas (65 con moto). Las 204 de Google Noticias se guardaron antes de retirar la fuente (DEC-011, la última del 13/09/2026). El scraper ya no tiene esas fuentes, pero las notas siguen visibles hasta vencer a los 30 días. Se decide con Rodo si se filtran en la API o se borran (ver CONTINUIDAD).

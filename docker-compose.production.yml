@@ -49,6 +49,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerida}
       SCRAPER_INTERVAL_MINUTES: ${SCRAPER_INTERVAL_MINUTES:-180}
+      SCRAPER_TIMEOUT_MINUTES: ${SCRAPER_TIMEOUT_MINUTES:-45}
     depends_on:
       db:
         condition: service_healthy

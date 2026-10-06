@@ -56,6 +56,23 @@ una base PostgreSQL/PostGIS administrada y una tarea programada que ejecute
 se usa el contenedor `scraper` en ciclo: el scheduler del proveedor evita que
 se dupliquen ejecuciones.
 
+### Operar el scraper (SES-080)
+
+El servicio `scraper` corre en su propio contenedor, separado de `api` y `web`.
+Cada corrida tiene un tope de `SCRAPER_TIMEOUT_MINUTES` (45 por defecto); si lo
+supera, se corta y se reintenta en el siguiente ciclo, sin trabar el resto.
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml stop scraper
+docker compose --env-file .env.production -f docker-compose.production.yml start scraper
+docker compose --env-file .env.production -f docker-compose.production.yml logs -f scraper
+```
+
+Usar `stop`/`start`, no `pause`: `pause` congela el proceso con la conexión a la
+base abierta, y `stop` queda respetado por `restart: unless-stopped` hasta que se
+inicie de nuevo. Los logs centralizados son los de `docker compose logs`, junto con
+`api` y `db`.
+
 ### Login y datos (verificado el 2026-10-05, SES-067)
 
 - El login de `backend/auth.py` es solo para el acceso personal por Tailscale

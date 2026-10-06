@@ -151,3 +151,12 @@ El notebook histórico ya no puede pisar artefactos vigentes y publicar en `back
 ## Actualización 2026-10-06 — SES-079: A18 resuelto (búsqueda solo al confirmar)
 
 El buscador de direcciones ya no autocompleta contra Nominatim. Busca con Enter o con el botón de la barra, y origen/destino buscan con Enter; no hay pedidos mientras se escribe. Esto cierra el pendiente de decisión de A18 registrado en SES-078. Verificado con lint, 71 tests y build. Falta la revisión visual con `npm run dev` (la hace Rodo).
+
+## Actualización 2026-10-06 — SES-080: scraper en contenedor y hallazgos de calidad
+
+El scraper corre como servicio `scraper` del compose de producción, con tope por corrida (`SCRAPER_TIMEOUT_MINUTES`, 45 min) y operación documentada en `DESPLIEGUE_MVP.md` (`stop`/`start`/`logs`). No se rehizo desde cero porque ya existía.
+
+**Calidad de los datos, pendiente de decisión de Rodo:**
+- Las 204 notas de Google Noticias (retiradas por DEC-011) siguen en la base y se muestran hasta vencer a los 30 días. Opciones: (a) filtrar `fuente` que empieza con «Google» en la API, lo que oculta solo las vigentes y es reversible; (b) borrarlas, que es irreversible. Recomiendo (a).
+- 29 notas tienen fecha anterior a 2025 y 13 no tienen fecha. Son fechas mal extraídas o ausentes. Recomiendo que la API las use por fecha de ingesta y no por la fecha de publicación cuando la publicada sea anterior a la ventana de 30 días.
+- De las 450 notas, 426 están ubicadas solo a nivel barrio. Eso es esperable: mejorar la precisión depende de que el titular tenga una dirección.
