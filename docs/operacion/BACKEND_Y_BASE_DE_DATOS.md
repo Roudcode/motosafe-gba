@@ -57,9 +57,15 @@ pg_restore --clean --if-exists --no-owner --dbname $env:DATABASE_URL_RESTORE mot
 ```
 
 El backup contiene reportes y potencialmente ubicaciones: guardarlo fuera del
-repositorio, con acceso limitado. T06 se cierra sólo tras restaurar un backup
-en una instancia aislada y registrar fecha, tamaño y resultado sin publicar
-datos.
+repositorio, con acceso limitado.
+
+Ensayo real del 2026-10-06 (SES-071, evidencia en
+`docs/evidencias/2026-10-06/T06-backup/`): estos tres comandos, con los clientes
+de una instancia PostgreSQL 16.4 desechable, restauraron una base idéntica a la
+de origen. Dieron iguales el hash del contenido de las seis tablas, las 10
+constraints y PostGIS 3.4.3, y la API funcionó sobre la copia, incluida la
+secuencia de ids. Usar `pg_dump`/`pg_restore` de la misma versión mayor que el
+servidor; en Docker, los del propio contenedor (`docker exec <contenedor> pg_dump ...`).
 
 ## CI
 

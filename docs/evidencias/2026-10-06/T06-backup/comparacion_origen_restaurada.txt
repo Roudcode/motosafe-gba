@@ -1,0 +1,9 @@
+constraints 10 ba3eb58fc2ed4f20eeade4bae97edce1
+corredores_riesgo 243 238964a5304575e6ec4fcb8cba0c8324
+geom_invalidas 0 
+hotspots_inseguridad 1135 6a9a51b543340442d9d12620c3fe2a75
+hotspots_riesgo 740 7acef09abfb61d1f781478dcb8283c18
+postgis 1 3.4.3
+reportes_colaborativos 1 73a2c5a868c991cbae626f2a478306fd
+reportes_confirmaciones 1 adf5e0915d952cb16c827f0372cf1d51
+schema_migrations 2 2dee3047ea94a7b49b7d8bf97f5dd8c4

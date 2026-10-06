@@ -119,3 +119,7 @@ El scraper valida que el geocode caiga en la zona que nombra la nota y se abstie
 ## Actualización 2026-10-06 — SES-070: A12/T01 contra PostgreSQL real
 
 Tests de integración contra un PostGIS desechable: migraciones concurrentes, límites y recuperación del pool, y ciclo de reportes. Pasan 7/7, con control negativo. A12 queda validado. El CI levanta PostGIS y los corre; falta confirmarlo en GitHub.
+
+## Actualización 2026-10-06 — SES-071: T06 backup ensayado
+
+Backup y restauración ensayados entre dos PostGIS desechables con el procedimiento documentado: copia idéntica y API funcionando sobre ella. Falta repetirlo con el volumen real y en el hosting.

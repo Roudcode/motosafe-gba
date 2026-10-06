@@ -688,3 +688,16 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - CI: el job de backend levanta `postgis/postgis:16-3.4` (credenciales desechables del servicio) y corre toda la suite. Sigue sin confirmarse en GitHub.
 - Hallazgo documentado sin cambio: la primera consulta sobre una conexión que cortó el servidor falla antes de que el pool la descarte. No se agregó reintento porque reintentar escrituras puede duplicar reportes, y eso merece un diseño aparte.
 - Estados: A12 validado y T01 validado parcialmente. Faltan permisos de un rol sin privilegios y la corrida en GitHub.
+
+## 2026-10-06 — SES-071 — Ensayo real de backup y restauración (T06) (Claude Code)
+
+- Alcance: T06 (P2, en curso) solo necesitaba ejecutar y registrar un ensayo real. No depende de decisiones de Rodo y se hizo sin tocar su base.
+- Ensayo: dos PostGIS 16.4 desechables en una red Docker propia.
+  - Origen: migraciones, los tres cargadores y un reporte con voto creados por la API.
+  - Copia: `pg_dump --format=custom` (242 kB), `createdb` y `pg_restore --clean --if-exists --no-owner` en la otra instancia, siguiendo el procedimiento documentado; código de salida 0, sin advertencias.
+- Verificación:
+  - Hash md5 del contenido ordenado de las seis tablas, constraints, PostGIS y geometrías: origen y restaurada idénticas.
+  - API sobre la restaurada: `/health` ok, las cuatro capas completas, el reporte restaurado con su voto, y un reporte nuevo con id 2 (secuencia restaurada) que se borró con su token.
+  - Contenedores, red y dump eliminados.
+- Estado: T06 validado parcialmente. Falta repetirlo con el volumen real y en el proveedor de hosting.
+- Nota: se descargó la imagen `alpine/socat` de Docker Hub para exponer los contenedores en localhost sin publicar puertos de Postgres en la red.

@@ -1,0 +1,7 @@
+health ok ok umbrales True sklearn True
+hotspots 740
+corredores 243
+inseguridad 633 502
+reportes [(1, 'pavimento', 1)]
+nuevo reporte 201 id 2
+borrar nuevo 200
