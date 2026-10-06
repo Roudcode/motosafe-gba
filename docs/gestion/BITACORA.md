@@ -650,3 +650,21 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - El montaje, el contenedor y los procesos del E2E se eliminaron. El stack de Rodo (`:5173`, `:8000`) no se tocó.
 - Otros: `eslint.config.js` ignora `dist_*`, porque el build local `dist_check_clima/` rompía `npm run lint`.
 - Verificación final: 84 tests de backend, 68 de frontend, lint y build limpios.
+
+## 2026-10-06 — SES-069 — Geocodificación de zonas de prensa validada (A09) (Claude Code)
+
+- Alcance: primer ítem del backlog después de cerrar los pendientes técnicos. Se eligió A09 (P1, en curso) porque tenía un defecto concreto observado en SES-067 y verificable sin etiquetado manual.
+- Causa: la consulta de zona (`"<partido>, Buenos Aires, Argentina"`) no validaba el resultado y Nominatim devolvía homónimos. Monte Grande, que se traduce a Esteban Echeverría, caía en la calle Esteban Echeverría de Munro.
+- Medición: `docs/evidencias/2026-10-06/A09-geocodificacion/medir_zonas.py` sobre las 87 zonas del gazetteer, verificando cada punto por geocodificación inversa, independiente del código evaluado. El método anterior ubicaba mal 11 (12,6 %): Esteban Echeverría, Monte Grande, Almirante Brown, Don Orione, Malvinas Argentinas, Grand Bourg, La Matanza, Virrey del Pino, Tres de Febrero, Belgrano y Vélez Sarsfield. El método nuevo, 0.
+  - Dos «errores» intermedios resultaron fallas de mi verificador, no del código: Adrogué no tenía partido en `address`, y el script no manejaba un campo faltante. Se corrigieron y se documentaron.
+- Cambio en `backend/scrapear_noticias_robos.py`:
+  - `geocodificar_en_zona` usa `featureType=settlement` en el nivel barrio, valida partido o barrio (`resultado_en_zona`, que lee también `display_name`), reintenta «Partido de X» y se abstiene si nada valida.
+  - En calles e intersecciones valida el partido, o CABA si la zona es un barrio.
+  - `encontrar_zona` ignora «nombre al <número>», que es una calle.
+  - El resumen separa «vacío» de «fuera de zona».
+  - 10 tests nuevos con direcciones reales devueltas por Nominatim; 93 de backend en total.
+- Corrida real en modo prueba (sin guardar):
+  - Primera versión: 78 ubicadas y 32 sin ubicar. La revisión (`revisar_rechazos.py`) mostró que 29 eran «sin resultado», que también fallaban antes; el mensaje los mezclaba.
+  - De las 3 abstenciones, una era un falso rechazo («Almirante Brown 500», con el partido solo en `display_name`) que además destapó un error de extracción: la nota era de Grand Bourg.
+  - Final: 79 ubicadas, 29 vacías, 2 abstenciones correctas, Monte Grande en Esteban Echeverría y Grand Bourg en Malvinas Argentinas.
+- No se tocó la base: las filas históricas de `reportes_prensa` ubicadas con el método anterior siguen ahí. Corregirlas es escribir en la base de Rodo y queda anotado como pendiente.

@@ -1,0 +1,236 @@
+
+=== Infobae (sitemap: https://www.infobae.com/arc/outboundfeeds/sitemap2/category/sociedad/policiales/) ===
+  100 URLs en el sitemap
+  18 pasan el prefiltro de slug (se bajan completas)
+  [sin ubicar] (robo) Video: rompió un ventanal de una concesionaria, robó una moto y lo atraparon por las cámaras
+  [choque, barrio, r=800m] (-34.75726, -58.40266) -- Locura en Lomas de Zamora: discutió con su amigo, al día siguiente lo cruzó en la calle y lo atropelló por la espalda
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Violento robo en un centro de estética de La Plata: atacó a golpes a la empleada y amenazó a una clienta de 93 años
+  [sin ubicar] (inseguridad) “No me pegues más”: el estremecedor video que se viralizó y derivó en una causa por violencia de género en Tapalqué
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Video: Dos motochorros derribaron a un ciclista, lo balearon en una pierna y huyeron con su bicicleta en La Plata
+  [sin ubicar] (inseguridad) Ayudaba a carnear un chancho cuando un amigo disparó por accidente y lo mató
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Salvaje asalto a un jubilado a metros de la sede del fuero penal de La Plata
+  [robo, barrio, r=800m] (-34.77345, -58.63514) -- Atropelló y mató a un ladrón que quiso robarlo en La Matanza: detuvieron a uno de los cómplices
+  [sin ubicar] (robo) Robaron un merendero en Córdoba y al menos 50 nenes se quedaron sin comer
+  [inseguridad, barrio, r=800m] (-34.65105, -58.62174) -- Video: el asesinato a sangre fría en la Villa Zavaleta cometido por el acusado de violar a un nene
+  [geocode vacio o fuera de Floresta -- query: "Villa Crespo y Floresta, Floresta, CABA, Argentina"] Madrugada accidentada: un conductor ebrio chocó contra un comercio y una camioneta impactó a  dos vehículos estacionados
+  [geocode vacio o fuera de CABA -- query: "Los Naranjos y Los Ceibos, CABA, Argentina"] Un motochorro atropelló y atacó a golpes a una mujer para robarle en Mar del Plata
+  [sin ubicar] (robo) Condenaron a tres hombres por el robo de motocicletas estacionadas en Salta
+  [robo, barrio, r=800m] (-34.65105, -58.62174) -- Entradera y pánico en Morón: una familia fue sorprendida por asaltantes que los desvalijaron en pocos segundos
+  [inseguridad, calle, r=150m] (-34.58670, -58.41668) -- Una brutal pelea en un boliche de Palermo terminó con seis detenidos y una causa por intento de homicidio
+  [geocode vacio o fuera de Constitución -- query: "Caseros y Salta, Constitución, CABA, Argentina"] Persecución y choque de un patrullero en Constitución: hay dos detenidos
+  [inseguridad, barrio, r=800m] (-34.58034, -58.42452) -- Cumplió condena por homicidio culposo, la designaron docente de una escuela de Palermo y ahora la investigan por grabar a sus alumnos
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- A los tiros, dos encapuchados robaron una carnicería en La Plata
+
+=== El Diario Sur (sitemap: https://www.eldiariosur.com/sitemap.xml) ===
+  27 URLs en el sitemap
+  6 pasan el prefiltro de slug (se bajan completas)
+  [sin ubicar] (choque) Choque en El Pampero: un auto volcó y cayó en un zanjón tras impactar con una camioneta
+  [choque, barrio, r=800m] (-34.75726, -58.40266) -- Temperley: atropelló a un amigo con su auto tras una pelea y escapó
+  [robo, barrio, r=800m] (-34.70310, -58.39535) -- Detuvieron en Lanús a un joven acusado de robar motos en Recoleta y mostrarlas en TikTok
+  [robo, barrio, r=800m] (-34.82468, -58.47713) -- Monte Grande: un detenido por el robo de un auto
+  [sin ubicar] (choque) Longchamps: conductor perdió el control y chocó contra el frente de una vivienda
+  [sin ubicar] (choque) Accidente fatal en Alejandro Korn: conductor alcoholizado chocó, murió su pareja y hay niños heridos
+
+=== Inforbano (sitemap: https://inforbano.com.ar/sitemap_index.xml) ===
+    [sitemap] https://inforbano.com.ar/sitemap_index.xml -> es un índice con 64 sitemaps hijos, acumulando desde el más reciente
+  946 URLs en el sitemap
+  18 pasan el prefiltro de slug (se bajan completas)
+  [robo, barrio, r=800m] (-34.77345, -58.63514) -- Cayó parte de la banda que asaltó a un juez en La Matanza: ya hay 12 detenidos
+  [robo, barrio, r=800m] (-34.65105, -58.62174) -- Persecución, choque y tiroteo en Morón: cuatro detenidos tras un fuerte operativo por entraderas
+  [robo, barrio, r=800m] (-34.77345, -58.63514) -- La Matanza: Intentaron robarle la moto a un policía de civil y terminó en un tiroteo, un delincuente resultó herido
+  [robo, barrio, r=800m] (-34.65105, -58.62174) -- Violento robo a policías de civil en Merlo: una banda armada les robó un patrullero no identificable y un arma reglamentaria
+  [inseguridad, barrio, r=800m] (-34.77345, -58.63514) -- Tragedia en La Matanza: una policía de la Ciudad se quitó la vida de un disparo frente a una comisaría
+  [geocode vacio o fuera de Tres de Febrero -- query: "Rosella y Luján, Tres de Febrero, Buenos Aires, Argentina"] Tres de Febrero: Intentaron robarle una importante suma de dinero tras salir de un banco y un delincuente murió en un tiroteo
+  [inseguridad, barrio, r=800m] (-34.92068, -57.95376) -- Misterio en La Plata: un hombre fue detenido tras realizar disparos contra tres viviendas
+  [robo, calle, r=150m] (-34.67402, -58.57436) -- La Matanza: Un jubilado murió en medio de una entradera en su casa
+  [robo, barrio, r=800m] (-34.59334, -58.63784) -- Hurlingham: Un botón antipanico frustró un robo a una joyería y terminó con un detenido
+  [inseguridad, barrio, r=800m] (-34.77345, -58.63514) -- Un alumno llevó un revólver a una escuela de La Matanza y el arma se disparó dentro del aula
+  [inseguridad, barrio, r=800m] (-34.72444, -58.25882) -- Alerta del FBI y operativo en Quilmes: investigan a un menor por planificar un tiroteo escolar
+  [inseguridad, barrio, r=800m] (-34.51191, -58.77768) -- Tras el asesinato de un joven en José C. Paz, el Municipio reclamó a Kicillof que refuerce la seguridad
+  [geocode vacio o fuera de Morón -- query: "Padre Castañer 1200, Morón, Buenos Aires, Argentina"] Morón: Gracias a la nueva ley detienen a dos menores de 14 años acusados de robo
+  [robo, barrio, r=800m] (-34.75726, -58.40266) -- Megaoperativo contra motochorros en Lomas de Zamora: cinco aprehendidos y 11 motos secuestradas
+  [robo, barrio, r=800m] (-34.77345, -58.63514) -- La Matanza: un policía de civil se identificó durante un intento de robo y mató a uno de los asaltantes
+  [robo, barrio, r=800m] (-34.66484, -58.36281) -- Avellaneda: Denunció el robo de su auto, pero confesó que había fundido el motor
+  [robo, barrio, r=800m] (-34.65105, -58.62174) -- Tres detenidos y dos armas secuestradas tras una investigación por un violento intento de robo en El Palomar
+  [robo, barrio, r=800m] (-34.51191, -58.77768) -- Tres detenidos por el crimen de David Elías Ojeda Vázquez en José C. Paz: secuestraron la moto utilizada en el asesinato
+
+=== Infosur Diario (sitemap: https://infosurdiario.com.ar/sitemap.xml) ===
+    [sitemap] https://infosurdiario.com.ar/sitemap.xml -> es un índice con 17 sitemaps hijos, acumulando desde el más reciente
+  808 URLs en el sitemap
+  15 pasan el prefiltro de slug (se bajan completas)
+  [inseguridad, barrio, r=800m] (-34.80444, -58.27832) -- Secuestro en Varela: lo tuvieron siete días cautivo en un ropero
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Le echó nafta a un delincuente para evitar un robo en La Plata
+  [error al bajar la nota: Client error '404 Not Found' for url 'https://infosurdiario.com.ar/wp-content/uploads/2016/08/secuestro-secuestradores_MILIMA20140603_0060_11.jpg'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404] https://infosurdiario.com.ar/wp-content/uploads/2016/08/secuestro-secuestradores_MILIMA20140603_0060_11.jpg
+  [robo, barrio, r=800m] (-34.80444, -58.27832) -- Estaciones de trenes Zona libre para el robo de celulares
+  [sin ubicar] (robo) Asaltaron, pegaron, se tirotearon con la policía y no estuvieron ni una hora presos
+  [robo, barrio, r=800m] (-34.80444, -58.27832) -- Trabajaba en Varela el policía detenido sospechado de participar en una entradera en La Plata
+  [robo, barrio, r=800m] (-34.76327, -58.21166) -- Asesinaron a balazos en un asalto a un ex comisario que iba de custodio de un matarife en Berazategui
+  [robo, barrio, r=800m] (-34.72444, -58.25882) -- Robaron un auto para ir al boliche: bailaron con la policía y terminaron presos
+  [sin ubicar] (choque) Volcó la paritaria de los Camioneros: paro nacional jueves y viernes
+  [inseguridad, barrio, r=800m] (-34.92068, -57.95376) -- La Plata: desalojan por amenaza de bomba el Ministerio de Justicia
+  [sin ubicar] (robo) Entraron, robaron y destrozaron la casa del Jefe de Gabinete de la Provincia
+  [robo, barrio, r=800m] (-34.80444, -58.27832) -- Indignación: volvieron a robar el Jardín de Infantes de Villa San Luis
+  [robo, interseccion, r=80m] (-34.73707, -58.23768) -- «Las Reinas», así cayó la banda familiar acusada de robar autos de lujo en la zona
+  [robo, barrio, r=800m] (-34.80444, -58.27832) -- Robo y vandalismo en el jardín de infantes 917 de Villa San Luis en Florencio Varela
+
+=== La Nación (sección: https://www.lanacion.com.ar/seguridad/) ===
+  30 notas en el listado
+  10 pasan el prefiltro de slug (se bajan completas)
+  [robo, barrio, r=800m] (-34.57716, -58.53772) -- Una empleada recibió una golpiza durante el robo de una estética en pleno centro de La Plata
+  [inseguridad, barrio, r=800m] (-34.58034, -58.42452) -- Los detalles del homicidio del narco uruguayo ejecutado en Palermo y el cargamento de US$ 2.000.000 que le secuestraron
+  [sin ubicar] (inseguridad) Murió un bebé de 10 días tras un violento choque en Punta Lara: imputaron a un hombre que manejaba a toda velocidad
+  [robo, barrio, r=800m] (-34.72444, -58.25882) -- Dos delincuentes robaron un auto, le dispararon a la víctima y quedaron grabados
+  [sin ubicar] (robo) Dos motochorros le robaron la bicicleta a un joven y le dispararon pese a que no intentó resistirse
+  [robo, barrio, r=800m] (-34.77345, -58.63514) -- Le intentaron robar el auto en La Matanza, atropelló a uno de los ladrones y lo mató
+  [robo, barrio, r=800m] (-34.75726, -58.40266) -- Detuvieron a cuatro ladrones tras un intento de robo en Lomas de Zamora
+  [robo, barrio, r=800m] (-34.60093, -58.56290) -- Son pareja, trabajan en inteligencia de la Policía Federal y los detuvieron por un robo, pero había sido un error
+  [inseguridad, barrio, r=800m] (-34.42266, -58.58089) -- Una causa narco derivó en un allanamiento en un tradicional country de Tigre y el secuestro de un lingote de oro
+  [inseguridad, barrio, r=800m] (-34.57452, -58.45228) -- Homicidio en Colegiales: se conoció el motivo de la pelea que terminó con el asesinato de un entrenador de boxeo
+
+=== Página12 (RSS: https://www.pagina12.com.ar/arc/outboundfeeds/rss/secciones/sociedad/notas) ===
+  25 items en el feed
+
+=== Diario Conurbano (RSS: https://diarioconurbano.com.ar/policiales/feed/) ===
+  10 items en el feed
+  [sin ubicar] (robo) Cayeron dos ladrones en Fiorito tras asaltar a un repartidor: tenían esposa y ropa policial
+  [inseguridad, barrio, r=800m] (-34.85489, -58.52584) -- «Vos sos el que te hacías el malo adentro»: los detalles de la emboscada y el piedrazo fatal en Ezeiza
+
+=== Infocielo (RSS: https://www.infocielo.com/judiciales-y-policiales/feed/) ===
+  ERROR al bajar/parsear el RSS: Client error '403 Forbidden' for url 'https://www.infocielo.com/judiciales-y-policiales/feed/'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+
+=== Primer Plano Online (RSS: https://primerplanoonline.com.ar/noticias/policiales/feed/) ===
+  6 items en el feed
+  [sin ubicar] (choque) Un colectivo de la línea 166 chocó contra auto en el Metrobús de Juan B. Justo: pasajero resultó fracturado
+  [sin ubicar] (inseguridad) Tensión en el barrio Carlos Gardel de El Palomar: un joven murió en medio de pelea entre bandas
+  [robo, barrio, r=800m] (-34.77345, -58.63514) -- Aceleró para escapar de un robo cuando estacionaba en Lomas del Millón y mató a uno de los ladrones
+
+=== Zona Norte Diario (RSS: https://www.zonanortediario.com.ar/SECCIONES/informacion-general/seguridad/feed/) ===
+  10 items en el feed
+  [sin ubicar] (inseguridad) Operativo “Caras Rotas”: desbarataron una red que usurpaba identidades y hacía fraudes con tarjetas de crédito
+  [sin ubicar] (robo) Cómo funciona la línea 910 para denunciar el robo de celulares y bloquearlos en todo el país
+  [sin ubicar] (inseguridad) Desarticularon una red de contrabando millonaria con presencia en varias provincias
+
+=== Periódico Para Todos (RSS: https://periodicoparatodos.com.ar/secciones/policiales/feed/) ===
+  9 items en el feed
+  [inseguridad, barrio, r=800m] (-34.42266, -58.58089) -- Un siniestro vial en El Talar terminó con una moto retenida por contar con pedido de secuestro activo
+
+=== Zona Sur Diario (RSS: https://www.zonasurdiario.com.ar/feeds/posts/default/-/Policiales?alt=rss) ===
+  25 items en el feed
+  [geocode vacio o fuera de Lomas de Zamora -- query: "Suiza y Alemania, Lomas de Zamora, Buenos Aires, Argentina"] Temperley: atropelló por la espalda a un amigo tras una pelea y está prófugo
+  [geocode vacio o fuera de Avellaneda -- query: "Criminal y Correccional, Avellaneda, Buenos Aires, Argentina"] Cayó en Lanús un joven acusado de robar motos en Recoleta y exhibirlas en TikTok
+  [inseguridad, barrio, r=800m] (-34.75726, -58.40266) -- Lomas de Zamora: una adolescente denunció a un vecino por abuso y su hermano lo mató a puñaladas
+  [inseguridad, barrio, r=800m] (-34.66484, -58.36281) -- Detuvieron en Avellaneda a un hombre acusado de contratar a un sicario para matar a un rival
+  [robo, barrio, r=800m] (-34.85489, -58.52584) -- Un joven de 22 años murió de una pedrada tras una pelea en Ezeiza: hay cuatro detenidos
+  [geocode vacio o fuera de Quilmes -- query: "Zapiola y Origone, Quilmes, Buenos Aires, Argentina"] Murió un jubilado de 85 años tras una entradera en Bernal Oeste y buscan a cinco delincuentes
+  [geocode vacio o fuera de Lanús -- query: "Agustín de Vedia y Tabaré, Lanús, Buenos Aires, Argentina"] Robaron un auto en Lanús y terminaron detenidos tras una persecución y choque en la Ciudad
+  [robo, barrio, r=800m] (-34.66484, -58.36281) -- Avellaneda: un policía se defendió a los tiros de un robo y baleó a un adolescente de 17 años
+  [geocode vacio o fuera de Lomas de Zamora -- query: "Caaguazú y Dinamarca, Lomas de Zamora, Buenos Aires, Argentina"] Temperley: un colectivero murió tras incrustarse con la unidad contra una casa
+  [inseguridad, barrio, r=800m] (-34.72444, -58.25882) -- Un adolescente planeaba una masacre en su colegio, habló del ataque con ChatGPT y una alerta del FBI llevó hasta su casa en Quilmes
+  [geocode vacio o fuera de Avellaneda -- query: "San Martín y Emilio Castro, Avellaneda, Buenos Aires, Argentina"] Lanús: detuvieron a dos hombres por el robo de 13 celulares en una estación de servicio
+  [geocode vacio o fuera de Lomas de Zamora -- query: "Tarulli 1500, Lomas de Zamora, Buenos Aires, Argentina"] Falsos policías intentaron entrar a una casa en Luis Guillón y terminaron detenidos en Morón
+  [geocode vacio o fuera de Quilmes -- query: "Mitre y Garibaldi, Quilmes, Buenos Aires, Argentina"] Cinco detenidos tras una persecución por un auto robado en Avellaneda
+  [geocode vacio o fuera de Avellaneda -- query: "Jujuy y Tuyutí, Avellaneda, Buenos Aires, Argentina"] Lanús: balearon a una mujer delante de su nieto para robarle el auto
+  [inseguridad, barrio, r=800m] (-34.72444, -58.25882) -- Quilmes: una adolescente embarazada fue baleada en medio de una disputa familiar por un terreno
+  [inseguridad, barrio, r=800m] (-34.66484, -58.36281) -- Tragedia en Lanús: una beba de 11 meses murió de un disparo y su madre está grave
+  [geocode vacio o fuera de Lanús -- query: "Giménez y Salazar, Lanús, Buenos Aires, Argentina"] Buscan a uno de los acusados de matar a un policía en Lanús tras una fuga de la cárcel de Campana
+  [geocode vacio o fuera de Quilmes -- query: "Florencio Varela y Quilmes, Quilmes, Buenos Aires, Argentina"] Cayó “Paranacito” en un megaoperativo narco en Florencio Varela y Quilmes: lo vinculan con el crimen del sargento Facundo Giménez
+  [geocode vacio o fuera de Avellaneda -- query: "Estévez y Roca, Avellaneda, Buenos Aires, Argentina"] Violento enfrentamiento en Villa Tranquila: cuatro policías heridos y un hombre baleado
+  [geocode vacio o fuera de Avellaneda -- query: "Avellaneda y Lanús, Avellaneda, Buenos Aires, Argentina"] Asaltaron a un fletero que viajaba con su hija y le robaron bebidas por $60 millones en Avellaneda
+  [robo, barrio, r=800m] (-34.72444, -58.25882) -- Video: Mariana Brey corrió para escapar de dos motochorros cuando llegaba a su casa en Quilmes
+  [inseguridad, calle, r=150m] (-34.84868, -58.52967) -- Un joven murió de un disparo mientras manipulaba un arma con un amigo en Ezeiza
+  [robo, barrio, r=800m] (-34.75726, -58.40266) -- Intentaron robar una moto frente a la casa de Duhalde y se tirotearon con la custodia
+
+=== Zona Oeste Diario (RSS: https://www.zonaoestediario.com.ar/feeds/posts/default/-/Policiales?alt=rss) ===
+  25 items en el feed
+  [geocode vacio o fuera de Malvinas Argentinas -- query: "Derqui y Pedro Lozano, Malvinas Argentinas, Buenos Aires, Argentina"] Recuperaron en Malvinas Argentinas un auto robado horas antes
+  [geocode vacio o fuera de Morón -- query: "Julio y Ortiz de Rosas, Morón, Buenos Aires, Argentina"] Morón: detuvieron a dos empleadas de un supermercado acusadas de vender cocaína desde la fiambrería
+  [robo, barrio, r=800m] (-34.65105, -58.62174) -- Violenta entradera en Morón: redujeron a un hombre frente a su casa y escaparon con el auto familiar
+  [robo, interseccion, r=80m] (-34.57777, -58.54985) -- Tres detenidos tras un robo en un bar de Los Polvorines
+  [geocode vacio o fuera de Morón -- query: "Córdoba y Azul, Morón, Buenos Aires, Argentina"] Balearon tres veces a un policía durante un intento de robo en Morón
+  [robo, barrio, r=800m] (-34.63966, -58.78983) -- Lo buscaban por homicidio y cayó por el robo y faena de cuatro caballos de polo en Pilar
+  [geocode vacio o fuera de Tigre -- query: "Godoy Cruz y Atlético Tucumán, Tigre, Buenos Aires, Argentina"] Detuvieron otra vez a Ezequiel Cirigliano en Tres de Febrero: le habría robado el arma a una policía
+  [inseguridad, interseccion, r=80m] (-34.73633, -58.60309) -- Persecución fatal en La Matanza: escapaban en una moto robada, chocaron con un patrullero y uno murió atropellado
+  [geocode vacio o fuera de San Martín -- query: "Ceballos y Estrada, San Martín, Buenos Aires, Argentina"] Balearon una casa en José León Suárez para cobrar una deuda: detuvieron a un prestamista y a sus supuestos “brazos armados”
+  [geocode vacio o fuera de Morón -- query: "Gregorio de Laferrere y González Catán, Morón, Buenos Aires, Argentina"] Secuestraron a dos choferes para robar un camión cargado de pañales y lo recuperaron en Virrey del Pino
+  [geocode vacio o fuera de Almirante Brown -- query: "Almirante Brown 500, Almirante Brown, Buenos Aires, Argentina"] Detuvieron en Grand Bourg a “Coco”, acusado de liderar una banda de entraderas violentas
+  [geocode vacio o fuera de Moreno -- query: "Juramento y Patricias Argentinas, Moreno, Buenos Aires, Argentina"] Moreno: un jubilado de 81 años mató a un presunto ladrón durante un violento asalto al comercio de su nieto
+  [inseguridad, calle, r=150m] (-34.77226, -58.62682) -- Susto en una escuela de La Matanza: un alumno llevó un arma en la mochila y se disparó al apoyarla en el piso
+  [geocode vacio o fuera de Morón -- query: "Ingeniero Santiago Brian 900, Morón, Buenos Aires, Argentina"] El Palomar: despliegan un operativo especial de seguridad tras el violento asalto frente al Colegio Emaús
+  [geocode vacio o fuera de Morón -- query: "Ingeniero Santiago Brian 900, Morón, Buenos Aires, Argentina"] Tiroteo frente a un colegio de El Palomar: balearon a un policía retirado cuando dejaba a su hija
+  [geocode vacio o fuera de Morón -- query: "Lobo y Miguez, Morón, Buenos Aires, Argentina"] Detuvieron al joven acusado de matar a su novia en Ituzaingó y balear a su suegro
+  [geocode vacio o fuera de Morón -- query: "Operativo Cóndor y Dalton, Morón, Buenos Aires, Argentina"] Femicidio en Merlo: un hombre asesinó a puñaladas a su esposa tras una discusión
+  [geocode vacio o fuera de La Matanza -- query: "Charrúa y Balbastro, La Matanza, Buenos Aires, Argentina"] Tenía prisión domiciliaria por un homicidio y cayó acusado de robar un auto en La Matanza con la tobillera puesta
+
+=== Diario Popular (sitemap seccionado: https://www.diariopopular.com.ar/sitemap-news.xml) ===
+  82 URLs en el sitemap
+  8 caen en /policiales/
+  1 pasan el prefiltro de slug (se bajan completas)
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Brutal ataque de motochorros en La Plata: le robaron la bicicleta a un joven y le dispararon
+
+=== 0221 (sitemap seccionado: https://www.0221.com.ar/sitemap-news.xml) ===
+  100 URLs en el sitemap
+  15 caen en /policiales/
+  10 pasan el prefiltro de slug (se bajan completas)
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Video: una mujer intentó robar frutas de una verdulería de La Plata y la descubrieron
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- La empleada de la estética asaltada en pleno centro de La Plata reveló detalles sobre el robo
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Vecinos de Los Hornos aseguran haber identificado al ladrón que le disparó a un joven por una bicicleta
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Video: robaron una estética en pleno centro de La Plata y causaron terror entre clientes
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Recuperaron la bicicleta del joven que fue baleado en Los Hornos durante un dramático robo
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Golpearon y asaltaron a una mujer en La Plata para robarle a plena luz del día
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- A los tiros, asaltaron a una pareja en Los Hornos y escaparon con su auto
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Video: así fue el brutal ataque armado en Los Hornos que terminó con un joven baleado durante un robo
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Brutal ataque en Los Hornos: motochorros balearon a un joven para robarle la bicicleta y quedaron filmados
+  [robo, barrio, r=800m] (-34.92068, -57.95376) -- Un médico jubilado de La Plata sufrió dos asaltos en apenas 14 días: Me robaron la paz y la tranquilidad
+
+=== El Día (sitemap seccionado: https://www.eldia.com/news_1.xml) ===
+  80 URLs en el sitemap
+  6 caen en /policiales/
+  2 pasan el prefiltro de slug (se bajan completas)
+  [inseguridad, barrio, r=800m] (-34.92068, -57.95376) -- Terror en la Avenida 520: balearon un colectivo de larga distancia que ingresaba a La Plata | El Dia
+  [sin ubicar] (choque) VIDEO | Murió un bebé de 10 días tras un triple choque en Punta Lara | El Dia
+
+=== Minutouno (sitemap seccionado: https://www.minutouno.com/sitemap-news.xml) ===
+  201 URLs en el sitemap
+  46 caen en /sociedad/
+  4 pasan el prefiltro de slug (se bajan completas)
+  [sin ubicar] (inseguridad) Dolorosa tragedia en Punta Lara: murió un bebé de 10 días tras un choque múltiple
+  [geocode vacio o fuera de CABA -- query: "Centro de Operaciones y Monitoreo., CABA, Argentina"] Junín: destrozó la vidriera de una concesionaria, robó una moto y cayó por las cámaras
+  [sin ubicar] (robo) Mar del Plata: motochorros encerraron a un nene y le robaron la bicicleta
+  [inseguridad, barrio, r=800m] (-34.76327, -58.21166) -- Asesinato de Nerea en Berazategui: investigan si fue víctima de un ritual Umbanda
+
+=== Clarín (multi-estrategia) ===
+    [sitemap] https://www.clarin.com/sitemaps/index.xml -> es un índice con 7 sitemaps hijos, acumulando desde el más reciente
+    [sitemap] https://www.clarin.com/sitemaps/index_galleries.xml -> es un índice con 46 sitemaps hijos, acumulando desde el más reciente
+  Funcionó: sitemap (robots.txt) (https://www.clarin.com/sitemaps/index.xml) -- 72 URLs
+  1 pasan el prefiltro de slug (se bajan completas)
+
+=== TN (multi-estrategia) ===
+    [sitemap] https://www.tn.com.ar/sitemap.xml -> HTTPStatusError: Client error '404 Not Found' for url 'https://tn.com.ar/sitemap.xml'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+  [sitemap adivinado] https://www.tn.com.ar/sitemap.xml -> sin notas reconocibles
+    [sitemap] https://www.tn.com.ar/arc/outboundfeeds/sitemap2/category/policiales/ -> HTTPStatusError: Client error '404 Not Found' for url 'https://tn.com.ar/arc/outboundfeeds/sitemap2/category/policiales/'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+  [sitemap Arc Publishing] https://www.tn.com.ar/arc/outboundfeeds/sitemap2/category/policiales/ -> sin notas reconocibles
+  [scrape de sección] https://www.tn.com.ar/policiales/ -> respondió pero 0 notas reconocibles
+  Ningún método funcionó para TN -- sigue bloqueada, no se agrega nada esta corrida
+
+132 noticias candidatas (11 choque, 38 inseguridad, 83 robo), 0 duplicadas omitidas, 78 pudieron ubicarse (dry-run, no se guardo nada -- corré con --guardar para insertar)
+  Relacionadas con moto: 15 candidatas
+  Sin ubicar porque el geocode no dio resultado dentro de la zona de la nota: 32
+  0221: 10 candidatas, 10 ubicadas
+  Diario Conurbano: 2 candidatas, 1 ubicadas
+  Diario Popular: 1 candidatas, 1 ubicadas
+  El Diario Sur: 6 candidatas, 3 ubicadas
+  El Día: 2 candidatas, 1 ubicadas
+  Infobae: 18 candidatas, 10 ubicadas
+  Inforbano: 18 candidatas, 16 ubicadas
+  Infosur Diario: 13 candidatas, 10 ubicadas
+  La Nación: 10 candidatas, 8 ubicadas
+  Minutouno: 4 candidatas, 1 ubicadas
+  Periódico Para Todos: 1 candidatas, 1 ubicadas
+  Primer Plano Online: 3 candidatas, 1 ubicadas
+  Zona Norte Diario: 3 candidatas, 0 ubicadas
+  Zona Oeste Diario: 18 candidatas, 5 ubicadas
+  Zona Sur Diario: 23 candidatas, 10 ubicadas

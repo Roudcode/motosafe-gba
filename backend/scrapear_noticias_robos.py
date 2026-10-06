@@ -620,6 +620,14 @@ def _es_barrio_ambiguo_en_contexto(texto_norm, zona, inicio):
     ))
 
 
+def _es_nombre_de_calle(texto_norm, fin):
+    """True si el nombre que termina en `fin` va seguido de "al <número>": en
+    "Almirante Brown al 500" o "Belgrano al 1500" es una calle, no el partido
+    ni el barrio. Caso real (SES-069): una nota de Grand Bourg terminaba
+    ubicada en Almirante Brown por la calle homónima."""
+    return re.match(r'\s+al\s+\d', texto_norm[fin:]) is not None
+
+
 def _oraciones(texto):
     """Divide en oraciones por punto seguido de espacio. Evita un bug real
     encontrado en un dry-run: _RE_CALLE permite un punto DENTRO de una
@@ -663,7 +671,10 @@ def encontrar_zona(texto):
         zona_norm = normalizar(zona)
         for match in re.finditer(rf'(?<!\w){re.escape(zona_norm)}(?!\w)', texto_norm):
             pos = match.start()
-            if not _es_de_otra_provincia(texto_norm, zona, pos + len(zona_norm)):
+            if (
+                not _es_de_otra_provincia(texto_norm, zona, pos + len(zona_norm))
+                and not _es_nombre_de_calle(texto_norm, match.end())
+            ):
                 return zona, 'Buenos Aires'
     for zona in BARRIOS_CABA:
         zona_norm = normalizar(zona)
@@ -672,6 +683,7 @@ def encontrar_zona(texto):
             if (
                 not _es_de_otra_provincia(texto_norm, zona, pos + len(zona_norm))
                 and not _es_barrio_ambiguo_en_contexto(texto_norm, zona, pos)
+                and not _es_nombre_de_calle(texto_norm, match.end())
             ):
                 return zona, 'CABA'
 
@@ -683,7 +695,10 @@ def encontrar_zona(texto):
         alias_norm = normalizar(alias)
         for match in re.finditer(rf'(?<!\w){re.escape(alias_norm)}(?!\w)', texto_norm):
             pos = match.start()
-            if not _es_de_otra_provincia(texto_norm, alias, pos + len(alias_norm)):
+            if (
+                not _es_de_otra_provincia(texto_norm, alias, pos + len(alias_norm))
+                and not _es_nombre_de_calle(texto_norm, match.end())
+            ):
                 return partido_real, 'Buenos Aires'
     return None
 
@@ -735,24 +750,101 @@ def extraer_ubicacion(titulo, descripcion):
     return None
 
 
-def geocodificar_nominatim(query):
-    """Mismo geocoder y mismo bbox que el frontend (geoRiesgo.js), pero desde
+def _buscar_nominatim(query, **extra):
+    """Primer resultado de Nominatim (dict con lat, lon y address) o None.
+    Mismo geocoder y mismo bbox que el frontend (geoRiesgo.js), pero desde
     Python: User-Agent identificado (exigido por la politica de uso de
     Nominatim) y una pausa fija entre pedidos (tambien exigida, max 1/seg).
     No cachea entre corridas -- el volumen esperado (unas pocas notas por
     corrida, unas pocas corridas por dia) esta lejos de necesitarlo."""
     resp = httpx.get(
         NOMINATIM_URL,
-        params={"format": "json", "q": query, "viewbox": BBOX_GBA, "bounded": 1, "limit": 1},
+        params={"format": "json", "q": query, "viewbox": BBOX_GBA, "bounded": 1, "limit": 1,
+                "addressdetails": 1, **extra},
         headers={"User-Agent": USER_AGENT, "Accept-Language": "es"},
         timeout=10,
     )
     time.sleep(PAUSA_ENTRE_GEOCODES_SEG)
     resp.raise_for_status()
     datos = resp.json()
-    if not datos:
-        return None
-    return float(datos[0]['lat']), float(datos[0]['lon'])
+    return datos[0] if datos else None
+
+
+def geocodificar_nominatim(query):
+    resultado = _buscar_nominatim(query)
+    return (float(resultado['lat']), float(resultado['lon'])) if resultado else None
+
+
+# Localidades de PARTIDOS_GBA que no son partidos (ver el comentario de esa lista).
+PARTIDO_DE_LOCALIDAD = {'City Bell': 'La Plata'}
+
+
+def _sin_prefijo_partido(nombre):
+    return re.sub(r'^partido del? ', '', normalizar(nombre or '').strip())
+
+
+def _partido_del_resultado(direccion, display_name=''):
+    """Partido (normalizado) al que pertenece un resultado de Nominatim. OSM lo
+    pone en state_district/county, o en town/city como "Partido de X" (p. ej.
+    la localidad Malvinas Argentinas: town = "Partido de Almirante Brown"). A
+    veces solo figura en display_name ("..., Burzaco, Partido de Almirante
+    Brown, ...") y para algunos partidos solo hay city (Quilmes)."""
+    for clave in ('state_district', 'county'):
+        if direccion.get(clave):
+            return _sin_prefijo_partido(direccion[clave])
+    for clave in ('town', 'city', 'municipality'):
+        if normalizar(direccion.get(clave) or '').startswith('partido de'):
+            return _sin_prefijo_partido(direccion[clave])
+    for parte in display_name.split(', '):
+        if normalizar(parte).startswith('partido de'):
+            return _sin_prefijo_partido(parte)
+    return _sin_prefijo_partido(direccion.get('city') or direccion.get('town'))
+
+
+def resultado_en_zona(direccion, zona, localidad, exigir_barrio, display_name=''):
+    """¿El resultado de Nominatim cae en la zona que nombró la nota?
+
+    Medido en A09 (docs/evidencias/2026-10-06/A09-geocodificacion/): la
+    consulta por zona devolvía homónimos lejos de la zona, por ejemplo la calle
+    "Esteban Echeverría" de Munro (Vicente López) o la localidad "Malvinas
+    Argentinas" de Almirante Brown. `exigir_barrio` pide además el barrio exacto
+    en CABA (para el nivel 'barrio'); para una calle alcanza con CABA, porque
+    cerca del límite entre barrios Nominatim puede informar el vecino."""
+    if localidad == 'CABA':
+        en_caba = 'autonoma de buenos aires' in normalizar(direccion.get('state') or '')
+        if not en_caba or zona is None or not exigir_barrio:
+            return en_caba
+        return normalizar(direccion.get('suburb') or '') == normalizar(zona)
+    esperado = normalizar(PARTIDO_DE_LOCALIDAD.get(zona, zona))
+    # endswith: OSM usa "General San Martín" para el partido de San Martín.
+    return _partido_del_resultado(direccion, display_name).endswith(esperado)
+
+
+def geocodificar_en_zona(query, nivel, zona, localidad):
+    """Como geocodificar_nominatim, pero solo acepta un resultado dentro de la
+    zona de la nota. Devuelve (punto, motivo): motivo 'ok', 'vacio' (Nominatim
+    no devolvió nada) o 'fuera_de_zona' (devolvió algo, pero en otro lado: la
+    nota no se ubica, mejor abstenerse que marcar un punto en otro partido).
+
+    Para el nivel 'barrio' se usa featureType=settlement, que restringe a
+    lugares y límites administrativos (sin calles, estaciones ni parques
+    homónimos), y si el resultado no valida se prueba "Partido de X"."""
+    if nivel == 'barrio':
+        consultas = [(query, {'featureType': 'settlement'})]
+        if localidad != 'CABA' and zona not in PARTIDO_DE_LOCALIDAD:
+            consultas.append((f"Partido de {zona}, Buenos Aires, Argentina", {}))
+    else:
+        consultas = [(query, {})]
+    motivo = 'vacio'
+    for consulta, extra in consultas:
+        resultado = _buscar_nominatim(consulta, **extra)
+        if resultado is None:
+            continue
+        if resultado_en_zona(resultado.get('address', {}), zona, localidad, nivel == 'barrio',
+                             resultado.get('display_name', '')):
+            return (float(resultado['lat']), float(resultado['lon'])), 'ok'
+        motivo = 'fuera_de_zona'
+    return None, motivo
 
 
 def extraer_urls_sitemap(xml_bytes):
@@ -1133,13 +1225,20 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
         print(f"  [sin ubicar] ({categoria}) {titulo}")
         return
     query, nivel, radio = ubicacion
+    # Misma zona que usó extraer_ubicacion para armar la consulta (sin zona en
+    # el texto, la consulta asume CABA).
+    zona, localidad = encontrar_zona(f"{titulo}. {descripcion}") or (None, 'CABA')
     try:
-        punto = geocodificar_nominatim(query)
+        punto, motivo = geocodificar_en_zona(query, nivel, zona, localidad)
     except Exception as err:
         print(f"  [error geocode: {err}] {titulo}")
         return
     if punto is None:
-        print(f"  [geocode vacio -- query: \"{query}\"] {titulo}")
+        if motivo == 'fuera_de_zona':
+            contadores['fuera_de_zona'] += 1
+            print(f"  [geocode fuera de {zona or localidad} -- query: \"{query}\"] {titulo}")
+        else:
+            print(f"  [geocode vacio -- query: \"{query}\"] {titulo}")
         return
     contadores['ubicadas'] += 1
     contadores['ubicadas_por_fuente'][nombre_fuente] = contadores['ubicadas_por_fuente'].get(nombre_fuente, 0) + 1
@@ -1193,7 +1292,7 @@ def main():
 
     contadores = {
         'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0,
-        'duplicadas': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
+        'duplicadas': 0, 'fuera_de_zona': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
         'candidatas_por_fuente': {}, 'ubicadas_por_fuente': {}, 'guardadas_por_fuente': {},
     }
 
@@ -1291,6 +1390,7 @@ def main():
           + (f", {contadores['guardadas']} nuevas guardadas en la base" if guardar
              else " (dry-run, no se guardo nada -- corré con --guardar para insertar)"))
     print(f"  Relacionadas con moto: {contadores['candidatas_moto']} candidatas")
+    print(f"  Sin ubicar porque el geocode cayó fuera de la zona de la nota: {contadores['fuera_de_zona']}")
     for fuente in sorted(contadores['candidatas_por_fuente']):
         candidatas = contadores['candidatas_por_fuente'][fuente]
         ubicadas = contadores['ubicadas_por_fuente'].get(fuente, 0)

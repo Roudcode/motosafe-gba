@@ -61,3 +61,98 @@ def test_alias_de_localidad_no_rompe_la_exclusion_de_otra_provincia():
     # alias: si el alias aparece pegado a "de <otra provincia>", no debe
     # devolver el partido GBA de todas formas.
     assert encontrar_zona('Un hecho en Lomas de Mendoza') is None
+
+
+# --- A09: validación de zona del geocode (SES-069) ---------------------------
+# Direcciones reales devueltas por Nominatim el 2026-10-06, ver
+# docs/evidencias/2026-10-06/A09-geocodificacion/.
+import scrapear_noticias_robos as scraper  # noqa: E402
+
+CALLE_ECHEVERRIA_EN_MUNRO = {'road': 'Esteban Echeverría', 'suburb': 'Munro', 'state_district': 'Partido de Vicente López', 'state': 'Buenos Aires'}
+PARTIDO_ECHEVERRIA = {'state_district': 'Partido de Esteban Echeverría', 'state': 'Buenos Aires'}
+LOCALIDAD_MALVINAS_EN_BROWN = {'village': 'Malvinas Argentinas', 'town': 'Partido de Almirante Brown', 'state': 'Buenos Aires'}
+PARTIDO_MALVINAS = {'state_district': 'Partido de Malvinas Argentinas', 'state': 'Buenos Aires'}
+ESTACION_BELGRANO_EN_MONSERRAT = {'railway': 'Belgrano', 'suburb': 'Monserrat', 'city': 'Buenos Aires', 'state': 'Ciudad Autónoma de Buenos Aires'}
+BARRIO_BELGRANO = {'suburb': 'Belgrano', 'city': 'Buenos Aires', 'state_district': 'Comuna 13', 'state': 'Ciudad Autónoma de Buenos Aires'}
+
+
+def _nominatim_falso(monkeypatch, respuestas):
+    """respuestas: lista de address dicts (o None) en el orden de las consultas."""
+    pedidos = []
+
+    def buscar(query, **extra):
+        pedidos.append((query, extra))
+        direccion = respuestas[len(pedidos) - 1]
+        return None if direccion is None else {'lat': '-34.8', 'lon': '-58.4', 'address': direccion}
+
+    monkeypatch.setattr(scraper, '_buscar_nominatim', buscar)
+    return pedidos
+
+
+def test_resultado_en_zona_rechaza_homonimos_de_otro_partido():
+    assert not scraper.resultado_en_zona(CALLE_ECHEVERRIA_EN_MUNRO, 'Esteban Echeverría', 'Buenos Aires', True)
+    assert scraper.resultado_en_zona(PARTIDO_ECHEVERRIA, 'Esteban Echeverría', 'Buenos Aires', True)
+    assert not scraper.resultado_en_zona(LOCALIDAD_MALVINAS_EN_BROWN, 'Malvinas Argentinas', 'Buenos Aires', True)
+    assert scraper.resultado_en_zona(PARTIDO_MALVINAS, 'Malvinas Argentinas', 'Buenos Aires', True)
+
+
+def test_resultado_en_zona_acepta_variantes_reales_de_osm():
+    # "General San Martín", "Partido del Pilar" y Quilmes solo con city.
+    assert scraper.resultado_en_zona({'state_district': 'Partido de General San Martín'}, 'San Martín', 'Buenos Aires', True)
+    assert scraper.resultado_en_zona({'town': 'Pilar', 'state_district': 'Partido del Pilar'}, 'Pilar', 'Buenos Aires', True)
+    assert scraper.resultado_en_zona({'city': 'Quilmes', 'state': 'Buenos Aires'}, 'Quilmes', 'Buenos Aires', True)
+    assert scraper.resultado_en_zona({'state_district': 'Partido de La Plata'}, 'City Bell', 'Buenos Aires', True)
+
+
+def test_barrio_de_caba_exige_el_barrio_solo_en_nivel_barrio():
+    assert not scraper.resultado_en_zona(ESTACION_BELGRANO_EN_MONSERRAT, 'Belgrano', 'CABA', True)
+    assert scraper.resultado_en_zona(BARRIO_BELGRANO, 'Belgrano', 'CABA', True)
+    # Una calle cerca del límite puede venir con el barrio vecino: alcanza con CABA.
+    assert scraper.resultado_en_zona(ESTACION_BELGRANO_EN_MONSERRAT, 'Belgrano', 'CABA', False)
+    assert not scraper.resultado_en_zona(PARTIDO_ECHEVERRIA, None, 'CABA', False)
+
+
+def test_monte_grande_ya_no_cae_en_munro(monkeypatch):
+    # Caso real de SES-067: "Monte Grande: un detenido por el robo de un auto".
+    query, nivel, _ = extraer_ubicacion('Monte Grande: un detenido por el robo de un auto', '')
+    pedidos = _nominatim_falso(monkeypatch, [CALLE_ECHEVERRIA_EN_MUNRO, PARTIDO_ECHEVERRIA])
+    assert scraper.geocodificar_en_zona(query, nivel, 'Esteban Echeverría', 'Buenos Aires') == ((-34.8, -58.4), 'ok')
+    assert pedidos[0][1] == {'featureType': 'settlement'}
+    assert pedidos[1][0] == 'Partido de Esteban Echeverría, Buenos Aires, Argentina'
+
+
+def test_sin_resultado_dentro_de_la_zona_la_nota_no_se_ubica(monkeypatch):
+    _nominatim_falso(monkeypatch, [LOCALIDAD_MALVINAS_EN_BROWN, CALLE_ECHEVERRIA_EN_MUNRO])
+    assert scraper.geocodificar_en_zona('Malvinas Argentinas, Buenos Aires, Argentina', 'barrio',
+                                        'Malvinas Argentinas', 'Buenos Aires') == (None, 'fuera_de_zona')
+
+
+def test_calle_en_otro_partido_se_descarta(monkeypatch):
+    pedidos = _nominatim_falso(monkeypatch, [CALLE_ECHEVERRIA_EN_MUNRO])
+    assert scraper.geocodificar_en_zona('Rivadavia 100, Quilmes, Buenos Aires, Argentina', 'calle',
+                                        'Quilmes', 'Buenos Aires') == (None, 'fuera_de_zona')
+    assert len(pedidos) == 1 and pedidos[0][1] == {}
+
+
+def test_sin_respuesta_de_nominatim_se_informa_como_vacio(monkeypatch):
+    _nominatim_falso(monkeypatch, [None])
+    assert scraper.geocodificar_en_zona('Caseros y Salta, Constitución, CABA, Argentina', 'interseccion',
+                                        'Constitución', 'CABA') == (None, 'vacio')
+
+
+def test_partido_que_solo_figura_en_display_name():
+    # Caso real de la corrida de prueba de SES-069: "Almirante Brown 500".
+    direccion = {'house_number': '500', 'road': 'Almirante Brown', 'town': 'Burzaco', 'state': 'Buenos Aires'}
+    nombre = '500, Almirante Brown, Burzaco, Partido de Almirante Brown, Buenos Aires, B1852, Argentina'
+    assert scraper.resultado_en_zona(direccion, 'Almirante Brown', 'Buenos Aires', False, nombre)
+    assert not scraper.resultado_en_zona(direccion, 'Almirante Brown', 'Buenos Aires', False)
+
+
+def test_nombre_de_partido_o_barrio_seguido_de_altura_es_una_calle():
+    # Caso real de SES-069: la nota era de Grand Bourg (Malvinas Argentinas).
+    texto = 'Detuvieron en Grand Bourg a Coco. El allanamiento fue en Almirante Brown al 500'
+    assert encontrar_zona(texto) == ('Malvinas Argentinas', 'Buenos Aires')
+    assert encontrar_zona('Robo en Belgrano al 1500, Quilmes') == ('Quilmes', 'Buenos Aires')
+    assert encontrar_zona('Asalto en Belgrano al 1500') is None
+    # Sin altura sigue siendo la zona.
+    assert encontrar_zona('Detuvieron a un ladrón en Almirante Brown') == ('Almirante Brown', 'Buenos Aires')

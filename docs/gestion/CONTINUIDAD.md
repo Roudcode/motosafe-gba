@@ -111,3 +111,7 @@ El MVP público corre sin login (`AUTH_HABILITADO=false` en compose y Render). P
 ## Actualización 2026-10-06 — SES-068: lock, prototipos y primer E2E real
 
 Dependencias transitivas fijadas con hashes (`backend/requirements.lock`, `requirements.lock`) e instaladas con `--require-hashes` en Docker, CI y el lanzador local. Prototipos de notebooks declarados. El primer E2E real, aislado de Funnel y de la base personal, pasó 23/23 verificaciones HTTP. Corrigió dos fallas: el mapa en blanco en el build de producción (worker de MapLibre) y `cargar_hotspots.py` sin crear su tabla. **Pendiente de Rodo:** confirmar la primera corrida del CI en GitHub (repo privado, sin `gh` ni sesión en el navegador integrado). **Pendiente técnico:** E2E visual de los flujos del mapa con la ventana en primer plano.
+
+## Actualización 2026-10-06 — SES-069: A09 geocodificación de zonas
+
+El scraper valida que el geocode caiga en la zona que nombra la nota y se abstiene si no es así. Sobre las 87 zonas del gazetteer, el método anterior ubicaba mal 11 y el nuevo ninguna (verificado por geocodificación inversa). La corrida real ubicó 79 de 132 candidatas, contra 78 antes. **Pendiente de decisión de Rodo:** si se re-geocodifican las filas históricas de `reportes_prensa`, porque implica escribir en su base.

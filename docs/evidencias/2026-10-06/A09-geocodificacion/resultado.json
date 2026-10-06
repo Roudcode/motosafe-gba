@@ -1,0 +1,1655 @@
+[
+ {
+  "zona": "La Matanza",
+  "tipo": "partido",
+  "partido_esperado": "La Matanza",
+  "anterior": {
+   "punto": [
+    -34.9133471,
+    -58.3392229
+   ],
+   "resultado": "mal (presidente peron)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7734472,
+    -58.6351399
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Isidro",
+  "tipo": "partido",
+  "partido_esperado": "San Isidro",
+  "anterior": {
+   "punto": [
+    -34.4739792,
+    -58.5264866
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.4739792,
+    -58.5264866
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Vicente López",
+  "tipo": "partido",
+  "partido_esperado": "Vicente López",
+  "anterior": {
+   "punto": [
+    -34.525763,
+    -58.4748977
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.525763,
+    -58.4748977
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Tigre",
+  "tipo": "partido",
+  "partido_esperado": "Tigre",
+  "anterior": {
+   "punto": [
+    -34.4235341,
+    -58.5817628
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.422659,
+    -58.5808887
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Quilmes",
+  "tipo": "partido",
+  "partido_esperado": "Quilmes",
+  "anterior": {
+   "punto": [
+    -34.7244434,
+    -58.2588168
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7244434,
+    -58.2588168
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Avellaneda",
+  "tipo": "partido",
+  "partido_esperado": "Avellaneda",
+  "anterior": {
+   "punto": [
+    -34.6648394,
+    -58.3628061
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6648394,
+    -58.3628061
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Lanús",
+  "tipo": "partido",
+  "partido_esperado": "Lanús",
+  "anterior": {
+   "punto": [
+    -34.7073871,
+    -58.3905998
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.703104,
+    -58.395347
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Lomas de Zamora",
+  "tipo": "partido",
+  "partido_esperado": "Lomas de Zamora",
+  "anterior": {
+   "punto": [
+    -34.7572582,
+    -58.4026638
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7572582,
+    -58.4026638
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Morón",
+  "tipo": "partido",
+  "partido_esperado": "Morón",
+  "anterior": {
+   "punto": [
+    -34.6510527,
+    -58.6217416
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6510527,
+    -58.6217416
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Tres de Febrero",
+  "tipo": "partido",
+  "partido_esperado": "Tres de Febrero",
+  "anterior": {
+   "punto": [
+    -34.5718753,
+    -58.4251993
+   ],
+   "resultado": "mal (caba)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.600926,
+    -58.5628981
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Martín",
+  "tipo": "partido",
+  "partido_esperado": "San Martín",
+  "anterior": {
+   "punto": [
+    -34.5771577,
+    -58.5377237
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5771577,
+    -58.5377237
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Merlo",
+  "tipo": "partido",
+  "partido_esperado": "Merlo",
+  "anterior": {
+   "punto": [
+    -34.6604988,
+    -58.7321695
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6604988,
+    -58.7321695
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Moreno",
+  "tipo": "partido",
+  "partido_esperado": "Moreno",
+  "anterior": {
+   "punto": [
+    -34.6396556,
+    -58.7898326
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6396556,
+    -58.7898326
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "José C. Paz",
+  "tipo": "partido",
+  "partido_esperado": "José C. Paz",
+  "anterior": {
+   "punto": [
+    -34.511906,
+    -58.7776777
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.511906,
+    -58.7776777
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Malvinas Argentinas",
+  "tipo": "partido",
+  "partido_esperado": "Malvinas Argentinas",
+  "anterior": {
+   "punto": [
+    -34.8187342,
+    -58.4240051
+   ],
+   "resultado": "mal (almirante brown)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.485984,
+    -58.7195534
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Miguel",
+  "tipo": "partido",
+  "partido_esperado": "San Miguel",
+  "anterior": {
+   "punto": [
+    -34.543006,
+    -58.711966
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.543006,
+    -58.711966
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Hurlingham",
+  "tipo": "partido",
+  "partido_esperado": "Hurlingham",
+  "anterior": {
+   "punto": [
+    -34.5933423,
+    -58.6378405
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5933423,
+    -58.6378405
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Ituzaingó",
+  "tipo": "partido",
+  "partido_esperado": "Ituzaingó",
+  "anterior": {
+   "punto": [
+    -34.6583293,
+    -58.6671441
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6583293,
+    -58.6671441
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Esteban Echeverría",
+  "tipo": "partido",
+  "partido_esperado": "Esteban Echeverría",
+  "anterior": {
+   "punto": [
+    -34.5284973,
+    -58.508079
+   ],
+   "resultado": "mal (vicente lopez)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.824677,
+    -58.477133
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Ezeiza",
+  "tipo": "partido",
+  "partido_esperado": "Ezeiza",
+  "anterior": {
+   "punto": [
+    -34.8168141,
+    -58.5474234
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.8548948,
+    -58.525839
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Almirante Brown",
+  "tipo": "partido",
+  "partido_esperado": "Almirante Brown",
+  "anterior": {
+   "punto": [
+    -34.6200727,
+    -58.90692
+   ],
+   "resultado": "mal (general rodriguez)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7973853,
+    -58.3885508
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Berazategui",
+  "tipo": "partido",
+  "partido_esperado": "Berazategui",
+  "anterior": {
+   "punto": [
+    -34.7632677,
+    -58.2116604
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7632677,
+    -58.2116604
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Florencio Varela",
+  "tipo": "partido",
+  "partido_esperado": "Florencio Varela",
+  "anterior": {
+   "punto": [
+    -34.8044384,
+    -58.2783224
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.8044384,
+    -58.2783224
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Fernando",
+  "tipo": "partido",
+  "partido_esperado": "San Fernando",
+  "anterior": {
+   "punto": [
+    -34.4471919,
+    -58.5701505
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.4471919,
+    -58.5701505
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Escobar",
+  "tipo": "partido",
+  "partido_esperado": "Escobar",
+  "anterior": {
+   "punto": [
+    -34.3453213,
+    -58.7950701
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.3453213,
+    -58.7950701
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Pilar",
+  "tipo": "partido",
+  "partido_esperado": "Pilar",
+  "anterior": {
+   "punto": [
+    -34.4570918,
+    -58.9141609
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.4570918,
+    -58.9141609
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "City Bell",
+  "tipo": "partido",
+  "partido_esperado": "La Plata",
+  "anterior": {
+   "punto": [
+    -34.8657439,
+    -58.0420871
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.8670408,
+    -58.0475179
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "La Plata",
+  "tipo": "partido",
+  "partido_esperado": "La Plata",
+  "anterior": {
+   "punto": [
+    -34.9206797,
+    -57.9537638
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.9206797,
+    -57.9537638
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Berisso",
+  "tipo": "partido",
+  "partido_esperado": "Berisso",
+  "anterior": {
+   "punto": [
+    -34.8688565,
+    -57.8828667
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.8688565,
+    -57.8828667
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Ensenada",
+  "tipo": "partido",
+  "partido_esperado": "Ensenada",
+  "anterior": {
+   "punto": [
+    -34.8574895,
+    -57.907717
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.8574895,
+    -57.907717
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Lomas",
+  "tipo": "alias",
+  "partido_esperado": "Lomas de Zamora",
+  "anterior": {
+   "punto": [
+    -34.7572582,
+    -58.4026638
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7572582,
+    -58.4026638
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Monte Grande",
+  "tipo": "alias",
+  "partido_esperado": "Esteban Echeverría",
+  "anterior": {
+   "punto": [
+    -34.5284973,
+    -58.508079
+   ],
+   "resultado": "mal (vicente lopez)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.824677,
+    -58.477133
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Temperley",
+  "tipo": "alias",
+  "partido_esperado": "Lomas de Zamora",
+  "anterior": {
+   "punto": [
+    -34.7572582,
+    -58.4026638
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7572582,
+    -58.4026638
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Don Orione",
+  "tipo": "alias",
+  "partido_esperado": "Almirante Brown",
+  "anterior": {
+   "punto": [
+    -34.6200727,
+    -58.90692
+   ],
+   "resultado": "mal (general rodriguez)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7973853,
+    -58.3885508
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Los Hornos",
+  "tipo": "alias",
+  "partido_esperado": "La Plata",
+  "anterior": {
+   "punto": [
+    -34.9206797,
+    -57.9537638
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.9206797,
+    -57.9537638
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Tolosa",
+  "tipo": "alias",
+  "partido_esperado": "La Plata",
+  "anterior": {
+   "punto": [
+    -34.9206797,
+    -57.9537638
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.9206797,
+    -57.9537638
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Virrey del Pino",
+  "tipo": "alias",
+  "partido_esperado": "La Matanza",
+  "anterior": {
+   "punto": [
+    -34.9133471,
+    -58.3392229
+   ],
+   "resultado": "mal (presidente peron)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.7734472,
+    -58.6351399
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Grand Bourg",
+  "tipo": "alias",
+  "partido_esperado": "Malvinas Argentinas",
+  "anterior": {
+   "punto": [
+    -34.8187342,
+    -58.4240051
+   ],
+   "resultado": "mal (almirante brown)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.485984,
+    -58.7195534
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Castelar",
+  "tipo": "alias",
+  "partido_esperado": "Morón",
+  "anterior": {
+   "punto": [
+    -34.6510527,
+    -58.6217416
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6510527,
+    -58.6217416
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Agronomía",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5952803,
+    -58.4859915
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5952803,
+    -58.4859915
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Almagro",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6099883,
+    -58.4222331
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6099883,
+    -58.4222331
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Balvanera",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6092155,
+    -58.4031396
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6092155,
+    -58.4031396
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Barracas",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6452854,
+    -58.3875619
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6452854,
+    -58.3875619
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Belgrano",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.612958,
+    -58.3776468
+   ],
+   "resultado": "mal (caba/monserrat)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5613076,
+    -58.4565454
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Boedo",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6254799,
+    -58.4161163
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6302518,
+    -58.41879
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Caballito",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6205897,
+    -58.4413922
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6200773,
+    -58.4424893
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Chacarita",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5871827,
+    -58.4551513
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5880107,
+    -58.4541562
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Coghlan",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5653298,
+    -58.4751219
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5599096,
+    -58.4747142
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Colegiales",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5730241,
+    -58.4481908
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5745154,
+    -58.4522819
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Constitución",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6282576,
+    -58.3805698
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.624246,
+    -58.3836324
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Flores",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6290748,
+    -58.4634771
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6282028,
+    -58.4622184
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Floresta",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6323692,
+    -58.4808865
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6281055,
+    -58.4837914
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "La Boca",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6335103,
+    -58.3590424
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6335103,
+    -58.3590424
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "La Paternal",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5969923,
+    -58.4672266
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5977397,
+    -58.4701995
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Liniers",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6388693,
+    -58.526338
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6420488,
+    -58.5202251
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Mataderos",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6578631,
+    -58.5017617
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6578631,
+    -58.5017617
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Monte Castro",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6188385,
+    -58.5059465
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6188385,
+    -58.5059465
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Monserrat",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6115595,
+    -58.3841265
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6115595,
+    -58.3841265
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Nueva Pompeya",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6526296,
+    -58.4147098
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6526296,
+    -58.4147098
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Núñez",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5484856,
+    -58.4627415
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5453484,
+    -58.4621491
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Palermo",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5803362,
+    -58.4245236
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5803362,
+    -58.4245236
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Parque Avellaneda",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6450628,
+    -58.4797234
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.649199,
+    -58.4763768
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Parque Chacabuco",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6338619,
+    -58.4429726
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.638261,
+    -58.4384464
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Parque Chas",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5855111,
+    -58.4793049
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5855111,
+    -58.4793049
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Parque Patricios",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6384945,
+    -58.4063149
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6374817,
+    -58.4012386
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Puerto Madero",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6103764,
+    -58.3622067
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6103764,
+    -58.3622067
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Recoleta",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.587358,
+    -58.39157
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.587358,
+    -58.39157
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Retiro",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5911503,
+    -58.3746803
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5916426,
+    -58.373307
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Saavedra",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5525291,
+    -58.4862759
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5525291,
+    -58.4862759
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Cristóbal",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6240603,
+    -58.4023896
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6240603,
+    -58.4023896
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Nicolás",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6044631,
+    -58.3844969
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6044631,
+    -58.3844969
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "San Telmo",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6214013,
+    -58.37375
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6214013,
+    -58.37375
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Vélez Sarsfield",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6323692,
+    -58.4808865
+   ],
+   "resultado": "mal (caba/floresta)"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6311961,
+    -58.4925556
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Versalles",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.628928,
+    -58.5232987
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.628928,
+    -58.5232987
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Crespo",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5932867,
+    -58.4480481
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5983947,
+    -58.4424743
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa del Parque",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6014043,
+    -58.4940744
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6047975,
+    -58.4938209
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Devoto",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6009939,
+    -58.5155164
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6009939,
+    -58.5155164
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa General Mitre",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6103098,
+    -58.4693142
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6103098,
+    -58.4693142
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Lugano",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6766149,
+    -58.4771849
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6766149,
+    -58.4771849
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Luro",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6362602,
+    -58.5020915
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6370747,
+    -58.5015075
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Ortúzar",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.581302,
+    -58.4682453
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.581302,
+    -58.4682453
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Pueyrredón",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5794479,
+    -58.5040849
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5794479,
+    -58.5040849
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Real",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6189432,
+    -58.5258765
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6189432,
+    -58.5258765
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Riachuelo",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6912065,
+    -58.47145
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6912065,
+    -58.47145
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Santa Rita",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6160781,
+    -58.4827416
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6160781,
+    -58.4827416
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Soldati",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.6622843,
+    -58.4410592
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.6620877,
+    -58.4421165
+   ],
+   "resultado": "ok"
+  }
+ },
+ {
+  "zona": "Villa Urquiza",
+  "tipo": "barrio",
+  "partido_esperado": null,
+  "anterior": {
+   "punto": [
+    -34.5732414,
+    -58.4914785
+   ],
+   "resultado": "ok"
+  },
+  "nuevo": {
+   "punto": [
+    -34.5732414,
+    -58.4914785
+   ],
+   "resultado": "ok"
+  }
+ }
+]

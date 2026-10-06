@@ -1,0 +1,94 @@
+La Matanza             partido  anterior=mal (presidente peron)             nuevo=ok
+San Isidro             partido  anterior=ok                                 nuevo=ok
+Vicente López          partido  anterior=ok                                 nuevo=ok
+Tigre                  partido  anterior=ok                                 nuevo=ok
+Quilmes                partido  anterior=ok                                 nuevo=ok
+Avellaneda             partido  anterior=ok                                 nuevo=ok
+Lanús                  partido  anterior=ok                                 nuevo=ok
+Lomas de Zamora        partido  anterior=ok                                 nuevo=ok
+Morón                  partido  anterior=ok                                 nuevo=ok
+Tres de Febrero        partido  anterior=mal (caba)                         nuevo=ok
+San Martín             partido  anterior=ok                                 nuevo=ok
+Merlo                  partido  anterior=ok                                 nuevo=ok
+Moreno                 partido  anterior=ok                                 nuevo=ok
+José C. Paz            partido  anterior=ok                                 nuevo=ok
+Malvinas Argentinas    partido  anterior=mal (almirante brown)              nuevo=ok
+San Miguel             partido  anterior=ok                                 nuevo=ok
+Hurlingham             partido  anterior=ok                                 nuevo=ok
+Ituzaingó              partido  anterior=ok                                 nuevo=ok
+Esteban Echeverría     partido  anterior=mal (vicente lopez)                nuevo=ok
+Ezeiza                 partido  anterior=ok                                 nuevo=ok
+Almirante Brown        partido  anterior=mal (general rodriguez)            nuevo=ok
+Berazategui            partido  anterior=ok                                 nuevo=ok
+Florencio Varela       partido  anterior=ok                                 nuevo=ok
+San Fernando           partido  anterior=ok                                 nuevo=ok
+Escobar                partido  anterior=ok                                 nuevo=ok
+Pilar                  partido  anterior=ok                                 nuevo=ok
+City Bell              partido  anterior=ok                                 nuevo=ok
+La Plata               partido  anterior=ok                                 nuevo=ok
+Berisso                partido  anterior=ok                                 nuevo=ok
+Ensenada               partido  anterior=ok                                 nuevo=ok
+Lomas                  alias    anterior=ok                                 nuevo=ok
+Monte Grande           alias    anterior=mal (vicente lopez)                nuevo=ok
+Temperley              alias    anterior=ok                                 nuevo=ok
+Don Orione             alias    anterior=mal (general rodriguez)            nuevo=ok
+Los Hornos             alias    anterior=ok                                 nuevo=ok
+Tolosa                 alias    anterior=ok                                 nuevo=ok
+Virrey del Pino        alias    anterior=mal (presidente peron)             nuevo=ok
+Grand Bourg            alias    anterior=mal (almirante brown)              nuevo=ok
+Castelar               alias    anterior=ok                                 nuevo=ok
+Agronomía              barrio   anterior=ok                                 nuevo=ok
+Almagro                barrio   anterior=ok                                 nuevo=ok
+Balvanera              barrio   anterior=ok                                 nuevo=ok
+Barracas               barrio   anterior=ok                                 nuevo=ok
+Belgrano               barrio   anterior=mal (caba/monserrat)               nuevo=ok
+Boedo                  barrio   anterior=ok                                 nuevo=ok
+Caballito              barrio   anterior=ok                                 nuevo=ok
+Chacarita              barrio   anterior=ok                                 nuevo=ok
+Coghlan                barrio   anterior=ok                                 nuevo=ok
+Colegiales             barrio   anterior=ok                                 nuevo=ok
+Constitución           barrio   anterior=ok                                 nuevo=ok
+Flores                 barrio   anterior=ok                                 nuevo=ok
+Floresta               barrio   anterior=ok                                 nuevo=ok
+La Boca                barrio   anterior=ok                                 nuevo=ok
+La Paternal            barrio   anterior=ok                                 nuevo=ok
+Liniers                barrio   anterior=ok                                 nuevo=ok
+Mataderos              barrio   anterior=ok                                 nuevo=ok
+Monte Castro           barrio   anterior=ok                                 nuevo=ok
+Monserrat              barrio   anterior=ok                                 nuevo=ok
+Nueva Pompeya          barrio   anterior=ok                                 nuevo=ok
+Núñez                  barrio   anterior=ok                                 nuevo=ok
+Palermo                barrio   anterior=ok                                 nuevo=ok
+Parque Avellaneda      barrio   anterior=ok                                 nuevo=ok
+Parque Chacabuco       barrio   anterior=ok                                 nuevo=ok
+Parque Chas            barrio   anterior=ok                                 nuevo=ok
+Parque Patricios       barrio   anterior=ok                                 nuevo=ok
+Puerto Madero          barrio   anterior=ok                                 nuevo=ok
+Recoleta               barrio   anterior=ok                                 nuevo=ok
+Retiro                 barrio   anterior=ok                                 nuevo=ok
+Saavedra               barrio   anterior=ok                                 nuevo=ok
+San Cristóbal          barrio   anterior=ok                                 nuevo=ok
+San Nicolás            barrio   anterior=ok                                 nuevo=ok
+San Telmo              barrio   anterior=ok                                 nuevo=ok
+Vélez Sarsfield        barrio   anterior=mal (caba/floresta)                nuevo=ok
+Versalles              barrio   anterior=ok                                 nuevo=ok
+Villa Crespo           barrio   anterior=ok                                 nuevo=ok
+Villa del Parque       barrio   anterior=ok                                 nuevo=ok
+Villa Devoto           barrio   anterior=ok                                 nuevo=ok
+Villa General Mitre    barrio   anterior=ok                                 nuevo=ok
+Villa Lugano           barrio   anterior=ok                                 nuevo=ok
+Villa Luro             barrio   anterior=ok                                 nuevo=ok
+Villa Ortúzar          barrio   anterior=ok                                 nuevo=ok
+Villa Pueyrredón       barrio   anterior=ok                                 nuevo=ok
+Villa Real             barrio   anterior=ok                                 nuevo=ok
+Villa Riachuelo        barrio   anterior=ok                                 nuevo=ok
+Villa Santa Rita       barrio   anterior=ok                                 nuevo=ok
+Villa Soldati          barrio   anterior=ok                                 nuevo=ok
+Villa Urquiza          barrio   anterior=ok                                 nuevo=ok
+
+partido  anterior  ok 25/30, mal 5, se abstiene 0
+partido  nuevo     ok 30/30, mal 0, se abstiene 0
+alias    anterior  ok 5/9, mal 4, se abstiene 0
+alias    nuevo     ok 9/9, mal 0, se abstiene 0
+barrio   anterior  ok 46/48, mal 2, se abstiene 0
+barrio   nuevo     ok 48/48, mal 0, se abstiene 0

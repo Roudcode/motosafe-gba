@@ -1,0 +1,200 @@
+[
+ {
+  "titulo": "Madrugada accidentada: un conductor ebrio chocó contra un comercio y una camioneta impactó",
+  "query": "Villa Crespo y Floresta, Floresta, CABA, Argentina",
+  "zona": "Floresta",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Un motochorro atropelló y atacó a golpes a una mujer para robarle en Mar del Plata",
+  "query": "Los Naranjos y Los Ceibos, CABA, Argentina",
+  "zona": "CABA",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Persecución y choque de un patrullero en Constitución: hay dos detenidos",
+  "query": "Caseros y Salta, Constitución, CABA, Argentina",
+  "zona": "Constitución",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Tres de Febrero: Intentaron robarle una importante suma de dinero tras salir de un banco y",
+  "query": "Rosella y Luján, Tres de Febrero, Buenos Aires, Argentina",
+  "zona": "Tres de Febrero",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Morón: Gracias a la nueva ley detienen a dos menores de 14 años acusados de robo",
+  "query": "Padre Castañer 1200, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Temperley: atropelló por la espalda a un amigo tras una pelea y está prófugo",
+  "query": "Suiza y Alemania, Lomas de Zamora, Buenos Aires, Argentina",
+  "zona": "Lomas de Zamora",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Cayó en Lanús un joven acusado de robar motos en Recoleta y exhibirlas en TikTok",
+  "query": "Criminal y Correccional, Avellaneda, Buenos Aires, Argentina",
+  "zona": "Avellaneda",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Murió un jubilado de 85 años tras una entradera en Bernal Oeste y buscan a cinco delincuen",
+  "query": "Zapiola y Origone, Quilmes, Buenos Aires, Argentina",
+  "zona": "Quilmes",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Robaron un auto en Lanús y terminaron detenidos tras una persecución y choque en la Ciudad",
+  "query": "Agustín de Vedia y Tabaré, Lanús, Buenos Aires, Argentina",
+  "zona": "Lanús",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Temperley: un colectivero murió tras incrustarse con la unidad contra una casa",
+  "query": "Caaguazú y Dinamarca, Lomas de Zamora, Buenos Aires, Argentina",
+  "zona": "Lomas de Zamora",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Lanús: detuvieron a dos hombres por el robo de 13 celulares en una estación de servicio",
+  "query": "San Martín y Emilio Castro, Avellaneda, Buenos Aires, Argentina",
+  "zona": "Avellaneda",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Falsos policías intentaron entrar a una casa en Luis Guillón y terminaron detenidos en Mor",
+  "query": "Tarulli 1500, Lomas de Zamora, Buenos Aires, Argentina",
+  "zona": "Lomas de Zamora",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Cinco detenidos tras una persecución por un auto robado en Avellaneda",
+  "query": "Mitre y Garibaldi, Quilmes, Buenos Aires, Argentina",
+  "zona": "Quilmes",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Lanús: balearon a una mujer delante de su nieto para robarle el auto",
+  "query": "Jujuy y Tuyutí, Avellaneda, Buenos Aires, Argentina",
+  "zona": "Avellaneda",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Buscan a uno de los acusados de matar a un policía en Lanús tras una fuga de la cárcel de ",
+  "query": "Giménez y Salazar, Lanús, Buenos Aires, Argentina",
+  "zona": "Lanús",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Cayó “Paranacito” en un megaoperativo narco en Florencio Varela y Quilmes: lo vinculan con",
+  "query": "Florencio Varela y Quilmes, Quilmes, Buenos Aires, Argentina",
+  "zona": "Quilmes",
+  "resultado": "Avenida Florencio Varela, Barrio 12 de Octubre, Ezpeleta Este, Partido de Quilmes, Partido de Berazategui, Buenos Aires,",
+  "partido_validador": "berazategui",
+  "state": "Buenos Aires"
+ },
+ {
+  "titulo": "Violento enfrentamiento en Villa Tranquila: cuatro policías heridos y un hombre baleado",
+  "query": "Estévez y Roca, Avellaneda, Buenos Aires, Argentina",
+  "zona": "Avellaneda",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Asaltaron a un fletero que viajaba con su hija y le robaron bebidas por $60 millones en Av",
+  "query": "Avellaneda y Lanús, Avellaneda, Buenos Aires, Argentina",
+  "zona": "Avellaneda",
+  "resultado": "Avellaneda y Bedoya, Marco Avellaneda, Villa General Balcarce, Remedios de Escalada, Partido de Lanús, Buenos Aires, 182",
+  "partido_validador": "lanus",
+  "state": "Buenos Aires"
+ },
+ {
+  "titulo": "Recuperaron en Malvinas Argentinas un auto robado horas antes",
+  "query": "Derqui y Pedro Lozano, Malvinas Argentinas, Buenos Aires, Argentina",
+  "zona": "Malvinas Argentinas",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Morón: detuvieron a dos empleadas de un supermercado acusadas de vender cocaína desde la f",
+  "query": "Julio y Ortiz de Rosas, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Balearon tres veces a un policía durante un intento de robo en Morón",
+  "query": "Córdoba y Azul, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Detuvieron otra vez a Ezequiel Cirigliano en Tres de Febrero: le habría robado el arma a u",
+  "query": "Godoy Cruz y Atlético Tucumán, Tigre, Buenos Aires, Argentina",
+  "zona": "Tigre",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Balearon una casa en José León Suárez para cobrar una deuda: detuvieron a un prestamista y",
+  "query": "Ceballos y Estrada, San Martín, Buenos Aires, Argentina",
+  "zona": "San Martín",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Secuestraron a dos choferes para robar un camión cargado de pañales y lo recuperaron en Vi",
+  "query": "Gregorio de Laferrere y González Catán, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Detuvieron en Grand Bourg a “Coco”, acusado de liderar una banda de entraderas violentas",
+  "query": "Almirante Brown 500, Almirante Brown, Buenos Aires, Argentina",
+  "zona": "Almirante Brown",
+  "resultado": "500, Almirante Brown, Burzaco, Partido de Almirante Brown, Buenos Aires, B1852, Argentina",
+  "partido_validador": "almirante brown",
+  "state": "Buenos Aires"
+ },
+ {
+  "titulo": "Moreno: un jubilado de 81 años mató a un presunto ladrón durante un violento asalto al com",
+  "query": "Juramento y Patricias Argentinas, Moreno, Buenos Aires, Argentina",
+  "zona": "Moreno",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "El Palomar: despliegan un operativo especial de seguridad tras el violento asalto frente a",
+  "query": "Ingeniero Santiago Brian 900, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Tiroteo frente a un colegio de El Palomar: balearon a un policía retirado cuando dejaba a ",
+  "query": "Ingeniero Santiago Brian 900, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Detuvieron al joven acusado de matar a su novia en Ituzaingó y balear a su suegro",
+  "query": "Lobo y Miguez, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Femicidio en Merlo: un hombre asesinó a puñaladas a su esposa tras una discusión",
+  "query": "Operativo Cóndor y Dalton, Morón, Buenos Aires, Argentina",
+  "zona": "Morón",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Tenía prisión domiciliaria por un homicidio y cayó acusado de robar un auto en La Matanza ",
+  "query": "Charrúa y Balbastro, La Matanza, Buenos Aires, Argentina",
+  "zona": "La Matanza",
+  "resultado": "sin resultado"
+ },
+ {
+  "titulo": "Junín: destrozó la vidriera de una concesionaria, robó una moto y cayó por las cámaras",
+  "query": "Centro de Operaciones y Monitoreo., CABA, Argentina",
+  "zona": "CABA",
+  "resultado": "sin resultado"
+ }
+]
