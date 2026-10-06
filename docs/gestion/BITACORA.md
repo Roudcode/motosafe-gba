@@ -721,3 +721,19 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Arreglo: el DDL de prensa en la API corre una vez por proceso, con el mismo patrón que reportes, y el scraper hace commit por fila.
   - Medición posterior, con el scraper guardando (13 → 24 filas): hotspots, corredores y prensa responden 200 en menos de 1,4 s durante toda la corrida.
 - El stack y las imágenes de prueba se eliminaron.
+
+## 2026-10-06 — SES-073 — Re-geocodificación de las filas históricas de prensa (A09) (Claude Code)
+
+- Decisión de Rodo: re-geocodificar las filas de `reportes_prensa` ubicadas con el método anterior, con backup previo.
+- Backup en `C:\Users\rodol\motosafe_backups\`, fuera del repo: dump completo (351 kB, legible con `pg_restore --list`) y CSV de la tabla antes y después.
+- Método, sin descargar páginas: la tabla guarda solo el titular y 232 filas son de Google Noticias, que no se consulta (DEC-011).
+  - 418 filas de nivel barrio coincidían exactamente con el punto anterior de una de las 87 zonas medidas en SES-069 y recibieron el punto nuevo validado de esa zona.
+  - 9 se re-extrajeron del titular.
+- Corrección durante la simulación: la primera versión movía filas de calle o intersección al centro de su zona y las dejaba marcadas como precisas. Se cambió la regla:
+  - si el titular da menos precisión, la fila se deja como está cuando el punto viejo cae en la zona del titular (verificado por geocodificación inversa);
+  - si cae fuera, se mueve y baja a nivel barrio (3 casos: Grand Bourg, que estaba en Burzaco a 49 km; Merlo, a 21 km; Avellaneda, a 8 km).
+- Resultado aplicado en una transacción: 450 filas antes y después, **142 cambiaron de ubicación** (las mismas que la propuesta).
+  - 94 corrigen notas que estaban en otro partido o barrio; 87 de La Matanza caían en Presidente Perón.
+  - 95 se desplazaron más de 20 km.
+  - 0 filas con otras columnas modificadas.
+- Evidencia en `docs/evidencias/2026-10-06/A09-regeocodificacion/`.
