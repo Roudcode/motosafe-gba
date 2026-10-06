@@ -10,6 +10,7 @@ personal ni la de DATABASE_URL.
 import os
 import threading
 import uuid
+from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 import psycopg2
@@ -203,3 +204,32 @@ def test_carga_inicial_solo_llena_tablas_vacias(url_base, tmp_path):
         cur.execute('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s', (nombre,))
         cur.execute(f'DROP DATABASE IF EXISTS {nombre}')
         admin.close()
+
+
+def test_prensa_excluye_google_y_usa_fecha_de_ingesta_si_la_publicada_no_sirve(pool_real, migrada, monkeypatch):
+    """SES-080 (DEC-011): Google Noticias no se devuelve, y una fecha de
+    publicación implausible (anterior a la ventana o posterior a la ingesta)
+    cae a la de ingesta. Las filas no se borran."""
+    monkeypatch.setattr(main, '_esquema_prensa_listo', False)
+    cliente = TestClient(main.app)
+    # Primera llamada: asegura la tabla de prensa en la base de prueba.
+    assert cliente.get('/reportes-prensa').status_code == 200
+    casos = [
+        ('Google Noticias GBA - seguridad', 'https://g.test/1', 'now()', 'now()'),                       # excluida por fuente
+        ('Infobae', 'https://i.test/ayer', "now() - interval '2 days'", 'now()'),                       # fecha publicada válida
+        ('Infobae', 'https://i.test/2013', "'2013-05-01'", "now() - interval '3 days'"),               # fecha imposible -> ingesta
+        ('Infobae', 'https://i.test/sin-fecha', 'NULL', "now() - interval '1 day'"),                    # sin fecha -> ingesta
+        ('Infobae', 'https://i.test/vieja', "now() - interval '2 days'", "now() - interval '40 days'"),  # ingesta vencida
+    ]
+    with psycopg2.connect(migrada) as conn, conn.cursor() as cur:
+        for fuente, url, publicado, creado in casos:
+            cur.execute(f"""
+                INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, publicado_en, creado_en)
+                VALUES (-34.6, -58.4, 'barrio', 800, 'Robo de moto', %s, %s, {publicado}, {creado})
+            """, (url, fuente))
+
+    filas = {f['url_fuente']: f for f in cliente.get('/reportes-prensa').json()}
+    assert set(filas) == {'https://i.test/ayer', 'https://i.test/2013', 'https://i.test/sin-fecha'}
+    # La fecha 2013 no se muestra: se reemplaza por la de ingesta (hace 3 días).
+    fecha_2013 = datetime.fromisoformat(filas['https://i.test/2013']['publicado_en'])
+    assert fecha_2013.year >= datetime.now(timezone.utc).year

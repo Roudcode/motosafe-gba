@@ -160,3 +160,5 @@ El scraper corre como servicio `scraper` del compose de producción, con tope po
 - Las 204 notas de Google Noticias (retiradas por DEC-011) siguen en la base y se muestran hasta vencer a los 30 días. Opciones: (a) filtrar `fuente` que empieza con «Google» en la API, lo que oculta solo las vigentes y es reversible; (b) borrarlas, que es irreversible. Recomiendo (a).
 - 29 notas tienen fecha anterior a 2025 y 13 no tienen fecha. Son fechas mal extraídas o ausentes. Recomiendo que la API las use por fecha de ingesta y no por la fecha de publicación cuando la publicada sea anterior a la ventana de 30 días.
 - De las 450 notas, 426 están ubicadas solo a nivel barrio. Eso es esperable: mejorar la precisión depende de que el titular tenga una dirección.
+
+**Actualización SES-080 (segunda parte):** la API ya no devuelve las notas de Google Noticias y usa la fecha de ingesta cuando la de publicación no es plausible. Las filas de la base no se tocaron. Si más adelante se decide limpiar la tabla, va con backup aparte.

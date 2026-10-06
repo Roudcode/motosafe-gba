@@ -833,3 +833,10 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: `sh -n` sobre `scraper-loop.sh` sin errores; `docker compose config` del compose de producción con variables de ejemplo, con `SCRAPER_TIMEOUT_MINUTES=45` y `SCRAPER_INTERVAL_MINUTES=180`.
 - No verificado: una corrida real dentro del contenedor, y que `timeout` corte un proceso colgado. Quedan para la primera corrida en el despliegue.
 - Hallazgo de calidad, sin cambios: en la base local hay 450 notas (65 con moto). Las 204 de Google Noticias se guardaron antes de retirar la fuente (DEC-011, la última del 13/09/2026). El scraper ya no tiene esas fuentes, pero las notas siguen visibles hasta vencer a los 30 días. Se decide con Rodo si se filtran en la API o se borran (ver CONTINUIDAD).
+
+- **SES-080 (calidad de prensa, parte de la API):**
+  - Cambio en `backend/main.py`: las tres consultas de `reportes_prensa` (listado público, ajuste de riesgo y «más reciente») excluyen las fuentes «Google Noticias» (DEC-011). Las filas no se borran; limpiar la tabla queda para una decisión aparte, con backup.
+  - La fecha de referencia es la de publicación si es plausible (no más de 30 días antes ni 1 día después de la ingesta). Si no lo es, o falta, se usa la de ingesta. Así una fecha mal extraída (en la base hay 29 anteriores a 2025 y 13 sin fecha) no deja vigente una nota vieja ni oculta una reciente.
+  - Tests: 104 pruebas de backend en verde, con `MOTOSAFE_TEST_DATABASE_URL` apuntando a la base local. Incluye la nueva `test_prensa_excluye_google_y_usa_fecha_de_ingesta_si_la_publicada_no_sirve`, que corre contra PostgreSQL real y no se saltea.
+  - Verificado: la tabla local sigue con 450 filas (no se tocaron datos).
+  - No verificado: el efecto visible en el mapa. El frontend muestra `publicado_en`, que ahora llega ya resuelto desde la API.

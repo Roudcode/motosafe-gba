@@ -1020,6 +1020,25 @@ def borrar_reporte(request: Request, reporte_id: int, delete_token: str = Header
 VIGENCIA_HORAS_PRENSA = 24 * 30  # "ultimo mes", pedido explicito de Rodo -- no es
                                  # vivo, sirve como contexto/historico reciente
 
+# Google Noticias se retiró por su robots.txt (DEC-011). Sus filas viejas siguen
+# en la tabla, pero la API no las devuelve ni las usa para el riesgo. No se
+# borran: limpiar la tabla es una decisión aparte, con backup (SES-080).
+_FILTRO_FUENTES_PRENSA_SQL = "NOT starts_with(fuente, 'Google Noticias')"
+
+# Fecha de referencia de cada nota: la de publicación si es plausible (no más de
+# un día después de la ingesta ni más de VIGENCIA_HORAS_PRENSA antes), y si no, la
+# de ingesta. Una fecha mal extraída (ej. 2013) o faltante no debe dejar vigente
+# una nota vieja ni ocultar una reciente (SES-080).
+_FECHA_REFERENCIA_PRENSA_SQL = f"""
+    CASE
+        WHEN publicado_en IS NOT NULL
+             AND publicado_en BETWEEN creado_en - INTERVAL '{VIGENCIA_HORAS_PRENSA // 24} days'
+                                  AND creado_en + INTERVAL '1 day'
+        THEN publicado_en
+        ELSE creado_en
+    END
+"""
+
 
 _esquema_prensa_listo = False
 _lock_esquema_prensa = threading.Lock()
@@ -1084,10 +1103,12 @@ def listar_reportes_prensa():
     try:
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("""
-            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en, creado_en
+        cur.execute(f"""
+            SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto,
+                   {_FECHA_REFERENCIA_PRENSA_SQL} AS publicado_en, creado_en
             FROM reportes_prensa
-            ORDER BY COALESCE(publicado_en, creado_en) DESC
+            WHERE {_FILTRO_FUENTES_PRENSA_SQL}
+            ORDER BY publicado_en DESC
         """)
         filas = cur.fetchall()
         cur.close()
@@ -1097,9 +1118,8 @@ def listar_reportes_prensa():
     ahora = datetime.now(timezone.utc)
     return [
         fila for fila in filas
-        # Las filas previas a la columna publicado_en siguen siendo válidas:
-        # usar .get evita que una respuesta histórica o una migración parcial
-        # derribe toda la capa de prensa y conserva creado_en como respaldo.
+        # .get y creado_en como respaldo: una respuesta histórica o una
+        # migración parcial no debe derribar toda la capa de prensa.
         if (ahora - (fila.get('publicado_en') or fila['creado_en'])).total_seconds() / 3600 <= VIGENCIA_HORAS_PRENSA
     ]
 
@@ -1150,11 +1170,11 @@ def _obtener_reportes_recientes_por_tipo(tipo_incidente, dias=DIAS_AJUSTE_RECIEN
         conn = _pool_conexiones.getconn()
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("""
-            SELECT lat, lng, titular, COALESCE(publicado_en, creado_en) AS fecha_referencia
+        cur.execute(f"""
+            SELECT lat, lng, titular, {_FECHA_REFERENCIA_PRENSA_SQL} AS fecha_referencia
             FROM reportes_prensa
-            WHERE tipo_incidente = %s
-            ORDER BY COALESCE(publicado_en, creado_en) DESC
+            WHERE tipo_incidente = %s AND {_FILTRO_FUENTES_PRENSA_SQL}
+            ORDER BY fecha_referencia DESC
         """, (tipo_incidente,))
         filas = cur.fetchall()
         cur.close()
@@ -1358,7 +1378,7 @@ def cobertura_capas():
         conn = _pool_conexiones.getconn()
         _asegurar_tabla_prensa(conn)
         cur = conn.cursor()
-        cur.execute("SELECT max(COALESCE(publicado_en, creado_en)) FROM reportes_prensa")
+        cur.execute(f"SELECT max({_FECHA_REFERENCIA_PRENSA_SQL}) FROM reportes_prensa WHERE {_FILTRO_FUENTES_PRENSA_SQL}")
         fila = cur.fetchone()
         valor = fila[0] if fila else None
         mas_reciente = valor.isoformat() if isinstance(valor, datetime) else None
