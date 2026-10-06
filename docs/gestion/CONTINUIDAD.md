@@ -143,3 +143,7 @@ Los 4 CSV derivados de las capas están en el repo y los crudos siguen afuera. U
 ## Actualización 2026-10-06 — SES-077: A19 pipeline canónico
 
 El notebook histórico ya no puede pisar artefactos vigentes y publicar en `backend/` requiere `promover_artefactos.py --confirmar`. Orden del pipeline en `docs/modelo/PIPELINE_CANONICO.md`. Corrido desde cero en una copia, reproduce el mismo contenido y el mismo modelo. Falta un script para la limpieza inicial.
+
+## Actualización 2026-10-06 — SES-078: D01 fichas de fuentes
+
+`docs/datos/FICHAS_FUENTES.md` reúne licencia y política verificadas de cada fuente. **Pendiente de decisión de Rodo (A18):** el buscador autocompleta contra Nominatim y su política lo prohíbe; hay que elegir otro proveedor o buscar recién al confirmar.

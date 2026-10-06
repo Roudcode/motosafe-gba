@@ -56,7 +56,9 @@ for i, fila in candidatos.iterrows():
 
     if (i + 1) % 20 == 0:
         print(f"  ... {i+1}/{len(candidatos)} procesadas")
-    time.sleep(0.3)  # no golpear el servidor publico de OSRM sin pausas
+    # El servidor demo de OSRM pide como maximo 1 pedido por segundo y solo uso no
+    # comercial (wiki Demo-server de Project-OSRM, verificado en D01, SES-078).
+    time.sleep(1.1)
 
 candidatos["geometria"] = geometrias
 candidatos.to_csv(SALIDA, index=False)

@@ -785,3 +785,19 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - `identificar_hotspots_inseguridad` (HDBSCAN sobre unos 450.000 delitos) seguía corriendo al cerrar esta entrada; su resultado se agrega cuando termine.
 - Límite: `motos_limpio.csv` sale del notebook (paso 0 sin script) y se trató como entrada congelada.
 - Agregado a SES-077: `identificar_hotspots_inseguridad` terminó en la copia (66 min, HDBSCAN sobre 408.241 delitos). Los hotspots general (633) y moto (502) tienen el mismo contenido que los vigentes. Las 7 salidas comparables y el modelo se reproducen todas.
+
+## 2026-10-06 — SES-078 — Fichas de fuentes con licencias verificadas (D01) (Claude Code)
+
+- Alcance: completar fichas de todas las fuentes con licencia y procedencia verificadas en las páginas oficiales, sin suponer.
+- Verificado:
+  - Siniestros viales y delitos del GCBA: «Creative Commons Attribution», actualización anual; última actualización del publicador el 2026-07-14 y el 2026-06-22.
+  - Open-Meteo: CC BY 4.0; gratis solo no comercial (menos de 10.000 pedidos por día).
+  - Nominatim: ODbL, 1 pedido por segundo, User-Agent o Referer; prohíbe el autocompletado.
+  - OSRM demo: 1 pedido por segundo, no comercial.
+  - TomTom: cupos del plan gratuito; la página no aclara el uso comercial.
+  - OpenFreeMap: uso comercial permitido, con atribución.
+- Nuevo `docs/datos/FICHAS_FUENTES.md`, con unidad, período, filtros, versionado, límites y cumplimiento por fuente. La ficha de siniestros enlaza la procedencia verificada.
+- Correcciones sin decisión de por medio:
+  - `fetch_corredores_geometria.py` hacía 0,3 s de pausa (unos 3 pedidos por segundo) contra OSRM demo; pasó a 1,1 s.
+  - El mapa agrega la atribución de Open-Meteo y de Buenos Aires Data (CC BY) en el control de atribución. 71 tests de frontend, lint y build limpios.
+- **Hallazgo para A18, decisión de Rodo:** `useSugerenciasDireccion` pide sugerencias a Nominatim mientras se escribe (400 ms de demora). Es autocompletado, que la política de Nominatim prohíbe. No se cambió: requiere elegir proveedor o pasar a búsqueda al confirmar.

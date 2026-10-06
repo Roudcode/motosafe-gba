@@ -15,5 +15,6 @@ metadatos del publicador. **Ítems:** D01, A02, A03.
 | Limitaciones | El cruce climático puede reducir filas; variables agregadas por comuna requieren fecha de disponibilidad para evaluación temporal. |
 | Privacidad | Los artefactos de evaluación deben contener sólo métricas agregadas, nunca filas ni coordenadas personales. |
 
-La procedencia, licencia, fecha de descarga y diccionario original deben
-completarse con las fuentes primarias antes de una publicación académica.
+Procedencia, licencia (Creative Commons Attribution), publicador y período
+verificados en la fuente: ver [FICHAS_FUENTES.md](FICHAS_FUENTES.md) (SES-078). Falta
+enlazar el diccionario de datos del publicador (PDF del dataset).

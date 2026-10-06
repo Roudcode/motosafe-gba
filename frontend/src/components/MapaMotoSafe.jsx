@@ -454,7 +454,13 @@ function MapaMotoSafeInner({
       zoom: zoomInicial,
       pitch: 0,
       bearing: 0,
-      attributionControl: { compact: true },
+      // Además de la atribución del mapa base (OpenFreeMap/OpenMapTiles/OSM, que
+      // agrega el estilo), las fuentes de datos con licencia CC BY: el clima que
+      // usa el modelo (Open-Meteo, CC BY 4.0) y los datasets del GCBA (D01, SES-078).
+      attributionControl: {
+        compact: true,
+        customAttribution: 'Clima: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · Datos: <a href="https://data.buenosaires.gob.ar/" target="_blank" rel="noopener noreferrer">Buenos Aires Data (GCBA)</a>',
+      },
     })
     mapRef.current = map
 
