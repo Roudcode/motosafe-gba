@@ -737,3 +737,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - 95 se desplazaron más de 20 km.
   - 0 filas con otras columnas modificadas.
 - Evidencia en `docs/evidencias/2026-10-06/A09-regeocodificacion/`.
+
+## 2026-10-06 — SES-074 — `data/` no está versionado: test de carga inicial y documentación (Claude Code)
+
+- Hallazgo, al calcular los períodos de cobertura: `data/` está en `.gitignore` y no tiene ningún archivo versionado. La decisión de SES-072 suponía «CSV del repo», pero esos CSV solo existen en la PC de Rodo.
+- Consecuencias:
+  - En el CI, `test_carga_inicial_solo_llena_tablas_vacias` habría fallado, porque esperaba 740 filas y no hay CSV.
+  - En un servidor clonado desde GitHub, o en Render, la carga inicial informa «sin CSV».
+- Cambio: el test prueba siempre el camino «sin CSV» y saltea el resto con un motivo explícito si faltan los CSV. Se verificó con `data/` (pasa) y simulando un clon limpio (se saltea). `DESPLIEGUE_MVP.md` quedó corregido.
+- **Pendiente de decisión de Rodo:** versionar los cuatro CSV derivados de las capas (unos 700 kB) u otra vía. No se cambió `.gitignore`.

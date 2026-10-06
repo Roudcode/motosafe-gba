@@ -176,6 +176,10 @@ def test_carga_inicial_solo_llena_tablas_vacias(url_base, tmp_path):
         assert set(carga.cargar_si_vacias(url, tmp_path).values()) == {'sin CSV'}
 
         datos = carga.cargar_hotspots.DIR_DATOS_POR_DEFECTO
+        # data/ no está versionado (.gitignore): en un clon limpio, como el CI,
+        # no hay CSV y solo se puede probar el camino de arriba.
+        if not all((datos / a).is_file() for _, _, archivos in carga.CAPAS for a in archivos):
+            pytest.skip('faltan los CSV de data/ (no versionados); se probó solo «sin CSV»')
         primera = carga.cargar_si_vacias(url, datos)
         assert primera == {'hotspots_riesgo': 'cargada 740', 'corredores_riesgo': 'cargada 243',
                            'hotspots_inseguridad': 'cargada 1135'}
