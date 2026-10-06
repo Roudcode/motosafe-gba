@@ -15,7 +15,7 @@ import {
   CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
   CLAVE_CAPA_PRENSA,
 } from './constants'
-import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
+import { siguientePaso, distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
 } from './utils/riesgoRuta'
@@ -1088,11 +1088,15 @@ function App() {
     if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
     const pasos = rutasCalculadas[rutaSeleccionada]?.pasos || []
     if (pasoActual >= pasos.length) return
-    const objetivo = pasos[pasoActual]
-    if (distanciaKm(miUbicacion, objetivo) <= 0.03) {
+    // Si el GPS se saltó una maniobra (curva rápida, saltos de señal), el paso
+    // activo quedaba trabado atrás y la tarjeta mostraba distancias absurdas
+    // (58,6 km para una maniobra a 130 m, SES-087). Ahora se avanza al último
+    // paso de los próximos cinco que esté a menos de 30 m. Nunca retrocede.
+    const nuevoPaso = siguientePaso(miUbicacion, pasos, pasoActual)
+    if (nuevoPaso > pasoActual) {
       // Reaccion a un cambio de posicion GPS (sistema externo), no estado derivado.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPasoActual((p) => Math.min(p + 1, pasos.length - 1))
+      setPasoActual(nuevoPaso)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [miUbicacion, modoViaje])
@@ -1956,7 +1960,7 @@ function App() {
         </button>
       </div>
 
-      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte}>
+      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''} ${mostrandoOpcionesRuta ? 'oculto-por-ruta' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte}>
         {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? <X size={16} /> : <TriangleAlert size={16} />}
         <span>{paso === 'buscando' ? 'Ubicando...' : paso === 'eligiendo' ? 'Cancelar' : 'Reportar'}</span>
       </button>

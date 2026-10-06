@@ -183,3 +183,14 @@ export async function buscarSugerencias(texto, { signal } = {}) {
   if (!data || data.length === 0) return []
   return data.map(itemNominatimAPunto)
 }
+
+// Paso activo de una navegación a partir de la posición GPS. Avanza al último
+// paso de los próximos `ventana` que esté a menos de `radioKm` (si el GPS se
+// saltó alguna maniobra, no queda trabado atrás). Nunca retrocede (SES-087).
+export function siguientePaso(ubicacion, pasos, pasoActual, radioKm = 0.03, ventana = 5) {
+  let nuevo = pasoActual
+  for (let i = pasoActual; i < Math.min(pasos.length, pasoActual + ventana + 1); i++) {
+    if (distanciaKm(ubicacion, pasos[i]) <= radioKm) nuevo = i + 1
+  }
+  return Math.min(nuevo, Math.max(pasos.length - 1, pasoActual))
+}

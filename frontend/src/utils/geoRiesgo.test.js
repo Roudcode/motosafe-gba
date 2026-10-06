@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcularAjuste, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm, buscarSugerencias } from './geoRiesgo'
+import { calcularAjuste, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm, buscarSugerencias, siguientePaso } from './geoRiesgo'
 
 describe('calcularAjuste', () => {
   it('solo aplica reportes viales al eje de siniestros', () => {
@@ -158,5 +158,21 @@ describe('buscarSugerencias', () => {
     expect(await buscarSugerencias('')).toEqual([])
     expect(await buscarSugerencias('  ')).toEqual([])
     expect(await buscarSugerencias('ab')).toEqual([])
+  })
+})
+
+describe('siguientePaso', () => {
+  const pasos = [{ lat: -34.6, lng: -58.4 }, { lat: -34.61, lng: -58.4 }, { lat: -34.62, lng: -58.4 }]
+  it('avanza cuando el GPS está sobre el paso activo', () => {
+    expect(siguientePaso({ lat: -34.6, lng: -58.4 }, pasos, 0)).toBe(1)
+  })
+  it('salta maniobras que el GPS se saltó', () => {
+    expect(siguientePaso({ lat: -34.61, lng: -58.4 }, pasos, 0)).toBe(2)
+  })
+  it('no avanza si la posición está lejos de todos los pasos cercanos', () => {
+    expect(siguientePaso({ lat: -34.7, lng: -58.4 }, pasos, 0)).toBe(0)
+  })
+  it('nunca retrocede', () => {
+    expect(siguientePaso({ lat: -34.6, lng: -58.4 }, pasos, 2)).toBe(2)
   })
 })

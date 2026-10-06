@@ -929,3 +929,15 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Nota: el build nuevo lo sirven también el preview 5175 del Funnel y el 5176 de prueba (comparten `frontend/dist`). La URL pública ya muestra estos cambios.
 - Pendiente, a revisar con Rodo antes de tocar (mejoras de diseño y nice-to-have): leyenda «Nivel de riesgo» todavía ocupa un bloque grande del mapa; la sugerencia de origen aparece solo al buscar ruta (no hay pista visual de que se puede elegir); el botón «Reportar» queda a 10 px del panel de navegación; la atribución colapsada en escritorio no se revisó con viaje; la pantalla de carga tarda mientras baja el chunk del mapa.
 - No verificado: escritorio con viaje activo, y el flujo de reportar con la app en navegación.
+
+## 2026-10-06 — SES-087 — Solapamientos y navegación a partir de las capturas de viaje real (Claude Code)
+
+- Pedido de Rodo: revisar las capturas de una prueba real en celular y arreglar lo que se pisa.
+- Hallazgos y arreglos:
+  - **Reportar tapaba «Nueva ruta»** en el panel de opciones de ruta. Ahora `.report-fab` se oculta mientras ese panel está abierto. Verificado en el navegador: `display: none` con el panel visible.
+  - **Distancia de maniobra absurda (58,6 km para una maniobra a 130 m).** Causa: el paso activo solo avanzaba si el GPS caía a menos de 30 m del punto de la maniobra. Si el GPS se saltaba un punto, el paso quedaba trabado y la distancia en línea recta se disparaba. Ahora `siguientePaso` (en `utils/geoRiesgo.js`) avanza al último paso de los próximos cinco que esté dentro de 30 m, sin retroceder nunca. Cubierto con 4 pruebas nuevas.
+  - **Tarjeta de zona tapada por la leyenda** en celular. Mientras hay una zona abierta, la leyenda se oculta en pantallas de hasta 480 px (igual que con el panel de rutas).
+  - **Toasts sobre la barra de búsqueda** («Calculando rutas», «Acercate para ver el tráfico», «Reporte enviado»). Ahora aparecen 80 px debajo de la barra. La tarjeta de instrucciones de navegación (`.navegacion-panel`) se mantiene en su posición original.
+- Verificación: lint sin errores; 75 pruebas (71 previas más 4 nuevas de `siguientePaso`); build sin errores.
+- No verificado en el navegador: la nueva posición de los toasts y la leyenda oculta con zona abierta. La captura de la distancia corregida requiere otra prueba de viaje con GPS que se salte una maniobra.
+- Pendiente de decisión de diseño: el tiempo estimado puede dispararse con velocidad baja (554 min en la captura). Y la leyenda ocupa mucho espacio en celular.

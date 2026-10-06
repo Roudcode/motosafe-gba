@@ -265,7 +265,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 
 .toast {
-  position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1002;
+  position: absolute; top: calc(var(--y1) + 80px); left: 50%; transform: translateX(-50%); z-index: 1002;
   background: var(--surface-solid); border: 1px solid var(--verde); color: var(--text);
   padding: 10px 18px; border-radius: var(--r-xl); font-size: var(--fs-md); font-family: 'Inter', sans-serif;
   box-shadow: var(--shadow-float-hover);
@@ -1001,6 +1001,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      44vh) deja más mapa visible arriba del panel. */
   .ruta-resumen, .detalle-panel { top: auto; width: min(300px, 78vw); max-height: 34vh; }
   .detalle-panel { bottom: calc(210px + var(--safe-bottom)); right: 12px; left: auto; }
+  /* Con una zona abierta, la leyenda (abajo a la izquierda) se tapaba con su tarjeta (SES-087). */
+  .app:has(.detalle-panel) .legend { display: none; }
   /* La leyenda se esconde mientras "Opciones de ruta" está abierto (ver
      mostrandoOpcionesRuta en App.jsx), y ese rincón queda libre justo para
      este panel -- por eso "Opciones de ruta" va abajo a la IZQUIERDA (donde
@@ -1229,3 +1231,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   color: #221a00;
   background: #ffc933;
 }
+
+/* Mientras el panel de opciones de ruta está abierto, Reportar taparía su botón "Nueva ruta" (SES-087). */
+.report-fab.oculto-por-ruta { display: none; }
