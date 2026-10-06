@@ -34,7 +34,8 @@ Fecha: 2026-10-06.
 | `hotspots_contexto.csv` | mismo contenido |
 | `corredores_candidatos.csv` | mismo contenido |
 | `modelo_final.pkl` | 300 árboles, 0 distintos: el mismo modelo |
-| `hotspots_inseguridad_*.csv` | ver `resultado_comparacion.txt` |
+| `hotspots_inseguridad_general.csv` | mismo contenido (633 hotspots; HDBSCAN sobre 408.241 delitos, 66 min) |
+| `hotspots_inseguridad_moto.csv` | mismo contenido (502 hotspots) |
 
 - El `backend/` de la copia no cambió durante la corrida (verificado con `sha256sum -c`): reentrenar ya no publica solo.
 

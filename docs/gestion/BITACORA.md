@@ -784,3 +784,4 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - El `backend/` de la copia no cambió.
   - `identificar_hotspots_inseguridad` (HDBSCAN sobre unos 450.000 delitos) seguía corriendo al cerrar esta entrada; su resultado se agrega cuando termine.
 - Límite: `motos_limpio.csv` sale del notebook (paso 0 sin script) y se trató como entrada congelada.
+- Agregado a SES-077: `identificar_hotspots_inseguridad` terminó en la copia (66 min, HDBSCAN sobre 408.241 delitos). Los hotspots general (633) y moto (502) tienen el mismo contenido que los vigentes. Las 7 salidas comparables y el modelo se reproducen todas.
