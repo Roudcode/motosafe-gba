@@ -183,6 +183,7 @@ function App() {
   const [destinoTexto, setDestinoTexto] = useState('')
   const [origenPunto, setOrigenPunto] = useState(null)
   const [destinoPunto, setDestinoPunto] = useState(null)
+  const [lugarElegido, setLugarElegido] = useState(null)
   // Origen/destino y la barra de búsqueda buscan solo al confirmar (Enter o
   // botón), nunca mientras se escribe: Nominatim prohíbe el autocompletado.
   const sugOrigen = useBusquedaDireccion(origenPunto ? '' : origenTexto)
@@ -946,12 +947,27 @@ function App() {
     const nuevasRecientes = [sug, ...recientes.filter((r) => r.label !== sug.label)].slice(0, 5)
     setRecientes(nuevasRecientes)
     guardarEnLocalStorage(CLAVE_BUSQUEDAS_RECIENTES, nuevasRecientes)
-    setDestinoTexto(sug.label)
-    setDestinoPunto({ lat: sug.lat, lng: sug.lng })
+    setLugarElegido(sug)
     setVuelo({ lat: sug.lat, lng: sug.lng })
     setBusqueda('')
     sugBusqueda.limpiar()
-    mostrarToast(`Ubicado: ${sug.label}`)
+  }
+  // "Ir": calcula la ruta al lugar elegido desde el origen actual, o desde tu
+  // ubicación si el origen está vacío. Sin ubicación, abre el panel para elegir.
+  const irAlLugar = () => {
+    if (!lugarElegido) return
+    const destino = { lat: lugarElegido.lat, lng: lugarElegido.lng }
+    const origen = origenPunto || miUbicacion
+    setDestinoTexto(lugarElegido.label)
+    setDestinoPunto(destino)
+    setLugarElegido(null)
+    if (origen) {
+      if (!origenPunto) { setOrigenPunto(origen); setOrigenTexto('Tu ubicación actual') }
+      setRutaAbierta(false)
+      calcularRuta(origen, destino)
+    } else {
+      abrirPanelRuta()
+    }
   }
   const guardarFavorito = async (clave, label) => {
     let punto = destinoPunto
@@ -1596,6 +1612,16 @@ function App() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {lugarElegido && !rutaAbierta && (
+        <div className="lugar-card panel-enter" role="dialog" aria-label="Lugar elegido">
+          <div className="lugar-card-texto"><MapPin size={14} /> <span>{lugarElegido.label}</span></div>
+          <div className="lugar-card-acciones">
+            <button type="button" className="lugar-card-cerrar" onClick={() => setLugarElegido(null)}>Cerrar</button>
+            <button type="button" className="lugar-card-ir" onClick={irAlLugar}><Navigation size={13} /> Ir</button>
+          </div>
         </div>
       )}
 

@@ -990,3 +990,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - **SES-091 (corrección):** la regla de 16 px no aplicaba a la barra de búsqueda y a los campos de ruta, porque sus selectores (`.searchbar input`, `.ruta-form input`) tienen más especificidad que `input`. Ahora también los apuntan directamente. Visto en capturas de iPhone: al tocar la barra, Safari hacía zoom.
 
 - **SES-092:** al tocar «Trazar ruta» en celular, el panel de origen y destino aparecía corrido a la derecha y después se acomodaba. Causa: la animación `panelIn` escribía `transform: translateY(0)`, que reemplazaba el `translateX(-50%)` con el que se centran los paneles. Ahora la animación usa la propiedad `translate`, que se combina con `transform`. Lint, 75 pruebas y build sin errores. No verificado en el navegador: la pestaña de prueba no dibujaba en ese momento; hay que confirmarlo en el celular.
+
+## 2026-10-06 — SES-093 — Revisión punta a punta: «Ir» explícito y favoritos con /lugares (Claude Code)
+
+- Decisiones de Rodo: no bajar la contraseña (queda en 4 caracteres por ahora); voz y compartir llegada fuera; búsqueda con «Ir» explícito; vista previa de la ruta sí; favoritos sin Nominatim.
+- Cambios:
+  - **Búsqueda:** elegir un resultado centra el mapa y muestra una tarjeta con el nombre y dos botones: «Cerrar» e «Ir». Antes el destino se cargaba sin aviso. «Ir» calcula la ruta desde el origen cargado o desde tu ubicación; sin ubicación, abre el panel para elegir el origen.
+  - **Favoritos:** `geocodificar` pasa de Nominatim a `/lugares` (primer resultado, con caché de 5 minutos). Se quitó el helper de Nominatim que quedó sin uso. Nominatim ya no se usa en el frontend.
+- Vista previa: las alternativas de ruta ya se dibujan en el mapa cuando el panel de opciones está abierto (capa `rutas`). No verifiqué en el navegador que la opción elegida se distinga de las demás; queda para confirmar en el celular.
+- Verificación: lint sin errores; 75 pruebas; build sin errores. Verificado en el navegador: la tarjeta aparece con nombre, «Cerrar» e «Ir». No verificado: el botón «Ir» con ubicación real (el navegador de prueba no tiene GPS).
+- Revisión punta a punta: el listado completo está en el chat, con las decisiones tomadas.

@@ -1241,3 +1241,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   input, textarea, select,
   .searchbar input, .ruta-form input { font-size: 16px; }
 }
+
+/* Tarjeta del lugar elegido en la busqueda: "Ir" calcula la ruta (SES-093). */
+.lugar-card {
+  position: absolute; top: calc(var(--y1) + 80px); left: 50%; transform: translateX(-50%); z-index: 1001;
+  width: min(320px, 88vw); background: rgba(var(--surface-rgb),0.97); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow-float); backdrop-filter: blur(6px);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.lugar-card-texto { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-md); color: var(--text); }
+.lugar-card-texto span { overflow: hidden; text-overflow: ellipsis; }
+.lugar-card-acciones { display: flex; justify-content: flex-end; gap: 8px; }
+.lugar-card-acciones button { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: var(--fs-md); cursor: pointer; border: 1px solid var(--border); }
+.lugar-card-cerrar { background: var(--inset); color: var(--text); }
+.lugar-card-ir { display: inline-flex; align-items: center; gap: 6px; background: var(--azul); color: #fff; border-color: var(--azul); font-weight: 600; }

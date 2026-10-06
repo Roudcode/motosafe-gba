@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA, API_URL } from '../constants'
+import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, API_URL } from '../constants'
 
 const CACHE_GEOCODIFICACION_TTL_MS = 5 * 60 * 1000
 const cacheGeocodificacion = new Map()
@@ -146,24 +146,14 @@ export function calcularAjuste(zona, reportes) {
 // esta nota en vez de la función para quien busque "franja pico" en este
 // archivo por costumbre.
 
-function itemNominatimAPunto(item) {
-  return {
-    lat: parseFloat(item.lat),
-    lng: parseFloat(item.lon),
-    label: item.display_name.split(',').slice(0, 2).join(','),
-  }
-}
-
+// la clave en el servidor). Antes usaba Nominatim, que no conviene para la
+// búsqueda (SES-093). Se cachea unos minutos para no repetir pedidos.
 export async function geocodificar(texto) {
   const clave = texto.trim().toLocaleLowerCase('es-AR')
   const cacheado = cacheGeocodificacion.get(clave)
   if (cacheado && Date.now() - cacheado.momento < CACHE_GEOCODIFICACION_TTL_MS) return cacheado.resultado
-  const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=1`
-  const res = await fetch(url, { headers: { 'Accept-Language': 'es' } })
-  if (!res.ok) throw new Error(`Geocodificador no disponible (${res.status})`)
-  const data = await res.json()
-  const resultado = !data || data.length === 0 ? null : itemNominatimAPunto(data[0])
+  const [primero] = await buscarSugerencias(texto)
+  const resultado = primero ?? null
   cacheGeocodificacion.set(clave, { resultado, momento: Date.now() })
   return resultado
 }
