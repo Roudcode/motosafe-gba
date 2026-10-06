@@ -1,0 +1,8 @@
+indice_inseguridad_comuna.csv        mismo contenido
+motos_con_clusters.csv               mismo contenido
+hotspots_moto_caba.csv               mismo contenido
+hotspots_contexto.csv                mismo contenido
+corredores_candidatos.csv            mismo contenido
+hotspots_inseguridad_general.csv     sin regenerar
+hotspots_inseguridad_moto.csv        sin regenerar
+modelo_final.pkl                     300 árboles, 0 distintos (mismo modelo)

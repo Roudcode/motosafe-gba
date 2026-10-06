@@ -139,3 +139,7 @@ Las leyendas muestran el período real de los datos (siniestros 2019–2025, del
 ## Actualización 2026-10-06 — SES-076: CSV de capas versionados
 
 Los 4 CSV derivados de las capas están en el repo y los crudos siguen afuera. Un clon limpio carga las capas solo; en Render sigue el paso único documentado.
+
+## Actualización 2026-10-06 — SES-077: A19 pipeline canónico
+
+El notebook histórico ya no puede pisar artefactos vigentes y publicar en `backend/` requiere `promover_artefactos.py --confirmar`. Orden del pipeline en `docs/modelo/PIPELINE_CANONICO.md`. Corrido desde cero en una copia, reproduce el mismo contenido y el mismo modelo. Falta un script para la limpieza inicial.

@@ -230,11 +230,10 @@ def main():
     contexto_por_cluster.to_csv(DATA / "hotspots_contexto.csv", index=False)
     print(f"hotspots_contexto.csv actualizado ({len(contexto_por_cluster)} clusters, con indice de inseguridad)")
 
-    # --- Copiar artefactos a backend/, que es de donde los sirve main.py ---
-    for archivo in ["modelo_final.pkl", "columnas_modelo.pkl", "hotspots_contexto.csv"]:
-        (BACKEND / archivo).write_bytes((DATA / archivo).read_bytes())
-    (BACKEND / "indice_inseguridad_comuna.csv").write_bytes((DATA / "indice_inseguridad_comuna.csv").read_bytes())
-    print("\nArtefactos copiados a backend/: modelo_final.pkl, columnas_modelo.pkl, hotspots_contexto.csv, indice_inseguridad_comuna.csv")
+    # A19 (SES-077): ya no se copia a backend/ automáticamente. Lo que queda en
+    # data/ es un candidato; pasarlo al backend es un paso explícito y revisable.
+    print("\nCandidatos en data/: modelo_final.pkl, columnas_modelo.pkl, hotspots_contexto.csv, indice_inseguridad_comuna.csv")
+    print("Para publicarlos: python notebooks/promover_artefactos.py (muestra el manifiesto) y después con --confirmar.")
 
 
 if __name__ == "__main__":

@@ -769,3 +769,18 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Cambio en `.gitignore`: `data/` pasa a `data/*`, porque con la carpeta excluida Git no permite excepciones, y se agregan excepciones explícitas para `hotspots_moto_caba.csv`, `corredores_riesgo.csv`, `hotspots_inseguridad_general.csv` y `hotspots_inseguridad_moto.csv` (unos 700 kB, datos agregados sin información personal). Se verificó que el resto de `data/` (crudos, modelos, previews) sigue ignorado.
 - Verificación: se clonó el repositorio en limpio en el scratchpad (`core.longpaths` por un `.docx` de nombre largo) y se corrió la suite completa contra un PostGIS desechable: 103/103, sin salteados. El test de carga inicial vuelve a validar las 740/243/1.135 filas.
 - Render sigue necesitando el paso único documentado, porque construye con contexto `./backend` y los CSV no van en la imagen.
+
+## 2026-10-06 — SES-077 — Pipeline canónico y notebook histórico seguro (A19) (Claude Code)
+
+- Problema: con «Run All», el notebook histórico podía pisar en `data/` el modelo, el contexto y los hotspots con versiones antiguas, y `reentrenar_modelo.py` copiaba directo a `backend/`.
+- Cambios:
+  - Guarda al principio del notebook, insertada sin reformatear el JSON (+53 líneas): desvía `to_csv` y `joblib.dump` hacia `data/` o `backend/` a `data/exploracion_notebook/`. Probada: desvía, no toca lo de afuera, es idempotente y los SHA256 de los vigentes quedaron intactos.
+  - `reentrenar_modelo.py` deja candidatos en `data/`.
+  - Nuevo `promover_artefactos.py`: manifiesto vigente contra candidato y publicación solo con `--confirmar`, verificando la versión de scikit-learn; normaliza los fines de línea de los CSV.
+  - Orden canónico en `docs/modelo/PIPELINE_CANONICO.md`.
+- Prueba desde cero: clon limpio con solo datos crudos y entorno del lock (scikit-learn 1.7.2).
+  - Los hashes de bytes dieron distintos, por CRLF de pandas en Windows y por metadatos del pickle.
+  - Comparado por contenido: índice, clusters, hotspots, contexto y candidatos de corredores son idénticos celda por celda, y el modelo es idéntico en los 300 árboles.
+  - El `backend/` de la copia no cambió.
+  - `identificar_hotspots_inseguridad` (HDBSCAN sobre unos 450.000 delitos) seguía corriendo al cerrar esta entrada; su resultado se agrega cuando termine.
+- Límite: `motos_limpio.csv` sale del notebook (paso 0 sin script) y se trató como entrada congelada.
