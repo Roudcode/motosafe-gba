@@ -1168,3 +1168,27 @@ def test_vertices_de_geometria_maneja_formatos_invalidos_sin_reventar():
     assert main._vertices_de_geometria([]) == []
     assert main._vertices_de_geometria("no-es-una-lista") == []
     assert main._vertices_de_geometria([[-34.6, -58.5], [-34.5, -58.46]]) == [(-34.6, -58.5), (-34.5, -58.46)]
+
+
+def test_cobertura_capas_informa_periodo_real_y_prensa():
+    """A10/A11/A15: período de los datos de cada capa, no fecha del archivo."""
+    cursor = MagicMock()
+    cursor.fetchone.return_value = (datetime(2026, 10, 5, 21, 30, tzinfo=timezone.utc),)
+    conexion = MagicMock()
+    conexion.cursor.return_value = cursor
+    with patch("main.psycopg2.connect", return_value=conexion):
+        r = client.get("/capas/cobertura")
+    assert r.status_code == 200
+    datos = r.json()
+    for capa in ('hotspots', 'corredores', 'inseguridad_general', 'inseguridad_moto'):
+        assert datos[capa]['desde'] <= datos[capa]['hasta']
+        assert datos[capa]['fuente']
+    assert datos['prensa'] == {'vigencia_dias': 30, 'mas_reciente': '2026-10-05T21:30:00+00:00'}
+
+
+def test_cobertura_capas_no_falla_sin_base():
+    with patch("main.psycopg2.connect", side_effect=main.psycopg2.OperationalError("sin base")):
+        r = client.get("/capas/cobertura")
+    assert r.status_code == 200
+    assert r.json()['prensa']['mas_reciente'] is None
+    assert 'hotspots' in r.json()

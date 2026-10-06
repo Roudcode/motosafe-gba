@@ -21,7 +21,7 @@ compara alternativas del mismo pedido; no estima siniestralidad por viaje.
 | Capa | Procedencia | Unidad | Actualización / TTL | Límite visible |
 |---|---|---|---|---|
 | Hotspots | Siniestros históricos procesados en CABA | Punto/cluster | Backend consulta cada 5 min desde el cliente | No cubre ni predice automáticamente GBA. |
-| Corredores | Corredores offline derivados de siniestros | Geometría de calle | Carga al iniciar; cache local de última respuesta | Falta fecha de generación publicada por fuente. |
+| Corredores | Corredores offline derivados de siniestros | Geometría de calle | Carga al iniciar; cache local de última respuesta | Período visible en la leyenda (siniestros 2019–2025, desde `/capas/cobertura`); fecha de generación del archivo en el tooltip. |
 | Inseguridad | Delitos GCBA procesados, general o con moto | Punto/cluster | Carga al iniciar; cache local de última respuesta | No equivale a gravedad vial. Nivel base por percentil fijo, ajustado por franja horaria y reportes recientes (ver más abajo). |
 | Prensa | Noticias filtradas y geocodificadas | Hecho puntual aproximado | Cliente consulta cada 10 min; vigencia de 30 días | Puede ser ambiguo, incompleto o tener ubicación aproximada. |
 | Reportes comunitarios | Personas usuarias | Hecho puntual | Consulta cada 30 s; vigencia por categoría | No son verificados automáticamente. |
@@ -30,6 +30,19 @@ La aplicación conserva la última respuesta local cuando una actualización
 falla. Esa persistencia no debe presentarse como fecha de origen del dato. Para
 cerrar A10/A11 falta devolver desde backend la fecha de generación de cada
 artefacto y mostrarla en la interfaz.
+
+### Período de cobertura visible (A10/A11/A15, SES-075)
+
+Decisión de Rodo: la interfaz muestra el **período que cubren los datos** de cada capa, porque es lo que sirve para juzgar la vigencia del riesgo. La fecha de generación del archivo queda como dato secundario en un tooltip. `GET /capas/cobertura` lo sirve desde `backend/metadatos_capas.json`, que genera `notebooks/generar_metadatos_capas.py` a partir de `data/` (no versionado), y suma prensa de forma dinámica:
+
+| Capa | Período (datos de 2026-10-06) | Registros | Archivo de la capa |
+|---|---|---|---|
+| Hotspots y corredores | 2019-01-01 a 2025-12-31 | 23.343 siniestros con moto | 2026-09-07 / 2026-09-04 |
+| Inseguridad general | 2023-01-01 a 2025-12-31 (últimos 3 años del dataset) | 447.938 delitos | 2026-09-09 |
+| Inseguridad con moto | 2023-01-01 a 2025-12-31 | 15.792 delitos | 2026-09-09 |
+| Prensa | últimos 30 días + fecha de la nota más reciente en la base | dinámico | — |
+
+Hay que regenerar el JSON cada vez que se regeneran las capas.
 
 ### Factores dinámicos por capa
 

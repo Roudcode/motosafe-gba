@@ -12,6 +12,7 @@
 
 import { X, Zap, Newspaper, Bike, CarFront, ShieldAlert, ListFilter } from 'lucide-react'
 import { OPCIONES_CAPA_MAPA, OPCIONES_CAPA_INSEGURIDAD } from '../constants'
+import { formatearAntiguedad } from '../utils/tiempo'
 
 export function CapasPanel({
   capaMapa, onCambiarCapaMapa,
@@ -20,6 +21,7 @@ export function CapasPanel({
   capaPrensa, onCambiarCapaPrensa,
   filtroPrensa, onCambiarFiltroPrensa,
   cantidadReportesPrensa, cantidadReportesPrensaFiltrados,
+  coberturaPrensa, horaActual,
   onCerrar,
 }) {
   return (
@@ -82,7 +84,15 @@ export function CapasPanel({
         <Newspaper size={15} className="capas-opcion-icono" />
         <span className="capas-opcion-texto">
           <span className="capas-opcion-label">Hechos recientes en noticias</span>
-          <span className="capas-opcion-desc">Últimos 30 días, no en vivo · filtrá motos, robos, inseguridad o choques · tocá un punto para ver la nota</span>
+          <span className="capas-opcion-desc">
+            Últimos {coberturaPrensa?.vigencia_dias ?? 30} días, no en vivo
+            {coberturaPrensa?.mas_reciente && (
+              <span title={`Nota más reciente en la base: ${new Date(coberturaPrensa.mas_reciente).toLocaleString('es-AR')}`}>
+                {' '}· nota más reciente {formatearAntiguedad(coberturaPrensa.mas_reciente, horaActual)}
+              </span>
+            )}
+            {' '}· filtrá motos, robos, inseguridad o choques · tocá un punto para ver la nota
+          </span>
         </span>
       </button>
       {capaPrensa && (

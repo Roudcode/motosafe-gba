@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatearAntiguedad, opacidadPorAntiguedad, esReciente, formatearDistancia } from './tiempo'
+import { formatearAntiguedad, opacidadPorAntiguedad, esReciente, formatearDistancia, formatearPeriodo } from './tiempo'
 
 const AHORA = new Date('2026-09-07T12:00:00.000Z').getTime()
 const hace = (ms) => new Date(AHORA - ms).toISOString()
@@ -87,5 +87,20 @@ describe('formatearDistancia', () => {
 
   it('redondea el borde justo en 999m sin saltar a km de más', () => {
     expect(formatearDistancia(0.999)).toBe('999 m')
+  })
+})
+
+describe('formatearPeriodo', () => {
+  it('muestra solo años cuando la cobertura son años completos', () => {
+    expect(formatearPeriodo('2019-01-01', '2025-12-31')).toBe('2019–2025')
+    expect(formatearPeriodo('2025-01-01', '2025-12-31')).toBe('2025')
+  })
+
+  it('agrega el mes cuando el período empieza o termina a mitad de año', () => {
+    expect(formatearPeriodo('2023-03-15', '2025-09-09')).toBe('mar 2023–sep 2025')
+  })
+
+  it('no inventa un período si falta una fecha', () => {
+    expect(formatearPeriodo(null, '2025-12-31')).toBeNull()
   })
 })

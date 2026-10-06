@@ -746,3 +746,19 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - En un servidor clonado desde GitHub, o en Render, la carga inicial informa «sin CSV».
 - Cambio: el test prueba siempre el camino «sin CSV» y saltea el resto con un motivo explícito si faltan los CSV. Se verificó con `data/` (pasa) y simulando un clon limpio (se saltea). `DESPLIEGUE_MVP.md` quedó corregido.
 - **Pendiente de decisión de Rodo:** versionar los cuatro CSV derivados de las capas (unos 700 kB) u otra vía. No se cambió `.gitignore`.
+
+## 2026-10-06 — SES-075 — Período de cobertura visible por capa (A10, A11, A15) (Claude Code)
+
+- Decisión de Rodo: mostrar el período real de los datos de cada capa (por ejemplo «siniestros 2019–2025»), no la fecha de generación del archivo; esa puede ir de forma secundaria en un tooltip.
+- Cálculo con datos reales (`notebooks/generar_metadatos_capas.py`):
+  - Siniestros: 2019-01-01 a 2025-12-31, 23.343 registros, todos con fecha válida. Las fechas vienen sin ceros (`2025-9-9`); un primer cálculo por texto daba un máximo equivocado y se pasó a fechas reales.
+  - Delitos: los últimos 3 años del dataset, 2023-01-01 a 2025-12-31 (447.938 en total, 15.792 con moto).
+  - Como `data/` no está versionado, el resultado se guarda en `backend/metadatos_capas.json`, que sí se versiona.
+- Backend: `GET /capas/cobertura` devuelve los períodos y, para prensa, la vigencia (30 días) y la nota más reciente en la base; si la base falla, ese dato vuelve vacío. 2 tests nuevos; 95 + 8 salteados.
+- Frontend:
+  - `formatearPeriodo` (3 tests) da «2019–2025» si son años completos, o con mes si no.
+  - Las leyendas de siniestros (hotspots o corredores) y de inseguridad muestran el período y la fuente; el tooltip agrega registros y la fecha del archivo de la capa.
+  - El panel de capas muestra la antigüedad de la nota de prensa más reciente.
+  - 71 tests de frontend, lint y build limpios.
+- No verificado visualmente: Rodo lo revisa con `npm run dev`.
+- Estados: A10 pasa a validado parcialmente; A11 sigue en curso (falta distancia a segmentos); A15 suma el período de origen desde el backend.

@@ -1336,6 +1336,44 @@ def _aplicar_ajuste_horario(fila, tipo, hora_actual):
         fila['motivo_ajuste_horario'] = None
 
 
+# Período de cobertura de cada capa (A10/A11/A15). Lo genera
+# notebooks/generar_metadatos_capas.py desde data/, que no está versionado, así
+# que se guarda en un JSON versionado al lado del modelo. Si falta, el endpoint
+# devuelve las capas sin período en vez de romper el arranque.
+try:
+    METADATOS_CAPAS = json.loads((BASE_DIR / 'metadatos_capas.json').read_text(encoding='utf-8'))
+except (OSError, ValueError):
+    METADATOS_CAPAS = {}
+
+
+@app.get("/capas/cobertura")
+def cobertura_capas():
+    """Qué período cubren los datos de cada capa, para que la interfaz muestre
+    la vigencia real del riesgo (por ejemplo "siniestros 2019-2025") y no solo
+    cuándo se consultó. `archivo_generado` es secundario. Prensa es dinámica:
+    ventana de vigencia y fecha de la nota más reciente en la base."""
+    mas_reciente = None
+    conn = None
+    try:
+        conn = _pool_conexiones.getconn()
+        _asegurar_tabla_prensa(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT max(COALESCE(publicado_en, creado_en)) FROM reportes_prensa")
+        fila = cur.fetchone()
+        valor = fila[0] if fila else None
+        mas_reciente = valor.isoformat() if isinstance(valor, datetime) else None
+        cur.close()
+    except Exception:
+        mas_reciente = None  # la cobertura de prensa es un dato accesorio
+    finally:
+        if conn is not None:
+            _pool_conexiones.putconn(conn)
+    return {
+        **METADATOS_CAPAS,
+        'prensa': {'vigencia_dias': VIGENCIA_HORAS_PRENSA // 24, 'mas_reciente': mas_reciente},
+    }
+
+
 @app.get("/corredores")
 def obtener_corredores():
     """

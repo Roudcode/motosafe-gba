@@ -131,3 +131,7 @@ Las capas se cargan solas al arrancar el contenedor si la base está vacía (CSV
 ## Actualización 2026-10-06 — SES-073: prensa histórica re-geocodificada
 
 Con backup previo en `C:\Users\rodol\motosafe_backups\`, 142 de las 450 notas cambiaron de ubicación; 94 estaban en otro partido o barrio (87 de La Matanza caían en Presidente Perón). Las filas precisas que estaban dentro de su zona no se tocaron.
+
+## Actualización 2026-10-06 — SES-075: período de cobertura por capa
+
+Las leyendas muestran el período real de los datos (siniestros 2019–2025, delitos 2023–2025) desde `/capas/cobertura`, con la fecha de generación del archivo en el tooltip. El JSON de metadatos se regenera con `notebooks/generar_metadatos_capas.py` cada vez que cambian las capas. Pendiente: la revisión visual de Rodo.

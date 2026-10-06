@@ -32,3 +32,16 @@ export function formatearDistancia(km) {
   if (km < 1) return `${Math.round(km * 1000)} m`
   return `${km.toFixed(1)} km`
 }
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
+// Período de cobertura de una capa (A10/A11/A15): "2019–2025" si cubre años
+// completos, si no con mes ("mar 2023–sep 2025"). Fechas 'AAAA-MM-DD' del
+// backend (/capas/cobertura); se leen como texto para no correr el día por zona horaria.
+export function formatearPeriodo(desde, hasta) {
+  if (!desde || !hasta) return null
+  const [ad, md, dd] = desde.split('-').map(Number)
+  const [ah, mh, dh] = hasta.split('-').map(Number)
+  if (md === 1 && dd === 1 && mh === 12 && dh === 31) return ad === ah ? `${ad}` : `${ad}–${ah}`
+  return `${MESES[md - 1]} ${ad}–${MESES[mh - 1]} ${ah}`
+}

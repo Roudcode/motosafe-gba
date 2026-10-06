@@ -19,7 +19,7 @@ import { distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgr
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
 } from './utils/riesgoRuta'
-import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
+import { formatearAntiguedad, formatearDistancia, formatearPeriodo } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
 import { cargarDeLocalStorage, guardarEnLocalStorage, generarUuidV4Fallback } from './utils/storage'
 import { LoadingScreen } from './components/LoadingScreen'
@@ -163,6 +163,9 @@ function App() {
   const [zonaSeleccionada, setZonaSeleccionada] = useState(null)
   const [zonaResaltada, setZonaResaltada] = useState(null)
   const [clima, setClima] = useState(null)
+  // Período que cubren los datos de cada capa (/capas/cobertura, A10/A11/A15).
+  // Si falla no se muestra nada: es contexto, no bloquea el mapa.
+  const [coberturaCapas, setCoberturaCapas] = useState(null)
   const [actividadAbierta, setActividadAbierta] = useState(false)
   const [statsAbierto, setStatsAbierto] = useState(false)
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
@@ -523,6 +526,13 @@ function App() {
     // anterior haya funcionado evita llamar "en vivo" a una respuesta vieja.
     const id = setInterval(cargarHotspots, 5 * 60 * 1000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    fetch(`${API_URL}/capas/cobertura`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setCoberturaCapas)
+      .catch(() => setCoberturaCapas(null))
   }, [])
 
   useEffect(() => { guardarEnLocalStorage(CLAVE_NIVELES, [...nivelesActivos]) }, [nivelesActivos])
@@ -1384,6 +1394,8 @@ function App() {
 
       {capasAbiertas && (
         <CapasPanel
+          coberturaPrensa={coberturaCapas?.prensa}
+          horaActual={horaActual}
           capaMapa={capaMapa}
           onCambiarCapaMapa={setCapaMapa}
           capaInseguridad={capaInseguridad}
@@ -1875,6 +1887,7 @@ function App() {
             <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
             {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
           </div>
+          <TextoCobertura meta={coberturaCapas?.[capaMapa === 'corredores' ? 'corredores' : 'hotspots']} prefijo="Siniestros" />
           {Object.entries(NIVELES).map(([key, val]) => (
             <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
               <span className="legend-swatch" style={{ background: val.color }} />
@@ -1890,6 +1903,7 @@ function App() {
           <div className="legend-header">
             <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
           </div>
+          <TextoCobertura meta={coberturaCapas?.[`inseguridad_${capaInseguridad}`]} prefijo="Delitos" />
           {Object.entries(NIVELES).map(([key, val]) => (
             <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
               <span className="legend-swatch" style={{ background: NIVELES_INSEGURIDAD_COLOR[key] }} />
@@ -1956,4 +1970,20 @@ function App() {
   )
 }
 
+// Línea de cobertura bajo el título de una leyenda: el período de los datos es
+// lo principal (con eso se juzga la vigencia del riesgo); la fecha en que se
+// generó el archivo de la capa va solo en el tooltip.
+function TextoCobertura({ meta, prefijo }) {
+  const periodo = formatearPeriodo(meta?.desde, meta?.hasta)
+  if (!periodo) return null
+  const detalle = `${meta.descripcion}: ${meta.desde} a ${meta.hasta} (${meta.registros.toLocaleString('es-AR')} registros). ${meta.fuente}.`
+    + (meta.archivo_generado ? ` Archivo de la capa generado el ${meta.archivo_generado}.` : '')
+  return (
+    <p className="legend-cobertura" title={detalle}>
+      {prefijo} {periodo} · GCBA
+    </p>
+  )
+}
+
 export default App
+
