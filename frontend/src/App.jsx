@@ -28,7 +28,6 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
 // MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
 const MapaMotoSafe = lazy(() => import('./components/MapaMotoSafe').then((m) => ({ default: m.MapaMotoSafe })))
-import { useSegundosDesde } from './hooks/useSegundosDesde'
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
 import { useSesion } from './sesion'
 
@@ -178,7 +177,6 @@ function App() {
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
   const [toast, setToast] = useState(null)
-  const segundos = useSegundosDesde()
 
   const [rutaAbierta, setRutaAbierta] = useState(false)
   const [origenTexto, setOrigenTexto] = useState('')
@@ -187,14 +185,14 @@ function App() {
   const [destinoPunto, setDestinoPunto] = useState(null)
   // Origen/destino y la barra de búsqueda buscan solo al confirmar (Enter o
   // botón), nunca mientras se escribe: Nominatim prohíbe el autocompletado.
-  const sugOrigen = useBusquedaDireccion()
-  const sugDestino = useBusquedaDireccion()
+  const sugOrigen = useBusquedaDireccion(origenPunto ? '' : origenTexto)
+  const sugDestino = useBusquedaDireccion(destinoPunto ? '' : destinoTexto)
   // La barra de búsqueda de arriba filtraba zonas ya cargadas, pero no
   // servía para buscar una dirección que no fuera ya una zona del dataset
   // (una avenida cualquiera, por ejemplo) -- reusa el mismo geocoder que
   // origen/destino para eso, y "elegir" un resultado la manda directo a
   // centra el mapa en el resultado (ver buscarEnMapa más abajo).
-  const sugBusqueda = useBusquedaDireccion()
+  const sugBusqueda = useBusquedaDireccion(busqueda)
   const [recientes, setRecientes] = useState(() => cargarDeLocalStorage(CLAVE_BUSQUEDAS_RECIENTES, []))
   const [buscaEnFoco, setBuscaEnFoco] = useState(false)
   const [campoActivo, setCampoActivo] = useState(null)
@@ -1345,9 +1343,9 @@ function App() {
   if (modoViaje) textoTopbar = 'Modo Viaje'
   else if (rutasCalculadas.length > 0) textoTopbar = `Ruta: ${rutasCalculadas[rutaSeleccionada].km} km · ${rutasCalculadas[rutaSeleccionada].min} min`
   else if (cargandoHotspots) textoTopbar = 'Conectando...'
-  else if (misReportes.length > 0) textoTopbar = `${misReportes.length} reporte${misReportes.length > 1 ? 's' : ''} tuyo${misReportes.length > 1 ? 's' : ''} · hace ${segundos}s`
+  else if (misReportes.length > 0) textoTopbar = `${misReportes.length} reporte${misReportes.length > 1 ? 's' : ''} tuyo${misReportes.length > 1 ? 's' : ''}`
   else if (mostrarAlerta) textoTopbar = `${criticosVisibles} zona${criticosVisibles > 1 ? 's' : ''} crítica${criticosVisibles > 1 ? 's' : ''}`
-  else textoTopbar = `${zonasFiltradas.length} zonas · hace ${segundos}s`
+  else textoTopbar = `${zonasFiltradas.length} zonas`
 
   const climaInfo = iconoClima(clima)
   const ultimaConsultaCapas = Object.entries(actualizacionesCapas)
@@ -1570,7 +1568,7 @@ function App() {
       {!vistaNavegacion && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input type="text" placeholder="Buscar lugar, calle o local (Enter)..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={() => { setBuscaEnFoco(false); setTimeout(sugBusqueda.limpiar, 150) }} aria-label="Buscar lugar, calle o local" autoComplete="off" />
+          <input type="text" placeholder="Buscar lugar, calle o local..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={() => { setBuscaEnFoco(false); setTimeout(sugBusqueda.limpiar, 150) }} aria-label="Buscar lugar, calle o local" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (

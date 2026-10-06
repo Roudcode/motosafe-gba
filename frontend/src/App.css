@@ -130,7 +130,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   --border: #DDE1E5;
   --text: #1B1E22;
   --text-dim: #5B6169;
-  --text-dimmer: #7A8087;
+  --text-dimmer: #666C73;
   --text-soft: #3A3F45;
 }
 

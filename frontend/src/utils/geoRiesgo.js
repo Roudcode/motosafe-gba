@@ -1,7 +1,7 @@
 // Cálculos geoespaciales y de ajuste de riesgo: distancias, geocodificación,
 // y la lógica que sube el nivel de riesgo de una zona según clima/reportes activos.
 
-import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA } from '../constants'
+import { ORDEN_NIVELES, UMBRAL_REPORTE_KM, BBOX_GBA, API_URL } from '../constants'
 
 const CACHE_GEOCODIFICACION_TTL_MS = 5 * 60 * 1000
 const cacheGeocodificacion = new Map()
@@ -176,12 +176,12 @@ export async function geocodificar(texto) {
 // búsqueda antes de que responda.
 export async function buscarSugerencias(texto, { signal } = {}) {
   if (!texto || texto.trim().length < 3) return []
-  const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${BBOX_GBA}&bounded=1&limit=5`
-  const res = await fetch(url, { headers: { 'Accept-Language': 'es' }, signal })
-  const data = await res.json()
-  if (!data || data.length === 0) return []
-  return data.map(itemNominatimAPunto)
+  // Pasa por el backend (/lugares): la clave de TomTom queda en el servidor y
+  // las respuestas se cachean allí (SES-090). Sugerencias mientras se escribe.
+  const q = encodeURIComponent(texto.trim())
+  const res = await fetch(`${API_URL}/lugares?q=${q}&limite=5`, { credentials: 'include', signal })
+  if (!res.ok) throw new Error(`Búsqueda no disponible (${res.status})`)
+  return res.json()
 }
 
 // Paso activo de una navegación a partir de la posición GPS. Avanza al último

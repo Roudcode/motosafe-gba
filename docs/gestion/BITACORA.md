@@ -971,3 +971,15 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - **M1 (leyenda), P2 (íconos sin texto), P1 (paneles):** propuesta visual antes de tocar.
   - **R1 a R3 (reportes), A1 (contraste), A3 (sin conexión):** pendientes.
 - Verificación: lint sin errores; 75 pruebas; build sin errores.
+
+## 2026-10-06 — SES-090 — Sugerencias de búsqueda con TomTom, reloj fuera de la barra y contraste (Claude Code)
+
+- Decisiones de Rodo: la búsqueda no abre «Trazar ruta» (queda como está); sin voz ni compartir llegada por ahora; sí sugerencias mientras se escribe; el contador de segundos de la barra debe desaparecer.
+- Cambios:
+  - **Backend, `GET /lugares`:** busca lugares con TomTom Search desde el servidor (la clave no sale del backend). Mínimo 3 caracteres, hasta 8 resultados, caché de 10 minutos por consulta, limitador de 60 pedidos por minuto. Etiqueta: nombre, calle y localidad. Idioma `es-ES` (TomTom rechaza `es-AR`, lo detecté al probar: el endpoint devolvía 502). Pruebas nuevas con TomTom simulado: 108 pruebas de backend en verde.
+  - **Frontend:** el hook `useBusquedaDireccion` sugiere a los 350 ms de dejar de escribir, para la barra de búsqueda, origen y destino. Enter o el botón buscan al instante. `buscarSugerencias` ahora llama a `/lugares`, así que Nominatim queda solo para guardar favoritos. Verificado en el navegador: «Cafe Tortoni» muestra sugerencias sin Enter.
+  - **Barra superior:** se quitó «hace Ns», que cambiaba cada segundo. Se borró el hook `useSegundosDesde`.
+  - **Contraste (tema claro):** `--text-dimmer` pasaba de 3,4–4,0 a 4,2–4,9 (ratio WCAG). Ahora cumple 4,5 en las tres superficies claras.
+- Verificación: lint sin errores; 75 pruebas de frontend; 108 de backend; build sin errores.
+- Pendiente, con costo o diseño propio (lista de SES-089): distancia de maniobra por la ruta, vista previa de la ruta antes de elegirla, ficha por lugar y categorías, texto de duración y quién confirmó en los reportes, modo sin conexión.
+- A revisar: el cupo y los términos de TomTom para búsqueda, además del ruteo (ya están en la lista de términos antes de uso comercial).

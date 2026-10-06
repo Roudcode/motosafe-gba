@@ -1192,3 +1192,33 @@ def test_cobertura_capas_no_falla_sin_base():
     assert r.status_code == 200
     assert r.json()['prensa']['mas_reciente'] is None
     assert 'hotspots' in r.json()
+
+
+def test_lugares_devuelve_vacio_para_consulta_corta_sin_llamar_a_tomtom():
+    with patch("main.httpx.get") as get, patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        assert client.get("/lugares", params={"q": "ab"}).json() == []
+    get.assert_not_called()
+
+
+def test_lugares_exige_clave_del_servidor():
+    with patch("main.TOMTOM_API_KEY", None):
+        assert client.get("/lugares", params={"q": "Cafe Tortoni"}).status_code == 503
+
+
+def test_lugares_parsea_resultados_y_cachea_la_consulta():
+    respuesta = MagicMock()
+    respuesta.json.return_value = {"results": [
+        {"poi": {"name": "Café Tortoni"}, "address": {"freeformAddress": "Av. de Mayo 825"}, "position": {"lat": -34.6087, "lon": -58.3813}},
+        {"address": {"freeformAddress": "Av. de Mayo 800"}, "position": {"lat": -34.6, "lon": -58.38}},
+        {"address": {"freeformAddress": "sin posicion"}},
+    ]}
+    with patch("main.httpx.get", return_value=respuesta) as get, patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.pop("cafe tortoni", None)
+        primera = client.get("/lugares", params={"q": "Cafe Tortoni"}).json()
+        segunda = client.get("/lugares", params={"q": "cafe   tortoni"}).json()
+    assert primera == [
+        {"label": "Café Tortoni, Av. de Mayo 825", "lat": -34.6087, "lng": -58.3813},
+        {"label": "Av. de Mayo 800", "lat": -34.6, "lng": -58.38},
+    ]
+    assert segunda == primera
+    assert get.call_count == 1

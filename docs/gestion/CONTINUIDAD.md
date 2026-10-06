@@ -184,3 +184,5 @@ No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_m
 **Actualización SES-088:** la barra de búsqueda ya no tapa los botones de arriba (la altura de la barra superior se medía mal). La búsqueda centra el mapa en el lugar elegido y lo deja como destino. Decisión pendiente: si la búsqueda debe abrir «Trazar ruta» directamente, como antes.
 
 **Actualización SES-089:** auditoría completa en BITACORA. Cerrados: ETA absurdo, recientes en la búsqueda, etiqueta del buscador y áreas táctiles. Pendientes con decisión de Rodo: si la búsqueda abre «Trazar ruta», voz y compartir llegada, propuesta visual de leyenda e íconos, y el proveedor de búsqueda (A18).
+
+**Actualización SES-090:** sugerencias de búsqueda mientras se escribe, vía TomTom desde el backend (`/lugares`). Sin contador de segundos en la barra. Contraste del texto secundario corregido. Pendientes: distancia de maniobra por ruta, vista previa de la ruta, fichas de lugares, datos de reportes y modo sin conexión. Revisar cupo y términos de TomTom para búsqueda.

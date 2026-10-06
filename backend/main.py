@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
+from urllib.parse import quote
 from fastapi import FastAPI, HTTPException, Request, Response, Header
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -1657,6 +1658,66 @@ class RutaOut(BaseModel):
     min: int
     eta_trafico: EtaTraficoOut | None = None
     pasos: list[PasoRutaOut]
+
+
+# --- Búsqueda de lugares con sugerencias (SES-090) -------------------------
+# Reemplaza el autocompletado contra Nominatim, que su política prohíbe. La
+# clave de TomTom queda en el servidor. Las respuestas se cachean unos minutos
+# para no gastar cupo en cada tecla repetida.
+TOMTOM_SEARCH_URL = 'https://api.tomtom.com/search/2/search/{consulta}.json'
+_CACHE_LUGARES_TTL_SEGUNDOS = 600
+_cache_lugares = {}  # consulta normalizada -> {'datos': [...], 'momento': float}
+
+
+def _label_lugar(item):
+    direccion = item.get('address', {})
+    calle = ' '.join(p for p in [direccion.get('streetName'), direccion.get('streetNumber')] if p)
+    calle = calle or direccion.get('freeformAddress', '')
+    nombre = item.get('poi', {}).get('name')
+    partes = [p for p in [nombre, calle, direccion.get('municipality')] if p]
+    return ', '.join(partes)
+
+
+@app.get("/lugares")
+@limiter.limit("60/minute")
+def buscar_lugares(request: Request, q: str, limite: int = 5):
+    consulta = ' '.join(q.split())
+    if len(consulta) < 3 or len(consulta) > 120:
+        return []
+    if not TOMTOM_API_KEY:
+        raise HTTPException(status_code=503, detail="TOMTOM_API_KEY no configurada")
+    clave = consulta.casefold()
+    entrada = _cache_lugares.get(clave)
+    if entrada and time.time() - entrada['momento'] < _CACHE_LUGARES_TTL_SEGUNDOS:
+        return entrada['datos']
+    try:
+        respuesta = httpx.get(
+            TOMTOM_SEARCH_URL.format(consulta=quote(consulta)),
+            params={
+                "key": TOMTOM_API_KEY,
+                "limit": max(1, min(limite, 8)),
+                "countrySet": "AR",
+                "lat": -34.6,
+                "lon": -58.45,
+                "radius": 60000,
+                "language": "es-ES",
+                "typeahead": "true",
+            },
+            timeout=10,
+        )
+        respuesta.raise_for_status()
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Búsqueda de lugares no disponible")
+    datos = []
+    for item in respuesta.json().get("results", []):
+        posicion = item.get("position", {})
+        label = _label_lugar(item)
+        if label and "lat" in posicion and "lon" in posicion:
+            datos.append({"label": label, "lat": posicion["lat"], "lng": posicion["lon"]})
+    if len(_cache_lugares) > 500:
+        _cache_lugares.clear()
+    _cache_lugares[clave] = {'datos': datos, 'momento': time.time()}
+    return datos
 
 
 @app.get("/rutas", response_model=list[RutaOut])
