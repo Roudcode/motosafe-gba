@@ -897,3 +897,22 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Causa real de la atribución expandida: MapLibre pone el atributo `open` en el `<details>` de la atribución al cargar en pantallas de hasta 640 px, y ese atributo es lo que la muestra. La clase `maplibregl-compact-show` no alcanza, y se quita también en el evento `idle`.
 - Verificación: lint sin errores; 71 tests; build sin errores. En el navegador a 375×812: la atribución queda en el «i», «Reportar» libre, placeholder con «(Enter)», y «Buscar ruta» con «Monte Grande» muestra las opciones sin calcular ruta.
 - Infraestructura, pendiente sin tocar: la URL pública del Funnel depende de que el preview del 5175 esté corriendo a mano. No es un servicio persistente. Se anota en CONTINUIDAD.
+
+## 2026-10-06 — SES-085 — Acceso público confiable: vigilancia automática del Funnel, preview y base (Claude Code)
+
+- Pedido de Rodo: que la URL pública vuelva sola tras reiniciar la PC, sin abrir terminales, con chequeo periódico y log, y `estado.bat` que responda de un vistazo.
+- Cambios:
+  - `tailscale/vigilancia.ps1` (nuevo): revisa en orden base (`motosafe-db`), backend (8000), preview (5175), Funnel (443 -> 5175) y URL pública. Si algo falla, lo reinicia: `docker start`, `_iniciar_backend.bat` oculto (limpiando antes los procesos huérfanos de `run_dev.py`), `vite preview` oculto (con build si falta `dist`), y reaplica el Funnel solo al 443. Escribe una línea por revisión en `logs\vigilancia\vigilancia_AAAAMMDD.log`. Con `-SoloEstado` no toca nada.
+  - `tailscale/registrar_vigilancia.ps1` (nuevo): registra la tarea `MotoSafe-Vigilancia`, que corre al iniciar sesión y cada 5 minutos, sin ventana, sin instancias paralelas y con límite de 15 minutos.
+  - `tailscale/estado.bat`: muestra el estado de las cinco piezas y las últimas revisiones. No reinicia nada.
+  - `tailscale/mantener_activo.bat`: retirado; lo reemplaza la vigilancia. Su README decía que debía estar en la carpeta de inicio.
+  - `tailscale/README.md`: sección 6 reescrita con la tarea.
+- Pruebas hechas en esta PC (las cuatro fallas, con recuperación confirmada en el log):
+  - Preview matado a mano: la vigilancia lo levantó (`preview: iniciado`) y todo quedó OK.
+  - Funnel 443 apagado a propósito: la vigilancia lo reaplicó (`funnel: reaplicado a 443`); el 8443 nunca se tocó.
+  - Base detenida con `docker stop`: la vigilancia la arrancó (`base: docker start`).
+  - Backend caído (worker del `uvicorn --reload` detenido): la vigilancia lo levantó (`backend: iniciado`) y el health volvió a 200.
+  - La tarea corrió con resultado 0.
+- Hallazgo de la prueba: al matar el proceso padre de `uvicorn --reload`, el worker hijo sigue con el socket abierto y el backend parece vivo. Por eso el reinicio ahora limpia los procesos huérfanos antes de levantar uno nuevo.
+- No verificado: el reinicio completo de la PC (requiere que lo hagas vos), y que Tailscale conserve la configuración del Funnel tras reiniciar. La vigilancia la reaplica si falta, así que no depende de que se conserve.
+- Pendiente: si quedó abierto `mantener_activo.bat` en alguna ventana, cerrarla, porque llama a `reiniciar_app.bat`, que cierra los procesos de 8000 y 5175.

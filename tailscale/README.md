@@ -97,22 +97,25 @@ URL pública. Pasame el contenido de `tailscale\public_url.txt` y desde acá
 hago un pedido real a esa URL para confirmar que responde desde afuera de
 tu red, no solo en tu WiFi.
 
-### 6. Dejarla corriendo siempre (arranque de Windows)
+### 6. Dejarla corriendo siempre (tarea de Windows, SES-085)
 
-No lo hice yo porque es una configuración persistente del sistema que te
-corresponde aprobar a vos directamente en tu PC, pero es un paso de 30
-segundos:
+Lo que antes eran acceso directo en la carpeta de inicio y un watchdog en
+ventana, ahora es una tarea programada única:
 
-1. `Win + R` -> escribí `shell:startup` -> Enter (abre tu carpeta de
-   inicio de Windows).
-2. Arrastrá ahí un acceso directo a `tailscale\iniciar_app_tailscale.bat`
-   y otro a `tailscale\mantener_activo.bat`.
+```
+powershell -ExecutionPolicy Bypass -File tailscale\registrar_vigilancia.ps1
+```
 
-Con eso, cada vez que prendés la PC y iniciás sesión, la app se levanta
-sola y el watchdog la vigila (reinicia backend+frontend+funnel si el
-backend deja de responder, sin duplicar procesos: antes de relanzar,
-identifica y cierra puntualmente el PID que tenga ocupado el puerto 8000 o
-5175, no mata procesos al voleo).
+La tarea `MotoSafe-Vigilancia` corre `tailscale\vigilancia.ps1` al iniciar
+sesión y cada 5 minutos, sin ventana. Cada revisión chequea, en orden:
+Postgres (contenedor `motosafe-db`), backend (8000), preview del frontend
+(5175), Funnel (443 -> 5175) y la URL pública. Si algo falla, lo reinicia y
+deja una línea en `logs\vigilancia\vigilancia_AAAAMMDD.log`. Nunca toca el
+8443 (otro proyecto).
+
+Para ver el estado en 10 segundos: `tailscale\estado.bat` (no reinicia nada).
+
+`tailscale\mantener_activo.bat` quedó retirado: la vigilancia lo reemplaza.
 
 ## Comandos sueltos, por si los necesitás directo
 

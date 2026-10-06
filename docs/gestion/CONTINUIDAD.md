@@ -174,3 +174,5 @@ No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_m
 **Actualización SES-083:** en celular, la atribución del mapa se colapsa al botón «i» y el «Salir» pasó al menú de herramientas. El build nuevo está publicado en el Funnel. Pendiente: revisar el solapamiento de «Salir» durante la navegación y la pasada general de UX.
 
 **Actualización SES-084:** pasada de UX sobre la búsqueda de ruta, la leyenda, la atribución y el modal de bienvenida. Pendientes: ítems 2, 5 y 7 de la auditoría (bundle, lupa y «Cerrar sesión» en viaje real). **Infraestructura:** la URL pública del Funnel depende de que el preview del 5175 siga vivo a mano; no es un servicio persistente.
+
+**Actualización SES-085:** la URL pública se vigila sola cada 5 minutos con la tarea `MotoSafe-Vigilancia` (`tailscale\vigilancia.ps1`). Reinicia base, backend, preview y Funnel si fallan, y deja log en `logs\vigilancia`. `tailscale\estado.bat` muestra el estado sin reiniciar nada. Probado: preview, Funnel, base y backend. Falta confirmar un reinicio completo de la PC. El pendiente de infraestructura del preview queda resuelto por la vigilancia.
