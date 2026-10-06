@@ -1025,3 +1025,9 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - **No verificado:** en el navegador de prueba no aparece ningún marcador de posición, ni siquiera fuera del viaje. Como el problema se ve también con las dependencias originales, lo más probable es que el arnés de prueba no fije la ubicación igual que la app real (el mismo flujo funcionó en capturas de celular). Hay que confirmar en el celular que la flecha aparece y gira.
 
 - **SES-097 — ajustes del viaje según capturas:** el aviso de reruteo («Te desviaste, recalculando») baja debajo de la tarjeta de maniobra, para no tapar la escena; la hoja de reportar durante el viaje se apoya sobre la barra inferior, con altura máxima de 46 % de la pantalla y scroll, para no tapar el mapa. Verificado por CSS y build (lint y pruebas sin errores); pendiente de confirmar en el celular.
+
+- **SES-098 — viaje y hoja de reporte:**
+  - **Bug:** la hoja de reportar durante el viaje tapaba el botón de reportar y no había forma de cerrarla. Ahora tiene un botón de cerrar en la cabecera (cancela el reporte).
+  - **Estilo Maps/Waze:** durante el viaje, reportar y la llave pasan a una columna a la derecha, en círculos de 52 px; la barra inferior tiene sombra más liviana.
+  - Verificado: lint, 77 pruebas y build sin errores. Pendiente: confirmar en el celular la columna derecha y el cierre de la hoja.
+- Pendientes del rediseño (no hechos): «Luego» como bloque separado en la tarjeta de maniobra, chip de velocidad con la misma forma que los botones, y ocultar «Modo Viaje» durante el viaje.

@@ -2038,7 +2038,10 @@ function App() {
 
       {paso === 'eligiendo' && (
         <div className="report-sheet hazard-edge">
-          <h3>¿Qué estás viendo en la vía?</h3>
+          <div className="report-sheet-cabecera">
+            <h3>¿Qué estás viendo en la vía?</h3>
+            <button type="button" className="report-sheet-cerrar" aria-label="Cancelar reporte" onClick={() => { setPaso('idle'); setCampoActivo(null) }}><X size={16} /></button>
+          </div>
           <div className={`report-options ${!ubicacionReporte ? 'deshabilitadas' : ''}`}>
             {CATEGORIAS_REPORTE.map((cat) => (
               <button key={cat.id} onClick={() => confirmarReporte(cat.id)}><cat.Icon size={15} /> {cat.label}</button>

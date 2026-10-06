@@ -1296,3 +1296,23 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .app:has(.nav-resumen-mini) .report-sheet {
   bottom: calc(96px + var(--safe-bottom)); max-height: 46vh; overflow-y: auto; padding: 12px;
 }
+
+/* Hoja de reporte: cabecera con boton de cerrar siempre visible (SES-098).
+   Antes no habia forma de cerrarla mientras el boton de reportar quedaba tapado. */
+.report-sheet-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.report-sheet-cabecera h3 { margin: 0; }
+.report-sheet-cerrar {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--inset); color: var(--text); cursor: pointer;
+}
+
+/* Viaje estilo Maps/Waze (SES-098): los botones de accion van en una columna a
+   la derecha, en circulos chicos, y la barra inferior queda liviana. */
+.app:has(.nav-resumen-mini) .report-fab {
+  right: 12px; bottom: calc(176px + var(--safe-bottom)); width: 52px; height: 52px; padding: 0;
+  border-radius: 50%; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+.app:has(.nav-resumen-mini) .herramientas-stack { right: 12px; bottom: calc(240px + var(--safe-bottom)); }
+.app:has(.nav-resumen-mini) .herramientas-fab { width: 52px; height: 52px; }
+.app:has(.nav-resumen-mini) .nav-resumen-mini { box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
