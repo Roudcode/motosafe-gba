@@ -335,6 +335,15 @@ FUENTES_RSS = [
     # RSS 2.0 real con ?alt=rss, no un Atom disfrazado).
     ("Zona Sur Diario", "https://www.zonasurdiario.com.ar/feeds/posts/default/-/Policiales?alt=rss"),
     ("Zona Oeste Diario", "https://www.zonaoestediario.com.ar/feeds/posts/default/-/Policiales?alt=rss"),
+    # SES-101: medios locales de zona oeste, norte y sur verificados el
+    # 2026-10-06 (robots.txt sin bloqueo total, feed RSS con notas reales).
+    # Se agregan por feed general: el prefiltro de slug y el de categoria
+    # separan los hechos de seguridad del resto.
+    ("Un/Medio", "https://unmedioenmoron.com.ar/feed/"),
+    ("Diario Anticipos", "https://diarioanticipos.com/feed/"),
+    ("Que Pasa Web", "https://quepasaweb.com.ar/feed/"),
+    ("Informe Norte", "https://informenorte.com.ar/feed/"),
+    ("El Sol", "https://elsolnoticias.com.ar/feed/"),
 ]
 # Sitemap general (mezcla todas las secciones) + segmento de URL a filtrar
 # antes de aplicar el prefiltro de slug de siempre -- ver la nota larga al
@@ -1053,7 +1062,9 @@ def descubrir_urls_multiestrategia(nombre_fuente, dominio, rutas_seccion):
     Si ninguno funciona, devuelve [] y lo dice explicitamente: no es un bug
     del script, es que la fuente sigue bloqueada -- no tiene sentido
     reintentar en cada corrida algo que ya se sabe que no entra."""
-    intentos_sitemap = [('sitemap (robots.txt)', sm) for sm in descubrir_sitemaps_desde_robots(dominio)]
+    # Los sitemaps de noticias primero: robots.txt suele listar primero el de paginas (SES-101).
+    sitemaps_robots = sorted(descubrir_sitemaps_desde_robots(dominio), key=lambda u: 'news' not in u.lower())
+    intentos_sitemap = [('sitemap (robots.txt)', sm) for sm in sitemaps_robots]
     intentos_sitemap.append(('sitemap adivinado', f"{dominio}/sitemap.xml"))
     intentos_sitemap.append(('sitemap Arc Publishing', f"{dominio}/arc/outboundfeeds/sitemap2/category/policiales/"))
 

@@ -1044,3 +1044,10 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Clarín: sigue en cero. El sitemap devuelve 72 URLs, pero solo una pasa el prefiltro por palabras del slug. Además su primer sitemap hijo son páginas de sección, no notas. Pendiente: identificar qué sitemap hijo trae notas y cómo se nombran.
 - Verificación: 20 pruebas del scraper en verde; corrida en seco exit 0.
 - Pendiente: etapa 2 (nuevos medios locales, con verificación de robots, feeds y términos) y etapa 3 (fuentes no periodísticas y redes: Instagram, Facebook y X quedan descartadas por sus términos; Telegram, Bluesky y Reddit se evalúan con su política).
+
+- **SES-101 — Clarín y medios locales:**
+  - Clarín: su primer sitemap en `robots.txt` era el de páginas de sección. Ahora los sitemaps con «news» se prueban primero; Clarín pasa de 0 a 20 candidatas (1 ubicada).
+  - Medios locales nuevos, verificados el 2026-10-06 (robots.txt sin bloqueo total, feed RSS con notas): Un/Medio (Morón), Diario Anticipos, Qué Pasa Web (zona norte), Informe Norte (zona norte) y El Sol (La Plata/zona sur). Quedan afuera Gazeta Norte y Zona Norte Visión (feed sin notas) y los que no tienen feed.
+  - Medición en seco (no se guardó nada): 172 candidatas (antes 151), 81 ubicadas (antes 79). Los cinco medios nuevos aportan poco hoy: sus feeds son chicos.
+  - Verificación: 20 pruebas del scraper en verde; corrida en seco exit 0.
+  - Pendiente: fuentes no periodísticas (comunicados oficiales) sin verificar todavía; y el cuello de botella de la ubicación, que es lo que llega al mapa.
