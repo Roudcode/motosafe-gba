@@ -188,3 +188,12 @@ No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_m
 **Actualización SES-090:** sugerencias de búsqueda mientras se escribe, vía TomTom desde el backend (`/lugares`). Sin contador de segundos en la barra. Contraste del texto secundario corregido. Pendientes: distancia de maniobra por ruta, vista previa de la ruta, fichas de lugares, datos de reportes y modo sin conexión. Revisar cupo y términos de TomTom para búsqueda.
 
 **Actualización SES-100:** TN vuelve a aportar (corrección de redirección en robots.txt) y el tope por fuente sube a 60. Clarín sigue en cero: falta identificar el sitemap de notas. Pendientes: nuevos medios verificados y fuentes no periodísticas.
+
+**Resumen de sesiones SES-091 a SES-101 (detalle en BITACORA):**
+- **SES-091/092:** zoom de iOS al tocar campos (16 px) y animación de paneles centrados (`translate` en vez de `transform`). Pendiente confirmar en iPhone.
+- **SES-093:** búsqueda con tarjeta «Ir» explícito; favoritos geocodificados con `/lugares` (sin Nominatim).
+- **SES-094:** distancia a la maniobra medida por la ruta; vencimiento visible en reportes.
+- **SES-095 a SES-099:** rediseño de la pantalla de viaje (barra única, flecha como marcador en 2D y 3D, bloque «Luego», hoja de reporte cerrable, columna de botones a la derecha). Pendiente confirmar en celular.
+- **SES-100/101:** scraper: TN recuperado (redirección en robots.txt), tope de 60 notas por fuente, sitemaps de noticias primero (Clarín), cinco medios locales verificados (Un/Medio, Diario Anticipos, Qué Pasa Web, Informe Norte, El Sol). En seco: 172 candidatas y 81 ubicadas.
+
+**Próximo foco:** mejorar la extracción de ubicación de las notas ya recopiladas (qué notas quedan sin ubicar y por qué). Pendientes abiertos: confirmar el viaje y el zoom de iOS en celular; fuentes no periodísticas sin verificar; TomTom (cupo y términos antes de uso comercial).
