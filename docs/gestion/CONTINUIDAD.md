@@ -127,3 +127,7 @@ Backup y restauración ensayados entre dos PostGIS desechables con el procedimie
 ## Actualización 2026-10-06 — SES-072: carga inicial en producción
 
 Las capas se cargan solas al arrancar el contenedor si la base está vacía (CSV montados, no en la imagen). En Render hay un paso único documentado en `DESPLIEGUE_MVP.md`. Se corrigió además un bloqueo que dejaba `/hotspots` y `/corredores` en 504 mientras corría el scraper.
+
+## Actualización 2026-10-06 — SES-073: prensa histórica re-geocodificada
+
+Con backup previo en `C:\Users\rodol\motosafe_backups\`, 142 de las 450 notas cambiaron de ubicación; 94 estaban en otro partido o barrio (87 de La Matanza caían en Presidente Perón). Las filas precisas que estaban dentro de su zona no se tocaron.
