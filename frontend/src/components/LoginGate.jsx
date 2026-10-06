@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { API_URL } from '../constants'
+import { SesionContext } from '../sesion'
 
 // Envuelve <App/> y no renderiza nada de la app hasta confirmar que hay una
 // sesion valida. El backend es la unica fuente de verdad sobre la sesion
@@ -47,18 +48,12 @@ export function LoginGate({ children }) {
     return children
   }
 
+  // La opción «Cerrar sesión» vive en el menú de herramientas de App (SES-083),
+  // no en un botón fijo que tapaba «Reportar» y la atribución del mapa.
   return (
-    <>
+    <SesionContext.Provider value={{ usuario, cerrarSesion }}>
       {children}
-      <button
-        type="button"
-        onClick={cerrarSesion}
-        title={`Cerrar sesion (${usuario})`}
-        style={estilos.botonLogout}
-      >
-        Salir
-      </button>
-    </>
+    </SesionContext.Provider>
   )
 }
 
@@ -149,9 +144,4 @@ const estilos = {
     fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 4,
   },
   error: { color: '#FF3B3B', fontSize: 13, margin: 0, textAlign: 'center' },
-  botonLogout: {
-    position: 'fixed', bottom: 12, right: 12, zIndex: 9999,
-    background: 'rgba(31,35,40,0.85)', color: '#C8CDD3', border: '1px solid #2C3138',
-    borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer',
-  },
 }

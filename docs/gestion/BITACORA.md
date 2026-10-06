@@ -869,3 +869,18 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Limpieza en seco con archivos de prueba en `logs\scraper`: se borraron `corrida_20250101_000000.log` y `corrida_20250301_120000.log`; se conservaron `notas_viejas.log` (otro patrón) y los logs recientes. Se borró después el archivo de control.
   - Corrida en seco con código 0, imagen reconstruida (`motosafe-gba-scraper`) con el contador.
 - No verificado: el contador en una corrida con `--guardar`. Se confirma con las próximas corridas programadas.
+
+## 2026-10-06 — SES-083 — Solapamientos en celular: atribución del mapa y «Cerrar sesión» (Claude Code)
+
+- Pedido de Rodo: revisar la UI en celular (375×812), arreglar solapamientos reales y mover el «Salir».
+- Confirmado en el navegador, con la app real:
+  - La atribución de MapLibre quedaba expandida al cargar, tapaba «Reportar» y el texto de OpenStreetMap quedaba debajo de «Salir». Causa: MapLibre agrega `maplibregl-compact-show` al cargar, aunque `compact: true`.
+  - El botón «Salir» era fijo abajo a la derecha y se superponía con «Reportar».
+- Cambios:
+  - `frontend/src/sesion.js` (nuevo): contexto de sesión. Vale null sin login (`AUTH_HABILITADO=false`).
+  - `LoginGate.jsx`: publica usuario y cierre de sesión por el contexto; se quitó el botón fijo y su estilo.
+  - `App.jsx`: «Cerrar sesión» como opción del menú de herramientas, solo si hay login.
+  - `MapaMotoSafe.jsx`: al cargar el mapa se quita `maplibregl-compact-show`, así la atribución queda como botón «i». El usuario la abre con ese botón.
+- Verificación: lint sin errores; 71 tests de frontend; build sin errores. En el navegador en 375×812: «Reportar» libre, «Salir» ya no aparece abajo, «Cerrar sesión» figura en el menú de herramientas (no se hizo clic para no cerrar la sesión de prueba).
+- Nota: el build nuevo lo sirven también el preview 5175 del Funnel y el 5176, porque comparten `frontend/dist`. Los cambios ya están vivos en la URL pública.
+- Pendiente: el solapamiento de «Salir» de navegación (`nav-resumen-mini`) con «Reportar» durante un viaje, que no se probó. La pasada general de UX queda para después, según lo acordado.

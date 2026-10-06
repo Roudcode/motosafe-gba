@@ -465,6 +465,10 @@ function MapaMotoSafeInner({
     mapRef.current = map
 
     map.on('load', () => {
+      // MapLibre deja la atribución expandida al cargar, y en el celular tapa
+      // «Reportar» y los botones de abajo (SES-083). La colapsamos al botón «i»;
+      // el usuario la abre igual con ese botón.
+      map.getContainer().querySelector('.maplibregl-ctrl-attrib.maplibregl-compact-show')?.classList.remove('maplibregl-compact-show')
       onReady?.(map)
       setVersion((v) => v + 1)
     })

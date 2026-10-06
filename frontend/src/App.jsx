@@ -3,7 +3,7 @@ import './App.css'
 
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
-  ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, Wrench, WifiOff,
+  ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, LogOut, Wrench, WifiOff,
   Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper,
 } from 'lucide-react'
 
@@ -29,6 +29,7 @@ import { CapasPanel } from './components/CapasPanel'
 import { MapaMotoSafe } from './components/MapaMotoSafe'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
+import { useSesion } from './sesion'
 
 // Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
 // panel de detalle de zona — mismos tonos semánticos que los niveles de riesgo
@@ -168,6 +169,7 @@ function App() {
   const [coberturaCapas, setCoberturaCapas] = useState(null)
   const [actividadAbierta, setActividadAbierta] = useState(false)
   const [statsAbierto, setStatsAbierto] = useState(false)
+  const sesion = useSesion()
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
   const [toast, setToast] = useState(null)
@@ -1943,6 +1945,11 @@ function App() {
             <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
               <BarChart3 size={15} /> Estadísticas
             </button>
+            {sesion && (
+              <button onClick={() => { setHerramientasAbiertas(false); sesion.cerrarSesion() }} title={`Sesión de ${sesion.usuario}`}>
+                <LogOut size={15} /> Cerrar sesión
+              </button>
+            )}
           </div>
         )}
         <button

@@ -170,3 +170,5 @@ El scraper corre cada 3 horas con la tarea `MotoSafe-Scraper` del Programador de
 No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_migrations` con la base real. Ese entrypoint corre `migrar.py` sobre la base en vivo.
 
 **Actualización SES-082:** la corrida programada ahora informa cuántas notas ya estaban en la base, y limpia `corrida_*.log` de más de 60 días antes de cada ejecución. Rodo decide la cadencia de 180 minutos con 3 o 4 corridas completas que incluyan el contador nuevo.
+
+**Actualización SES-083:** en celular, la atribución del mapa se colapsa al botón «i» y el «Salir» pasó al menú de herramientas. El build nuevo está publicado en el Funnel. Pendiente: revisar el solapamiento de «Salir» durante la navegación y la pasada general de UX.
