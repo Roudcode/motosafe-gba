@@ -186,3 +186,5 @@ No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_m
 **Actualización SES-089:** auditoría completa en BITACORA. Cerrados: ETA absurdo, recientes en la búsqueda, etiqueta del buscador y áreas táctiles. Pendientes con decisión de Rodo: si la búsqueda abre «Trazar ruta», voz y compartir llegada, propuesta visual de leyenda e íconos, y el proveedor de búsqueda (A18).
 
 **Actualización SES-090:** sugerencias de búsqueda mientras se escribe, vía TomTom desde el backend (`/lugares`). Sin contador de segundos en la barra. Contraste del texto secundario corregido. Pendientes: distancia de maniobra por ruta, vista previa de la ruta, fichas de lugares, datos de reportes y modo sin conexión. Revisar cupo y términos de TomTom para búsqueda.
+
+**Actualización SES-100:** TN vuelve a aportar (corrección de redirección en robots.txt) y el tope por fuente sube a 60. Clarín sigue en cero: falta identificar el sitemap de notas. Pendientes: nuevos medios verificados y fuentes no periodísticas.

@@ -1033,3 +1033,14 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Pendientes del rediseño (no hechos): «Luego» como bloque separado en la tarjeta de maniobra, chip de velocidad con la misma forma que los botones, y ocultar «Modo Viaje» durante el viaje.
 
 - **SES-099 — pulido del viaje (primera tanda):** la línea «Después:» pasa a un bloque «Luego» separado, con etiqueta y borde superior, dentro de la tarjeta de maniobra. Durante el viaje se oculta el chip de estado «Modo Viaje» de la barra superior. Verificado en el navegador: el bloque «Luego» aparece con el texto del siguiente giro; la leyenda no se renderiza durante el viaje. Lint, 77 pruebas y build sin errores. Pendiente: confirmar en el celular; pulido de velocidad, colores y modo oscuro del viaje.
+
+## 2026-10-06 — SES-100 — Scraper: TN recuperado y tope de notas por fuente (Claude Code)
+
+- Pedido de Rodo: mejorar la cantidad y calidad de las fuentes, en tres etapas: arreglar fuentes caídas, verificar nuevos medios y revisar fuentes no periodísticas.
+- Causa de TN: `descubrir_sitemaps_desde_robots` no seguía redirecciones (`www.tn.com.ar` redirige) y devolvía vacío, así que nunca usaba los sitemaps que `robots.txt` declara. Corregido con `follow_redirects=True`.
+- Tope por fuente: `MAX_URLS_POR_FUENTE` pasa de 40 a 60 (Clarín devolvía 72 URLs y se bajaban 40).
+- Medición en seco (no se guardó nada): 151 candidatas (antes 136), 79 ubicadas (antes 78). TN aporta 20 candidatas y 4 ubicadas.
+- Página12: el feed responde bien (redirige con barra final). Tiene pocos items en el feed; su cero es de volumen, no de bloqueo.
+- Clarín: sigue en cero. El sitemap devuelve 72 URLs, pero solo una pasa el prefiltro por palabras del slug. Además su primer sitemap hijo son páginas de sección, no notas. Pendiente: identificar qué sitemap hijo trae notas y cómo se nombran.
+- Verificación: 20 pruebas del scraper en verde; corrida en seco exit 0.
+- Pendiente: etapa 2 (nuevos medios locales, con verificación de robots, feeds y términos) y etapa 3 (fuentes no periodísticas y redes: Instagram, Facebook y X quedan descartadas por sus términos; Telegram, Bluesky y Reddit se evalúan con su política).

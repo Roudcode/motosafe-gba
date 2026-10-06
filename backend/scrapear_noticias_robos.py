@@ -382,7 +382,7 @@ FUENTES_MULTIESTRATEGIA = [
 # sentido (ni es amable con el sitio) bajarlas todas en cada corrida cuando
 # alcanza con las mas recientes para una fuente que se corre varias veces por
 # dia.
-MAX_URLS_POR_FUENTE = 40
+MAX_URLS_POR_FUENTE = 60  # SES-100: 40 dejaba afuera notas recientes de fuentes grandes (Clarín: 72 URLs)
 PAUSA_ENTRE_FETCHES_SEG = 0.5
 
 # Palabras que hacen candidata a una noticia, agrupadas por CATEGORIA (titulo +
@@ -1019,7 +1019,7 @@ def descubrir_sitemaps_desde_robots(dominio):
     forma estandar (sirve para cualquier CMS, no solo Arc Publishing) de
     encontrar el sitemap de un sitio sin adivinar la ruta a ciegas."""
     try:
-        resp = httpx.get(f"{dominio}/robots.txt", headers=HEADERS_NAVEGADOR, timeout=10)
+        resp = httpx.get(f"{dominio}/robots.txt", headers=HEADERS_NAVEGADOR, timeout=10, follow_redirects=True)
         resp.raise_for_status()
     except Exception:
         return []
