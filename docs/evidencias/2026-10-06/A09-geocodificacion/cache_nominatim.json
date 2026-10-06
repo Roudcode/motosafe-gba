@@ -13792,5 +13792,501 @@
  "{\"bounded\": 1, \"limit\": 1, \"q\": \"Lobo y Miguez, Mor\\u00f3n, Buenos Aires, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": [],
  "{\"bounded\": 1, \"limit\": 1, \"q\": \"Operativo C\\u00f3ndor y Dalton, Mor\\u00f3n, Buenos Aires, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": [],
  "{\"bounded\": 1, \"limit\": 1, \"q\": \"Charr\\u00faa y Balbastro, La Matanza, Buenos Aires, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": [],
- "{\"bounded\": 1, \"limit\": 1, \"q\": \"Centro de Operaciones y Monitoreo., CABA, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": []
+ "{\"bounded\": 1, \"limit\": 1, \"q\": \"Centro de Operaciones y Monitoreo., CABA, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": [],
+ "{\"bounded\": 1, \"limit\": 1, \"q\": \"Vicente L\\u00f3pez y San Isidro, San Isidro, Buenos Aires, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": [
+  {
+   "place_id": 17232684,
+   "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+   "osm_type": "way",
+   "osm_id": 435225873,
+   "lat": "-34.4880061",
+   "lon": "-58.4994998",
+   "class": "highway",
+   "type": "residential",
+   "place_rank": 26,
+   "importance": 0.05338234607461658,
+   "addresstype": "road",
+   "name": "Vicente Fidel López",
+   "display_name": "Vicente Fidel López, Martínez, Partido de San Isidro, Buenos Aires, 1640, Argentina",
+   "address": {
+    "road": "Vicente Fidel López",
+    "town": "Martínez",
+    "state_district": "Partido de San Isidro",
+    "state": "Buenos Aires",
+    "ISO3166-2-lvl4": "AR-B",
+    "postcode": "1640",
+    "country": "Argentina",
+    "country_code": "ar"
+   },
+   "boundingbox": [
+    "-34.4886905",
+    "-34.4873133",
+    "-58.5009519",
+    "-58.4980516"
+   ]
+  }
+ ],
+ "{\"bounded\": 1, \"limit\": 1, \"q\": \"Balcarce 1300, San Isidro, Buenos Aires, Argentina\", \"url\": \"https://nominatim.openstreetmap.org/search\", \"viewbox\": \"-59.5,-33.9,-57.8,-35.3\"}": [
+  {
+   "place_id": 16994448,
+   "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+   "osm_type": "way",
+   "osm_id": 36124697,
+   "lat": "-34.4896988",
+   "lon": "-58.4867917",
+   "class": "highway",
+   "type": "residential",
+   "place_rank": 26,
+   "importance": 0.05338816433966579,
+   "addresstype": "road",
+   "name": "Balcarce",
+   "display_name": "Balcarce, Martínez, Partido de San Isidro, Buenos Aires, B1640AOD, Argentina",
+   "address": {
+    "road": "Balcarce",
+    "town": "Martínez",
+    "state_district": "Partido de San Isidro",
+    "state": "Buenos Aires",
+    "ISO3166-2-lvl4": "AR-B",
+    "postcode": "B1640AOD",
+    "country": "Argentina",
+    "country_code": "ar"
+   },
+   "boundingbox": [
+    "-34.4914322",
+    "-34.4880249",
+    "-58.4879728",
+    "-58.4857458"
+   ]
+  }
+ ],
+ "{\"lat\": -34.5039998, \"lon\": -58.7976767, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17383522,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 198453851,
+  "lat": "-34.5069489",
+  "lon": "-58.7968083",
+  "class": "place",
+  "type": "suburb",
+  "place_rank": 19,
+  "importance": 0.14671650034332795,
+  "addresstype": "suburb",
+  "name": "Juan Vucetich",
+  "display_name": "Juan Vucetich, José C. Paz, Partido de José C. Paz, Buenos Aires, 1743, Argentina",
+  "address": {
+   "suburb": "Juan Vucetich",
+   "city": "José C. Paz",
+   "state_district": "Partido de José C. Paz",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1743",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.5269489",
+   "-34.4869489",
+   "-58.8168083",
+   "-58.7768083"
+  ]
+ },
+ "{\"lat\": -34.7545911, \"lon\": -58.6769244, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17719226,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 13283746946,
+  "lat": "-34.7525928",
+  "lon": "-58.6757260",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13337781567101548,
+  "addresstype": "quarter",
+  "name": "Angélica",
+  "display_name": "Angélica, Pontevedra, Partido de Merlo, Buenos Aires, 1761, Argentina",
+  "address": {
+   "quarter": "Angélica",
+   "town": "Pontevedra",
+   "state_district": "Partido de Merlo",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1761",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.7625928",
+   "-34.7425928",
+   "-58.6857260",
+   "-58.6657260"
+  ]
+ },
+ "{\"lat\": -34.7253053, \"lon\": -58.4072093, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17380766,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 2823766026,
+  "lat": "-34.7260592",
+  "lon": "-58.4073132",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13338380636301211,
+  "addresstype": "quarter",
+  "name": "Villa General Balcarce",
+  "display_name": "Villa General Balcarce, Remedios de Escalada, Partido de Lanús, Buenos Aires, B1872, Argentina",
+  "address": {
+   "quarter": "Villa General Balcarce",
+   "suburb": "Villa General Balcarce",
+   "town": "Remedios de Escalada",
+   "state_district": "Partido de Lanús",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "B1872",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.7360592",
+   "-34.7160592",
+   "-58.4173132",
+   "-58.3973132"
+  ]
+ },
+ "{\"lat\": -34.7141439, \"lon\": -58.329143, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 417787450,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 198433431,
+  "lat": "-34.7056715",
+  "lon": "-58.3287411",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13338263447013043,
+  "addresstype": "quarter",
+  "name": "Villa Barilari",
+  "display_name": "Villa Barilari, Wilde, Partido de Avellaneda, Buenos Aires, 1874, Argentina",
+  "address": {
+   "quarter": "Villa Barilari",
+   "town": "Wilde",
+   "state_district": "Partido de Avellaneda",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1874",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.7156715",
+   "-34.6956715",
+   "-58.3387411",
+   "-58.3187411"
+  ]
+ },
+ "{\"lat\": -34.6889891, \"lon\": -58.6368904, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17478255,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 11910899049,
+  "lat": "-34.6872877",
+  "lon": "-58.6397881",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13338826962691688,
+  "addresstype": "quarter",
+  "name": "Texalar",
+  "display_name": "Texalar, Castelar, Partido de Morón, Buenos Aires, 1722, Argentina",
+  "address": {
+   "quarter": "Texalar",
+   "city": "Castelar",
+   "state_district": "Partido de Morón",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1722",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.6972877",
+   "-34.6772877",
+   "-58.6497881",
+   "-58.6297881"
+  ]
+ },
+ "{\"lat\": -34.5590287, \"lon\": -58.5368258, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17488441,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "relation",
+  "osm_id": 19269734,
+  "lat": "-34.5652904",
+  "lon": "-58.5341084",
+  "class": "boundary",
+  "type": "administrative",
+  "place_rank": 16,
+  "importance": 0.1867128763256275,
+  "addresstype": "village",
+  "name": "Villa Parque San Lorenzo",
+  "display_name": "Villa Parque San Lorenzo, Partido de General San Martín, Buenos Aires, B1651, Argentina",
+  "address": {
+   "village": "Villa Parque San Lorenzo",
+   "state_district": "Partido de General San Martín",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "B1651",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.5691560",
+   "-34.5554022",
+   "-58.5405614",
+   "-58.5261394"
+  ]
+ },
+ "{\"lat\": -34.6422567, \"lon\": -58.7893353, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17609836,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 1245027427,
+  "lat": "-34.6383938",
+  "lon": "-58.7820711",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13338520408941784,
+  "addresstype": "quarter",
+  "name": "Rancho Grande",
+  "display_name": "Rancho Grande, Moreno Centro Norte, Moreno, Partido de Moreno, Buenos Aires, B1743IAE, Argentina",
+  "address": {
+   "quarter": "Rancho Grande",
+   "suburb": "Moreno Centro Norte",
+   "city": "Moreno",
+   "state_district": "Partido de Moreno",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "B1743IAE",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.6483938",
+   "-34.6283938",
+   "-58.7920711",
+   "-58.7720711"
+  ]
+ },
+ "{\"lat\": -34.6740231, \"lon\": -58.5743587, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17437459,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 13233430706,
+  "lat": "-34.6772349",
+  "lon": "-58.5787168",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13338521782253757,
+  "addresstype": "quarter",
+  "name": "Olivares",
+  "display_name": "Olivares, San Justo, Partido de La Matanza, Buenos Aires, B1754BYQ, Argentina",
+  "address": {
+   "quarter": "Olivares",
+   "city": "San Justo",
+   "state_district": "Partido de La Matanza",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "B1754BYQ",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.6872349",
+   "-34.6672349",
+   "-58.5887168",
+   "-58.5687168"
+  ]
+ },
+ "{\"lat\": -34.8486778, \"lon\": -58.5296749, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17632348,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "relation",
+  "osm_id": 3195654,
+  "lat": "-34.8548948",
+  "lon": "-58.5258390",
+  "class": "boundary",
+  "type": "administrative",
+  "place_rank": 16,
+  "importance": 0.46482226534735804,
+  "addresstype": "town",
+  "name": "Ezeiza",
+  "display_name": "Ezeiza, Partido de Ezeiza, Buenos Aires, 1804, Argentina",
+  "address": {
+   "town": "Ezeiza",
+   "state_district": "Partido de Ezeiza",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1804",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.8717026",
+   "-34.8311353",
+   "-58.5439877",
+   "-58.5023937"
+  ]
+ },
+ "{\"lat\": -34.7801281, \"lon\": -58.6151766, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17786478,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 13233430784,
+  "lat": "-34.7838896",
+  "lon": "-58.6162416",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.13338352254520483,
+  "addresstype": "quarter",
+  "name": "San José",
+  "display_name": "San José, Dorrego, González Catán, Partido de La Matanza, Buenos Aires, 1759, Argentina",
+  "address": {
+   "quarter": "San José",
+   "suburb": "Dorrego",
+   "city": "González Catán",
+   "state_district": "Partido de La Matanza",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1759",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.7938896",
+   "-34.7738896",
+   "-58.6262416",
+   "-58.6062416"
+  ]
+ },
+ "{\"lat\": -34.6397535, \"lon\": -58.6817348, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17793455,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "relation",
+  "osm_id": 19462727,
+  "lat": "-34.6381227",
+  "lon": "-58.6777382",
+  "class": "boundary",
+  "type": "administrative",
+  "place_rank": 18,
+  "importance": 0.16004991912718394,
+  "addresstype": "quarter",
+  "name": "El Pilar",
+  "display_name": "El Pilar, Ituzaingó, Partido de Ituzaingó, Buenos Aires, Argentina",
+  "address": {
+   "quarter": "El Pilar",
+   "city": "Ituzaingó",
+   "state_district": "Partido de Ituzaingó",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.6432060",
+   "-34.6319254",
+   "-58.6831342",
+   "-58.6684996"
+  ]
+ },
+ "{\"lat\": -34.7363309, \"lon\": -58.6030898, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17815215,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "node",
+  "osm_id": 13233430747,
+  "lat": "-34.7404965",
+  "lon": "-58.6008178",
+  "class": "place",
+  "type": "quarter",
+  "place_rank": 20,
+  "importance": 0.133383290608072,
+  "addresstype": "quarter",
+  "name": "La Lucero",
+  "display_name": "La Lucero, Gregorio de Laferrere, Partido de La Matanza, Buenos Aires, 1757, Argentina",
+  "address": {
+   "quarter": "La Lucero",
+   "city": "Gregorio de Laferrere",
+   "state_district": "Partido de La Matanza",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "postcode": "1757",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.7504965",
+   "-34.7304965",
+   "-58.6108178",
+   "-58.5908178"
+  ]
+ },
+ "{\"lat\": -34.8258203, \"lon\": -58.3800571, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17756252,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "relation",
+  "osm_id": 2532299,
+  "lat": "-34.8258956",
+  "lon": "-58.3950536",
+  "class": "boundary",
+  "type": "administrative",
+  "place_rank": 16,
+  "importance": 0.45451887658813234,
+  "addresstype": "town",
+  "name": "Burzaco",
+  "display_name": "Burzaco, Partido de Almirante Brown, Buenos Aires, Argentina",
+  "address": {
+   "town": "Burzaco",
+   "state": "Buenos Aires",
+   "ISO3166-2-lvl4": "AR-B",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.8564556",
+   "-34.8058147",
+   "-58.4402065",
+   "-58.3629282"
+  ]
+ },
+ "{\"lat\": -34.5867045, \"lon\": -58.4166842, \"url\": \"https://nominatim.openstreetmap.org/reverse\", \"zoom\": 14}": {
+  "place_id": 17249197,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "relation",
+  "osm_id": 2222226,
+  "lat": "-34.5803362",
+  "lon": "-58.4245236",
+  "class": "boundary",
+  "type": "administrative",
+  "place_rank": 18,
+  "importance": 0.49943623326052666,
+  "addresstype": "suburb",
+  "name": "Palermo",
+  "display_name": "Palermo, Buenos Aires, Comuna 14, Ciudad Autónoma de Buenos Aires, Argentina",
+  "address": {
+   "suburb": "Palermo",
+   "city": "Buenos Aires",
+   "state_district": "Comuna 14",
+   "state": "Ciudad Autónoma de Buenos Aires",
+   "ISO3166-2-lvl4": "AR-C",
+   "country": "Argentina",
+   "country_code": "ar"
+  },
+  "boundingbox": [
+   "-34.5978556",
+   "-34.5509349",
+   "-58.4490952",
+   "-58.3928657"
+  ]
+ }
 }

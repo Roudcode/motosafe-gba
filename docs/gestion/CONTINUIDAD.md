@@ -135,3 +135,7 @@ Con backup previo en `C:\Users\rodol\motosafe_backups\`, 142 de las 450 notas ca
 ## Actualización 2026-10-06 — SES-075: período de cobertura por capa
 
 Las leyendas muestran el período real de los datos (siniestros 2019–2025, delitos 2023–2025) desde `/capas/cobertura`, con la fecha de generación del archivo en el tooltip. El JSON de metadatos se regenera con `notebooks/generar_metadatos_capas.py` cada vez que cambian las capas. Pendiente: la revisión visual de Rodo.
+
+## Actualización 2026-10-06 — SES-076: CSV de capas versionados
+
+Los 4 CSV derivados de las capas están en el repo y los crudos siguen afuera. Un clon limpio carga las capas solo; en Render sigue el paso único documentado.

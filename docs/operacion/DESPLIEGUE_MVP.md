@@ -70,13 +70,14 @@ se dupliquen ejecuciones.
   en la imagen: en `docker-compose.production.yml` se monta `./data` en
   `/data` (solo lectura). Prensa la sigue llenando el scraper. Verificado con
   una base vacía: 740, 243 y 1.135 cargadas; tras reiniciar, «ya tenía».
-- **`data/` no está versionado** (`.gitignore`, hallazgo de SES-074). La carga
-  funciona donde exista `data/` con los CSV, como la PC de Rodo. En un clon
-  limpio desde GitHub (un servidor o Render) no hay CSV y la carga informa
-  «sin CSV». **Pendiente de decisión de Rodo:** versionar los cuatro CSV
-  derivados de las capas (`hotspots_moto_caba.csv`, `corredores_riesgo.csv`,
-  `hotspots_inseguridad_general.csv`, `hotspots_inseguridad_moto.csv`,
-  unos 700 kB en total) u otra vía para llevarlos al servidor.
+- **CSV versionados (SES-076, decisión de Rodo):** los cuatro CSV derivados de
+  las capas (`hotspots_moto_caba.csv`, `corredores_riesgo.csv`,
+  `hotspots_inseguridad_general.csv`, `hotspots_inseguridad_moto.csv`, unos
+  700 kB) están en el repo. Los crudos (`delitos_caba.csv`, 113 MB) siguen
+  afuera. Un servidor que clone el repo y use `docker-compose.production.yml`
+  tiene las capas desde el primer arranque. Verificado en un clon limpio: suite
+  completa 103/103, incluida la carga inicial. Render sigue necesitando el paso
+  único de abajo, porque construye solo con `./backend` y no monta `data/`.
 - **Render:** el Blueprint no puede montar `data/`, así que la carga inicial
   informa «sin CSV» y las capas responden error hasta cargarlas. Paso único,
   desde una copia del repositorio, con la *External Database URL* del panel de
