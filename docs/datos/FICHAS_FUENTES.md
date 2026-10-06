@@ -59,12 +59,12 @@ Actualizado: 2026-10-06 (SES-078). Licencias y políticas verificadas ese día e
 
 | Servicio | Uso en MotoSafe | Licencia / política (verificada) | Estado de cumplimiento |
 |---|---|---|---|
-| **Nominatim** (OSM) | Geocodificación del scraper (backend) y del buscador del frontend | Datos ODbL con atribución. Máximo 1 pedido por segundo, User-Agent o Referer identificable, caché recomendada. **Prohíbe el autocompletado**, consultas sistemáticas y reventa. https://operations.osmfoundation.org/policies/nominatim/ | Scraper: 1,1 s entre pedidos y User-Agent propio. **Frontend: el buscador pide sugerencias mientras se escribe (`useSugerenciasDireccion`, 400 ms de demora): es autocompletado y no cumple la política.** Depende de A18 (decisión de proveedor). |
+| **Nominatim** (OSM) | Geocodificación del scraper (backend) y del buscador del frontend | Datos ODbL con atribución. Máximo 1 pedido por segundo, User-Agent o Referer identificable, caché recomendada. **Prohíbe el autocompletado**, consultas sistemáticas y reventa. https://operations.osmfoundation.org/policies/nominatim/ | Scraper: 1,1 s entre pedidos y User-Agent propio. Frontend: sin autocompletado desde SES-079 (`useBusquedaDireccion`); un pedido por búsqueda confirmada (Enter o botón). Resuelto A18. |
 | **OSRM** (servidor demo) | Geometría de corredores, una vez, offline (`fetch_corredores_geometria.py`) | Máximo 1 pedido por segundo, uso razonable no comercial, sin garantías. https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server | La pausa era de 0,3 s (unos 3 por segundo); se corrigió a 1,1 s en SES-078. El ruteo en vivo ya no lo usa (TomTom). |
 | **TomTom** | Ruteo (`/rutas`) y teselas de tráfico | Plan gratuito: 20.000 pedidos de ruteo y 200.000 de teselas de tráfico por mes. La página de precios no aclara el uso comercial en el plan gratuito. https://docs.tomtom.com/pricing | Clave fuera del repo. Falta revisar los términos de servicio antes de un uso comercial. |
 | **OpenFreeMap** | Teselas del mapa base | Uso comercial permitido, sin límites declarados. Atribución obligatoria «OpenFreeMap © OpenMapTiles Data from OpenStreetMap». https://openfreemap.org | MapLibre muestra la atribución (`attributionControl`). |
 
 ## Pendientes derivados
 
-1. Buscador del frontend contra la política de Nominatim (A18): elegir proveedor o cambiar a búsqueda al confirmar, sin sugerencias en vivo. **Decisión de Rodo.**
+1. Cuota de Nominatim para uso de producción (las búsquedas del frontend ya son una por confirmación; A18 quedó resuelto en SES-079).
 2. Términos de servicio de Open-Meteo y TomTom antes de cualquier uso comercial del MVP.

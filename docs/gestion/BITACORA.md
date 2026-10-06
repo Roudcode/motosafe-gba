@@ -801,3 +801,20 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - `fetch_corredores_geometria.py` hacía 0,3 s de pausa (unos 3 pedidos por segundo) contra OSRM demo; pasó a 1,1 s.
   - El mapa agrega la atribución de Open-Meteo y de Buenos Aires Data (CC BY) en el control de atribución. 71 tests de frontend, lint y build limpios.
 - **Hallazgo para A18, decisión de Rodo:** `useSugerenciasDireccion` pide sugerencias a Nominatim mientras se escribe (400 ms de demora). Es autocompletado, que la política de Nominatim prohíbe. No se cambió: requiere elegir proveedor o pasar a búsqueda al confirmar.
+
+---
+
+## 2026-10-06 — SES-079 — Resolución de A18: búsqueda de direcciones solo al confirmar (Claude Code)
+
+- Pedido de Rodo: quitar el autocompletado en vivo contra Nominatim, que su política prohíbe, y documentarlo como resolución de A18.
+- Cambio:
+  - `frontend/src/hooks/useSugerenciasDireccion.js` (debounce de 400 ms, pedido en cada pausa) se reemplaza por `useBusquedaDireccion.js`, que expone `buscar(texto)` y `limpiar()`.
+  - Barra de búsqueda: busca con Enter o con el botón de la lupa (ahora un `<button>`, deshabilitado si el campo está vacío).
+  - Origen y destino: buscan con Enter en el campo, mientras no esté ya resuelto el punto. Cada resultado sigue siendo una elección del usuario. «Buscar ruta» usa `geocodificar()` como antes.
+  - Al editar el campo se descartan los resultados y se cancela el pedido en vuelo. Si no hay resultados o falla el pedido, el desplegable lo dice.
+  - Se quitó el comentario obsoleto de `geoRiesgo.js` y se aclaró que `buscarSugerencias` se llama solo al confirmar.
+- Resultado: no quedan llamadas a Nominatim durante la escritura. Un pedido por búsqueda confirmada.
+- Verificación: `eslint src` sin errores; 71 tests de frontend (`node node_modules/vitest/vitest.mjs run`, porque el `.bin` de vitest no resuelve en este equipo); `vite build` sin errores.
+- No verificado: la revisión visual con `npm run dev` (la hace Rodo). El hook no tiene test propio porque el proyecto no tiene `@testing-library/react`.
+- Registros: A18 pasa a «Resuelto» en BACKLOG; `FICHAS_FUENTES.md` actualiza la fila de Nominatim y los pendientes derivados.
+- Queda fuera de A18 y no bloquea: evaluar la cuota de Nominatim para producción o un proveedor propio.

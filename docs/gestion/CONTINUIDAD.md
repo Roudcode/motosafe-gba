@@ -147,3 +147,7 @@ El notebook histórico ya no puede pisar artefactos vigentes y publicar en `back
 ## Actualización 2026-10-06 — SES-078: D01 fichas de fuentes
 
 `docs/datos/FICHAS_FUENTES.md` reúne licencia y política verificadas de cada fuente. **Pendiente de decisión de Rodo (A18):** el buscador autocompleta contra Nominatim y su política lo prohíbe; hay que elegir otro proveedor o buscar recién al confirmar.
+
+## Actualización 2026-10-06 — SES-079: A18 resuelto (búsqueda solo al confirmar)
+
+El buscador de direcciones ya no autocompleta contra Nominatim. Busca con Enter o con el botón de la barra, y origen/destino buscan con Enter; no hay pedidos mientras se escribe. Esto cierra el pendiente de decisión de A18 registrado en SES-078. Verificado con lint, 71 tests y build. Falta la revisión visual con `npm run dev` (la hace Rodo).

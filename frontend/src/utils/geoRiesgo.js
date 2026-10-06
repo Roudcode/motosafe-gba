@@ -168,15 +168,12 @@ export async function geocodificar(texto) {
   return resultado
 }
 
-// Sugerencias en vivo mientras se escribe el origen/destino de una ruta --
-// mismo geocoder (Nominatim) que ya usaba geocodificar() al confirmar la
-// ruta, ahora con limit=5 en vez de 1 para armar un desplegable. Antes el
-// único feedback de que "Ramos Meji" no alcanzaba para ubicar algo llegaba
-// recién al tocar "Buscar ruta" -- con la lista en vivo se corrige mientras
-// se escribe, sin tener que fallar primero.
-// `signal` (AbortSignal) deja cancelar un pedido en vuelo cuando el usuario
-// sigue tipeando: sin esto, una tecla vieja que tarda más en volver podía
-// pisar el resultado de una tecla más reciente que ya volvió.
+// Búsqueda de hasta 5 candidatos para elegir entre varios (Monte Grande existe
+// en más de un partido). Se llama SOLO cuando el usuario confirma (Enter o
+// botón), nunca mientras escribe: Nominatim prohíbe el autocompletado
+// (docs/datos/FICHAS_FUENTES.md, A18).
+// `signal` (AbortSignal) permite cancelar el pedido si el usuario lanza otra
+// búsqueda antes de que responda.
 export async function buscarSugerencias(texto, { signal } = {}) {
   if (!texto || texto.trim().length < 3) return []
   const q = encodeURIComponent(`${texto}, Buenos Aires, Argentina`)

@@ -28,7 +28,7 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
 import { MapaMotoSafe } from './components/MapaMotoSafe'
 import { useSegundosDesde } from './hooks/useSegundosDesde'
-import { useSugerenciasDireccion } from './hooks/useSugerenciasDireccion'
+import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
 
 // Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
 // panel de detalle de zona — mismos tonos semánticos que los niveles de riesgo
@@ -178,14 +178,16 @@ function App() {
   const [destinoTexto, setDestinoTexto] = useState('')
   const [origenPunto, setOrigenPunto] = useState(null)
   const [destinoPunto, setDestinoPunto] = useState(null)
-  const sugOrigen = useSugerenciasDireccion(origenTexto, !!origenPunto)
-  const sugDestino = useSugerenciasDireccion(destinoTexto, !!destinoPunto)
+  // Origen/destino y la barra de búsqueda buscan solo al confirmar (Enter o
+  // botón), nunca mientras se escribe: Nominatim prohíbe el autocompletado.
+  const sugOrigen = useBusquedaDireccion()
+  const sugDestino = useBusquedaDireccion()
   // La barra de búsqueda de arriba filtraba zonas ya cargadas, pero no
   // servía para buscar una dirección que no fuera ya una zona del dataset
   // (una avenida cualquiera, por ejemplo) -- reusa el mismo geocoder que
-  // origen/destino para eso, y "elegir" una sugerencia la manda directo a
+  // origen/destino para eso, y "elegir" un resultado la manda directo a
   // Trazar ruta como destino (ver buscarComoDestino más abajo).
-  const sugBusqueda = useSugerenciasDireccion(busqueda, false)
+  const sugBusqueda = useBusquedaDireccion()
   const [campoActivo, setCampoActivo] = useState(null)
   const [geocodificando, setGeocodificando] = useState(false)
   const [rutasCalculadas, setRutasCalculadas] = useState([])
@@ -278,7 +280,7 @@ function App() {
   // Al arrancar (o reiniciar) el viaje, la cámara vuelve a seguir al GPS --
   // si el usuario había paneado a mano en un viaje anterior, eso no debe
   // "heredarse" al viaje nuevo. El setState va en un setTimeout (no directo
-  // en el cuerpo del efecto) por la misma regla de lint que useSugerenciasDireccion.
+  // en el cuerpo del efecto) por la regla de lint set-state-in-effect.
   useEffect(() => {
     if (!modoViaje) return
     const id = setTimeout(() => setSiguiendoUbicacion(true), 0)
@@ -1548,19 +1550,21 @@ function App() {
           paneles de datos de riesgo, no para el buscador. */}
       {!vistaNavegacion && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
-          <span className="searchbar-icon"><Search size={13} /></span>
-          <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
+          <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
+          <input type="text" placeholder="Buscar zona o avenida..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
-          {busqueda && <button className="searchbar-clear" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda"><X size={12} /></button>}
-          {sugBusqueda.sugerencias.length > 0 && (
+          {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
+          {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
             <ul className="ruta-form-sugerencias searchbar-sugerencias">
-              {sugBusqueda.sugerencias.map((s, i) => (
+              {sugBusqueda.resultados.map((s, i) => (
                 <li key={i}>
                   <button type="button" onMouseDown={() => buscarComoDestino(s)}>
                     <Compass size={12} /> Ir a: {s.label}
                   </button>
                 </li>
               ))}
+              {sugBusqueda.buscada && sugBusqueda.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección. Probá con más detalle.</li>}
+              {sugBusqueda.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
             </ul>
           )}
         </div>
@@ -1570,36 +1574,40 @@ function App() {
         <div className="ruta-form panel-enter">
           <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
             <span className="ruta-form-punto ruta-form-punto-origen" />
-            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null) }} onBlur={() => setTimeout(sugOrigen.limpiar, 150)} aria-label="Origen de la ruta" autoComplete="off" />
+            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null); sugOrigen.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter' && !origenPunto) sugOrigen.buscar(origenTexto) }} onBlur={() => setTimeout(sugOrigen.limpiar, 150)} aria-label="Origen de la ruta" autoComplete="off" />
             {sugOrigen.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
             <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}><MapPin size={14} /></button>
-            {sugOrigen.sugerencias.length > 0 && (
+            {(sugOrigen.resultados.length > 0 || sugOrigen.buscada || sugOrigen.error) && (
               <ul className="ruta-form-sugerencias">
-                {sugOrigen.sugerencias.map((s, i) => (
+                {sugOrigen.resultados.map((s, i) => (
                   <li key={i}>
                     <button type="button" onMouseDown={() => elegirSugerencia('origen', s)}>
                       <MapPin size={12} /> {s.label}
                     </button>
                   </li>
                 ))}
+                {sugOrigen.buscada && sugOrigen.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección.</li>}
+                {sugOrigen.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
               </ul>
             )}
           </div>
           <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar" aria-label="Intercambiar origen y destino"><ArrowUpDown size={13} /></button>
           <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
             <span className="ruta-form-punto ruta-form-punto-destino" />
-            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null) }} onBlur={() => setTimeout(sugDestino.limpiar, 150)} aria-label="Destino de la ruta" autoComplete="off" />
+            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null); sugDestino.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter' && !destinoPunto) sugDestino.buscar(destinoTexto) }} onBlur={() => setTimeout(sugDestino.limpiar, 150)} aria-label="Destino de la ruta" autoComplete="off" />
             {sugDestino.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
             <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}><MapPin size={14} /></button>
-            {sugDestino.sugerencias.length > 0 && (
+            {(sugDestino.resultados.length > 0 || sugDestino.buscada || sugDestino.error) && (
               <ul className="ruta-form-sugerencias">
-                {sugDestino.sugerencias.map((s, i) => (
+                {sugDestino.resultados.map((s, i) => (
                   <li key={i}>
                     <button type="button" onMouseDown={() => elegirSugerencia('destino', s)}>
                       <MapPin size={12} /> {s.label}
                     </button>
                   </li>
                 ))}
+                {sugDestino.buscada && sugDestino.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección.</li>}
+                {sugDestino.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
               </ul>
             )}
           </div>
