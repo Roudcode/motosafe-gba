@@ -983,3 +983,5 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: lint sin errores; 75 pruebas de frontend; 108 de backend; build sin errores.
 - Pendiente, con costo o diseño propio (lista de SES-089): distancia de maniobra por la ruta, vista previa de la ruta antes de elegirla, ficha por lugar y categorías, texto de duración y quién confirmó en los reportes, modo sin conexión.
 - A revisar: el cupo y los términos de TomTom para búsqueda, además del ruteo (ya están en la lista de términos antes de uso comercial).
+
+- **SES-090 (ajuste):** elegir un resultado de la búsqueda ya no cambia el zoom: el mapa se desplaza al lugar con el zoom actual. Antes forzaba zoom 16. El efecto de vuelo usa el zoom que venga en `vuelo` y, si no viene, el actual del mapa. Lint, 75 pruebas y build sin errores.

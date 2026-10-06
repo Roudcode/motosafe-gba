@@ -261,7 +261,7 @@ function App() {
   const zoomNavegacionHechoRef = useRef(false)
 
   useEffect(() => {
-    if (vuelo && mapaListo) mapaRef.current?.flyTo({ center: [vuelo.lng, vuelo.lat], zoom: vuelo.zoom || 15, duration: 1400 })
+    if (vuelo && mapaListo) mapaRef.current?.flyTo({ center: [vuelo.lng, vuelo.lat], zoom: vuelo.zoom ?? mapaRef.current.getZoom(), duration: 1400 })
   }, [vuelo, mapaListo])
 
   // Publica la altura real del topbar en --topbar-h en cada resize (rotar el
@@ -948,7 +948,7 @@ function App() {
     guardarEnLocalStorage(CLAVE_BUSQUEDAS_RECIENTES, nuevasRecientes)
     setDestinoTexto(sug.label)
     setDestinoPunto({ lat: sug.lat, lng: sug.lng })
-    setVuelo({ lat: sug.lat, lng: sug.lng, zoom: 16 })
+    setVuelo({ lat: sug.lat, lng: sug.lng })
     setBusqueda('')
     sugBusqueda.limpiar()
     mostrarToast(`Ubicado: ${sug.label}`)
