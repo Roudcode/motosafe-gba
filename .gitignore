@@ -1,6 +1,14 @@
-# Datos (nunca subir CSVs pesados al repo)
-data/
+# Datos (nunca subir CSVs pesados al repo). data/* y no data/: con la carpeta
+# entera excluida Git no permite re-incluir archivos sueltos.
+data/*
 *.csv
+# Excepción: los 4 CSV derivados que carga backend/cargar_datos_iniciales.py
+# (~700 kB). Sin ellos un clon limpio (servidor, Render, CI) no tiene capas.
+# Decisión de Rodo, SES-076. Los crudos (delitos_caba.csv, 113 MB) siguen afuera.
+!data/hotspots_moto_caba.csv
+!data/corredores_riesgo.csv
+!data/hotspots_inseguridad_general.csv
+!data/hotspots_inseguridad_moto.csv
 *.xlsx
 # Excepcion: artefactos que el backend necesita para arrancar (copias chicas,
 # generadas por la notebook a partir de data/, se regeneran corriendo la

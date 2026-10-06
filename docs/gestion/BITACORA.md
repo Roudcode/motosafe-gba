@@ -762,3 +762,8 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - 71 tests de frontend, lint y build limpios.
 - No verificado visualmente: Rodo lo revisa con `npm run dev`.
 - Estados: A10 pasa a validado parcialmente; A11 sigue en curso (falta distancia a segmentos); A15 suma el período de origen desde el backend.
+
+## 2026-10-06 — SES-076 — CSV derivados de las capas versionados (A14) (Claude Code)
+
+- Decisión de Rodo: versionar los 4 CSV derivados que usa la carga inicial y dejar afuera los crudos (`delitos_caba.csv`, 113 MB).
+- Cambio en `.gitignore`: `data/` pasa a `data/*`, porque con la carpeta excluida Git no permite excepciones, y se agregan excepciones explícitas para `hotspots_moto_caba.csv`, `corredores_riesgo.csv`, `hotspots_inseguridad_general.csv` y `hotspots_inseguridad_moto.csv` (unos 700 kB, datos agregados sin información personal). Se verificó que el resto de `data/` (crudos, modelos, previews) sigue ignorado.
