@@ -14,8 +14,8 @@ echo.
 echo === Backend local, puerto 8000 (esperado: 200) ===
 curl -s -o nul -w "HTTP %%{http_code}\n" http://127.0.0.1:8000/health
 echo.
-echo === Frontend local, puerto 5173 HTTPS autofirmado (esperado: 200) ===
-curl -sk -o nul -w "HTTP %%{http_code}\n" https://127.0.0.1:5173/
+echo === Frontend local, puerto 5175 HTTPS autofirmado (esperado: 200) ===
+curl -sk -o nul -w "HTTP %%{http_code}\n" https://127.0.0.1:5175/
 echo.
 if exist "%~dp0public_url.txt" (
     set /p URL=<"%~dp0public_url.txt"

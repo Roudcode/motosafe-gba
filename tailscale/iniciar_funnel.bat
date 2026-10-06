@@ -6,7 +6,7 @@ echo ============================================
 echo   MotoSafe GBA - Tailscale Funnel
 echo ============================================
 echo.
-echo Publica el frontend (puerto 5173, HTTPS con certificado autofirmado)
+echo Publica el frontend (puerto 5175, HTTPS con certificado autofirmado)
 echo como unico punto de entrada publico. El backend (8000) NO se expone
 echo directo a internet: Vite le hace de proxy interno via /api (ver
 echo frontend/vite.config.js), igual que ya pasa en desarrollo local.
@@ -25,7 +25,7 @@ echo 10000. Ver tailscale\README.md, seccion "Varios proyectos en la
 echo misma PC".
 echo.
 
-tailscale funnel --bg --https=443 https+insecure://127.0.0.1:5173
+tailscale funnel --bg --https=443 https+insecure://127.0.0.1:5175
 if errorlevel 1 (
     echo.
     echo ERROR al activar Funnel. Revisa los dos requisitos de arriba.

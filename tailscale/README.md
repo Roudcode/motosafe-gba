@@ -5,12 +5,12 @@ Esquema real de este proyecto (no el genérico de cualquier app):
 ```
 Internet
   -> https://<nombre-pc>.<tailnet>.ts.net   (Tailscale Funnel, TLS real)
-  -> https://127.0.0.1:5173                  (Vite dev server, TLS autofirmado)
+  -> https://127.0.0.1:5175                  (vite preview del build de produccion, TLS autofirmado)
        -> /api/*  proxeado internamente a  http://127.0.0.1:8000  (FastAPI)
        -> todo lo demas servido por Vite (la SPA de React)
 ```
 
-Un solo puerto queda expuesto a internet: **5173**. El backend (8000) nunca
+Un solo puerto queda expuesto a internet: **5175**. El backend (8000) nunca
 es alcanzable directo desde afuera -- solo Vite le pega, en la misma
 máquina. Esto es el mismo patrón que ya usaban con `cloudflared` en
 `iniciar_app.bat`, solo que Tailscale Funnel da una URL fija (no cambia en
@@ -112,12 +112,12 @@ Con eso, cada vez que prendés la PC y iniciás sesión, la app se levanta
 sola y el watchdog la vigila (reinicia backend+frontend+funnel si el
 backend deja de responder, sin duplicar procesos: antes de relanzar,
 identifica y cierra puntualmente el PID que tenga ocupado el puerto 8000 o
-5173, no mata procesos al voleo).
+5175, no mata procesos al voleo).
 
 ## Comandos sueltos, por si los necesitás directo
 
 ```
-tailscale funnel --bg https+insecure://127.0.0.1:5173    equivale a iniciar_funnel.bat
+tailscale funnel --bg https+insecure://127.0.0.1:5175    equivale a iniciar_funnel.bat
 tailscale funnel status                                    equivale a estado.bat (parte Tailscale)
 tailscale funnel 443 off                                   equivale a detener_funnel.bat
 ```
@@ -135,7 +135,7 @@ público -- ni vos necesitás usuario/contraseña en ese caso, porque
 Tailscale ya autenticó el dispositivo:
 
 ```
-tailscale serve --bg https+insecure://127.0.0.1:5173
+tailscale serve --bg https+insecure://127.0.0.1:5175
 ```
 
 Esto NO reemplaza el login que ya quedó armado (es una capa aparte) pero

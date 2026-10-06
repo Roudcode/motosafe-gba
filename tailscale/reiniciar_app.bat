@@ -5,11 +5,11 @@ echo ============================================
 echo   MotoSafe GBA - Reiniciando (sin duplicar procesos)
 echo ============================================
 echo.
-echo Busco que proceso tiene ocupados los puertos 8000 (backend) y 5173
+echo Busco que proceso tiene ocupados los puertos 8000 (backend) y 5175
 echo (frontend), y SOLO cierro esos dos PID puntuales -- no toco ningun
 echo otro proceso de la PC.
 
-for %%P in (8000 5173) do (
+for %%P in (8000 5175) do (
     set "PID_PUERTO="
     for /f "tokens=5" %%A in ('netstat -ano ^| findstr /r ":%%P[^0-9].*LISTENING"') do (
         set "PID_PUERTO=%%A"
