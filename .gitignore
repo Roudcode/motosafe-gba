@@ -48,3 +48,6 @@ tailscale/_funnel_status.txt
 # Entornos y builds locales
 backend/venv312/
 frontend/dist_check_clima/
+
+# Logs de la corrida programada del scraper (scraper_programado.bat, SES-081)
+logs/

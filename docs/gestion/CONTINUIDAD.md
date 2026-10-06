@@ -162,3 +162,9 @@ El scraper corre como servicio `scraper` del compose de producción, con tope po
 - De las 450 notas, 426 están ubicadas solo a nivel barrio. Eso es esperable: mejorar la precisión depende de que el titular tenga una dirección.
 
 **Actualización SES-080 (segunda parte):** la API ya no devuelve las notas de Google Noticias y usa la fecha de ingesta cuando la de publicación no es plausible. Las filas de la base no se tocaron. Si más adelante se decide limpiar la tabla, va con backup aparte.
+
+## Actualización 2026-10-06 — SES-081: scraper programado en Windows
+
+El scraper corre cada 3 horas con la tarea `MotoSafe-Scraper` del Programador de tareas, que ejecuta `scraper_programado.bat` contra la misma base que usa el backend nativo (`motosafe-db`, mismo proyecto y servicio que el compose de producción). Los logs quedan en `logs\scraper`, uno por corrida, y la cifra de «nuevas guardadas» de cada una sirve para decidir la cadencia. Docker Desktop arranca con el inicio de sesión; el `.bat` espera a que responda antes de correr.
+
+No se usa `up -d scraper` del compose de producción hasta reconciliar `schema_migrations` con la base real. Ese entrypoint corre `migrar.py` sobre la base en vivo.

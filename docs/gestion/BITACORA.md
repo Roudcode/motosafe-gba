@@ -840,3 +840,16 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Tests: 104 pruebas de backend en verde, con `MOTOSAFE_TEST_DATABASE_URL` apuntando a la base local. Incluye la nueva `test_prensa_excluye_google_y_usa_fecha_de_ingesta_si_la_publicada_no_sirve`, que corre contra PostgreSQL real y no se saltea.
   - Verificado: la tabla local sigue con 450 filas (no se tocaron datos).
   - No verificado: el efecto visible en el mapa. El frontend muestra `publicado_en`, que ahora llega ya resuelto desde la API.
+
+## 2026-10-06 — SES-081 — Scraper programado en Windows contra la base de producción (Claude Code)
+
+- Pedido de Rodo: correr el scraper cada 3 horas en el despliegue actual (backend nativo, Docker solo para la base), sin depender de una terminal abierta, con logs por corrida y sin pisar corridas.
+- Decisión: wrapper + Programador de tareas de Windows, no el `up -d scraper` del compose de producción, porque su entrypoint corre `migrar.py` sobre la base en vivo, que no tiene `schema_migrations` (ver CONTINUIDAD).
+- Cambios:
+  - `scraper_programado.bat` (raíz): hace `cd /d` a su propia carpeta; vacía en el proceso las variables que Compose toma del entorno (`DATABASE_URL`, `TOMTOM_API_KEY`, etc.) para que no pisen `.env.production`; espera hasta 5 minutos a que Docker responda (Docker Desktop arranca con el inicio de sesión, según `HKCU\...\Run`); corre `docker compose ... run --rm --no-deps --entrypoint python scraper scrapear_noticias_robos.py --guardar`; escribe un log por corrida en `logs\scraper\corrida_AAAAMMDD_HHMMSS.log` y devuelve el código de salida.
+  - `scraper_programado.bat --seco` corre sin `--guardar` y no escribe en la base.
+  - `.gitignore`: se ignora `logs/`.
+  - Tarea `MotoSafe-Scraper` del Programador de tareas de Windows: disparador cada 3 horas (desde 5 minutos después del registro, indefinidamente); «no iniciar una nueva instancia si ya hay una en ejecución»; límite de ejecución de 1 hora; «ejecutar tan pronto como sea posible si se perdió una ejecución»; se ejecuta solo con la sesión iniciada.
+- Verificación: corrida en seco con código 0 (138 candidatas, 80 ubicadas, log con resumen). `reportes_prensa` sigue con 465 filas tras la prueba.
+- Pendiente: la primera corrida real del programador (prevista para 10:32) es la primera escritura automática. Se revisa en `logs\scraper`. La cadencia de 3 horas se ajusta con las cifras de «nuevas guardadas» de esos logs.
+- Límites conocidos: si la PC está apagada o nadie inicia sesión, no corre (se recupera al iniciar sesión por «ejecutar tan pronto como sea posible»). Cada corrida crea un archivo de log; ocho por día, sin rotación automática.
