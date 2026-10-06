@@ -916,3 +916,16 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Hallazgo de la prueba: al matar el proceso padre de `uvicorn --reload`, el worker hijo sigue con el socket abierto y el backend parece vivo. Por eso el reinicio ahora limpia los procesos huérfanos antes de levantar uno nuevo.
 - No verificado: el reinicio completo de la PC (requiere que lo hagas vos), y que Tailscale conserve la configuración del Funnel tras reiniciar. La vigilancia la reaplica si falta, así que no depende de que se conserve.
 - Pendiente: si quedó abierto `mantener_activo.bat` en alguna ventana, cerrarla, porque llama a `reiniciar_app.bat`, que cierra los procesos de 8000 y 5175.
+
+## 2026-10-06 — SES-086 — Pasada de UX: code splitting, lupa visible, viaje real y atribución durante la navegación (Claude Code)
+
+- Pedido de Rodo: cerrar los ítems 2, 5 y 7 de la auditoría, y revisar la interfaz de punta a punta.
+- Cambios:
+  - Ítem 2 (bundle): el mapa se carga con `React.lazy` en su propio chunk. El bundle principal bajó de 1,30 MB a 269 kB (85 kB comprimido); MapLibre queda en `MapaMotoSafe-*.js` (1,03 MB, 275 kB comprimido) y baja mientras se muestra la pantalla de carga. El aviso de chunk mayor a 500 kB sigue para ese chunk; se deja para más adelante.
+  - Ítem 5 (lupa): el botón de buscar es un círculo con fondo y borde, y cambia al pasar el puntero o enfocarlo.
+  - Ítem 7 (viaje real): se simuló la ubicación del GPS, se calculó una ruta a Lanús Oeste (12,9 km, 23 min, tres opciones) y se inició el viaje. Medido en 375×812: el botón «Salir» de navegación y «Reportar» no se solapan (10 px de separación). El botón «Cerrar sesión» ya no es fijo (SES-083), así que no compite con nada durante el viaje.
+  - Bug encontrado en la prueba de viaje: al iniciar el viaje, MapLibre volvía a abrir la atribución (`open` en el `<details>`), que cubría el panel de navegación y el velocímetro. Se corrige con un `MutationObserver` sobre ese atributo, respetando el clic del usuario en el botón «i». Medido después: colapsada en la esquina, sin solapamientos.
+- Verificación: lint sin errores; 71 tests; build sin errores. Pruebas en el navegador en 375×812 (carga, búsqueda de ruta con opciones, viaje activo).
+- Nota: el build nuevo lo sirven también el preview 5175 del Funnel y el 5176 de prueba (comparten `frontend/dist`). La URL pública ya muestra estos cambios.
+- Pendiente, a revisar con Rodo antes de tocar (mejoras de diseño y nice-to-have): leyenda «Nivel de riesgo» todavía ocupa un bloque grande del mapa; la sugerencia de origen aparece solo al buscar ruta (no hay pista visual de que se puede elegir); el botón «Reportar» queda a 10 px del panel de navegación; la atribución colapsada en escritorio no se revisó con viaje; la pantalla de carga tarda mientras baja el chunk del mapa.
+- No verificado: escritorio con viaje activo, y el flujo de reportar con la app en navegación.

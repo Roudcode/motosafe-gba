@@ -465,22 +465,28 @@ function MapaMotoSafeInner({
     mapRef.current = map
 
     map.on('load', () => {
-      // En celular, MapLibre deja la atribución expandida al cargar y tapa
-      // «Reportar» y los botones de abajo (SES-083). Por debajo del breakpoint
-      // mobile se colapsa al botón «i» (el usuario la abre con ese botón). En
-      // escritorio queda abierta: hay espacio y es la atribución de los datos.
-      // MapLibre a veces vuelve a expandirla después del load (cuando termina de
-      // renderizar), así que se repite en el evento idle.
-      // La atribución es un <details>: lo que la muestra expandida es el atributo
-      // `open`, que MapLibre pone en celular al cargar (la clase sola no alcanza).
-      const colapsarAtribucionEnCelular = () => {
-        if (!window.matchMedia('(max-width: 480px)').matches) return
-        const atribucion = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
-        atribucion?.classList.remove('maplibregl-compact-show')
-        atribucion?.removeAttribute('open')
+      // En celular, MapLibre deja la atribución expandida y tapa «Reportar», el
+      // panel de navegación y el velocímetro (SES-083/086). Por debajo de 480 px
+      // se mantiene colapsada al botón «i». MapLibre la vuelve a abrir cada vez
+      // que cambia el tamaño del mapa (por ejemplo al iniciar un viaje), así que
+      // un MutationObserver corrige ese atributo; el clic del usuario en el botón
+      // «i» se respeta (se marca por un segundo). En escritorio queda abierta.
+      const atribucion = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
+      const esCelular = () => window.matchMedia('(max-width: 480px)').matches
+      let abiertaPorUsuario = false
+      atribucion?.querySelector('.maplibregl-ctrl-attrib-button')?.addEventListener('click', () => {
+        abiertaPorUsuario = true
+        setTimeout(() => { abiertaPorUsuario = false }, 1000)
+      })
+      const corregirAtribucion = () => {
+        if (!atribucion || abiertaPorUsuario || !esCelular()) return
+        atribucion.classList.remove('maplibregl-compact-show')
+        atribucion.removeAttribute('open')
       }
-      colapsarAtribucionEnCelular()
-      map.once('idle', colapsarAtribucionEnCelular)
+      if (atribucion) {
+        new MutationObserver(corregirAtribucion).observe(atribucion, { attributes: true, attributeFilter: ['open'] })
+      }
+      corregirAtribucion()
       onReady?.(map)
       setVersion((v) => v + 1)
     })

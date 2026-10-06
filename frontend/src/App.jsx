@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react'
 import './App.css'
 
 import {
@@ -26,7 +26,8 @@ import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
-import { MapaMotoSafe } from './components/MapaMotoSafe'
+// MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
+const MapaMotoSafe = lazy(() => import('./components/MapaMotoSafe').then((m) => ({ default: m.MapaMotoSafe })))
 import { useSegundosDesde } from './hooks/useSegundosDesde'
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
 import { useSesion } from './sesion'
@@ -1642,7 +1643,7 @@ function App() {
       )}
 
       <div className={`mapa-wrapper ${primeraVezListo ? 'cargado' : ''}`}>
-        <MapaMotoSafe
+        <Suspense fallback={null}><MapaMotoSafe
           tema={tema}
           centro={CENTRO_GBA}
           zoomInicial={11}
@@ -1678,7 +1679,7 @@ function App() {
           progresoRutaIndice={progresoRuta?.indiceCercano ?? null}
           siguiendoUbicacion={siguiendoUbicacion}
           onPaneoManual={manejarPaneoManual}
-        />
+        /></Suspense>
         {mapaListo && (
           <>
             <div className="zoom-controls panel-enter" style={{ animationDelay: '0.1s' }}>
