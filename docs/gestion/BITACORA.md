@@ -1031,3 +1031,5 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - **Estilo Maps/Waze:** durante el viaje, reportar y la llave pasan a una columna a la derecha, en círculos de 52 px; la barra inferior tiene sombra más liviana.
   - Verificado: lint, 77 pruebas y build sin errores. Pendiente: confirmar en el celular la columna derecha y el cierre de la hoja.
 - Pendientes del rediseño (no hechos): «Luego» como bloque separado en la tarjeta de maniobra, chip de velocidad con la misma forma que los botones, y ocultar «Modo Viaje» durante el viaje.
+
+- **SES-099 — pulido del viaje (primera tanda):** la línea «Después:» pasa a un bloque «Luego» separado, con etiqueta y borde superior, dentro de la tarjeta de maniobra. Durante el viaje se oculta el chip de estado «Modo Viaje» de la barra superior. Verificado en el navegador: el bloque «Luego» aparece con el texto del siguiente giro; la leyenda no se renderiza durante el viaje. Lint, 77 pruebas y build sin errores. Pendiente: confirmar en el celular; pulido de velocidad, colores y modo oscuro del viaje.

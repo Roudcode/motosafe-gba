@@ -1316,3 +1316,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .app:has(.nav-resumen-mini) .herramientas-stack { right: 12px; bottom: calc(240px + var(--safe-bottom)); }
 .app:has(.nav-resumen-mini) .herramientas-fab { width: 52px; height: 52px; }
 .app:has(.nav-resumen-mini) .nav-resumen-mini { box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+
+/* ---- Pulido de viaje estilo Maps/Waze (SES-099) --------------------------
+   Tarjeta de maniobra con bloque "Luego" separado; durante el viaje se ocultan
+   el chip de Modo Viaje y la leyenda (ya no hace falta en pantalla de ruta). */
+.navegacion-luego {
+  display: flex; align-items: center; gap: 6px; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border); min-width: 0; font-family: 'Inter', sans-serif;
+}
+.navegacion-luego-etiqueta {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-dim); background: var(--inset); border-radius: 6px; padding: 2px 6px; flex-shrink: 0;
+}
+.navegacion-luego-texto { font-size: var(--fs-sm); color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.app:has(.nav-resumen-mini) .legend,
+.app:has(.nav-resumen-mini) .legend-inseguridad { display: none; }
+.app:has(.nav-resumen-mini) .topbar-status { display: none; }

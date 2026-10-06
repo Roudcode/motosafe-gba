@@ -1484,9 +1484,11 @@ function App() {
                   texto más chico, para que se lea como un dato secundario y
                   no como continuación del mismo mensaje. */}
               {pasoSiguiente && (
-                <span className="navegacion-siguiente">
-                  <CornerDownRight size={11} /> Después: {textoManiobra(pasoSiguiente)}
-                </span>
+                <div className="navegacion-luego">
+                  <span className="navegacion-luego-etiqueta">Luego</span>
+                  <CornerDownRight size={13} />
+                  <span className="navegacion-luego-texto">{textoManiobra(pasoSiguiente)}</span>
+                </div>
               )}
             </div>
           </div>
