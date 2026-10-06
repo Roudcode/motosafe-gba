@@ -1010,3 +1010,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - **Votos:** el popup dice «✓ Sigue ahí · N confirmaron». No se muestran nombres de quienes confirmaron: los votos son anónimos y mostrar identidades expondría a los usuarios.
 - Verificación: lint sin errores (corrido desde `frontend`); 77 pruebas de frontend; 108 de backend; build sin errores.
 - No verificado en el navegador: la distancia por ruta durante un viaje real y el popup de reportes con datos reales.
+
+## 2026-10-06 — SES-095 — Rediseño de la pantalla de viaje (Claude Code)
+
+- Pedido de Rodo: mejorar toda la interfaz al iniciar un viaje.
+- Cambios:
+  - **Barra inferior única:** velocidad (círculo con km/h), tiempo en grande con los minutos, y debajo los km y la hora de llegada. «Salir» con etiqueta y área táctil de 44 px. Centrada, con borde verde. Reemplaza la barra anterior y el velocímetro suelto (que queda oculto durante el viaje).
+  - **Tarjeta de maniobra:** la distancia a la maniobra pasa a 22 px.
+  - **Reportar:** durante el viaje queda solo como ícono redondo, arriba de la barra. Con `aria-label` para lectores de pantalla.
+- Verificación: lint sin errores; 77 pruebas; build sin errores. En el navegador de prueba el contenido de la barra es correcto: «29 KM/H · 27 min · 12,8 km · llegás 03:31 p. m. · Salir». No pude medir posiciones (el panel de prueba no dibuja en ese momento), así que la distribución visual queda por confirmar en el celular.

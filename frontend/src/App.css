@@ -1255,3 +1255,37 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .lugar-card-acciones button { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: var(--fs-md); cursor: pointer; border: 1px solid var(--border); }
 .lugar-card-cerrar { background: var(--inset); color: var(--text); }
 .lugar-card-ir { display: inline-flex; align-items: center; gap: 6px; background: var(--azul); color: #fff; border-color: var(--azul); font-weight: 600; }
+
+/* ---- Pantalla de viaje (SES-095) ----------------------------------------
+   Una sola barra inferior con velocidad, tiempo y llegada, y "Salir" con
+   etiqueta. La tarjeta de maniobra da más peso a la distancia. Durante el
+   viaje, "Reportar" queda solo como ícono para no tapar el mapa. */
+.app .nav-resumen-mini {
+  left: 50%; right: auto; bottom: calc(14px + var(--safe-bottom)); transform: translateX(-50%);
+  width: min(94vw, 440px); max-width: none; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 10px 10px 14px; border-radius: 18px;
+  background: rgba(var(--surface-rgb),0.97); border: 1.5px solid var(--verde);
+  box-shadow: var(--shadow-float);
+}
+.viaje-velocidad {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--border);
+  font-family: 'Space Grotesk', sans-serif; line-height: 1;
+}
+.viaje-velocidad strong { font-size: 18px; }
+.viaje-velocidad span { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+.viaje-tiempo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.viaje-tiempo strong { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.viaje-tiempo span { font-family: 'Inter', sans-serif; font-size: var(--fs-sm); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viaje-salir {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  min-height: 44px; padding: 0 14px; border-radius: 12px; cursor: pointer;
+  background: rgba(255,59,59,0.12); color: #D92D2D; border: 1px solid rgba(255,59,59,0.35);
+  font-family: 'Inter', sans-serif; font-size: var(--fs-md); font-weight: 600;
+}
+.viaje-salir:hover { background: rgba(255,59,59,0.22); }
+.app:has(.nav-resumen-mini) .velocimetro { display: none; }
+.app:has(.nav-resumen-mini) .report-fab { bottom: calc(96px + var(--safe-bottom)); padding: 14px; border-radius: 50%; }
+.app:has(.nav-resumen-mini) .report-fab span { display: none; }
+.navegacion-distancia { font-size: 22px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }

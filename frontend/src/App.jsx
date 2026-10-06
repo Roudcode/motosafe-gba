@@ -1870,15 +1870,22 @@ function App() {
           falta" que le faltaba a la app -- antes, una vez que arrancabas a
           navegar, no había NINGÚN indicador de progreso del viaje. */}
       {rutasCalculadas.length > 0 && modoViaje && (
-        <div className="nav-resumen-mini panel-enter">
-          <div className="nav-resumen-mini-datos">
-            <strong>{etaInfo ? etaInfo.distanciaRestanteKm.toFixed(1) : rutasConScore[rutaSeleccionada]?.km} km</strong>
-            <span className="nav-resumen-mini-sep">·</span>
+        <div className="nav-resumen-mini panel-enter" role="status" aria-live="polite">
+          {velocidadActual != null && (
+            <div className="viaje-velocidad" title="Velocidad actual (GPS)">
+              <strong>{Math.round(velocidadActual * 3.6)}</strong>
+              <span>km/h</span>
+            </div>
+          )}
+          <div className="viaje-tiempo">
             <strong>{etaInfo ? etaInfo.minRestante : rutasConScore[rutaSeleccionada]?.min} min</strong>
-            {etaInfo && <span className="nav-resumen-mini-llegada">llegás {etaInfo.horaLlegada}</span>}
+            <span>
+              {etaInfo ? etaInfo.distanciaRestanteKm.toFixed(1) : rutasConScore[rutaSeleccionada]?.km} km
+              {etaInfo && <> · llegás {etaInfo.horaLlegada}</>}
+            </span>
           </div>
-          <button className="nav-resumen-mini-detener" onClick={desactivarModoViaje} aria-label="Detener navegación">
-            <Square size={12} /> Salir
+          <button className="viaje-salir" onClick={desactivarModoViaje} aria-label="Detener navegación">
+            <Square size={12} /> <span>Salir</span>
           </button>
         </div>
       )}
@@ -2023,7 +2030,7 @@ function App() {
         </button>
       </div>
 
-      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''} ${mostrandoOpcionesRuta ? 'oculto-por-ruta' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte}>
+      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''} ${mostrandoOpcionesRuta ? 'oculto-por-ruta' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte} aria-label={paso === 'idle' ? 'Reportar' : undefined}>
         {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? <X size={16} /> : <TriangleAlert size={16} />}
         <span>{paso === 'buscando' ? 'Ubicando...' : paso === 'eligiendo' ? 'Cancelar' : 'Reportar'}</span>
       </button>
