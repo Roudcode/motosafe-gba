@@ -668,3 +668,23 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - De las 3 abstenciones, una era un falso rechazo («Almirante Brown 500», con el partido solo en `display_name`) que además destapó un error de extracción: la nota era de Grand Bourg.
   - Final: 79 ubicadas, 29 vacías, 2 abstenciones correctas, Monte Grande en Esteban Echeverría y Grand Bourg en Malvinas Argentinas.
 - No se tocó la base: las filas históricas de `reportes_prensa` ubicadas con el método anterior siguen ahí. Corregirlas es escribir en la base de Rodo y queda anotado como pendiente.
+
+## 2026-10-06 — SES-070 — Pool y migraciones contra PostgreSQL real (A12, T01) (Claude Code)
+
+- Alcance: A12 (P2, validado parcialmente) solo necesitaba la prueba contra PostgreSQL real. Se trabajó junto con T01 porque se solapan.
+- Cambio: nuevo `backend/tests/test_integracion_postgres.py`, con 7 tests. Se saltea sin `MOTOSAFE_TEST_DATABASE_URL`; con ella, crea una base aleatoria en un servidor desechable y la borra al terminar.
+- Escenarios:
+  - 4 procesos migrando a la vez;
+  - idempotencia y PostGIS;
+  - límite del pool con conexiones reales;
+  - rollback después de un error SQL;
+  - conexión cortada con `pg_terminate_backend`;
+  - ciclo de reportes contra la base: token como hash, voto reemplazado, `ON DELETE CASCADE`;
+  - `/health`.
+- Verificación:
+  - PostGIS 16.4 en un contenedor en `127.0.0.1:55433`: 7/7 a la primera.
+  - Control negativo: sin el `pg_advisory_xact_lock` de `migrar.py`, el test de concurrencia falló 3 de 3 veces; después se restauró el archivo.
+  - Suite completa: 93 aprobados y 7 salteados sin la variable; 100 aprobados con ella. No quedaron bases de prueba y el contenedor se eliminó.
+- CI: el job de backend levanta `postgis/postgis:16-3.4` (credenciales desechables del servicio) y corre toda la suite. Sigue sin confirmarse en GitHub.
+- Hallazgo documentado sin cambio: la primera consulta sobre una conexión que cortó el servidor falla antes de que el pool la descarte. No se agregó reintento porque reintentar escrituras puede duplicar reportes, y eso merece un diseño aparte.
+- Estados: A12 validado y T01 validado parcialmente. Faltan permisos de un rol sin privilegios y la corrida en GitHub.

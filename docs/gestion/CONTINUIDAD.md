@@ -115,3 +115,7 @@ Dependencias transitivas fijadas con hashes (`backend/requirements.lock`, `requi
 ## Actualización 2026-10-06 — SES-069: A09 geocodificación de zonas
 
 El scraper valida que el geocode caiga en la zona que nombra la nota y se abstiene si no es así. Sobre las 87 zonas del gazetteer, el método anterior ubicaba mal 11 y el nuevo ninguna (verificado por geocodificación inversa). La corrida real ubicó 79 de 132 candidatas, contra 78 antes. **Pendiente de decisión de Rodo:** si se re-geocodifican las filas históricas de `reportes_prensa`, porque implica escribir en su base.
+
+## Actualización 2026-10-06 — SES-070: A12/T01 contra PostgreSQL real
+
+Tests de integración contra un PostGIS desechable: migraciones concurrentes, límites y recuperación del pool, y ciclo de reportes. Pasan 7/7, con control negativo. A12 queda validado. El CI levanta PostGIS y los corre; falta confirmarlo en GitHub.
