@@ -61,6 +61,10 @@ const DISTANCIA_MIN_PARA_RUMBO_KM = 0.003
 // fondo que el piso de velocidad para el ETA más abajo: por debajo de esto,
 // la señal no alcanza para decir hacia dónde se apunta.
 const VELOCIDAD_MIN_PARA_RUMBO_GPS = 1.5
+// Por debajo de ~15 km/h (4,2 m/s) el ritmo GPS no sirve para estimar el tiempo: el
+// reparto proporcional de la ruta es mas estable (SES-089). Antes el piso era 1,5 m/s.
+const VELOCIDAD_MIN_PARA_ETA_GPS = 4.2
+const CLAVE_BUSQUEDAS_RECIENTES = 'motosafe_busquedas_recientes'
 
 // Umbral para considerar que el usuario se desvió de la ruta calculada (no
 // que el GPS tembló): más que el ruido normal en calle (~15-30m con buena
@@ -191,6 +195,8 @@ function App() {
   // origen/destino para eso, y "elegir" un resultado la manda directo a
   // centra el mapa en el resultado (ver buscarEnMapa más abajo).
   const sugBusqueda = useBusquedaDireccion()
+  const [recientes, setRecientes] = useState(() => cargarDeLocalStorage(CLAVE_BUSQUEDAS_RECIENTES, []))
+  const [buscaEnFoco, setBuscaEnFoco] = useState(false)
   const [campoActivo, setCampoActivo] = useState(null)
   const [rutasCalculadas, setRutasCalculadas] = useState([])
   const [rutaSeleccionada, setRutaSeleccionada] = useState(0)
@@ -939,6 +945,9 @@ function App() {
   // (como cualquier buscador) y lo deja cargado como destino para "Trazar ruta",
   // sin abrir el panel de ruta que tapaba el mapa (SES-088).
   const buscarEnMapa = (sug) => {
+    const nuevasRecientes = [sug, ...recientes.filter((r) => r.label !== sug.label)].slice(0, 5)
+    setRecientes(nuevasRecientes)
+    guardarEnLocalStorage(CLAVE_BUSQUEDAS_RECIENTES, nuevasRecientes)
     setDestinoTexto(sug.label)
     setDestinoPunto({ lat: sug.lat, lng: sug.lng })
     setVuelo({ lat: sug.lat, lng: sug.lng, zoom: 16 })
@@ -1259,7 +1268,7 @@ function App() {
     // (mismo umbral que ya se usa para no confiar en el rumbo a esa
     // velocidad) se cae al reparto proporcional del tiempo total de la ruta,
     // una aproximación razonable para "estoy parado un momento", no exacta.
-    const velocidadConfiableParaEta = velocidadActual != null && velocidadActual >= VELOCIDAD_MIN_PARA_RUMBO_GPS
+    const velocidadConfiableParaEta = velocidadActual != null && velocidadActual >= VELOCIDAD_MIN_PARA_ETA_GPS
     const minRestante = velocidadConfiableParaEta
       ? (progresoRuta.distanciaRestanteKm / (velocidadActual * 3.6)) * 60
       : ruta.min * (1 - progresoRuta.fraccionRecorrida)
@@ -1561,7 +1570,7 @@ function App() {
       {!vistaNavegacion && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input type="text" placeholder="Buscar lugar, calle o local (Enter)..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onBlur={() => setTimeout(sugBusqueda.limpiar, 150)} aria-label="Buscar zona o avenida" autoComplete="off" />
+          <input type="text" placeholder="Buscar lugar, calle o local (Enter)..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={() => { setBuscaEnFoco(false); setTimeout(sugBusqueda.limpiar, 150) }} aria-label="Buscar lugar, calle o local" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
@@ -1575,6 +1584,18 @@ function App() {
               ))}
               {sugBusqueda.buscada && sugBusqueda.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección. Probá con más detalle.</li>}
               {sugBusqueda.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
+            </ul>
+          )}
+          {buscaEnFoco && !busqueda.trim() && recientes.length > 0 && (
+            <ul className="ruta-form-sugerencias searchbar-sugerencias">
+              <li className="ruta-form-sin-resultados">Recientes</li>
+              {recientes.map((r, i) => (
+                <li key={`${r.label}-${i}`}>
+                  <button type="button" onMouseDown={() => buscarEnMapa(r)}>
+                    <Clock size={12} /> {r.label}
+                  </button>
+                </li>
+              ))}
             </ul>
           )}
         </div>

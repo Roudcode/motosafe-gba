@@ -414,14 +414,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    (antes era un ícono suelto, sin indicio de que se podía tocar; SES-086). */
 .searchbar-icon {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 30px; height: 30px; border-radius: 50%; padding: 0; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 50%; padding: 0; cursor: pointer;
   color: var(--text); background: var(--inset); border: 1px solid var(--border);
 }
 .searchbar-icon:hover, .searchbar-icon:focus-visible { background: var(--border); outline: none; }
 .searchbar-icon:disabled { cursor: default; opacity: 0.4; }
 .searchbar input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: 'Inter', sans-serif; font-size: var(--fs-md); }
 .searchbar input::placeholder { color: var(--text-dimmer); }
-.searchbar-clear { display: flex; background: none; border: none; color: var(--text-dim); cursor: pointer; }
+.searchbar-clear { display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; background: none; border: none; color: var(--text-dim); cursor: pointer; }
 /* El indent de 16px de .ruta-form-sugerencias es para no tapar el puntito
    de color (origen/destino) de esa fila -- la searchbar no tiene ese
    puntito, así que el dropdown va de punta a punta. */

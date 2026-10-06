@@ -951,3 +951,23 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificación: lint sin errores; 75 pruebas; build sin errores.
 - Decisión a confirmar: la búsqueda ya no abre la ruta automáticamente (antes sí). Si preferís que abra «Trazar ruta» como antes, es un cambio de una línea.
 - Pendiente: la búsqueda de lugares depende de Nominatim (ver A18: su política no admite autocompletar, pero sí buscar al confirmar, que es como funciona ahora).
+
+## 2026-10-06 — SES-089 — Auditoría completa: bugs y mejoras de búsqueda (Claude Code)
+
+- Pedido de Rodo: auditar toda la app y avanzar con el listado, decidiendo lo que no requiera su aprobación.
+- Hecho en esta sesión:
+  - **B2 (ETA absurdo):** el GPS solo estima el tiempo desde 15 km/h (antes el piso era 1,5 m/s, unos 5 km/h, y daba «554 min»). Por debajo se usa el reparto proporcional de la ruta. Constante `VELOCIDAD_MIN_PARA_ETA_GPS`.
+  - **S1 y S2 (recientes):** los últimos cinco lugares elegidos se guardan en `localStorage` (`motosafe_busquedas_recientes`). Al enfocar el buscador vacío aparecen como «Recientes». Verificado en el navegador.
+  - **B5 (etiqueta):** el `aria-label` del buscador coincide con el placeholder.
+  - **A2 (área táctil):** la lupa pasa de 30 a 36 px, y el botón de borrar la búsqueda tiene al menos 36 px.
+- Pendiente, con decisión o trabajo grande:
+  - **B1 (distancia de maniobra en línea recta):** requiere la geometría de la ruta por paso. Sin decisión tuya, queda como está, con la corrección de SES-087 para que no se trabe.
+  - **B3 (vista previa de la ruta antes de elegir):** pendiente.
+  - **B4 (la búsqueda abre o no «Trazar ruta»):** decisión tuya. Hoy solo centra el mapa.
+  - **B6 (modal de bienvenida por origen):** decisión tuya si se pasa a una cookie o a la cuenta.
+  - **B7 (chunk del mapa de 1 MB):** no se reduce más sin cambiar de librería.
+  - **S3 (categorías), S4 (ficha del lugar), S5 (autocompletado):** S5 depende de elegir otro proveedor de búsqueda (A18). S3 y S4 requieren diseño.
+  - **N1 a N7 (navegación):** la voz (N2) y compartir llegada (N4) son las más pedidas en Waze y Maps; las dos requieren decisión de alcance.
+  - **M1 (leyenda), P2 (íconos sin texto), P1 (paneles):** propuesta visual antes de tocar.
+  - **R1 a R3 (reportes), A1 (contraste), A3 (sin conexión):** pendientes.
+- Verificación: lint sin errores; 75 pruebas; build sin errores.
