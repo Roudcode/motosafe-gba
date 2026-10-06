@@ -1000,3 +1000,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Vista previa: las alternativas de ruta ya se dibujan en el mapa cuando el panel de opciones está abierto (capa `rutas`). No verifiqué en el navegador que la opción elegida se distinga de las demás; queda para confirmar en el celular.
 - Verificación: lint sin errores; 75 pruebas; build sin errores. Verificado en el navegador: la tarjeta aparece con nombre, «Cerrar» e «Ir». No verificado: el botón «Ir» con ubicación real (el navegador de prueba no tiene GPS).
 - Revisión punta a punta: el listado completo está en el chat, con las decisiones tomadas.
+
+## 2026-10-06 — SES-094 — Distancia de maniobra por ruta y datos de vigencia de reportes (Claude Code)
+
+- Avance del listado de la revisión punta a punta (sin decisiones pendientes de Rodo).
+- Cambios:
+  - **Distancia a la maniobra por la ruta (N1):** la tarjeta de navegación usa el recorrido sobre la polilínea (`calcularProgresoRuta` del paso menos el recorrido actual), en vez de la línea recta. Si no hay geometría, cae a la línea recta.
+  - **Vencimiento de reportes:** el backend devuelve `vence_en` por reporte (según la vigencia de su categoría). El popup muestra «vence en N h / N días» junto a la antigüedad, con `formatearVence` (pruebas nuevas).
+  - **Votos:** el popup dice «✓ Sigue ahí · N confirmaron». No se muestran nombres de quienes confirmaron: los votos son anónimos y mostrar identidades expondría a los usuarios.
+- Verificación: lint sin errores (corrido desde `frontend`); 77 pruebas de frontend; 108 de backend; build sin errores.
+- No verificado en el navegador: la distancia por ruta durante un viaje real y el popup de reportes con datos reales.

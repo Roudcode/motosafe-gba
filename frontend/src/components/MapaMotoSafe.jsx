@@ -43,7 +43,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import urlWorkerMaplibre from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { NIVELES, NIVELES_INSEGURIDAD_COLOR, CATEGORIAS_REPORTE, VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT } from '../constants'
 import { crearIconoCluster, crearIconoClusterInseguridad } from '../utils/ui'
-import { opacidadPorAntiguedad, esReciente, formatearAntiguedad } from '../utils/tiempo'
+import { opacidadPorAntiguedad, esReciente, formatearAntiguedad, formatearVence } from '../utils/tiempo'
 
 if (import.meta.env.PROD) setWorkerUrl(urlWorkerMaplibre)
 
@@ -883,14 +883,14 @@ function MapaMotoSafeInner({
         // mostrar botones que van a fallar).
         const botonesVoto = esPropio ? '' : `
               <div class="popup-votos">
-                <button class="popup-voto-btn popup-voto-confirma" data-tipo="confirma">✓ Sigue ahí (${rep.confirmaciones || 0})</button>
+                <button class="popup-voto-btn popup-voto-confirma" data-tipo="confirma">✓ Sigue ahí · ${rep.confirmaciones || 0} confirmaron</button>
                 <button class="popup-voto-btn popup-voto-desmiente" data-tipo="desmiente">✕ Ya no está (${rep.desmentidas || 0})</button>
               </div>`
         popup = new Popup({ closeButton: true })
           .setLngLat([rep.lng, rep.lat])
           .setHTML(`
             <div class="popup-content">
-              <span class="popup-nivel" style="color:${color}">${esPropio ? 'Tu reporte' : 'Reporte de otro usuario'} · ${formatearAntiguedad(rep.creadoEn, horaActual)}</span>
+              <span class="popup-nivel" style="color:${color}">${esPropio ? 'Tu reporte' : 'Reporte de otro usuario'} · ${formatearAntiguedad(rep.creadoEn, horaActual)} · ${formatearVence(rep.venceEn)}</span>
               <strong>${label}</strong>
               ${botonesVoto}
             </div>

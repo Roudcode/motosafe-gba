@@ -45,3 +45,14 @@ export function formatearPeriodo(desde, hasta) {
   if (md === 1 && dd === 1 && mh === 12 && dh === 31) return ad === ah ? `${ad}` : `${ad}–${ah}`
   return `${MESES[md - 1]} ${ad}–${MESES[mh - 1]} ${ah}`
 }
+
+// Cuánto falta para que un reporte venza, en lenguaje corto (SES-094).
+export function formatearVence(isoVencimiento, ahoraMs = Date.now()) {
+  if (!isoVencimiento) return ''
+  const horas = (new Date(isoVencimiento).getTime() - ahoraMs) / 3600000
+  if (Number.isNaN(horas)) return ''
+  if (horas <= 0) return 'ya venció'
+  if (horas < 1) return 'vence en menos de 1 h'
+  if (horas < 48) return `vence en ${Math.round(horas)} h`
+  return `vence en ${Math.round(horas / 24)} días`
+}

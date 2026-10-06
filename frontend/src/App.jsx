@@ -487,6 +487,7 @@ function App() {
           esPropio: Boolean(tokensReportes[String(r.id)]),
           creadoEn: r.creado_en,
           confirmaciones: r.confirmaciones || 0,
+          venceEn: r.vence_en,
           desmentidas: r.desmentidas || 0,
           estado: 'vigente',
       }))))
@@ -1269,6 +1270,15 @@ function App() {
     return calcularProgresoRuta(miUbicacion, ruta.coords)
   }, [modoViaje, miUbicacion, rutasConScore, rutaSeleccionada])
 
+  // Distancia a la próxima maniobra medida POR LA RUTA (no en línea recta):
+  // recorrido hasta el paso menos el recorrido actual, sobre la polilínea (SES-094).
+  // Si no hay geometría, cae a la distancia en línea recta.
+  const distanciaManiobraKm = (paso) => {
+    const ruta = rutasConScore[rutaSeleccionada]
+    if (!progresoRuta || !ruta?.coords || !paso) return distanciaKm(miUbicacion, paso)
+    const recorridoPaso = calcularProgresoRuta(paso, ruta.coords).distanciaRecorridaKm
+    return Math.max(0, recorridoPaso - progresoRuta.distanciaRecorridaKm)
+  }
   const etaInfo = useMemo(() => {
     if (!progresoRuta) return null
     const ruta = rutasConScore[rutaSeleccionada]
@@ -1463,7 +1473,7 @@ function App() {
             <div className="navegacion-texto">
               {miUbicacion && (
                 <span className="navegacion-distancia">
-                  {formatearDistancia(distanciaKm(miUbicacion, pasoActivo))}
+                  {formatearDistancia(distanciaManiobraKm(pasoActivo))}
                 </span>
               )}
               <strong>{textoManiobra(pasoActivo)}</strong>

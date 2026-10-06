@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatearAntiguedad, opacidadPorAntiguedad, esReciente, formatearDistancia, formatearPeriodo } from './tiempo'
+import { formatearAntiguedad, opacidadPorAntiguedad, esReciente, formatearDistancia, formatearPeriodo, formatearVence } from './tiempo'
 
 const AHORA = new Date('2026-09-07T12:00:00.000Z').getTime()
 const hace = (ms) => new Date(AHORA - ms).toISOString()
@@ -102,5 +102,18 @@ describe('formatearPeriodo', () => {
 
   it('no inventa un período si falta una fecha', () => {
     expect(formatearPeriodo(null, '2025-12-31')).toBeNull()
+  })
+})
+
+describe('formatearVence', () => {
+  const ahora = Date.parse('2026-10-06T12:00:00Z')
+  it('expresa el tiempo que falta', () => {
+    expect(formatearVence('2026-10-06T12:30:00Z', ahora)).toBe('vence en menos de 1 h')
+    expect(formatearVence('2026-10-06T20:00:00Z', ahora)).toBe('vence en 8 h')
+    expect(formatearVence('2026-10-16T12:00:00Z', ahora)).toBe('vence en 10 días')
+  })
+  it('marca los vencidos y tolera datos faltantes', () => {
+    expect(formatearVence('2026-10-06T11:00:00Z', ahora)).toBe('ya venció')
+    expect(formatearVence(null, ahora)).toBe('')
   })
 })

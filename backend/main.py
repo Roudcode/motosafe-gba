@@ -4,7 +4,7 @@ import time
 import os
 import hashlib
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
@@ -964,6 +964,7 @@ def listar_reportes():
             'id': fila['id'], 'lat': fila['lat'], 'lng': fila['lng'],
             'categoria': fila['categoria'], 'creado_en': fila['creado_en'],
             'confirmaciones': confirmaciones, 'desmentidas': desmentidas,
+            'vence_en': (fila['creado_en'] + timedelta(hours=vigencia_horas)).isoformat(),
         })
     return vigentes
 
