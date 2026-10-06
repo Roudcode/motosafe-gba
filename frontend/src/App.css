@@ -1234,3 +1234,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 /* Mientras el panel de opciones de ruta está abierto, Reportar taparía su botón "Nueva ruta" (SES-087). */
 .report-fab.oculto-por-ruta { display: none; }
+
+/* iOS hace zoom a toda la pagina al enfocar un campo con texto menor a 16 px.
+   Por eso los campos quedan en 16 px en celular (SES-091). */
+@media (max-width: 480px) {
+  input, textarea, select { font-size: 16px; }
+}

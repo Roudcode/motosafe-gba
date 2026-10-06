@@ -985,3 +985,5 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - A revisar: el cupo y los términos de TomTom para búsqueda, además del ruteo (ya están en la lista de términos antes de uso comercial).
 
 - **SES-090 (ajuste):** elegir un resultado de la búsqueda ya no cambia el zoom: el mapa se desplaza al lugar con el zoom actual. Antes forzaba zoom 16. El efecto de vuelo usa el zoom que venga en `vuelo` y, si no viene, el actual del mapa. Lint, 75 pruebas y build sin errores.
+
+- **SES-091:** al tocar la barra de búsqueda en iPhone, Safari hacía zoom a toda la interfaz, porque los campos tenían 13 px (iOS hace zoom debajo de 16 px). Ahora todos los campos quedan en 16 px en pantallas de hasta 480 px, y los del login también. Lint, 75 pruebas y build sin errores. No lo probé en un iPhone real: en el navegador de prueba no se reproduce el zoom de Safari; hay que confirmarlo en el celular.

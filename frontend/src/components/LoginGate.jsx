@@ -137,7 +137,7 @@ const estilos = {
   subtitulo: { color: '#8A9099', fontSize: 13, margin: '0 0 8px', textAlign: 'center' },
   input: {
     background: '#14171A', border: '1px solid #2C3138', borderRadius: 8, padding: '10px 12px',
-    color: '#E8EAED', fontSize: 15, outline: 'none',
+    color: '#E8EAED', fontSize: 16, outline: 'none',
   },
   boton: {
     background: '#FFC933', color: '#14171A', border: 'none', borderRadius: 8, padding: '10px 12px',
