@@ -270,6 +270,22 @@ function App() {
     if (vuelo && mapaListo) mapaRef.current?.flyTo({ center: [vuelo.lng, vuelo.lat], zoom: vuelo.zoom ?? mapaRef.current.getZoom(), duration: 1400 })
   }, [vuelo, mapaListo])
 
+  // Pide la ubicación UNA vez al abrir la app, en silencio (sin mover el
+  // mapa ni mostrar nada) -- antes `miUbicacion` quedaba en null hasta que
+  // el usuario tocaba "Mi ubicación" o arrancaba un viaje, así que buscar
+  // "farmacia" recién abierta la app siempre sesgaba desde CABA aunque el
+  // celular tuviera GPS activado (SES-109: Rodo lo reportó parado en
+  // Pilar). Si el usuario no dio permiso, falla en silencio y queda como
+  // estaba: sin ubicación, igual que antes de este cambio.
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setMiUbicacion((anterior) => anterior ?? { lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 8000, maximumAge: 300000 }
+    )
+  }, [])
+
   // Publica la altura real del topbar en --topbar-h en cada resize (rotar el
   // celular, que el badge de clima aparezca/desaparezca, que el status pill
   // pase a 2 lineas por un texto largo, etc). ResizeObserver dispara una vez
