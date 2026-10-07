@@ -819,6 +819,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-hint { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: var(--fs-sm); color: var(--text-dim); }
 
 .maplibregl-popup-content { background: var(--surface-solid); color: var(--text); border-radius: 10px; border: 1px solid var(--border); padding: 10px 12px; }
+/* El botón nativo de cerrar (una "x" sin estilo propio, flotando sobre el
+   borde de la tarjeta) y la puntita del globo quedaban con el blanco/negro
+   por defecto del navegador, sin relación con el tema -- mismo tratamiento
+   que ya tienen los demás botones de cerrar de la app (lugar, reporte). */
+.maplibregl-popup-close-button {
+  top: 6px !important; right: 6px !important; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+  background: var(--inset); color: var(--text-dim); border: none; transition: all 0.15s ease;
+}
+.maplibregl-popup-close-button:hover { background: var(--border); color: var(--text); }
+.maplibregl-popup-tip { border-top-color: var(--surface-solid) !important; border-bottom-color: var(--surface-solid) !important; }
 
 /* ---- Atribución del mapa (SES-105) -----------------------------------
    MapLibre no trae estilo propio para esto: quedaba como una franja blanca
