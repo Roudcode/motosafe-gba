@@ -1108,4 +1108,11 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Límite real, no resuelto: "USAL" como sigla no lo reconoce ninguna de las dos APIs, hace falta el nombre completo. Un barrio privado puede no estar en ninguna base de comercios -- para esos casos la app ya permite marcar el punto a mano tocando el mapa.
   - Verificado: 114 tests de backend (6 nuevos) sin errores. Probado en vivo contra las dos APIs reales con un backend local en un puerto nuevo cada vez (ver nota de infraestructura abajo): "Universidad del Salvador Pilar" trae el campus de Pilar primero; "Fika Pilar" sigue resolviendo solo con TomTom.
   - **Nota de infraestructura:** durante la verificación, reiniciar el backend de prueba en el mismo puerto (8001) sirvió una y otra vez al proceso VIEJO en vez del nuevo -- `pkill` (desde Bash/MSYS) no estaba matando el proceso real de Windows de forma confiable, un problema similar (aunque de causa distinta) al de los PID fantasma de SES-106/107. Se resolvió usando un puerto nuevo en cada intento. Pendiente: si esto se repite, preferir `Stop-Process` por PID exacto (vía `Get-CimInstance`) a `pkill`.
-  - Commit: `10af154`. **Pendiente el mismo reinicio del backend real (puerto 8000)** que SES-107 -- no se hizo todavía.
+  - Commit: `10af154`. Rodo corrió `reiniciar_app.bat` después de este commit -- confirmado por la hora del proceso (16:10) posterior a la del archivo (16:06): el backend real ya tiene este cambio y el de SES-107.
+
+- **SES-109 — la ubicación nunca se pedía sola (Claude Code):**
+  - Rodo probó "farmacia" parado en Pilar, con el GPS del iPhone activado, y seguía trayendo resultados de CABA -- "no noto el cambio".
+  - Causa real: la app nunca pedía la ubicación automáticamente al abrirse. `miUbicacion` quedaba en `null` hasta que el usuario tocaba "Mi ubicación" o arrancaba un viaje -- el permiso del sistema operativo estaba dado, pero la app nunca había llamado a `getCurrentPosition`. El sesgo de SES-107 no tenía nada que usar.
+  - Corregido: pedido de ubicación una vez al montar la app, en silencio (sin mover el mapa, sin toast, sin el spinner del botón "Mi ubicación"). Si no hay permiso, falla en silencio y queda como antes.
+  - Verificado: lint, 79 tests y build sin errores. Visto en el navegador (sin GPS real en el entorno de prueba): carga sin errores de consola.
+  - Commit: `5a40745`. Solo tocó frontend -- preview reconstruido y confirmado, sin necesitar otro reinicio del backend.
