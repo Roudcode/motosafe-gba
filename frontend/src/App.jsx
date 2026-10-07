@@ -80,6 +80,11 @@ const DESVIOS_SEGUIDOS_PARA_RECALCULAR = 3
 // el desvío real persista.
 const COOLDOWN_RECALCULO_MS = 20000
 
+// Distancia al punto de destino para dar el viaje por terminado solo. Más
+// chico que el radio de maniobra normal (30 m, ver siguientePaso): llegar al
+// radio de maniobra del último paso solo dice "estás cerca", no "ya llegaste".
+const RADIO_LLEGADA_KM = 0.025
+
 // Barra de escala manual (mismo cálculo que antes, con Leaflet): MapLibre no
 // tiene un control de escala con este estilo visual propio (el suyo trae su
 // propio look), así que se mantiene el mismo diseño calculando a mano sobre
@@ -733,7 +738,9 @@ function App() {
     mostrarToast(conVistaNavegacion ? 'Navegación iniciada' : 'Modo Viaje activado')
   }
 
-  const desactivarModoViaje = () => {
+  // `mensaje` lo pisa la llegada automática ("Llegaste a destino" en vez de
+  // "Modo Viaje desactivado") -- mismo apagado, distinto motivo.
+  const desactivarModoViaje = (mensaje = 'Modo Viaje desactivado') => {
     if (watchId != null) navigator.geolocation.clearWatch(watchId)
     desactivarBrujula()
     setWatchId(null)
@@ -745,7 +752,7 @@ function App() {
     setAlertaViaje(null)
     setReportesAlertados(new Set())
     setAlertaReporte(null)
-    mostrarToast('Modo Viaje desactivado')
+    mostrarToast(mensaje)
   }
 
   const toggleModoViaje = () => {
@@ -1132,6 +1139,24 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [miUbicacion, modoViaje])
+
+  // Llegada a destino: antes la tarjeta de maniobra llegaba a mostrar "Llegaste
+  // a destino" (texto del último paso, tipo 'arrive') y se quedaba así -- nada
+  // apagaba el viaje. pasoActual llega al último índice de pasos (ver
+  // siguientePaso) apenas se entra en su radio de maniobra, que es más grande
+  // que estar realmente parado en el destino, así que acá se exige además una
+  // distancia corta de verdad antes de cortar.
+  useEffect(() => {
+    if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
+    const pasos = rutasCalculadas[rutaSeleccionada]?.pasos || []
+    const ultimoPaso = pasos[pasos.length - 1]
+    if (!ultimoPaso || ultimoPaso.tipo !== 'arrive' || pasoActual < pasos.length - 1) return
+    if (distanciaKm(miUbicacion, ultimoPaso) > RADIO_LLEGADA_KM) return
+    // Reaccion a un cambio de posicion GPS (sistema externo), no estado derivado.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    desactivarModoViaje('Llegaste a destino')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [miUbicacion, modoViaje, pasoActual])
 
   // --- detección de desvío + reroute automático -----------------------------
   // Hasta ahora, si te equivocabas de calle en plena navegación, la ruta se
@@ -1887,7 +1912,7 @@ function App() {
               {etaInfo && <> · llegás {etaInfo.horaLlegada}</>}
             </span>
           </div>
-          <button className="viaje-salir" onClick={desactivarModoViaje} aria-label="Detener navegación">
+          <button className="viaje-salir" onClick={() => desactivarModoViaje()} aria-label="Detener navegación">
             <Square size={12} /> <span>Salir</span>
           </button>
         </div>
