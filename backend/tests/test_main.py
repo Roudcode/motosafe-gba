@@ -1251,6 +1251,40 @@ def test_lugares_manda_la_posicion_del_usuario_a_tomtom(monkeypatch):
     assert get.call_args.kwargs["params"]["lon"] == -58.7896
 
 
+def test_nominatim_usa_un_viewbox_angosto_alrededor_del_centro_real(monkeypatch):
+    # Bug real (SES-110): esta función nunca recibía el centro del usuario y
+    # siempre pedía con un viewbox de ARGENTINA ENTERA, que en la práctica no
+    # sesgaba nada -- Nominatim devolvía su propio orden de "importancia"
+    # (CABA primero) sin importar dónde estuviera el usuario.
+    respuesta = MagicMock()
+    respuesta.json.return_value = []
+    with patch("main.httpx.get", return_value=respuesta) as get:
+        main._buscar_lugares_nominatim('farmacia', 5, centro_lat=-34.4180, centro_lon=-58.9817)
+    viewbox = get.call_args.kwargs['params']['viewbox']
+    assert viewbox == '-59.4817,-33.918,-58.4817,-34.918'
+
+
+def test_nominatim_sin_centro_cae_al_viewbox_de_todo_el_pais(monkeypatch):
+    respuesta = MagicMock()
+    respuesta.json.return_value = []
+    with patch("main.httpx.get", return_value=respuesta) as get:
+        main._buscar_lugares_nominatim('farmacia', 5)
+    assert get.call_args.kwargs['params']['viewbox'] == main._VIEWBOX_ARGENTINA
+
+
+def test_lugares_pasa_el_centro_real_al_respaldo_de_nominatim(monkeypatch):
+    respuesta_tomtom = MagicMock()
+    respuesta_tomtom.json.return_value = {"results": []}
+    respuesta_nominatim = MagicMock()
+    respuesta_nominatim.json.return_value = []
+    with patch("main.httpx.get", side_effect=[respuesta_tomtom, respuesta_nominatim]) as get, \
+         patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        client.get("/lugares", params={"q": "farmacia", "lat": -34.4180, "lng": -58.9817})
+    viewbox_nominatim = get.call_args_list[1].kwargs['params']['viewbox']
+    assert viewbox_nominatim == '-59.4817,-33.918,-58.4817,-34.918'
+
+
 def test_lugares_cae_a_nominatim_cuando_tomtom_no_encuentra_nada(monkeypatch):
     # Caso real reportado por Rodo (SES-108): el campus de la USAL en Pilar
     # no está en TomTom bajo ningún nombre, pero sí en OpenStreetMap.
@@ -1335,6 +1369,15 @@ def test_algun_resultado_relevante():
     # Consulta sin palabras evaluables (todo corto o numerico): no se puede
     # juzgar relevancia, así que no se fuerza el respaldo.
     assert main._algun_resultado_relevante("22", [{"label": "cualquier cosa"}]) is True
+    # Caso real (SES-110): "farmacia" en Pilar da resultados reales y bien
+    # ubicados (nombres de marca de laboratorios del parque industrial), pero
+    # ninguno contiene el substring exacto "farmacia" -- exigir substring
+    # exacto los rechazaba a todos. Con similitud de texto, sí se reconocen.
+    assert main._algun_resultado_relevante("farmacia", [{"label": "Fada Fharma, Calle 8, Pilar"}]) is True
+    assert main._algun_resultado_relevante("farmacia", [{"label": "Biofarma, Km 63 8, Pilar"}]) is True
+    # Pero no cualquier cosa cercana: sin relación real, se sigue rechazando.
+    assert main._algun_resultado_relevante("farmacia", [{"label": "Bayer Pilar, Calle 5 5, Pilar"}]) is False
+    assert main._algun_resultado_relevante("farmacia", [{"label": "Laboratorio Casasco, Pilar"}]) is False
 
 
 def test_lugares_no_consulta_nominatim_si_tomtom_ya_encontro_algo(monkeypatch):

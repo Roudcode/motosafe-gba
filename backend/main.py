@@ -6,6 +6,7 @@ import hashlib
 import re
 import secrets
 import unicodedata
+from difflib import SequenceMatcher
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -1683,11 +1684,17 @@ _CACHE_LUGARES_TTL_SEGUNDOS = 600
 # depende de que alguien escriba y TomTom falle, nunca un bucle).
 NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 _NOMINATIM_USER_AGENT = 'MotoSafeGBA-tesis-USAL/1.0 (proyecto academico, contacto en README del repo)'
-# Caja amplia de Argentina (no solo GBA): mismo motivo que el radio de 150 km
-# de TomTom, un lugar real puede estar fuera del conurbano en sentido
-# estricto. bounded=0 en la consulta real es un SESGO (prioriza lo cercano a
-# esta caja sin descartar lo de afuera), no un corte duro.
+# Caja amplia de Argentina entera, SOLO como último respaldo si no hay
+# centro real -- un lugar puede estar fuera del conurbano en sentido
+# estricto (mismo motivo que el radio de 150 km de TomTom).
 _VIEWBOX_ARGENTINA = '-73.6,-21.8,-53.6,-55.1'
+# Medio grado (~55 km) a cada lado del centro real: bug real medido (SES-110,
+# Rodo parado en Pilar) -- esta función nunca recibía el centro del usuario y
+# siempre pedía con el viewbox de PAÍS ENTERO de arriba. bounded=0 ahí es un
+# sesgo tan débil (toda Argentina) que en la práctica no sesgaba nada, y
+# Nominatim devolvía su propio orden de "importancia" (que para "farmacia"
+# favorece CABA, con más densidad de POI mapeados). Con el viewbox angosto
+# alrededor del centro real, el sesgo es real.
 _CATEGORIAS_NOMINATIM_ES = {
     'college': 'Universidad', 'university': 'Universidad', 'school': 'Escuela',
     'hospital': 'Hospital', 'pharmacy': 'Farmacia', 'restaurant': 'Restaurante',
@@ -1703,27 +1710,47 @@ def _normalizar_para_comparar(texto):
     return sin_acentos.lower()
 
 
+def _parecida(palabra, etiqueta, umbral=0.55):
+    """True si `palabra` se parece (similitud de texto, no substring exacto)
+    a ALGUNA palabra de `etiqueta`. Bug real medido (SES-110, Rodo parado en
+    Pilar): "farmacia" buscado ahí da resultados reales y bien ubicados en
+    TomTom (Bayer Pilar, Fada Fharma, Biofarma -- laboratorios del parque
+    industrial de Pilar), pero NINGUNO contiene el substring exacto
+    "farmacia" (son nombres de marca: "Fharma", no el diccionario). Exigir
+    substring exacto los rechazaba a todos como "sin relación" y disparaba
+    el respaldo de Nominatim sin necesidad -- que para colmo, en términos
+    genéricos como "farmacia", termina favoreciendo CABA de cualquier forma
+    (ver el comentario de _buscar_lugares_nominatim). SequenceMatcher mide
+    similitud real de caracteres: "farmacia" vs "fharma" da 0.71, vs
+    "biofarma" 0.62, vs ruido real como "camus" o "bayer pilar" da 0.3-0.4
+    -- 0.55 separa bien ambos grupos, medido con estos casos reales."""
+    return any(
+        SequenceMatcher(None, palabra, p).ratio() >= umbral
+        for p in re.findall(r'[a-z]+', etiqueta)
+    )
+
+
 def _algun_resultado_relevante(consulta, resultados):
-    """True si ALGÚN resultado de TomTom tiene en su etiqueta, a la vez, la
-    PRIMERA y la ÚLTIMA palabra significativa (3+ letras) de la consulta
-    (la misma si la consulta es una sola palabra). En una búsqueda real el
-    nombre específico suele ir primero y la localidad al final ("USAL
-    Campus Pilar", "Fika Pilar") -- exigir solo una de las dos falla para
-    los dos lados: solo "Pilar" (última) da por bueno cualquier resultado
-    cercano sin relación real (el sesgo de ubicación mete "Pilar" en casi
-    todo); solo "Universidad" (primera, de "Universidad del Salvador
-    Pilar") da por bueno OTRA sede de la misma universidad en CABA, que
-    tiene "Universidad" pero no "Pilar". Exigir las dos en el MISMO
-    resultado filtra ambos casos reales medidos (SES-108). Esto distingue
-    "encontró algo relacionado" de "no encontró nada pero devolvió una
-    coincidencia fonética o de otra sede sin relación real" (ver el
-    comentario largo en buscar_lugares)."""
+    """True si ALGÚN resultado de TomTom tiene en su etiqueta, a la vez, una
+    palabra PARECIDA a la PRIMERA y a la ÚLTIMA palabra significativa (3+
+    letras) de la consulta (la misma si la consulta es una sola palabra).
+    En una búsqueda real el nombre específico suele ir primero y la
+    localidad al final ("USAL Campus Pilar", "Fika Pilar") -- exigir solo
+    una de las dos falla para los dos lados: solo "Pilar" (última) da por
+    bueno cualquier resultado cercano sin relación real (el sesgo de
+    ubicación mete "Pilar" en casi todo); solo "Universidad" (primera, de
+    "Universidad del Salvador Pilar") da por bueno OTRA sede de la misma
+    universidad en CABA, que tiene "Universidad" pero no "Pilar". Exigir
+    las dos en el MISMO resultado filtra ambos casos reales medidos
+    (SES-108). Esto distingue "encontró algo relacionado" de "no encontró
+    nada pero devolvió una coincidencia fonética o de otra sede sin
+    relación real" (ver el comentario largo en buscar_lugares)."""
     palabras = [p for p in re.findall(r'[a-z]+', _normalizar_para_comparar(consulta)) if len(p) >= 3]
     if not palabras:
         return True  # consulta sin palabras evaluables (solo numeros/simbolos): no se puede juzgar, no se fuerza el respaldo
     primera, ultima = palabras[0], palabras[-1]
     return any(
-        primera in _normalizar_para_comparar(r['label']) and ultima in _normalizar_para_comparar(r['label'])
+        _parecida(primera, _normalizar_para_comparar(r['label'])) and _parecida(ultima, _normalizar_para_comparar(r['label']))
         for r in resultados
     )
 
@@ -1737,13 +1764,17 @@ def _etiqueta_nominatim(item):
     return ', '.join(partes[:3]) if partes else None
 
 
-def _buscar_lugares_nominatim(consulta, limite):
+def _buscar_lugares_nominatim(consulta, limite, centro_lat=None, centro_lon=None):
+    if centro_lat is not None and centro_lon is not None:
+        viewbox = f"{centro_lon - 0.5},{centro_lat + 0.5},{centro_lon + 0.5},{centro_lat - 0.5}"
+    else:
+        viewbox = _VIEWBOX_ARGENTINA
     try:
         respuesta = httpx.get(
             NOMINATIM_URL,
             params={
                 'format': 'json', 'q': consulta, 'countrycodes': 'ar',
-                'viewbox': _VIEWBOX_ARGENTINA, 'bounded': 0,
+                'viewbox': viewbox, 'bounded': 0,
                 'limit': max(1, min(limite, 8)), 'addressdetails': 0,
             },
             headers={'User-Agent': _NOMINATIM_USER_AGENT, 'Accept-Language': 'es'},
@@ -1906,7 +1937,7 @@ def buscar_lugares(request: Request, q: str, limite: int = 5, lat: float | None 
         # usuario. Si TomTom se equivocó, lo más probable es más útil que lo
         # menos probable, va adelante.
         nuevos = []
-        for lugar in _buscar_lugares_nominatim(consulta, limite):
+        for lugar in _buscar_lugares_nominatim(consulta, limite, centro_lat, centro_lon):
             cerca_de_algo = any(
                 _distancia_metros(lugar['lat'], lugar['lng'], d['lat'], d['lng']) < 300
                 for d in datos

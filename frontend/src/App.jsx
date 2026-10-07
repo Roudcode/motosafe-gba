@@ -1656,13 +1656,6 @@ function App() {
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
             <ul className="ruta-form-sugerencias searchbar-sugerencias">
-              {/* Diagnóstico temporal (SES-110), se saca apenas se confirme
-                  la causa de por qué el sesgo no se nota en el celular. */}
-              <li className="ruta-form-sin-resultados" style={{ fontSize: 10, opacity: 0.7 }}>
-                {sugBusqueda.centroUsado
-                  ? `📍 con tu ubicación: ${sugBusqueda.centroUsado.lat.toFixed(4)}, ${sugBusqueda.centroUsado.lng.toFixed(4)}`
-                  : '📍 SIN tu ubicación (buscando desde CABA)'}
-              </li>
               {sugBusqueda.resultados.map((s, i) => (
                 <li key={i}>
                   <button type="button" onMouseDown={() => buscarEnMapa(s)}>
