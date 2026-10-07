@@ -16,12 +16,19 @@ import { buscarSugerencias } from '../utils/geoRiesgo'
 
 const DEMORA_SUGERENCIAS_MS = 350
 
-export function useBusquedaDireccion(texto = '') {
+// `centro` ({lat,lng}, normalmente miUbicacion): sesga la búsqueda hacia
+// donde está parado el usuario en vez de siempre CABA (SES-107). Va en un
+// ref, no en las deps de `buscar` -- cambia en cada fix de GPS (cada pocos
+// segundos) y no hace falta recrear la función de búsqueda por eso, alcanza
+// con leer el valor más reciente al momento de buscar.
+export function useBusquedaDireccion(texto = '', centro = null) {
   const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
   const [buscada, setBuscada] = useState(false)
   const [error, setError] = useState(false)
   const abortRef = useRef(null)
+  const centroRef = useRef(centro)
+  useEffect(() => { centroRef.current = centro }, [centro])
 
   const limpiar = useCallback(() => {
     abortRef.current?.abort()
@@ -40,7 +47,7 @@ export function useBusquedaDireccion(texto = '') {
     setBuscada(false)
     setError(false)
     try {
-      const encontrados = await buscarSugerencias(consulta, { signal: controller.signal })
+      const encontrados = await buscarSugerencias(consulta, { signal: controller.signal, centro: centroRef.current })
       if (controller.signal.aborted) return
       setResultados(encontrados)
       setBuscada(true)

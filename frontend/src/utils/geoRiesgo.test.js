@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { calcularAjuste, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea, distanciaKm, buscarSugerencias, siguientePaso } from './geoRiesgo'
 
 describe('calcularAjuste', () => {
@@ -154,10 +154,28 @@ describe('distanciaAPolilinea', () => {
 })
 
 describe('buscarSugerencias', () => {
+  afterEach(() => { vi.unstubAllGlobals() })
+
   it('no pega contra la red con menos de 3 caracteres (evita un pedido por cada tecla al empezar a escribir)', async () => {
     expect(await buscarSugerencias('')).toEqual([])
     expect(await buscarSugerencias('  ')).toEqual([])
     expect(await buscarSugerencias('ab')).toEqual([])
+  })
+
+  it('manda la posicion del usuario para sesgar la busqueda cuando la tiene (SES-107)', async () => {
+    const fetchFalso = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    vi.stubGlobal('fetch', fetchFalso)
+    await buscarSugerencias('farmacia', { centro: { lat: -34.6466, lng: -58.7896 } })
+    const url = fetchFalso.mock.calls[0][0]
+    expect(url).toContain('lat=-34.6466')
+    expect(url).toContain('lng=-58.7896')
+  })
+
+  it('sin posicion del usuario, no manda lat/lng (el backend cae a su centro por defecto)', async () => {
+    const fetchFalso = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    vi.stubGlobal('fetch', fetchFalso)
+    await buscarSugerencias('farmacia')
+    expect(fetchFalso.mock.calls[0][0]).not.toContain('lat=')
   })
 })
 

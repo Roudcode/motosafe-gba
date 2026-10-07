@@ -164,12 +164,19 @@ export async function geocodificar(texto) {
 // (docs/datos/FICHAS_FUENTES.md, A18).
 // `signal` (AbortSignal) permite cancelar el pedido si el usuario lanza otra
 // búsqueda antes de que responda.
-export async function buscarSugerencias(texto, { signal } = {}) {
+export async function buscarSugerencias(texto, { signal, centro } = {}) {
   if (!texto || texto.trim().length < 3) return []
   // Pasa por el backend (/lugares): la clave de TomTom queda en el servidor y
   // las respuestas se cachean allí (SES-090). Sugerencias mientras se escribe.
   const q = encodeURIComponent(texto.trim())
-  const res = await fetch(`${API_URL}/lugares?q=${q}&limite=5`, { credentials: 'include', signal })
+  // `centro` (la ubicación real del usuario, cuando ya la tenemos) sesga la
+  // búsqueda hacia donde está parado -- sin esto, alguien en Moreno que
+  // busca "farmacia" recibía farmacias del centro porteño a 30 km (SES-107).
+  // Sin ubicación todavía (recién abrió la app, sin permiso de GPS), el
+  // backend cae a su centro por defecto (CABA).
+  const posicion = centro && Number.isFinite(centro.lat) && Number.isFinite(centro.lng)
+    ? `&lat=${centro.lat}&lng=${centro.lng}` : ''
+  const res = await fetch(`${API_URL}/lugares?q=${q}&limite=5${posicion}`, { credentials: 'include', signal })
   if (!res.ok) throw new Error(`Búsqueda no disponible (${res.status})`)
   return res.json()
 }

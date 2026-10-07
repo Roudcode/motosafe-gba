@@ -1706,15 +1706,40 @@ def _categoria_lugar(item):
     return _TIPO_SIN_POI_ES.get(item.get('type'))
 
 
+# Bbox amplio de Argentina (no solo GBA): valida que un lat/lng que mande el
+# cliente sea una posición real del país antes de usarlo como centro de
+# sesgo -- un GPS roto devolviendo (0,0) no debe terminar sesgando la
+# búsqueda al golfo de Guinea.
+_BBOX_ARGENTINA = (-73.6, -55.1, -53.6, -21.8)  # lon_min, lat_min, lon_max, lat_max
+
+
+def _centro_lugares(lat, lng):
+    """(lat, lon) de sesgo para /lugares: la posición real del usuario si la
+    mandó y es válida, si no el centro de CABA de siempre."""
+    if lat is not None and lng is not None:
+        lon_min, lat_min, lon_max, lat_max = _BBOX_ARGENTINA
+        if lat_min <= lat <= lat_max and lon_min <= lng <= lon_max:
+            return lat, lng
+    return -34.6, -58.45
+
+
 @app.get("/lugares")
 @limiter.limit("60/minute")
-def buscar_lugares(request: Request, q: str, limite: int = 5):
+def buscar_lugares(request: Request, q: str, limite: int = 5, lat: float | None = None, lng: float | None = None):
     consulta = ' '.join(q.split())
     if len(consulta) < 3 or len(consulta) > 120:
         return []
     if not TOMTOM_API_KEY:
         raise HTTPException(status_code=503, detail="TOMTOM_API_KEY no configurada")
-    clave = consulta.casefold()
+    centro_lat, centro_lon = _centro_lugares(lat, lng)
+    # El cache es por consulta DE TEXTO -- antes de sumar el sesgo por
+    # ubicación eso alcanzaba, porque el resultado para "farmacia" era el
+    # mismo para cualquiera. Ahora "farmacia" en Moreno y "farmacia" en CABA
+    # son búsquedas distintas de verdad (ver el comentario largo más abajo),
+    # así que la clave suma el centro redondeado a ~1 km -- esa redondeo
+    # mantiene el cache útil (gente cerca comparte resultados) sin mezclar
+    # resultados de zonas distintas del GBA.
+    clave = f"{consulta.casefold()}@{centro_lat:.2f},{centro_lon:.2f}"
     entrada = _cache_lugares.get(clave)
     if entrada and time.time() - entrada['momento'] < _CACHE_LUGARES_TTL_SEGUNDOS:
         return entrada['datos']
@@ -1725,8 +1750,8 @@ def buscar_lugares(request: Request, q: str, limite: int = 5):
                 "key": TOMTOM_API_KEY,
                 "limit": max(1, min(limite, 8)),
                 "countrySet": "AR",
-                "lat": -34.6,
-                "lon": -58.45,
+                "lat": centro_lat,
+                "lon": centro_lon,
                 # 150 km, no 60: con 60 km (el radio aproximado del GBA) un
                 # lugar conocido pero fuera de esa franja (la Basílica de
                 # Luján, la ciudad de Zárate) quedaba afuera de los
@@ -1735,10 +1760,15 @@ def buscar_lugares(request: Request, q: str, limite: int = 5):
                 # ser una calle homónima sin relación real (medido:
                 # "Luján basilica" con 60 km devolvía una capilla en una
                 # calle de CABA llamada Luján, no la Basílica real).
-                # 150 km sigue centrado en CABA (el "lat"/"lon" de arriba),
-                # así que una búsqueda genérica ("panadería") sigue
-                # devolviendo solo resultados cercanos -- confirmado con
-                # pruebas reales, los más cercanos ganan por distancia igual.
+                # El centro ahora es la posición real del usuario cuando la
+                # manda (ver _centro_lugares) -- antes quedaba siempre fijo
+                # en CABA, y alguien parado en Moreno que buscaba "farmacia"
+                # recibía farmacias del centro porteño a 30 km en vez de la
+                # que tenía a 100 metros (medido con una consulta real a
+                # TomTom: mismo "farmacia", sesgo en CABA vs sesgo en Moreno,
+                # resultados completamente distintos y ambos "correctos"
+                # para SU zona -- el problema no era el radio, era siempre
+                # mirar desde el mismo punto).
                 "radius": 150000,
                 "language": "es-ES",
                 "typeahead": "true",

@@ -1224,6 +1224,28 @@ def test_lugares_parsea_resultados_y_cachea_la_consulta():
     assert get.call_count == 1
 
 
+def test_centro_lugares_usa_la_posicion_real_si_es_valida():
+    # Caso real de Moreno (SES-107): sin esto, "farmacia" siempre buscaba
+    # desde CABA aunque el usuario estuviera a 30 km.
+    assert main._centro_lugares(-34.6466, -58.7896) == (-34.6466, -58.7896)
+
+
+def test_centro_lugares_cae_a_caba_sin_posicion_o_con_una_invalida():
+    assert main._centro_lugares(None, None) == (-34.6, -58.45)
+    # GPS roto devolviendo (0, 0): no hay que sesgar la busqueda a Africa.
+    assert main._centro_lugares(0, 0) == (-34.6, -58.45)
+
+
+def test_lugares_manda_la_posicion_del_usuario_a_tomtom(monkeypatch):
+    respuesta = MagicMock()
+    respuesta.json.return_value = {"results": []}
+    with patch("main.httpx.get", return_value=respuesta) as get, patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        client.get("/lugares", params={"q": "farmacia", "lat": -34.6466, "lng": -58.7896})
+    assert get.call_args.kwargs["params"]["lat"] == -34.6466
+    assert get.call_args.kwargs["params"]["lon"] == -58.7896
+
+
 def test_categoria_lugar_traduce_lo_conocido_y_no_inventa_lo_que_no():
     # Categoria conocida: traducida.
     assert main._categoria_lugar({"poi": {"categories": ["restaurant"]}}) == "Restaurante"

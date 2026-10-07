@@ -191,14 +191,14 @@ function App() {
   const [lugarElegido, setLugarElegido] = useState(null)
   // Origen/destino y la barra de búsqueda buscan solo al confirmar (Enter o
   // botón), nunca mientras se escribe: Nominatim prohíbe el autocompletado.
-  const sugOrigen = useBusquedaDireccion(origenPunto ? '' : origenTexto)
-  const sugDestino = useBusquedaDireccion(destinoPunto ? '' : destinoTexto)
+  const sugOrigen = useBusquedaDireccion(origenPunto ? '' : origenTexto, miUbicacion)
+  const sugDestino = useBusquedaDireccion(destinoPunto ? '' : destinoTexto, miUbicacion)
   // La barra de búsqueda de arriba filtraba zonas ya cargadas, pero no
   // servía para buscar una dirección que no fuera ya una zona del dataset
   // (una avenida cualquiera, por ejemplo) -- reusa el mismo geocoder que
   // origen/destino para eso, y "elegir" un resultado la manda directo a
   // centra el mapa en el resultado (ver buscarEnMapa más abajo).
-  const sugBusqueda = useBusquedaDireccion(busqueda)
+  const sugBusqueda = useBusquedaDireccion(busqueda, miUbicacion)
   const [recientes, setRecientes] = useState(() => cargarDeLocalStorage(CLAVE_BUSQUEDAS_RECIENTES, []))
   const [buscaEnFoco, setBuscaEnFoco] = useState(false)
   const [campoActivo, setCampoActivo] = useState(null)
