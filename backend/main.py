@@ -3,7 +3,9 @@ import json
 import time
 import os
 import hashlib
+import re
 import secrets
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -1662,11 +1664,110 @@ class RutaOut(BaseModel):
 
 
 # --- Búsqueda de lugares con sugerencias (SES-090) -------------------------
-# Reemplaza el autocompletado contra Nominatim, que su política prohíbe. La
-# clave de TomTom queda en el servidor. Las respuestas se cachean unos minutos
-# para no gastar cupo en cada tecla repetida.
+# Reemplaza el autocompletado EN VIVO contra Nominatim, que su política
+# prohíbe (DEC-011/A18) -- TomTom sigue siendo quien responde mientras el
+# usuario escribe. La clave de TomTom queda en el servidor. Las respuestas se
+# cachean unos minutos para no gastar cupo en cada tecla repetida.
 TOMTOM_SEARCH_URL = 'https://api.tomtom.com/search/2/search/{consulta}.json'
 _CACHE_LUGARES_TTL_SEGUNDOS = 600
+
+# Respaldo gratuito cuando TomTom no encuentra nada (SES-108): medido con
+# casos reales que Rodo reportó como "no lo encuentra" -- el campus de la
+# USAL en Pilar y un barrio privado no están en el catálogo de POI de
+# TomTom bajo ningún nombre que se probó, pero sí están en OpenStreetMap
+# (Nominatim los devuelve como "college" y "neighbourhood"). Esto NO es el
+# autocompletado prohibido: se llama UNA vez, solo cuando TomTom ya
+# respondió vacío para esa consulta exacta (no en cada tecla), y el
+# resultado se cachea igual que el de TomTom -- el volumen real es mucho
+# menor a los límites de la política (4/min para scripts periódicos; acá
+# depende de que alguien escriba y TomTom falle, nunca un bucle).
+NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
+_NOMINATIM_USER_AGENT = 'MotoSafeGBA-tesis-USAL/1.0 (proyecto academico, contacto en README del repo)'
+# Caja amplia de Argentina (no solo GBA): mismo motivo que el radio de 150 km
+# de TomTom, un lugar real puede estar fuera del conurbano en sentido
+# estricto. bounded=0 en la consulta real es un SESGO (prioriza lo cercano a
+# esta caja sin descartar lo de afuera), no un corte duro.
+_VIEWBOX_ARGENTINA = '-73.6,-21.8,-53.6,-55.1'
+_CATEGORIAS_NOMINATIM_ES = {
+    'college': 'Universidad', 'university': 'Universidad', 'school': 'Escuela',
+    'hospital': 'Hospital', 'pharmacy': 'Farmacia', 'restaurant': 'Restaurante',
+    'cafe': 'Café o bar', 'bar': 'Bar', 'fast_food': 'Comida rápida',
+    'fuel': 'Estación de servicio', 'bank': 'Banco', 'supermarket': 'Supermercado',
+    'neighbourhood': 'Barrio', 'residential': 'Zona residencial', 'suburb': 'Barrio',
+    'place_of_worship': 'Templo', 'police': 'Comisaría',
+}
+
+
+def _normalizar_para_comparar(texto):
+    sin_acentos = unicodedata.normalize('NFKD', texto or '').encode('ascii', 'ignore').decode('ascii')
+    return sin_acentos.lower()
+
+
+def _algun_resultado_relevante(consulta, resultados):
+    """True si ALGÚN resultado de TomTom tiene en su etiqueta, a la vez, la
+    PRIMERA y la ÚLTIMA palabra significativa (3+ letras) de la consulta
+    (la misma si la consulta es una sola palabra). En una búsqueda real el
+    nombre específico suele ir primero y la localidad al final ("USAL
+    Campus Pilar", "Fika Pilar") -- exigir solo una de las dos falla para
+    los dos lados: solo "Pilar" (última) da por bueno cualquier resultado
+    cercano sin relación real (el sesgo de ubicación mete "Pilar" en casi
+    todo); solo "Universidad" (primera, de "Universidad del Salvador
+    Pilar") da por bueno OTRA sede de la misma universidad en CABA, que
+    tiene "Universidad" pero no "Pilar". Exigir las dos en el MISMO
+    resultado filtra ambos casos reales medidos (SES-108). Esto distingue
+    "encontró algo relacionado" de "no encontró nada pero devolvió una
+    coincidencia fonética o de otra sede sin relación real" (ver el
+    comentario largo en buscar_lugares)."""
+    palabras = [p for p in re.findall(r'[a-z]+', _normalizar_para_comparar(consulta)) if len(p) >= 3]
+    if not palabras:
+        return True  # consulta sin palabras evaluables (solo numeros/simbolos): no se puede juzgar, no se fuerza el respaldo
+    primera, ultima = palabras[0], palabras[-1]
+    return any(
+        primera in _normalizar_para_comparar(r['label']) and ultima in _normalizar_para_comparar(r['label'])
+        for r in resultados
+    )
+
+
+def _etiqueta_nominatim(item):
+    # display_name trae la jerarquía completa ("Nombre, Localidad, Partido,
+    # Provincia, CP, País") -- igual de verboso que seguir mostrando todo
+    # como hace Nominatim por defecto; se recorta a los primeros 3 tramos
+    # para que se lea parecido a como arma su etiqueta TomTom (_label_lugar).
+    partes = (item.get('display_name') or '').split(', ')
+    return ', '.join(partes[:3]) if partes else None
+
+
+def _buscar_lugares_nominatim(consulta, limite):
+    try:
+        respuesta = httpx.get(
+            NOMINATIM_URL,
+            params={
+                'format': 'json', 'q': consulta, 'countrycodes': 'ar',
+                'viewbox': _VIEWBOX_ARGENTINA, 'bounded': 0,
+                'limit': max(1, min(limite, 8)), 'addressdetails': 0,
+            },
+            headers={'User-Agent': _NOMINATIM_USER_AGENT, 'Accept-Language': 'es'},
+            timeout=10,
+        )
+        respuesta.raise_for_status()
+    except httpx.HTTPError:
+        # Un fallo acá no debe tirar abajo la búsqueda entera -- TomTom ya
+        # contestó vacío, así que el resultado final sigue siendo "nada",
+        # igual que si este respaldo no existiera.
+        return []
+    datos = []
+    for item in respuesta.json():
+        label = _etiqueta_nominatim(item)
+        try:
+            lat, lon = float(item['lat']), float(item['lon'])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if label:
+            datos.append({
+                'label': label, 'lat': lat, 'lng': lon,
+                'categoria': _CATEGORIAS_NOMINATIM_ES.get(item.get('type'), (item.get('type') or '').capitalize() or None),
+            })
+    return datos
 _cache_lugares = {}  # consulta normalizada -> {'datos': [...], 'momento': float}
 
 
@@ -1787,6 +1888,33 @@ def buscar_lugares(request: Request, q: str, limite: int = 5, lat: float | None 
                 "label": label, "lat": posicion["lat"], "lng": posicion["lon"],
                 "categoria": _categoria_lugar(item),
             })
+    if not _algun_resultado_relevante(consulta, datos):
+        # TomTom no tiene el lugar bajo ningún nombre probado -- y no
+        # siempre devuelve vacío cuando pasa esto: medido con un caso real
+        # (SES-108), "USAL Campus Pilar" vuelve CON resultados (calles que
+        # suenan parecido, "Calle A. Camus"), ninguno con relación real a lo
+        # buscado. Una lista no vacía pero irrelevante es indistinguible de
+        # una buena sin mirar el contenido -- _algun_resultado_relevante
+        # exige que alguna palabra significativa de la consulta aparezca en
+        # algún resultado. Si no, se prueba el respaldo gratuito antes de
+        # decirle al usuario "no está". Se descartan los resultados de
+        # Nominatim a menos de 300 m de uno que ya puso TomTom (mismo lugar
+        # con otro nombre) para no duplicar. Van PRIMERO en la lista, no al
+        # final: si TomTom ya devolvió "limite" resultados (su cupo
+        # completo, aunque sean irrelevantes), agregarlos al final no servía
+        # de nada -- el truncado de abajo los cortaba antes de llegar al
+        # usuario. Si TomTom se equivocó, lo más probable es más útil que lo
+        # menos probable, va adelante.
+        nuevos = []
+        for lugar in _buscar_lugares_nominatim(consulta, limite):
+            cerca_de_algo = any(
+                _distancia_metros(lugar['lat'], lugar['lng'], d['lat'], d['lng']) < 300
+                for d in datos
+            )
+            if not cerca_de_algo:
+                nuevos.append(lugar)
+        datos = nuevos + datos
+    datos = datos[:max(1, min(limite, 8))]
     if len(_cache_lugares) > 500:
         _cache_lugares.clear()
     _cache_lugares[clave] = {'datos': datos, 'momento': time.time()}

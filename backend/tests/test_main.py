@@ -12,6 +12,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -1237,13 +1238,125 @@ def test_centro_lugares_cae_a_caba_sin_posicion_o_con_una_invalida():
 
 
 def test_lugares_manda_la_posicion_del_usuario_a_tomtom(monkeypatch):
+    # TomTom con un resultado (no vacío): alcanza para esta prueba y evita
+    # que caiga al respaldo de Nominatim, que se prueba aparte.
     respuesta = MagicMock()
-    respuesta.json.return_value = {"results": []}
+    respuesta.json.return_value = {"results": [
+        {"poi": {"name": "Farmacia X"}, "address": {"freeformAddress": "Moreno"}, "position": {"lat": -34.6, "lon": -58.7}},
+    ]}
     with patch("main.httpx.get", return_value=respuesta) as get, patch("main.TOMTOM_API_KEY", "clave-falsa"):
         main._cache_lugares.clear()
         client.get("/lugares", params={"q": "farmacia", "lat": -34.6466, "lng": -58.7896})
     assert get.call_args.kwargs["params"]["lat"] == -34.6466
     assert get.call_args.kwargs["params"]["lon"] == -58.7896
+
+
+def test_lugares_cae_a_nominatim_cuando_tomtom_no_encuentra_nada(monkeypatch):
+    # Caso real reportado por Rodo (SES-108): el campus de la USAL en Pilar
+    # no está en TomTom bajo ningún nombre, pero sí en OpenStreetMap.
+    respuesta_tomtom = MagicMock()
+    respuesta_tomtom.json.return_value = {"results": []}
+    respuesta_nominatim = MagicMock()
+    respuesta_nominatim.json.return_value = [{
+        "display_name": "Universidad del Salvador, Pilar, Partido del Pilar, Buenos Aires, Argentina",
+        "lat": "-34.43", "lon": "-58.91", "type": "college",
+    }]
+    with patch("main.httpx.get", side_effect=[respuesta_tomtom, respuesta_nominatim]) as get, \
+         patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        resultado = client.get("/lugares", params={"q": "USAL Campus Pilar"}).json()
+    assert resultado == [{
+        "label": "Universidad del Salvador, Pilar, Partido del Pilar",
+        "lat": -34.43, "lng": -58.91, "categoria": "Universidad",
+    }]
+    assert get.call_count == 2
+    assert "nominatim" in get.call_args_list[1].args[0]
+
+
+def test_lugares_cae_a_nominatim_aunque_tomtom_no_vuelva_vacio(monkeypatch):
+    # El bug real (SES-108) no era que TomTom volviera vacío -- "USAL Campus
+    # Pilar" vuelve CON resultados, ninguno relacionado (coincidencias
+    # foneticas tipo "Calle A. Camus"). Si solo se mirara "vacío", este caso
+    # real se seguía perdiendo.
+    respuesta_tomtom = MagicMock()
+    respuesta_tomtom.json.return_value = {"results": [
+        {"address": {"freeformAddress": "Calle A. Camus, Pilar"}, "position": {"lat": -34.40, "lon": -58.87}},
+    ]}
+    respuesta_nominatim = MagicMock()
+    respuesta_nominatim.json.return_value = [{
+        "display_name": "Universidad del Salvador, Pilar, Partido del Pilar, Buenos Aires, Argentina",
+        "lat": "-34.43", "lon": "-58.91", "type": "college",
+    }]
+    with patch("main.httpx.get", side_effect=[respuesta_tomtom, respuesta_nominatim]) as get, \
+         patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        resultado = client.get("/lugares", params={"q": "USAL Campus Pilar"}).json()
+    # No pisa lo que TomTom encontró, aunque sea poco relevante -- solo suma.
+    assert len(resultado) == 2
+    assert any('Universidad del Salvador' in r['label'] for r in resultado)
+    assert any('Camus' in r['label'] for r in resultado)
+
+
+def test_lugares_no_duplica_si_nominatim_devuelve_el_mismo_lugar(monkeypatch):
+    respuesta_tomtom = MagicMock()
+    respuesta_tomtom.json.return_value = {"results": [
+        {"address": {"freeformAddress": "Calle sin relacion, Pilar"}, "position": {"lat": -34.43, "lon": -58.91}},
+    ]}
+    respuesta_nominatim = MagicMock()
+    # A menos de 300 m del resultado de TomTom de arriba: mismo lugar.
+    respuesta_nominatim.json.return_value = [{
+        "display_name": "Mismo lugar, Pilar, Buenos Aires, Argentina",
+        "lat": "-34.4302", "lon": "-58.9101", "type": "college",
+    }]
+    with patch("main.httpx.get", side_effect=[respuesta_tomtom, respuesta_nominatim]), \
+         patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        resultado = client.get("/lugares", params={"q": "lugar sin relacion real"}).json()
+    assert len(resultado) == 1
+
+
+def test_algun_resultado_relevante():
+    resultados = [{"label": "Fika, Calle Los Crisantemos, Pilar"}]
+    assert main._algun_resultado_relevante("Fika Pilar", resultados) is True
+    assert main._algun_resultado_relevante("USAL Campus Pilar", [{"label": "Calle A. Camus, Pilar"}]) is False
+    # Caso real (SES-108): "Universidad del Salvador Pilar" -- exigir solo
+    # la primera palabra daba por bueno OTRA sede de la misma universidad
+    # en CABA (tiene "Universidad" pero no "Pilar"); exigir las dos lo filtra.
+    assert main._algun_resultado_relevante(
+        "Universidad del Salvador Pilar",
+        [{"label": "Universidad del Salvador Sede Caba, Buenos Aires"}],
+    ) is False
+    assert main._algun_resultado_relevante(
+        "Universidad del Salvador Pilar",
+        [{"label": "Universidad del Salvador, Pilar, Buenos Aires"}],
+    ) is True
+    # Sin resultados, nada es relevante.
+    assert main._algun_resultado_relevante("lo que sea", []) is False
+    # Consulta sin palabras evaluables (todo corto o numerico): no se puede
+    # juzgar relevancia, así que no se fuerza el respaldo.
+    assert main._algun_resultado_relevante("22", [{"label": "cualquier cosa"}]) is True
+
+
+def test_lugares_no_consulta_nominatim_si_tomtom_ya_encontro_algo(monkeypatch):
+    respuesta_tomtom = MagicMock()
+    respuesta_tomtom.json.return_value = {"results": [
+        {"poi": {"name": "Fika"}, "address": {"freeformAddress": "Pilar"}, "position": {"lat": -34.45, "lon": -58.9}},
+    ]}
+    with patch("main.httpx.get", return_value=respuesta_tomtom) as get, patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        client.get("/lugares", params={"q": "Fika Pilar"})
+    assert get.call_count == 1
+
+
+def test_lugares_un_fallo_de_nominatim_no_rompe_la_busqueda(monkeypatch):
+    respuesta_tomtom = MagicMock()
+    respuesta_tomtom.json.return_value = {"results": []}
+    with patch("main.httpx.get", side_effect=[respuesta_tomtom, httpx.ConnectError("sin red")]), \
+         patch("main.TOMTOM_API_KEY", "clave-falsa"):
+        main._cache_lugares.clear()
+        resultado = client.get("/lugares", params={"q": "algo que no existe"})
+    assert resultado.status_code == 200
+    assert resultado.json() == []
 
 
 def test_categoria_lugar_traduce_lo_conocido_y_no_inventa_lo_que_no():
