@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Bike } from 'lucide-react'
 import { API_URL } from '../constants'
 import { SesionContext } from '../sesion'
 
@@ -37,7 +38,7 @@ export function LoginGate({ children }) {
   }, [])
 
   if (estado === 'verificando') {
-    return <div style={estilos.fondoVerificando} />
+    return <div className="login-fondo" />
   }
 
   if (estado === 'anonimo') {
@@ -91,57 +92,42 @@ function FormularioLogin({ onLogin }) {
   }
 
   return (
-    <div style={estilos.fondo}>
-      <form onSubmit={enviar} style={estilos.tarjeta}>
-        <h1 style={estilos.titulo}>MotoSafe GBA</h1>
-        <p style={estilos.subtitulo}>Acceso privado</p>
-        <input
-          type="text"
-          placeholder="Usuario"
-          value={usuario}
-          onChange={(e) => setUsuario(e.target.value)}
-          autoFocus
-          autoComplete="username"
-          style={estilos.input}
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={contrasena}
-          onChange={(e) => setContrasena(e.target.value)}
-          autoComplete="current-password"
-          style={estilos.input}
-        />
-        {error && <p style={estilos.error}>{error}</p>}
-        <button type="submit" disabled={enviando} style={estilos.boton}>
+    <div className="login-fondo">
+      <form onSubmit={enviar} className="login-tarjeta">
+        <span className="login-marca"><Bike size={26} /></span>
+        <h1 className="login-titulo">MotoSafe GBA</h1>
+        <p className="login-subtitulo">Acceso privado</p>
+        <div className="login-campo">
+          <label htmlFor="login-usuario">Usuario</label>
+          <input
+            id="login-usuario"
+            type="text"
+            placeholder="Tu usuario"
+            value={usuario}
+            onChange={(e) => setUsuario(e.target.value)}
+            autoFocus
+            autoComplete="username"
+            className="login-input"
+          />
+        </div>
+        <div className="login-campo">
+          <label htmlFor="login-contrasena">Contraseña</label>
+          <input
+            id="login-contrasena"
+            type="password"
+            placeholder="Tu contraseña"
+            value={contrasena}
+            onChange={(e) => setContrasena(e.target.value)}
+            autoComplete="current-password"
+            className="login-input"
+          />
+        </div>
+        {error && <p className="login-error" role="alert">{error}</p>}
+        <button type="submit" disabled={enviando} className="login-boton">
+          {enviando && <span className="spinner spinner-dark" />}
           {enviando ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
     </div>
   )
-}
-
-const estilos = {
-  fondoVerificando: {
-    position: 'fixed', inset: 0, background: '#14171A',
-  },
-  fondo: {
-    position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: '#14171A', fontFamily: "'Inter', sans-serif", padding: 16,
-  },
-  tarjeta: {
-    display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320,
-    background: '#1F2328', border: '1px solid #2C3138', borderRadius: 12, padding: 28,
-  },
-  titulo: { color: '#E8EAED', fontSize: 22, fontWeight: 700, margin: 0, textAlign: 'center' },
-  subtitulo: { color: '#8A9099', fontSize: 13, margin: '0 0 8px', textAlign: 'center' },
-  input: {
-    background: '#14171A', border: '1px solid #2C3138', borderRadius: 8, padding: '10px 12px',
-    color: '#E8EAED', fontSize: 16, outline: 'none',
-  },
-  boton: {
-    background: '#FFC933', color: '#14171A', border: 'none', borderRadius: 8, padding: '10px 12px',
-    fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 4,
-  },
-  error: { color: '#FF3B3B', fontSize: 13, margin: 0, textAlign: 'center' },
 }
