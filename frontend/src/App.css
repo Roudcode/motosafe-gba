@@ -793,8 +793,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-fab {
   position: absolute; bottom: var(--b2); right: calc(24px + var(--safe-right)); z-index: 1000;
   display: flex; align-items: center; gap: 8px;
-  background: var(--amarillo); color: #14171A; border: none; border-radius: 30px; padding: 14px 20px;
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer;
+  background: var(--amarillo); color: #14171A; border: none; border-radius: var(--r-pill); padding: 14px 20px;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-lg); cursor: pointer;
   box-shadow: 0 4px 20px rgba(255,201,51,0.35); transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .report-fab:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 24px rgba(255,201,51,0.5); }
@@ -819,6 +819,28 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-hint { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: var(--fs-sm); color: var(--text-dim); }
 
 .maplibregl-popup-content { background: var(--surface-solid); color: var(--text); border-radius: 10px; border: 1px solid var(--border); padding: 10px 12px; }
+
+/* ---- Atribución del mapa (SES-105) -----------------------------------
+   MapLibre no trae estilo propio para esto: quedaba como una franja blanca
+   fija de punta a punta, sin relación con el tema oscuro/claro de la app ni
+   con el resto de los flotantes (card con --surface-solid, borde, sombra).
+   El layout (compacta en celular, abierta en escritorio) lo arma
+   MapaMotoSafe.jsx; esto solo le da la misma piel que todo lo demás. */
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl { margin: 0 10px 10px 0; }
+.maplibregl-ctrl-attrib {
+  background: rgba(var(--surface-rgb), 0.85) !important;
+  border: 1px solid var(--border); border-radius: var(--r-sm) 0 0 var(--r-sm);
+  box-shadow: var(--shadow-float); backdrop-filter: blur(6px);
+  padding: 3px 10px !important; font-size: var(--fs-2xs) !important;
+  color: var(--text-dimmer) !important;
+}
+.maplibregl-ctrl-attrib a { color: var(--text-dim) !important; }
+.maplibregl-ctrl-attrib a:hover { color: var(--azul) !important; }
+.maplibregl-ctrl-attrib-button {
+  background-color: var(--text-dimmer) !important;
+  width: 18px !important; height: 18px !important;
+}
+.maplibregl-ctrl-attrib-button:hover { background-color: var(--azul) !important; }
 .maplibregl-popup-tip { border-top-color: var(--surface-solid); border-bottom-color: var(--surface-solid); }
 .maplibregl-popup-close-button { color: var(--text-dim); font-size: 16px; }
 .popup-content { display: flex; flex-direction: column; gap: 4px; font-family: 'Inter', sans-serif; }
