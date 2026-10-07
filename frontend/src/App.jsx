@@ -1668,7 +1668,13 @@ function App() {
 
       {lugarElegido && !rutaAbierta && (
         <div className="lugar-card panel-enter" role="dialog" aria-label="Lugar elegido">
-          <div className="lugar-card-texto"><MapPin size={14} /> <span>{lugarElegido.label}</span></div>
+          <div className="lugar-card-texto">
+            <MapPin size={14} />
+            <span>
+              {lugarElegido.label}
+              {lugarElegido.categoria && <em className="lugar-card-categoria">{lugarElegido.categoria}</em>}
+            </span>
+          </div>
           <div className="lugar-card-acciones">
             <button type="button" className="lugar-card-cerrar" onClick={() => setLugarElegido(null)}>Cerrar</button>
             <button type="button" className="lugar-card-ir" onClick={irAlLugar}><Navigation size={13} /> Ir</button>
@@ -1781,6 +1787,7 @@ function App() {
           origenPunto={origenPunto}
           destinoPunto={destinoPunto}
           ubicacionReporte={paso === 'eligiendo' ? ubicacionReporte : null}
+          lugarElegido={rutaAbierta ? null : lugarElegido}
           miUbicacion={miUbicacion}
           vistaNavegacion={vistaNavegacion}
           modoViaje={modoViaje}

@@ -1679,6 +1679,33 @@ def _label_lugar(item):
     return ', '.join(partes)
 
 
+# TomTom devuelve las categorias de POI en ingles aunque se pida
+# language=es-ES (son tags internos, no texto traducible del proveedor) --
+# traduce solo las mas frecuentes en busquedas reales (gastronomia, salud,
+# combustible, alojamiento); el resto se muestra tal cual viene antes que no
+# mostrar nada. _TIPO_SIN_POI cubre el caso contrario: un resultado que es
+# una calle o una zona, sin objeto "poi" del que sacar categoria.
+_CATEGORIAS_LUGAR_ES = {
+    'restaurant': 'Restaurante', 'cafe/pub': 'Café o bar', 'fast food': 'Comida rápida',
+    'latin american': 'Comida latinoamericana', 'bakery': 'Panadería', 'bar': 'Bar',
+    'pharmacy': 'Farmacia', 'hospital': 'Hospital', 'doctor': 'Consultorio médico',
+    'gas station': 'Estación de servicio', 'parking garage': 'Estacionamiento',
+    'hotel': 'Hotel', 'supermarket': 'Supermercado', 'shopping': 'Comercio',
+    'bank': 'Banco', 'atm': 'Cajero automático', 'school': 'Escuela',
+    'police station': 'Comisaría', 'bus station': 'Terminal de colectivos',
+    'train station': 'Estación de tren', 'park': 'Parque', 'motorcycle dealer': 'Concesionaria de motos',
+}
+_TIPO_SIN_POI_ES = {'Street': 'Calle', 'Point Address': 'Dirección', 'Geography': 'Zona'}
+
+
+def _categoria_lugar(item):
+    categorias = item.get('poi', {}).get('categories') or []
+    if categorias:
+        primera = categorias[0]
+        return _CATEGORIAS_LUGAR_ES.get(primera, primera.capitalize())
+    return _TIPO_SIN_POI_ES.get(item.get('type'))
+
+
 @app.get("/lugares")
 @limiter.limit("60/minute")
 def buscar_lugares(request: Request, q: str, limite: int = 5):
@@ -1700,7 +1727,19 @@ def buscar_lugares(request: Request, q: str, limite: int = 5):
                 "countrySet": "AR",
                 "lat": -34.6,
                 "lon": -58.45,
-                "radius": 60000,
+                # 150 km, no 60: con 60 km (el radio aproximado del GBA) un
+                # lugar conocido pero fuera de esa franja (la Basílica de
+                # Luján, la ciudad de Zárate) quedaba afuera de los
+                # resultados -- TomTom no avisa "no está", directamente
+                # ofrece la mejor coincidencia DENTRO del radio, que puede
+                # ser una calle homónima sin relación real (medido:
+                # "Luján basilica" con 60 km devolvía una capilla en una
+                # calle de CABA llamada Luján, no la Basílica real).
+                # 150 km sigue centrado en CABA (el "lat"/"lon" de arriba),
+                # así que una búsqueda genérica ("panadería") sigue
+                # devolviendo solo resultados cercanos -- confirmado con
+                # pruebas reales, los más cercanos ganan por distancia igual.
+                "radius": 150000,
                 "language": "es-ES",
                 "typeahead": "true",
             },
@@ -1714,7 +1753,10 @@ def buscar_lugares(request: Request, q: str, limite: int = 5):
         posicion = item.get("position", {})
         label = _label_lugar(item)
         if label and "lat" in posicion and "lon" in posicion:
-            datos.append({"label": label, "lat": posicion["lat"], "lng": posicion["lon"]})
+            datos.append({
+                "label": label, "lat": posicion["lat"], "lng": posicion["lon"],
+                "categoria": _categoria_lugar(item),
+            })
     if len(_cache_lugares) > 500:
         _cache_lugares.clear()
     _cache_lugares[clave] = {'datos': datos, 'momento': time.time()}

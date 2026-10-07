@@ -1217,8 +1217,20 @@ def test_lugares_parsea_resultados_y_cachea_la_consulta():
         primera = client.get("/lugares", params={"q": "Cafe Tortoni"}).json()
         segunda = client.get("/lugares", params={"q": "cafe   tortoni"}).json()
     assert primera == [
-        {"label": "Café Tortoni, Av. de Mayo 825", "lat": -34.6087, "lng": -58.3813},
-        {"label": "Av. de Mayo 800", "lat": -34.6, "lng": -58.38},
+        {"label": "Café Tortoni, Av. de Mayo 825", "lat": -34.6087, "lng": -58.3813, "categoria": None},
+        {"label": "Av. de Mayo 800", "lat": -34.6, "lng": -58.38, "categoria": None},
     ]
     assert segunda == primera
     assert get.call_count == 1
+
+
+def test_categoria_lugar_traduce_lo_conocido_y_no_inventa_lo_que_no():
+    # Categoria conocida: traducida.
+    assert main._categoria_lugar({"poi": {"categories": ["restaurant"]}}) == "Restaurante"
+    # Categoria de TomTom sin traduccion propia: se muestra igual, capitalizada,
+    # antes que no mostrar nada.
+    assert main._categoria_lugar({"poi": {"categories": ["some weird tag"]}}) == "Some weird tag"
+    # Sin poi (una calle o una zona): cae al tipo de resultado.
+    assert main._categoria_lugar({"type": "Street"}) == "Calle"
+    # Ni poi ni tipo reconocido: no se inventa una categoria.
+    assert main._categoria_lugar({}) is None

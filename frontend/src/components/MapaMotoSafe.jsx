@@ -89,6 +89,28 @@ function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExt
   return el
 }
 
+// Pin del lugar buscado (ver .lugar-pin en App.css): forma clásica de
+// "gota" con la punta exacta sobre el punto -- por eso el Marker se ancla
+// en 'bottom', no en el centro como los círculos simples de arriba.
+function elementoPin() {
+  // MapLibre posiciona el Marker con su PROPIO transform inline sobre este
+  // div -- animar "transform" acá encima (como hacia la primera version)
+  // pisaba esa posicion y el pin quedaba en (0,0) de la pantalla en vez de
+  // sobre el punto real (mismo problema que ya resolvio panelIn en App.css,
+  // ver ese comentario). La animacion de caida va en un div INTERNO.
+  const el = document.createElement('div')
+  el.className = 'lugar-pin'
+  el.innerHTML = `
+    <div class="lugar-pin-visual">
+      <svg width="30" height="38" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 37C15 37 28 22.5 28 14C28 6.8 22.2 1 15 1C7.8 1 2 6.8 2 14C2 22.5 15 37 15 37Z"
+              fill="#4FA8E8" stroke="#0B1620" stroke-width="1.5"/>
+        <circle cx="15" cy="14" r="5.5" fill="#0B1620"/>
+      </svg>
+    </div>`
+  return el
+}
+
 // motivo_ajuste (ver _aplicar_ajuste_riesgo en backend/main.py) incluye el
 // titular de una noticia SCRAPEADA de prensa externa, no un dato propio del
 // GCBA como el resto de los campos que ya se interpolan sin escapar en estos
@@ -395,6 +417,7 @@ function MapaMotoSafeInner({
   origenPunto,
   destinoPunto,
   ubicacionReporte,
+  lugarElegido,
   miUbicacion,
   vistaNavegacion,
   modoViaje,
@@ -1095,9 +1118,16 @@ function MapaMotoSafeInner({
       el.className = 'pulse-marker-report'
       markers.push(new Marker({ element: el }).setLngLat([ubicacionReporte.lng, ubicacionReporte.lat]).addTo(map))
     }
+    if (lugarElegido) {
+      markers.push(
+        new Marker({ element: elementoPin(), anchor: 'bottom' })
+          .setLngLat([lugarElegido.lng, lugarElegido.lat])
+          .addTo(map)
+      )
+    }
     return () => markers.forEach((m) => m.remove())
-     
-  }, [origenPunto, destinoPunto, ubicacionReporte, version])
+
+  }, [origenPunto, destinoPunto, ubicacionReporte, lugarElegido, version])
 
   // --- mi ubicación: marker persistente con movimiento animado --------------
   // Antes este marker se destruía y se recreaba en CADA fix de GPS (cada

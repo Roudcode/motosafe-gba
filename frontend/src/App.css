@@ -906,6 +906,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .pulse-marker-yo { animation: pulse-yo 1.6s infinite; }
 @keyframes pulse-yo { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
+/* Pin del lugar buscado (SES-106): antes un resultado de búsqueda solo
+   centraba el mapa ahí, sin ninguna marca -- "¿seguro que es acá?" sin forma
+   de confirmarlo de un vistazo. Mismo truco que el puck de navegación (SVG
+   propio, no el ícono por defecto de MapLibre) para que tenga la piel de la
+   app. Cae con un rebote corto (clavarse en el punto, no aparecer flotando). */
+.lugar-pin { cursor: pointer; }
+.lugar-pin-visual { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)); animation: pinDrop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes pinDrop { from { opacity: 0; transform: translateY(-14px) scale(0.6); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
 /* Puck direccional de navegación (reemplaza al punto pulsante mientras hay
    vista inclinada activa) -- flecha que apunta siempre "arriba" en pantalla,
    porque la cámara ya rota para dejar el rumbo actual hacia arriba (ver
@@ -1272,7 +1281,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; flex-direction: column; gap: 10px;
 }
 .lugar-card-texto { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-md); color: var(--text); }
-.lugar-card-texto span { overflow: hidden; text-overflow: ellipsis; }
+.lugar-card-texto span { display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Categoría del comercio/POI (SES-106), cuando TomTom la trae -- "Restaurante",
+   "Farmacia". Mismo tratamiento visual que un subtítulo de tarjeta de Maps. */
+.lugar-card-categoria { font-style: normal; font-size: var(--fs-xs); color: var(--text-dim); margin-top: 1px; }
 .lugar-card-acciones { display: flex; justify-content: flex-end; gap: 8px; }
 .lugar-card-acciones button { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: var(--fs-md); cursor: pointer; border: 1px solid var(--border); }
 .lugar-card-cerrar { background: var(--inset); color: var(--text); }
