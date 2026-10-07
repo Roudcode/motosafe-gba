@@ -26,6 +26,12 @@ export function useBusquedaDireccion(texto = '', centro = null) {
   const [buscando, setBuscando] = useState(false)
   const [buscada, setBuscada] = useState(false)
   const [error, setError] = useState(false)
+  // Diagnóstico temporal (SES-110): Rodo confirmó que el sesgo por ubicación
+  // sigue sin notarse en el celular aunque el GPS funciona. Antes de seguir
+  // adivinando, esto expone en la UI si la ÚLTIMA búsqueda real mandó centro
+  // o no -- para sacar la duda sin acceso a las devtools del teléfono. Se
+  // saca apenas se confirme la causa real.
+  const [centroUsado, setCentroUsado] = useState(null)
   const abortRef = useRef(null)
   const centroRef = useRef(centro)
   useEffect(() => { centroRef.current = centro }, [centro])
@@ -46,6 +52,7 @@ export function useBusquedaDireccion(texto = '', centro = null) {
     setResultados([])
     setBuscada(false)
     setError(false)
+    setCentroUsado(centroRef.current)
     try {
       const encontrados = await buscarSugerencias(consulta, { signal: controller.signal, centro: centroRef.current })
       if (controller.signal.aborted) return
@@ -65,5 +72,5 @@ export function useBusquedaDireccion(texto = '', centro = null) {
     return () => clearTimeout(id)
   }, [texto, buscar])
 
-  return { resultados, buscando, buscada, error, buscar, limpiar }
+  return { resultados, buscando, buscada, error, buscar, limpiar, centroUsado }
 }
