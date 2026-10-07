@@ -80,10 +80,14 @@ const DESVIOS_SEGUIDOS_PARA_RECALCULAR = 3
 // el desvío real persista.
 const COOLDOWN_RECALCULO_MS = 20000
 
-// Distancia al punto de destino para dar el viaje por terminado solo. Más
-// chico que el radio de maniobra normal (30 m, ver siguientePaso): llegar al
-// radio de maniobra del último paso solo dice "estás cerca", no "ya llegaste".
-const RADIO_LLEGADA_KM = 0.025
+// Distancia al punto de destino para dar el viaje por terminado solo. Antes
+// 25 m (más chico que el radio de maniobra normal, 30 m): probado en sitio
+// real (SES-103) con origen y destino en el mismo lugar, nunca disparaba. El
+// punto de "arrive" que da TomTom es el de la dirección geocodificada, no
+// donde estás parado -- la distancia entre ambos (más el error propio del
+// GPS del celular) supera los 25 m con facilidad. 60 m es más parecido a lo
+// que usan Maps/Waze para destinos por dirección (no por pin exacto).
+const RADIO_LLEGADA_KM = 0.06
 
 // Barra de escala manual (mismo cálculo que antes, con Leaflet): MapLibre no
 // tiene un control de escala con este estilo visual propio (el suyo trae su
