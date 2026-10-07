@@ -80,14 +80,10 @@ const DESVIOS_SEGUIDOS_PARA_RECALCULAR = 3
 // el desvío real persista.
 const COOLDOWN_RECALCULO_MS = 20000
 
-// Distancia al punto de destino para dar el viaje por terminado solo. Antes
-// 25 m (más chico que el radio de maniobra normal, 30 m): probado en sitio
-// real (SES-103) con origen y destino en el mismo lugar, nunca disparaba. El
-// punto de "arrive" que da TomTom es el de la dirección geocodificada, no
-// donde estás parado -- la distancia entre ambos (más el error propio del
-// GPS del celular) supera los 25 m con facilidad. 60 m es más parecido a lo
-// que usan Maps/Waze para destinos por dirección (no por pin exacto).
-const RADIO_LLEGADA_KM = 0.06
+// Recorrido restante (sobre la ruta, no en línea recta -- ver el efecto de
+// llegada) para dar el viaje por terminado solo. Mismo orden que el radio de
+// maniobra normal (30 m, ver siguientePaso).
+const RADIO_LLEGADA_KM = 0.03
 
 // Barra de escala manual (mismo cálculo que antes, con Leaflet): MapLibre no
 // tiene un control de escala con este estilo visual propio (el suyo trae su
@@ -1147,15 +1143,29 @@ function App() {
   // Llegada a destino: antes la tarjeta de maniobra llegaba a mostrar "Llegaste
   // a destino" (texto del último paso, tipo 'arrive') y se quedaba así -- nada
   // apagaba el viaje. pasoActual llega al último índice de pasos (ver
-  // siguientePaso) apenas se entra en su radio de maniobra, que es más grande
-  // que estar realmente parado en el destino, así que acá se exige además una
-  // distancia corta de verdad antes de cortar.
+  // siguientePaso) apenas se entra en su radio de maniobra, así que acá se
+  // exige además estar cerca de verdad antes de cortar.
+  //
+  // "Cerca" se mide IGUAL que la tarjeta (ver distanciaManiobraKm): recorrido
+  // sobre la polilínea de la ruta, no línea recta GPS-a-punto. Probado en
+  // sitio real (SES-103): con origen y destino en el mismo lugar, la ruta mide
+  // ~0 km y la tarjeta ya decía "0 m", pero la distancia en línea recta entre
+  // el GPS real y el punto de "arrive" de TomTom (la dirección geocodificada,
+  // no donde estás parado) seguía sin entrar en el radio -- medir en línea
+  // recta nunca iba a cortar en ese caso aunque la ruta ya estuviera recorrida
+  // entera. Con el mismo criterio que ve el usuario en pantalla, los dos
+  // coinciden siempre.
   useEffect(() => {
     if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
-    const pasos = rutasCalculadas[rutaSeleccionada]?.pasos || []
+    const ruta = rutasCalculadas[rutaSeleccionada]
+    const pasos = ruta?.pasos || []
     const ultimoPaso = pasos[pasos.length - 1]
     if (!ultimoPaso || ultimoPaso.tipo !== 'arrive' || pasoActual < pasos.length - 1) return
-    if (distanciaKm(miUbicacion, ultimoPaso) > RADIO_LLEGADA_KM) return
+    const faltanKm = ruta?.coords
+      ? Math.max(0, calcularProgresoRuta(ultimoPaso, ruta.coords).distanciaRecorridaKm
+                     - calcularProgresoRuta(miUbicacion, ruta.coords).distanciaRecorridaKm)
+      : distanciaKm(miUbicacion, ultimoPaso)
+    if (faltanKm > RADIO_LLEGADA_KM) return
     // Reaccion a un cambio de posicion GPS (sistema externo), no estado derivado.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     desactivarModoViaje('Llegaste a destino')
