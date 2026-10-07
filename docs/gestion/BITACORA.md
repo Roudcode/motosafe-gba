@@ -1051,3 +1051,11 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
   - Medición en seco (no se guardó nada): 172 candidatas (antes 151), 81 ubicadas (antes 79). Los cinco medios nuevos aportan poco hoy: sus feeds son chicos.
   - Verificación: 20 pruebas del scraper en verde; corrida en seco exit 0.
   - Pendiente: fuentes no periodísticas (comunicados oficiales) sin verificar todavía; y el cuello de botella de la ubicación, que es lo que llega al mapa.
+
+## 2026-10-07 — SES-102 — Viaje: el modo viaje no se apagaba al llegar (Claude Code)
+
+- Bug reportado por Rodo: la tarjeta de maniobra llega a decir "Llegaste a destino" pero el viaje sigue activo, nada lo corta.
+- Causa: `pasoActual` llega al último índice de pasos (el de tipo `arrive`) apenas la posición entra en su radio de maniobra (30 m, el mismo que cualquier giro) y se queda ahí para siempre; ningún efecto apagaba Modo Viaje.
+- Corrección: nuevo efecto que, con el paso activo en `arrive` y la posición real a menos de 25 m del punto de destino (más estricto que el radio de maniobra a propósito), apaga el viaje por el mismo camino que el botón «Salir» y muestra el toast "Llegaste a destino" en vez del genérico "Modo Viaje desactivado". De paso se corrigió que el botón «Salir» pasaba `desactivarModoViaje` directo a `onClick`, así que el evento del click se colaba como el nuevo parámetro de mensaje.
+- Verificación: lint, 77 pruebas de frontend y build sin errores. **No verificado:** GPS real llegando al punto de destino (no hay forma de simular eso en el arnés de prueba); confirmar en el celular.
+- Commit: `2ce6801`.
