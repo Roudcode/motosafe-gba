@@ -1583,6 +1583,19 @@ function App() {
           <button onClick={() => setRecargaCapas((v) => v + 1)}>Reintentar capas</button>
         </div>
       )}
+      {/* SES-112: con el backend caído, activar tráfico quedaba sin ningún
+          aviso -- las fichas de calle (tiles PNG de TomTom vía backend)
+          fallan en silencio, MapLibre no dispara un error que el usuario vea,
+          y el panel de capas seguía marcando la opción como activa. El toast
+          de App.jsx solo avisaba en un SEGUNDO intento de activarla (si
+          traficoNoDisponible ya era true). Este banner cubre el primer
+          intento, con la misma fuente/reintento que el resto de las capas. */}
+      {!backendError && capaTrafico && traficoNoDisponible && (
+        <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="status" aria-live="polite">
+          <WifiOff size={14} /> Tráfico en vivo (TomTom) no disponible ahora. Se mantiene el mapa sin esa capa.
+          <button onClick={() => { setCapaTrafico(false); setTimeout(() => setCapaTrafico(true), 50) }}>Reintentar tráfico</button>
+        </div>
+      )}
 
 
       {actividadAbierta && misReportes.length > 0 && (
