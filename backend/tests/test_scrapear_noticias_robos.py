@@ -1,4 +1,5 @@
-from scrapear_noticias_robos import categoria_de, extraer_fecha_publicacion, extraer_ubicacion, encontrar_zona, firma_titular, parsear_rss, relacionado_con_moto
+import pytest
+from scrapear_noticias_robos import categoria_de, encontrar_localidad, extraer_fecha_publicacion, extraer_ubicacion, encontrar_zona, firma_titular, parsear_rss, relacionado_con_moto, zona_de_ubicacion
 
 
 def test_categoria_no_confunde_subcadena_de_robo():
@@ -179,3 +180,72 @@ def test_nota_ya_guardada_cuenta_como_ya_en_base_y_no_como_nueva(monkeypatch):
 
     assert contadores['ya_en_base'] == 1
     assert contadores['guardadas'] == 0
+
+
+def test_localidad_del_gba_se_ubica_por_su_nombre_dentro_del_partido(monkeypatch):
+    # Caso real del dry-run 2026-10-06: notas de Punta Lara (Ensenada) y de
+    # Nordelta (Tigre) quedaban sin ubicar. Se geocodifican por la localidad.
+    query, nivel, radio = extraer_ubicacion('Murió un bebé de 10 días en un choque en Punta Lara', '')
+    assert (query, nivel, radio) == ('Punta Lara, Ensenada, Buenos Aires, Argentina', 'barrio', 800)
+    pedidos = _nominatim_falso(monkeypatch, [PARTIDO_ECHEVERRIA])
+    assert scraper.geocodificar_en_zona(query, nivel, 'Ensenada', 'Buenos Aires') == (None, 'fuera_de_zona')
+    assert len(pedidos) == 1 and pedidos[0][1] == {'featureType': 'settlement'}
+
+
+def test_localidad_sin_resultado_no_cae_al_centro_del_partido(monkeypatch):
+    query, nivel, _ = extraer_ubicacion('Ataque de perros en Nordelta', '')
+    pedidos = _nominatim_falso(monkeypatch, [None, PARTIDO_ECHEVERRIA])
+    assert scraper.geocodificar_en_zona(query, nivel, 'Tigre', 'Buenos Aires') == (None, 'vacio')
+    assert len(pedidos) == 1
+
+
+def test_localidad_solo_si_no_hay_partido_ni_barrio_y_no_como_calle():
+    # Una avenida Canning en CABA no es la localidad de Ezeiza.
+    assert encontrar_localidad('Robo en Av. Canning al 500') is None
+    assert encontrar_localidad('Robo en Canning, Ezeiza') == ('Canning', 'Ezeiza')
+    # Si hay barrio de CABA en el texto, manda la zona que ya se resolvia antes.
+    assert zona_de_ubicacion('Robo en Av. Canning, en Palermo') == ('Palermo', 'CABA')
+    assert zona_de_ubicacion('Un hecho sin zona') == (None, 'CABA')
+
+
+class _RespuestaFalsa:
+    def __init__(self, status, datos=None):
+        self.status_code = status
+        self._datos = datos or []
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(self.status_code)
+
+    def json(self):
+        return self._datos
+
+
+def _nominatim_con_red_falsa(monkeypatch, respuestas):
+    monkeypatch.setattr(scraper, '_cache_nominatim', {})
+    monkeypatch.setattr(scraper, '_nominatim_bloqueado', False)
+    monkeypatch.setattr(scraper.time, 'sleep', lambda s: None)
+    pedidos = []
+
+    def get(url, params, headers, timeout):
+        pedidos.append(params['q'])
+        return respuestas.pop(0)
+
+    monkeypatch.setattr(scraper.httpx, 'get', get)
+    return pedidos
+
+
+def test_consulta_repetida_en_la_corrida_no_vuelve_a_pedir(monkeypatch):
+    pedidos = _nominatim_con_red_falsa(monkeypatch, [_RespuestaFalsa(200, [PARTIDO_ECHEVERRIA])])
+    scraper._buscar_nominatim('Quilmes, Buenos Aires, Argentina')
+    scraper._buscar_nominatim('Quilmes, Buenos Aires, Argentina')
+    assert len(pedidos) == 1
+
+
+def test_un_429_corta_los_pedidos_del_resto_de_la_corrida(monkeypatch):
+    pedidos = _nominatim_con_red_falsa(monkeypatch, [_RespuestaFalsa(429)])
+    with pytest.raises(scraper.NominatimBloqueado):
+        scraper._buscar_nominatim('Punta Lara, Ensenada, Buenos Aires, Argentina')
+    with pytest.raises(scraper.NominatimBloqueado):
+        scraper._buscar_nominatim('Nordelta, Tigre, Buenos Aires, Argentina')
+    assert len(pedidos) == 1

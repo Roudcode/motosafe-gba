@@ -281,7 +281,10 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 USER_AGENT = "MotoSafeGBA-tesis-USAL/1.0 (proyecto academico, contacto en README del repo)"
 BBOX_GBA = "-59.5,-33.9,-57.8,-35.3"
-PAUSA_ENTRE_GEOCODES_SEG = 1.1
+# Politica de uso de Nominatim: scripts que corren a intervalos regulares no
+# pueden pasar de 4 pedidos por minuto (1 por segundo es el maximo absoluto).
+# Verificado 2026-10-06; el scraper corre cada 3 h, asi que va a 4 por minuto.
+PAUSA_ENTRE_GEOCODES_SEG = 15
 
 # Cada fuente sabe bajar su listado de URLs (sitemap XML o pagina HTML de
 # sección) -- el resto del pipeline (prefiltro de slug, fetch de la nota,
@@ -502,6 +505,21 @@ ALIAS_LOCALIDAD_PARTIDO = {
     'Castelar': 'Morón',
 }
 
+# Localidades del GBA que aparecen en notas y no son partido ni barrio. Se
+# buscan solo si encontrar_zona no encontro partido ni barrio, para no cambiar
+# ninguna resolucion que ya funcionaba. Se geocodifican por su propio nombre
+# (no por el centro del partido, que quedaria a varios km) y el resultado se
+# valida contra el partido. Medido en el dry-run del 2026-10-06 (notas sin
+# ubicar de Punta Lara, Nordelta, Canning y Glew); Nominatim las resuelve con
+# featureType=settlement dentro del partido. Fiorito queda afuera: esa consulta
+# no devuelve nada, y sin featureType devuelve un hospital.
+LOCALIDADES_GBA = {
+    'Nordelta': 'Tigre',
+    'Punta Lara': 'Ensenada',
+    'Canning': 'Ezeiza',
+    'Glew': 'Almirante Brown',
+}
+
 # Nombres de partido/barrio del GBA que TAMBIEN son nombre de una ciudad en
 # otra provincia (ambiguedad real del espanol: "San Martin" es un partido
 # del GBA pero tambien una ciudad de Tucuman/Mendoza/San Juan). Si el
@@ -712,6 +730,36 @@ def encontrar_zona(texto):
     return None
 
 
+def encontrar_localidad(texto):
+    """(localidad, partido) de LOCALIDADES_GBA si la nota la nombra como lugar
+    y no como calle ("Av. Canning", "Canning al 500"), o None. Solo se llama
+    cuando encontrar_zona no encontro nada (ver zona_de_ubicacion)."""
+    texto_norm = normalizar(texto)
+    for localidad, partido in LOCALIDADES_GBA.items():
+        loc_norm = normalizar(localidad)
+        for match in re.finditer(rf'(?<!\w){re.escape(loc_norm)}(?!\w)', texto_norm):
+            antes = texto_norm[max(0, match.start() - 12):match.start()]
+            if re.search(r'(av\.?|avenida|calle|pasaje)\s*$', antes):
+                continue
+            if not _es_nombre_de_calle(texto_norm, match.end()):
+                return localidad, partido
+    return None
+
+
+def zona_de_ubicacion(texto):
+    """(zona, localidad) para validar un geocode: el partido o barrio que
+    nombra el texto, o la localidad de LOCALIDADES_GBA con su partido. Sin
+    ninguna pista, (None, 'CABA'). Es la misma zona que usa extraer_ubicacion
+    para armar la consulta."""
+    zona_encontrada = encontrar_zona(texto)
+    if zona_encontrada:
+        return zona_encontrada
+    loc = encontrar_localidad(texto)
+    if loc:
+        return loc[1], 'Buenos Aires'
+    return None, 'CABA'
+
+
 def extraer_ubicacion(titulo, descripcion):
     """
     Devuelve (query_nominatim, nivel_precision, radio_metros) o None si no hay
@@ -733,13 +781,22 @@ def extraer_ubicacion(titulo, descripcion):
     # etc.) vive DENTRO de encontrar_zona, localizado al match puntual --
     # ver ahi y el comentario largo sobre PROVINCIAS_NO_GBA.
     zona_encontrada = encontrar_zona(texto)
+    loc = None if zona_encontrada else encontrar_localidad(texto)
     # Sin pista de zona en el texto, se asume CABA como default (no GBA en
     # general) porque en la practica las notas con detalle de calle suelen
     # ser de la Ciudad -- un sesgo conocido, no una certeza, pero mejor eso
     # que geocodificar sin ninguna localidad y arriesgar un resultado fuera
     # de la region entera.
-    zona, localidad = zona_encontrada if zona_encontrada else (None, 'CABA')
-    sufijo_zona = f", {zona}" if zona else ""
+    if zona_encontrada:
+        zona, localidad = zona_encontrada
+    elif loc:
+        zona, localidad = loc[1], 'Buenos Aires'
+    else:
+        zona, localidad = None, 'CABA'
+    # Lugar que va en la consulta: "Punta Lara, Ensenada" (localidad y partido)
+    # o solo la zona. Ver LOCALIDADES_GBA.
+    lugar = f"{loc[0]}, {zona}" if loc else zona
+    sufijo_zona = f", {lugar}" if lugar else ""
 
     # Oracion por oracion (ver _oraciones) para que una calle real nunca se
     # pegue con la primera palabra de la oracion siguiente.
@@ -754,18 +811,32 @@ def extraer_ubicacion(titulo, descripcion):
             return (f"{m.group(1)} {m.group(2)}{sufijo_zona}, {localidad}, Argentina", 'calle', 150)
 
     if zona:
-        return (f"{zona}, {localidad}, Argentina", 'barrio', 800)
+        return (f"{lugar}, {localidad}, Argentina", 'barrio', 800)
 
     return None
+
+
+_cache_nominatim = {}
+_nominatim_bloqueado = False
+
+
+class NominatimBloqueado(Exception):
+    """Nominatim respondio 429: no se vuelve a pedir en esta corrida."""
 
 
 def _buscar_nominatim(query, **extra):
     """Primer resultado de Nominatim (dict con lat, lon y address) o None.
     Mismo geocoder y mismo bbox que el frontend (geoRiesgo.js), pero desde
-    Python: User-Agent identificado (exigido por la politica de uso de
-    Nominatim) y una pausa fija entre pedidos (tambien exigida, max 1/seg).
-    No cachea entre corridas -- el volumen esperado (unas pocas notas por
-    corrida, unas pocas corridas por dia) esta lejos de necesitarlo."""
+    Python: User-Agent identificado y pausa entre pedidos (politica de uso:
+    scripts periodicos, max 4 por minuto). Dentro de una corrida se cachea
+    cada consulta repetida (varias notas nombran la misma zona). Ante un 429
+    la corrida deja de pedir a Nominatim: seguir insistiendo alarga el bloqueo."""
+    global _nominatim_bloqueado
+    clave = (query, tuple(sorted(extra.items())))
+    if clave in _cache_nominatim:
+        return _cache_nominatim[clave]
+    if _nominatim_bloqueado:
+        raise NominatimBloqueado(query)
     resp = httpx.get(
         NOMINATIM_URL,
         params={"format": "json", "q": query, "viewbox": BBOX_GBA, "bounded": 1, "limit": 1,
@@ -774,9 +845,14 @@ def _buscar_nominatim(query, **extra):
         timeout=10,
     )
     time.sleep(PAUSA_ENTRE_GEOCODES_SEG)
+    if resp.status_code == 429:
+        _nominatim_bloqueado = True
+        raise NominatimBloqueado(query)
     resp.raise_for_status()
     datos = resp.json()
-    return datos[0] if datos else None
+    resultado = datos[0] if datos else None
+    _cache_nominatim[clave] = resultado
+    return resultado
 
 
 def geocodificar_nominatim(query):
@@ -837,10 +913,14 @@ def geocodificar_en_zona(query, nivel, zona, localidad):
 
     Para el nivel 'barrio' se usa featureType=settlement, que restringe a
     lugares y límites administrativos (sin calles, estaciones ni parques
-    homónimos), y si el resultado no valida se prueba "Partido de X"."""
+    homónimos), y si el resultado no valida se prueba "Partido de X". Ese
+    respaldo solo se agrega cuando la consulta es el nombre de la zona misma:
+    para una localidad (Nordelta, en Tigre) el centro del partido queda a
+    varios km y no es una ubicación válida."""
     if nivel == 'barrio':
         consultas = [(query, {'featureType': 'settlement'})]
-        if localidad != 'CABA' and zona not in PARTIDO_DE_LOCALIDAD:
+        es_nombre_de_zona = query.split(',')[0] == zona
+        if localidad != 'CABA' and zona not in PARTIDO_DE_LOCALIDAD and es_nombre_de_zona:
             consultas.append((f"Partido de {zona}, Buenos Aires, Argentina", {}))
     else:
         consultas = [(query, {})]
@@ -1238,7 +1318,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
     query, nivel, radio = ubicacion
     # Misma zona que usó extraer_ubicacion para armar la consulta (sin zona en
     # el texto, la consulta asume CABA).
-    zona, localidad = encontrar_zona(f"{titulo}. {descripcion}") or (None, 'CABA')
+    zona, localidad = zona_de_ubicacion(f"{titulo}. {descripcion}")
     try:
         punto, motivo = geocodificar_en_zona(query, nivel, zona, localidad)
     except Exception as err:
