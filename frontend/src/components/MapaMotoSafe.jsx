@@ -378,15 +378,19 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
   }
 }
 
-// React.memo: App.jsx tiene un tick de reloj (useSegundosDesde, "hace Xs" en
-// la topbar) que lo hace re-renderizar cada segundo para siempre. Sin memo,
-// eso volvía a invocar este componente -- el más pesado de la app, dueño de
-// la instancia real de maplibre-gl -- una vez por segundo aunque ninguno de
-// sus props hubiera cambiado en absoluto. Para que memo realmente frene algo
-// hace falta que los props función que le pasa App.jsx sean estables entre
-// renders (useCallback ahí), no funciones inline nuevas en cada render --
-// ver clicMapa/onMapaReady/onTraficoEstadoCambio/onClickZonaMapa/
-// manejarPaneoManual en App.jsx.
+// React.memo: App.jsx tenía un tick de reloj por segundo (useSegundosDesde,
+// "hace Xs" en la topbar) que lo hacía re-renderizar sin parar; se retiró y
+// hoy App.jsx solo cambia de estado real con el polling (reportes y hora
+// cada 30s, hotspots cada 5 min, etc.). Sin memo, cualquier re-render de
+// App.jsx -- aunque ninguno de los props de este componente cambiara --
+// volvía a invocar el más pesado de la app, dueño de la instancia real de
+// maplibre-gl. Para que memo realmente frene algo hace falta que los props
+// función que le pasa App.jsx sean estables entre renders (useCallback ahí),
+// no funciones inline nuevas en cada render -- ver clicMapa/onMapaReady/
+// onTraficoEstadoCambio/onClickZonaMapa/manejarPaneoManual en App.jsx.
+// Verificado en vivo (SES-112): con memo, este componente solo re-renderiza
+// cuando un prop realmente cambia de valor/referencia (confirmado con un
+// diff de props entre renders); no en cada render de App.jsx.
 function MapaMotoSafeInner({
   tema,
   centro,

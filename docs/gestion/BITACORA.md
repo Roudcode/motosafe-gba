@@ -1145,3 +1145,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Verificado antes de cerrar: 25/25 pruebas del scraper, 117/117 de toda la suite de backend (9 skip esperados, de integración con PostgreSQL real que no estaba levantada).
 - **A09:** se amplía la nota existente con este cierre -- sigue en "Validado parcialmente" porque A09 en general tiene más pendientes (deduplicación semántica, validación de calles), pero el hallazgo específico de localidades sin ubicar queda resuelto y documentado.
 - Pendiente para la próxima ronda: A11 (distancia a segmentos), A17 (perfilado), A19 (script de limpieza inicial), A23 (ejecución real de accesibilidad), F08 (contratos de estado de reportes).
+
+## 2026-10-09 — SES-112 (cont.) — A17: perfilado real del mapa
+
+- Pedido: continuar el triage de SES-111/112, siguiente ítem de la lista ("A17 perfilado").
+- Método: instrumentación temporal en `App.jsx` y `MapaMotoSafe.jsx` (contador de renders en `window`, y un diff de props entre renders consecutivos), levantando el mismo entorno de prueba local (backend en puerto libre con `AUTH_HABILITADO=false`, Vite apuntando a ese backend) y midiendo en vivo con el navegador de Claude, en reposo (sin interacción) durante ventanas de ~30-40s.
+- Primera medición salió contaminada: mis propias ediciones del archivo mientras medía disparaban recargas en caliente (HMR) que inflaban el conteo -- no era un problema real de la app. Al dejar de editar y medir limpio, el resultado fue estable: `MapaMotoSafe` solo vuelve a renderizar cuando al menos un prop cambia de verdad (confirmado con el diff), nunca por un re-render vacío de `App.jsx`. Los renders que sí ocurren (cada ~9-30s) coinciden con el polling documentado (reportes y hora cada 30s) y son esperados, no un leak.
+- Encontrado de paso: el comentario que justifica el `React.memo` en `MapaMotoSafe.jsx` citaba `useSegundosDesde`, un hook que ya no existe en el código (fue retirado en un refactor anterior sin actualizar el comentario). Corregido para reflejar el estado real: el tick es de 30s (`horaActual`), no de 1s.
+- **A17** sigue "En curso": la separación incremental de `App.jsx` (2140 líneas) no se hizo en esta pasada -- es un refactor de mayor escala, no algo para resolver dentro de una sesión de perfilado. Lo que se cerró es el perfilado en sí, con evidencia real en vez de la nota vacía anterior.
+- Verificado: 79/79 pruebas de frontend, lint y build limpios. Entorno de prueba (backend/Vite de prueba, `AUTH_HABILITADO=false`) limpiado por completo al terminar.
