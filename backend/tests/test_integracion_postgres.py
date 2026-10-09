@@ -135,8 +135,7 @@ def test_conexion_cortada_por_el_servidor_se_descarta(pool_real, migrada):
     pool_real.putconn(nueva)
 
 
-def test_ciclo_de_reportes_con_base_real(pool_real, migrada, monkeypatch):
-    monkeypatch.setattr(main, '_esquema_reportes_listo', False)
+def test_ciclo_de_reportes_con_base_real(pool_real, migrada):
     cliente = TestClient(main.app)
     autor, votante = str(uuid.uuid4()), str(uuid.uuid4())
     r = cliente.post('/reportes', json={'lat': -34.6037, 'lng': -58.3816, 'categoria': 'robo', 'autor_id': autor})
@@ -206,13 +205,11 @@ def test_carga_inicial_solo_llena_tablas_vacias(url_base, tmp_path):
         admin.close()
 
 
-def test_prensa_excluye_google_y_usa_fecha_de_ingesta_si_la_publicada_no_sirve(pool_real, migrada, monkeypatch):
+def test_prensa_excluye_google_y_usa_fecha_de_ingesta_si_la_publicada_no_sirve(pool_real, migrada):
     """SES-080 (DEC-011): Google Noticias no se devuelve, y una fecha de
     publicación implausible (anterior a la ventana o posterior a la ingesta)
     cae a la de ingesta. Las filas no se borran."""
-    monkeypatch.setattr(main, '_esquema_prensa_listo', False)
     cliente = TestClient(main.app)
-    # Primera llamada: asegura la tabla de prensa en la base de prueba.
     assert cliente.get('/reportes-prensa').status_code == 200
     casos = [
         ('Google Noticias GBA - seguridad', 'https://g.test/1', 'now()', 'now()'),                       # excluida por fuente

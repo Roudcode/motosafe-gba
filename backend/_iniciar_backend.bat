@@ -20,4 +20,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo Aplicando migraciones versionadas (no hace nada si ya estan aplicadas)...
+python migrar.py
+if errorlevel 1 (
+    echo.
+    echo No se pudieron aplicar las migraciones. Revisa DATABASE_URL en backend\.env
+    echo y que la base de datos este accesible.
+    pause
+    exit /b 1
+)
+
 python run_dev.py

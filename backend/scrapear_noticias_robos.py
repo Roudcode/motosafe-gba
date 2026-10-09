@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Scraper de noticias de robos/asaltos en el GBA, para la tabla reportes_prensa
-(ver backend/main.py, _asegurar_tabla_prensa). NO es en vivo -- pensado para
+(ver backend/migrations/003_reportes_prensa.sql). NO es en vivo -- pensado para
 correr unas pocas veces por dia (a mano, o con el Programador de Tareas de
 Windows), nunca en cada request. Ver la nota larga en main.py sobre por que
 esto es una fuente separada de reportes_colaborativos y por que no alimenta
@@ -1257,6 +1257,9 @@ def _parsear_fecha_iso(valor):
 
 
 def _asegurar_tabla(cur):
+    """Red de seguridad para una corrida manual contra una base que todavia
+    no paso por backend/migrar.py (ver migrations/003_reportes_prensa.sql,
+    que define este mismo esquema de forma versionada)."""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS reportes_prensa (
             id SERIAL PRIMARY KEY,
@@ -1275,9 +1278,7 @@ def _asegurar_tabla(cur):
     """)
     # ALTER para bases que ya tenian la tabla creada antes de v5 (sin esta
     # columna) -- CREATE TABLE IF NOT EXISTS no la agrega si la tabla ya
-    # existe. Mismo patron que usa main.py (_asegurar_tabla_prensa) del lado
-    # del backend, para que correr cualquiera de los dos primero deje la
-    # tabla en el mismo estado.
+    # existe.
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
     cur.execute("ALTER TABLE reportes_prensa ALTER COLUMN url_fuente TYPE TEXT")

@@ -723,70 +723,6 @@ def predecir_gravedad(request: Request, contexto: ContextoSiniestro):
     }
 
 
-def _asegurar_tabla_reportes(conn):
-    """
-    Compatibilidad para instalaciones existentes. Las instalaciones nuevas se
-    inicializan con ``backend/migrar.py`` y las migraciones versionadas; este
-    guard evita romper una instancia aún no migrada durante la transición.
-    """
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS reportes_colaborativos (
-            id SERIAL PRIMARY KEY,
-            lat DOUBLE PRECISION NOT NULL,
-            lng DOUBLE PRECISION NOT NULL,
-            categoria VARCHAR(30) NOT NULL,
-            autor_id VARCHAR(50) NOT NULL,
-            delete_token_hash VARCHAR(64),
-            creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
-    """)
-    # Las filas creadas antes de la corrección no tienen token. Siguen siendo
-    # visibles hasta vencer, pero no se pueden borrar con un UUID público.
-    cur.execute("ALTER TABLE reportes_colaborativos ADD COLUMN IF NOT EXISTS delete_token_hash VARCHAR(64)")
-    conn.commit()
-    cur.close()
-
-
-def _asegurar_tabla_confirmaciones(conn):
-    """
-    Compatibilidad para instalaciones existentes. Un voto ("confirma" / "desmiente") por dispositivo y por reporte -- el UNIQUE
-    de mas abajo es lo que hace que votar de nuevo actualice el voto propio en vez
-    de sumar otro (ver confirmar_reporte, INSERT ... ON CONFLICT). ON DELETE CASCADE
-    porque una confirmacion sin su reporte no significa nada.
-    """
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS reportes_confirmaciones (
-            id SERIAL PRIMARY KEY,
-            reporte_id INTEGER NOT NULL REFERENCES reportes_colaborativos(id) ON DELETE CASCADE,
-            autor_id VARCHAR(50) NOT NULL,
-            tipo VARCHAR(10) NOT NULL,
-            creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-            UNIQUE (reporte_id, autor_id)
-        )
-    """)
-    conn.commit()
-    cur.close()
-
-
-_esquema_reportes_listo = False
-_lock_esquema_reportes = threading.Lock()
-
-
-def _asegurar_esquema_reportes_una_vez(conn):
-    """Compatibilidad transitoria sin ejecutar DDL en cada request."""
-    global _esquema_reportes_listo
-    if _esquema_reportes_listo:
-        return
-    with _lock_esquema_reportes:
-        if _esquema_reportes_listo:
-            return
-        _asegurar_tabla_reportes(conn)
-        _asegurar_tabla_confirmaciones(conn)
-        _esquema_reportes_listo = True
-
-
 class ReporteNuevo(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lng: float = Field(ge=-180, le=180)
@@ -828,7 +764,6 @@ def crear_reporte(request: Request, reporte: ReporteNuevo):
     delete_token = secrets.token_urlsafe(32)
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_tabla_reportes(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT COUNT(*) AS cantidad FROM reportes_colaborativos
@@ -892,7 +827,6 @@ def confirmar_reporte(request: Request, reporte_id: int, confirmacion: Confirmac
     """
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_esquema_reportes_una_vez(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT autor_id FROM reportes_colaborativos WHERE id = %s", (reporte_id,))
         reporte = cur.fetchone()
@@ -928,7 +862,6 @@ def listar_reportes():
     """
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_esquema_reportes_una_vez(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT r.id, r.lat, r.lng, r.categoria, r.creado_en,
@@ -983,7 +916,6 @@ def borrar_reporte(request: Request, reporte_id: int, delete_token: str = Header
     """
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_tabla_reportes(conn)
         cur = conn.cursor()
         cur.execute(
             "DELETE FROM reportes_colaborativos WHERE id = %s AND delete_token_hash = %s",
@@ -1045,57 +977,6 @@ _FECHA_REFERENCIA_PRENSA_SQL = f"""
 """
 
 
-_esquema_prensa_listo = False
-_lock_esquema_prensa = threading.Lock()
-
-
-def _asegurar_tabla_prensa(conn):
-    """Compatibilidad transitoria, una vez por proceso. Antes corría en cada
-    request de /hotspots, /corredores y /reportes-prensa: el ALTER TABLE toma
-    un lock exclusivo y, si el scraper tenía una transacción abierta sobre la
-    tabla, todas las lecturas quedaban encoladas detrás (504, SES-072)."""
-    global _esquema_prensa_listo
-    if _esquema_prensa_listo:
-        return
-    with _lock_esquema_prensa:
-        if _esquema_prensa_listo:
-            return
-        _crear_o_actualizar_tabla_prensa(conn)
-        _esquema_prensa_listo = True
-
-
-def _crear_o_actualizar_tabla_prensa(conn):
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS reportes_prensa (
-            id SERIAL PRIMARY KEY,
-            lat DOUBLE PRECISION NOT NULL,
-            lng DOUBLE PRECISION NOT NULL,
-            nivel_precision VARCHAR(20) NOT NULL,
-            radio_metros INTEGER NOT NULL,
-            titular TEXT NOT NULL,
-            url_fuente TEXT NOT NULL UNIQUE,
-            fuente VARCHAR(50) NOT NULL,
-            tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo',
-            relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE,
-            publicado_en TIMESTAMPTZ,
-            creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
-    """)
-    # Para bases que ya tenian la tabla creada antes de que existiera esta
-    # columna (CREATE TABLE IF NOT EXISTS no la agrega si la tabla ya
-    # existe) -- ver la misma alteracion del lado del scraper
-    # (scrapear_noticias_robos.py:_asegurar_tabla), asi que corra primero
-    # cualquiera de los dos dos la tabla termina igual.
-    cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
-    cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
-    # Los enlaces de agregadores pueden incluir parámetros de redirección muy
-    # largos; TEXT evita que una sola URL válida interrumpa una corrida.
-    cur.execute("ALTER TABLE reportes_prensa ALTER COLUMN url_fuente TYPE TEXT")
-    conn.commit()
-    cur.close()
-
-
 @app.get("/reportes-prensa")
 def listar_reportes_prensa():
     """
@@ -1106,7 +987,6 @@ def listar_reportes_prensa():
     """
     conn = _pool_conexiones.getconn()
     try:
-        _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(f"""
             SELECT id, lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto,
@@ -1173,7 +1053,6 @@ def _obtener_reportes_recientes_por_tipo(tipo_incidente, dias=DIAS_AJUSTE_RECIEN
     conn = None
     try:
         conn = _pool_conexiones.getconn()
-        _asegurar_tabla_prensa(conn)
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(f"""
             SELECT lat, lng, titular, {_FECHA_REFERENCIA_PRENSA_SQL} AS fecha_referencia
@@ -1381,7 +1260,6 @@ def cobertura_capas():
     conn = None
     try:
         conn = _pool_conexiones.getconn()
-        _asegurar_tabla_prensa(conn)
         cur = conn.cursor()
         cur.execute(f"SELECT max({_FECHA_REFERENCIA_PRENSA_SQL}) FROM reportes_prensa WHERE {_FILTRO_FUENTES_PRENSA_SQL}")
         fila = cur.fetchone()
