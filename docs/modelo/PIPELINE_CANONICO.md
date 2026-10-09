@@ -12,7 +12,7 @@ Actualizado: 2026-10-06 (SES-077). Evidencia: [docs/evidencias/2026-10-06/A19-pi
 
 | Paso | Script | Entrada | Salida (en `data/`) | Red |
 |---|---|---|---|---|
-| 0 | (notebook histórico, sección 1) | `siniestros_viales_hechos.csv`, `siniestros_viales_victimas.csv` | `motos_limpio.csv` | No |
+| 0 | `limpiar_siniestros_motos.py` | `siniestros_viales_hechos.csv` | `motos_limpio.csv` | No |
 | 1 | `fetch_delitos_caba.py` | Buenos Aires Data | `delitos_caba.csv` | Sí |
 | 2 | `fetch_clima_historico.py` | Open-Meteo | `clima_historico.csv` | Sí |
 | 3 | `construir_indice_inseguridad.py` | `delitos_caba.csv` | `indice_inseguridad_comuna.csv` | No |
@@ -30,5 +30,8 @@ En los pasos 4, 5 y 7 los CSV de capas quedan en `data/` y se versionan (SES-076
 
 ## Límites
 
-- **El paso 0 no tiene script.** `motos_limpio.csv` sale de la sección de limpieza del notebook histórico, que según el assessment no corre de punta a punta. Se trata como entrada congelada (hash en la evidencia). Escribir un script canónico de limpieza queda pendiente.
 - Los pasos 1, 2 y 7 dependen de servicios externos y pueden devolver datos distintos con el tiempo.
+
+## Notas
+
+- **Paso 0** (`limpiar_siniestros_motos.py`, SES-112): reproduce exactamente la sección 1 del notebook histórico (filtra la fila con error de exportación de Excel, normaliza columnas de texto, agrega `comuna` desde `comuna_siniestro`, descarta filas sin coordenadas válidas y filtra a motociclistas). Verificado con hash SHA256: la salida es byte a byte idéntica al `motos_limpio.csv` vigente. `siniestros_viales_victimas.csv` no es entrada de este paso -- el notebook lo carga en la misma sección pero nunca lo combina con `hechos` antes de guardar `motos_limpio.csv`; se vuelve a leer, limpio e independiente, en la sección de ablación demográfica (A03). La tabla de arriba quedó corregida: antes listaba `victimas` como entrada del paso 0, lo cual no reflejaba lo que el notebook realmente hace.
