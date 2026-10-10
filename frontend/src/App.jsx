@@ -1067,6 +1067,43 @@ function App() {
     () => reportes.filter((r) => r.esPropio || tokensReportes[String(r.id)]),
     [reportes, tokensReportes]
   )
+  // F08: distinto de misReportes (solo vigentes, sale de GET /reportes). Esto
+  // puede tener reportes vencidos o retirados por consenso, que GET /reportes
+  // excluye a propósito porque el mapa público solo muestra lo vigente -- ver
+  // POST /reportes/mios en el backend. Se pide solo cuando se abre el panel
+  // (no hace falta tenerlo cargado todo el tiempo) y con la misma credencial
+  // privada (id + delete_token) que ya se usa para borrar.
+  const tengoReportesPropios = Object.keys(tokensReportes).length > 0
+  const [historialReportes, setHistorialReportes] = useState([])
+  const [cargandoHistorial, setCargandoHistorial] = useState(false)
+  const [errorHistorial, setErrorHistorial] = useState(false)
+  useEffect(() => {
+    if (!actividadAbierta) return
+    const ids = Object.keys(tokensReportes)
+    if (ids.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHistorialReportes([])
+      return
+    }
+    const controller = new AbortController()
+    setCargandoHistorial(true)
+    setErrorHistorial(false)
+    fetch(`${API_URL}/reportes/mios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({ reportes: ids.map((id) => ({ id: Number(id), delete_token: tokensReportes[id] })) }),
+    })
+      .then((r) => { if (!r.ok) throw new Error('No se pudo cargar el historial'); return r.json() })
+      .then((data) => setHistorialReportes(data.map((r) => ({
+        id: r.id, lat: r.lat, lng: r.lng, categoria: r.categoria,
+        creadoEn: r.creado_en, estado: r.estado,
+      }))))
+      .catch(() => { if (!controller.signal.aborted) setErrorHistorial(true) })
+      .finally(() => { if (!controller.signal.aborted) setCargandoHistorial(false) })
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actividadAbierta])
 
   const zonasAjustadas = useMemo(() => {
     return ZONAS_RIESGO.map((z) => ({ ...z, ajuste: calcularAjuste(z, reportes) }))
@@ -1483,8 +1520,8 @@ function App() {
             </div>
           )}
           <div
-            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${misReportes.length > 0 ? 'clickeable' : ''}`}
-            onClick={() => { if (misReportes.length > 0) { setActividadAbierta((v) => !v); setCapasAbiertas(false) } }}
+            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${tengoReportesPropios ? 'clickeable' : ''}`}
+            onClick={() => { if (tengoReportesPropios) { setActividadAbierta((v) => !v); setCapasAbiertas(false) } }}
           >
             <span className="status-dot" />
             {textoTopbar}
@@ -1598,25 +1635,43 @@ function App() {
       )}
 
 
-      {actividadAbierta && misReportes.length > 0 && (
+      {actividadAbierta && tengoReportesPropios && (
         <div className="actividad-panel panel-enter hazard-edge">
           <div className="actividad-header">
             <span className="cercanas-title">Actividad reciente</span>
             <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad"><X size={14} /></button>
           </div>
-          {misReportes.map((rep) => {
+          {/* F08: mientras el historial no cargó (o si falló), se ve lo
+              vigente -- que ya se tenía antes, sin esperar a la red -- para
+              no mostrar el panel vacío. Una vez que historialReportes trae
+              algo, manda eso: incluye además lo vencido y lo retirado por
+              consenso, que misReportes nunca tiene porque sale de GET
+              /reportes (solo vigente, a propósito). */}
+          {cargandoHistorial && historialReportes.length === 0 && <p className="actividad-estado-carga">Cargando historial…</p>}
+          {errorHistorial && <p className="actividad-estado-carga">No se pudo cargar el historial completo; se muestra lo vigente.</p>}
+          {(historialReportes.length > 0
+            ? historialReportes
+            : misReportes.map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, categoria: r.categoria, creadoEn: r.creadoEn, estado: 'vigente' }))
+          ).map((rep) => {
             const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
+            const textoEstado = rep.estado === 'vencido' ? `Venció · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
+              : rep.estado === 'desmentido' ? `Retirado por la comunidad · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
+              : `Vigente · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
             return (
-              <button key={rep.id} className="actividad-item" onClick={() => { setVuelo({ lat: rep.lat, lng: rep.lng, zoom: 16 }); setActividadAbierta(false) }}>
+              <button
+                key={rep.id}
+                className={`actividad-item ${rep.estado !== 'vigente' ? 'actividad-item-historico' : ''}`}
+                onClick={() => { setVuelo({ lat: rep.lat, lng: rep.lng, zoom: 16 }); setActividadAbierta(false) }}
+              >
                 <span className="actividad-icon">{cat?.Icon && <cat.Icon size={15} />}</span>
                 <span className="actividad-texto">
                   <span className="actividad-label">{cat?.label}</span>
-                  <span className="actividad-hora">Vigente · {formatearAntiguedad(rep.creadoEn, horaActual)}</span>
+                  <span className="actividad-hora">{textoEstado}</span>
                 </span>
               </button>
             )
           })}
-          <button className="actividad-borrar" onClick={borrarReportes}>Borrar mis reportes</button>
+          {misReportes.length > 0 && <button className="actividad-borrar" onClick={borrarReportes}>Borrar mis reportes</button>}
         </div>
       )}
 
@@ -1914,6 +1969,18 @@ function App() {
                   <span className="cercanas-dot" style={{ background: NIVELES[z.nivel].color }} />
                   {z.tipoRiesgo === 'inseguridad' ? <ShieldAlert size={11} className="ruta-resumen-icono" /> : <Siren size={11} className="ruta-resumen-icono" />}
                   {z.nombre}
+                  {/* A11: distancia real al segmento de ruta más cercano, no
+                      solo "cruza" (el umbral ya filtra eso). "cruza a 80m" y
+                      "cruza a 580m" expresan una incertidumbre muy distinta
+                      sobre si la zona corresponde de verdad al tramo. */}
+                  {Number.isFinite(z.distanciaSegmentoKm) && (
+                    <span
+                      className="ruta-resumen-distancia"
+                      title="Distancia desde esta zona al punto más cercano del trazado de la ruta"
+                    >
+                      a {formatearDistancia(z.distanciaSegmentoKm)}
+                    </span>
+                  )}
                   {z.ajustadoPorHorario && (
                     <Clock size={11} className="ruta-resumen-ajuste" title={z.motivoAjusteHorario || 'Nivel subido por franja horaria'} />
                   )}

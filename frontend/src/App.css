@@ -373,6 +373,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .actividad-texto { display: flex; flex-direction: column; }
 .actividad-label { font-size: var(--fs-base); color: var(--text); }
 .actividad-hora { font-size: var(--fs-xs); color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
+/* F08: vencido/desmentido se atenúan (ya no están en el mapa, a diferencia
+   de un vigente) pero sin ocultarlos -- siguen siendo parte del historial. */
+.actividad-item-historico { opacity: 0.6; }
+.actividad-item-historico .actividad-icon { color: var(--text-dim); }
+.actividad-estado-carga { font-size: var(--fs-xs); color: var(--text-dim); padding: 6px 0; }
 .actividad-borrar {
   margin-top: 10px; width: 100%; background: none; border: 1px solid var(--border); color: var(--rojo);
   border-radius: var(--r-sm); padding: 7px; font-size: var(--fs-sm); cursor: pointer;
@@ -630,6 +635,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    alerta que .popup-ajuste, chico porque va al lado del nombre de la zona,
    no como linea propia. */
 .ruta-resumen-ajuste { color: #FF8C42; flex-shrink: 0; margin-left: 2px; }
+/* A11: distancia real de la zona al trazado de la ruta -- chica y apagada,
+   es un dato secundario de incertidumbre, no compite con el nombre. */
+.ruta-resumen-distancia { font-size: var(--fs-2xs); color: var(--text-dimmer); flex-shrink: 0; margin-left: auto; padding-left: 6px; white-space: nowrap; }
 .desglose-pts { font-size: var(--fs-2xs); color: var(--text-dimmer); margin-left: 2px; opacity: 0.7; }
 .ruta-sin-alternativa { font-size: var(--fs-sm); color: var(--text-dimmer); margin-top: 4px; font-style: italic; }
 .ruta-cobertura-aviso { font-size: var(--fs-sm); color: var(--text-dimmer); margin: 8px 0 0; line-height: 1.35; }

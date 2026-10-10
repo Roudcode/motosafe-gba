@@ -851,6 +851,28 @@ def confirmar_reporte(request: Request, reporte_id: int, confirmacion: Confirmac
     return fila
 
 
+def _estado_reporte(categoria, creado_en, confirmaciones, desmentidas, ahora):
+    """Estado real de un reporte: 'vigente', 'vencido' (pasó su ventana de
+    tiempo por categoría) o 'desmentido' (la comunidad lo retiró por consenso
+    antes de vencer, ver MIN_DESMENTIDAS_PARA_OCULTAR). El orden de los
+    chequeos -- tiempo primero, consenso después -- es el mismo que usaba
+    listar_reportes antes de esta función existir, para no cambiar su
+    comportamiento al extraerla. vence_en es la fecha teórica de vencimiento
+    por tiempo, se devuelve siempre (incluso para un reporte ya desmentido)."""
+    vigencia_horas = VIGENCIA_HORAS_POR_CATEGORIA.get(categoria, VIGENCIA_HORAS_DEFAULT)
+    vence_en = creado_en + timedelta(hours=vigencia_horas)
+    edad_horas = (ahora - creado_en).total_seconds() / 3600
+    if edad_horas > vigencia_horas:
+        return 'vencido', vence_en
+    retirado_por_consenso = (
+        desmentidas >= MIN_DESMENTIDAS_PARA_OCULTAR
+        and (desmentidas - confirmaciones) >= MIN_DIFERENCIA_DESMENTIDAS_PARA_OCULTAR
+    )
+    if retirado_por_consenso:
+        return 'desmentido', vence_en
+    return 'vigente', vence_en
+
+
 @app.get("/reportes")
 def listar_reportes():
     """
@@ -880,19 +902,12 @@ def listar_reportes():
     ahora = datetime.now(timezone.utc)
     vigentes = []
     for fila in filas:
-        vigencia_horas = VIGENCIA_HORAS_POR_CATEGORIA.get(fila['categoria'], VIGENCIA_HORAS_DEFAULT)
-        edad_horas = (ahora - fila['creado_en']).total_seconds() / 3600
-        if edad_horas > vigencia_horas:
-            continue
         # .get (no fila[...]) para tolerar filas sin estas columnas -- pasa en los
         # tests que mockean fetchall con dicts a mano sin confirmaciones/desmentidas.
         desmentidas = fila.get('desmentidas', 0)
         confirmaciones = fila.get('confirmaciones', 0)
-        retirado_por_consenso = (
-            desmentidas >= MIN_DESMENTIDAS_PARA_OCULTAR
-            and (desmentidas - confirmaciones) >= MIN_DIFERENCIA_DESMENTIDAS_PARA_OCULTAR
-        )
-        if retirado_por_consenso:
+        estado, vence_en = _estado_reporte(fila['categoria'], fila['creado_en'], confirmaciones, desmentidas, ahora)
+        if estado != 'vigente':
             continue
         # La identidad de dispositivo sólo se usa del lado servidor para
         # impedir auto-voto; no forma parte del contrato público del mapa.
@@ -900,7 +915,7 @@ def listar_reportes():
             'id': fila['id'], 'lat': fila['lat'], 'lng': fila['lng'],
             'categoria': fila['categoria'], 'creado_en': fila['creado_en'],
             'confirmaciones': confirmaciones, 'desmentidas': desmentidas,
-            'vence_en': (fila['creado_en'] + timedelta(hours=vigencia_horas)).isoformat(),
+            'vence_en': vence_en.isoformat(),
         })
     return vigentes
 
@@ -932,6 +947,75 @@ def borrar_reporte(request: Request, reporte_id: int, delete_token: str = Header
     finally:
         _pool_conexiones.putconn(conn)
     return {"eliminado": True}
+
+
+class ReporteMioConsulta(BaseModel):
+    id: int
+    # Misma credencial privada que autoriza borrar (ver borrar_reporte) --
+    # reutilizarla acá evita inventar un segundo mecanismo de identidad para
+    # lo mismo: "este dispositivo es dueño de este reporte".
+    delete_token: str = Field(min_length=32, max_length=256)
+
+
+class ConsultaMisReportes(BaseModel):
+    # Tope para no aceptar un batch arbitrariamente grande -- tokensReportes
+    # en el frontend es, en la práctica, un puñado de reportes por dispositivo
+    # (la cuota diaria ya los limita, ver CUOTA_REPORTES_POR_DIA_POR_AUTOR).
+    reportes: list[ReporteMioConsulta] = Field(max_length=50)
+
+
+@app.post("/reportes/mios")
+@limiter.limit("20/minute")
+def listar_mis_reportes(request: Request, consulta: ConsultaMisReportes):
+    """
+    Estado histórico de reportes propios: vigente, vencido o desmentido.
+    GET /reportes no alcanza para esto a propósito -- excluye los reportes
+    vencidos o retirados por consenso porque el mapa público solo debe
+    mostrar lo vigente (ver listar_reportes). Acá la identidad es la misma
+    credencial privada que autoriza borrar (id + delete_token); un id sin su
+    token correcto, o el de un reporte ajeno, simplemente no aparece en la
+    respuesta -- mismo criterio de "no revelar información" que borrar_reporte.
+    """
+    if not consulta.reportes:
+        return []
+    ids = [r.id for r in consulta.reportes]
+    # Conjunto de pares (no dict id->hash): si el mismo id viene dos veces con
+    # tokens distintos -- normalmente no pasa, pero el cliente podría mandarlo
+    # mal -- un dict se quedaría solo con el último y podría descartar el
+    # token correcto si vino antes que uno equivocado para el mismo id.
+    pares_validos = {(r.id, _hash_delete_token(r.delete_token)) for r in consulta.reportes}
+    conn = _pool_conexiones.getconn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT r.id, r.lat, r.lng, r.categoria, r.creado_en, r.delete_token_hash,
+                   COALESCE(SUM(CASE WHEN c.tipo = 'confirma' THEN 1 ELSE 0 END), 0) AS confirmaciones,
+                   COALESCE(SUM(CASE WHEN c.tipo = 'desmiente' THEN 1 ELSE 0 END), 0) AS desmentidas
+            FROM reportes_colaborativos r
+            LEFT JOIN reportes_confirmaciones c ON c.reporte_id = r.id
+            WHERE r.id = ANY(%s)
+            GROUP BY r.id
+        """, (ids,))
+        filas = cur.fetchall()
+        cur.close()
+    finally:
+        _pool_conexiones.putconn(conn)
+
+    ahora = datetime.now(timezone.utc)
+    resultado = []
+    for fila in filas:
+        if (fila['id'], fila['delete_token_hash']) not in pares_validos:
+            continue
+        confirmaciones = fila.get('confirmaciones', 0)
+        desmentidas = fila.get('desmentidas', 0)
+        estado, vence_en = _estado_reporte(fila['categoria'], fila['creado_en'], confirmaciones, desmentidas, ahora)
+        resultado.append({
+            'id': fila['id'], 'lat': fila['lat'], 'lng': fila['lng'],
+            'categoria': fila['categoria'], 'creado_en': fila['creado_en'],
+            'confirmaciones': confirmaciones, 'desmentidas': desmentidas,
+            'estado': estado, 'vence_en': vence_en.isoformat(),
+        })
+    return resultado
 
 
 # --- Reportes de prensa (corroborados por medios, no por usuarios) ---

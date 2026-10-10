@@ -154,6 +154,57 @@ def test_ciclo_de_reportes_con_base_real(pool_real, migrada):
     assert _contar(migrada, 'SELECT count(*) FROM reportes_confirmaciones WHERE reporte_id = %s', rid) == 0
 
 
+def test_mis_reportes_distingue_vigente_vencido_y_desmentido_con_base_real(pool_real, migrada):
+    """F08: historial de reportes propios por (id, delete_token) -- la misma
+    credencial privada que autoriza borrar. GET /reportes no sirve para esto
+    porque excluye a propósito lo vencido y lo desmentido."""
+    cliente = TestClient(main.app)
+    autor = str(uuid.uuid4())
+
+    vigente = cliente.post('/reportes', json={'lat': -34.6, 'lng': -58.4, 'categoria': 'robo', 'autor_id': autor})
+    vencido = cliente.post('/reportes', json={'lat': -34.6, 'lng': -58.4, 'categoria': 'corte', 'autor_id': autor})
+    desmentido = cliente.post('/reportes', json={'lat': -34.6, 'lng': -58.4, 'categoria': 'pavimento', 'autor_id': autor})
+    id_vigente, token_vigente = vigente.json()['id'], vigente.json()['delete_token']
+    id_vencido, token_vencido = vencido.json()['id'], vencido.json()['delete_token']
+    id_desmentido, token_desmentido = desmentido.json()['id'], desmentido.json()['delete_token']
+
+    # 'corte' vence a las 12h (VIGENCIA_HORAS_POR_CATEGORIA): lo hacemos pasar
+    # como creado hace 13h para que quede vencido sin esperar de verdad.
+    with psycopg2.connect(migrada) as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE reportes_colaborativos SET creado_en = now() - interval '13 hours' WHERE id = %s",
+            (id_vencido,),
+        )
+
+    # Dos votantes distintos desmienten el tercero -- supera MIN_DESMENTIDAS_PARA_OCULTAR
+    # y la diferencia contra confirmaciones (0) también.
+    for _ in range(2):
+        votante = str(uuid.uuid4())
+        assert cliente.post(
+            f'/reportes/{id_desmentido}/confirmar', json={'autor_id': votante, 'tipo': 'desmiente'}
+        ).status_code == 201
+
+    consulta = {'reportes': [
+        {'id': id_vigente, 'delete_token': token_vigente},
+        {'id': id_vencido, 'delete_token': token_vencido},
+        {'id': id_desmentido, 'delete_token': token_desmentido},
+        {'id': id_vigente, 'delete_token': 'x' * 40},  # token equivocado: no debe aparecer
+        {'id': 999999, 'delete_token': 'y' * 40},  # id inexistente: no debe aparecer
+    ]}
+    r = cliente.post('/reportes/mios', json=consulta)
+    assert r.status_code == 200
+    por_id = {fila['id']: fila for fila in r.json()}
+    assert len(por_id) == 3  # ni el token equivocado ni el id inexistente aparecen
+    assert por_id[id_vigente]['estado'] == 'vigente'
+    assert por_id[id_vencido]['estado'] == 'vencido'
+    assert por_id[id_desmentido]['estado'] == 'desmentido'
+    assert por_id[id_desmentido]['desmentidas'] == 2
+
+
+def test_mis_reportes_vacio_no_pega_a_la_base(pool_real, migrada):
+    assert TestClient(main.app).post('/reportes/mios', json={'reportes': []}).json() == []
+
+
 def test_health_informa_base_ok_con_postgres_real(pool_real):
     r = TestClient(main.app).get('/health')
     assert r.status_code == 200

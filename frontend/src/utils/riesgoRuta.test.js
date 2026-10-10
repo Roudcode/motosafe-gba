@@ -150,6 +150,22 @@ describe('calcularZonasCruzadasPorRuta', () => {
     expect(cruces[0].map((z) => z.id)).toEqual(['z1'])
     expect(cruces[1].map((z) => z.id)).toEqual(['z2'])
   })
+
+  it('A11: cada zona cruzada trae distanciaSegmentoKm, la distancia real al trazado', () => {
+    const cruces = calcularZonasCruzadasPorRuta([ruta], [zonaEncimaDeLaRuta, zonaLejos], 1.5)
+    const z1 = cruces[0].find((z) => z.id === 'z1')
+    const z2 = cruces[0].find((z) => z.id === 'z2')
+    // Zona exactamente sobre un punto de la ruta: distancia ~0.
+    expect(z1.distanciaSegmentoKm).toBeCloseTo(0, 2)
+    // Zona a ~1.1km: la distancia real queda registrada, no solo "cruzó".
+    expect(z2.distanciaSegmentoKm).toBeGreaterThan(1)
+    expect(z2.distanciaSegmentoKm).toBeLessThan(1.5)
+  })
+
+  it('A11: no muta las zonas originales (devuelve copias con el campo agregado)', () => {
+    calcularZonasCruzadasPorRuta([ruta], [zonaEncimaDeLaRuta], 0.6)
+    expect(zonaEncimaDeLaRuta.distanciaSegmentoKm).toBeUndefined()
+  })
 })
 
 describe('calcularCoberturaRegistrada', () => {

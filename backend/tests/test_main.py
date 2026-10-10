@@ -553,6 +553,38 @@ def test_borrar_reporte_rechaza_token_corto():
     assert r.status_code == 422
 
 
+def test_estado_reporte_vencido_gana_sobre_desmentido():
+    """Si un reporte ya pasó su ventana de tiempo Y además cumple el umbral
+    de desmentidas, gana 'vencido' -- mismo orden de chequeo que tenía
+    listar_reportes antes de extraer esta función (tiempo primero)."""
+    ahora = datetime.now(timezone.utc)
+    estado, vence_en = main._estado_reporte(
+        "corte", ahora - timedelta(days=2), confirmaciones=0, desmentidas=5, ahora=ahora
+    )
+    assert estado == "vencido"
+    assert vence_en < ahora
+
+
+def test_estado_reporte_vigente_sin_desmentidas_suficientes():
+    ahora = datetime.now(timezone.utc)
+    estado, _ = main._estado_reporte(
+        "robo", ahora - timedelta(hours=1), confirmaciones=0, desmentidas=1, ahora=ahora
+    )
+    assert estado == "vigente"
+
+
+def test_mis_reportes_rechaza_mas_de_50_items_sin_tocar_la_base():
+    consulta = {"reportes": [{"id": i, "delete_token": "x" * 32} for i in range(51)]}
+    r = client.post("/reportes/mios", json=consulta)
+    assert r.status_code == 422
+
+
+def test_mis_reportes_vacio_no_pega_a_la_base():
+    r = client.post("/reportes/mios", json={"reportes": []})
+    assert r.status_code == 200
+    assert r.json() == []
+
+
 def test_listar_reportes_no_expone_autor_id():
     ahora = datetime.now(timezone.utc)
     fila = {

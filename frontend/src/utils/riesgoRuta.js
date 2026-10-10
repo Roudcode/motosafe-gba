@@ -69,9 +69,16 @@ export function unificarZonasRiesgo(zonasAjustadas, zonasInseguridadUnificadas) 
 }
 
 // Para cada ruta calculada, las zonas de riesgo (de cualquier eje) que pasan
-// a menos de umbralCruceKm de su trazado.
+// a menos de umbralCruceKm de su trazado. Cada zona devuelta trae además
+// distanciaSegmentoKm (A11): la distancia real al punto más cercano del
+// trazado, no solo si pasó o no el umbral -- "cruza a 80m" y "cruza a 580m"
+// hoy son indistinguibles para quien usa la app, aunque la incertidumbre de
+// cuál segmento exacto corresponde a la zona es muy distinta en cada caso.
 export function calcularZonasCruzadasPorRuta(rutasCalculadas, zonasRiesgoTodas, umbralCruceKm) {
-  return rutasCalculadas.map((r) => zonasRiesgoTodas.filter((z) => distanciaAPolilinea(z, r.coords) <= umbralCruceKm))
+  return rutasCalculadas.map((r) => zonasRiesgoTodas
+    .map((z) => ({ zona: z, distanciaSegmentoKm: distanciaAPolilinea(z, r.coords) }))
+    .filter(({ distanciaSegmentoKm }) => distanciaSegmentoKm <= umbralCruceKm)
+    .map(({ zona, distanciaSegmentoKm }) => ({ ...zona, distanciaSegmentoKm })))
 }
 
 // Proporción de vértices del trazado que quedan cerca de alguna zona con dato
