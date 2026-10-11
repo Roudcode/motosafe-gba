@@ -1235,3 +1235,12 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Login no se vio en vivo en esta pasada (el entorno de prueba usa `AUTH_HABILITADO=false` para no pedir credenciales) -- su único cambio fue `16px` → `var(--sp-4)`, coincidencia exacta, cero diff visual posible por construcción.
 - Verificado: eslint/vitest(81)/build en verde. Entorno de prueba limpiado.
 - Siguiente: Fase 2 (controles flotantes sobre el mapa: zoom, escala, leyenda, FABs), a la espera del visto bueno de Rodo.
+
+## 2026-10-11 — SES-114 (cont.) — Rediseño fuerte, Fase 2 (controles flotantes)
+
+- `--surface-float` unificado en zoom-controls/legend/herramientas-menu (antes 0.95/0.92/0.97 de opacidad conviviendo sin motivo, con y sin blur consistente).
+- Auditoría de touch targets con medición real en el navegador (`getBoundingClientRect`, no estimada a partir del CSS): `.route-fab` daba 41px de alto, `.herramientas-menu button` 37px, `.legend-item` 19px -- los tres por debajo de cualquier piso razonable.
+- Decisión con criterio, no aplicación ciega de "44px en todos lados": `.route-fab` y `.herramientas-menu button` son controles primarios (trazar ruta, modo viaje) -- se llevaron a 44px, mismo piso que zoom/recenter/herramientas-fab (ya estaban así, con comentario explícito de Rodo sobre manejar/guantes). La leyenda es distinta: es una lista de filtros que se usa parado/sentado, no manejando, y Rodo ya había pedido explícitamente que fuera compacta (comentario existente: "Achicada a pedido de Rodo... sin aportar tanto"). El mínimo real de WCAG 2.5.8 (AA) para web es 24px, no 44px -- esa cifra más alta es convención de iOS/Android para controles nativos, no un requisito universal. Se llevó `.legend-item`/`.legend-reset` a 24px: cumple el mínimo real sin contradecir el pedido de "compacto".
+- Verificado con medición después del cambio: `.route-fab` 44px, `.herramientas-menu button` 44px, `.legend-item` 24px, confirmados con el mismo método (no solo lectura del CSS).
+- Verificado: eslint/vitest(81)/build en verde, revisión visual en ambos temas y específicamente el cluster de FABs en landscape (el punto más denso), sin superposiciones con los controles más grandes.
+- Siguiente: Fase 3 (familia de paneles: capas, actividad, estadísticas, detalle de zona) -- ahí entra la auditoría de contraste de colores de riesgo usados como texto, y el `.detalle-cerrar` que quedó anotado en esta fase (botón de cerrar sin padding, hit area de solo 14-16px, en actividad/stats/detalle) para corregir ahí.
