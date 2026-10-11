@@ -399,24 +399,27 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: space-between;
-  padding: calc(14px + var(--safe-top)) calc(20px + var(--safe-right)) 14px calc(20px + var(--safe-left));
+  padding: calc(14px + var(--safe-top)) calc(var(--sp-5) + var(--safe-right)) 14px calc(var(--sp-5) + var(--safe-left));
   background: linear-gradient(180deg, rgba(var(--bg-rgb),0.92) 0%, rgba(var(--bg-rgb),0) 100%);
   pointer-events: none;
 }
-.brand { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; }
+.brand { display: flex; align-items: center; gap: var(--sp-2); font-family: 'Space Grotesk', sans-serif; }
 .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--amarillo); box-shadow: 0 0 10px rgba(255,201,51,0.7); }
-.brand-name { font-weight: 700; font-size: 19px; letter-spacing: -0.02em; color: var(--text); }
+.brand-name { font-weight: 700; font-size: var(--fs-xl); letter-spacing: -0.02em; color: var(--text); }
 .brand-badge { font-size: var(--fs-sm); font-weight: 700; background: var(--amarillo); color: #14171A; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.03em; }
 
 .topbar-right { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
 .clima-badge {
-  display: flex; align-items: center; gap: 4px; font-size: var(--fs-base);
-  background: rgba(var(--surface-rgb),0.85); padding: 6px 10px; border-radius: var(--r-xl); border: 1px solid var(--border);
+  /* Rediseño SES-114: mismo padding que .topbar-status (antes 6px 10px vs
+     6px 12px -- dos pills hermanos en la misma fila con aire horizontal
+     distinto sin ninguna razón). */
+  display: flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-base);
+  background: rgba(var(--surface-rgb),0.85); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-xl); border: 1px solid var(--border);
   font-family: 'Space Grotesk', sans-serif; box-shadow: var(--shadow-float);
 }
 .topbar-status {
-  display: flex; align-items: center; gap: 6px; font-size: var(--fs-base); color: var(--text-dim);
-  background: rgba(var(--surface-rgb),0.85); padding: 6px 12px; border-radius: var(--r-xl); border: 1px solid var(--border);
+  display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-base); color: var(--text-dim);
+  background: rgba(var(--surface-rgb),0.85); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-xl); border: 1px solid var(--border);
   transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif; box-shadow: var(--shadow-float);
 }
 .topbar-status.clickeable { cursor: pointer; }
@@ -1467,7 +1470,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    de letra que ya usa el resto de la app en vez de números sueltos nuevos. */
 .login-fondo {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-  padding: 16px; overflow: hidden;
+  padding: var(--sp-4); overflow: hidden;
   background:
     radial-gradient(60% 50% at 50% 0%, rgba(255,201,51,0.08), transparent),
     var(--bg);

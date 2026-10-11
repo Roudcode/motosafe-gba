@@ -1225,3 +1225,13 @@ Registro de trabajo real. No sustituye actas institucionales. La historia previa
 - Nada de esto cambia el matiz de los colores de riesgo usados como swatch/punto/ícono -- las variantes `*-text` son solo para texto, y se van a aplicar sitio por sitio en la Fase 3 (donde ya se identificaron los casos reales por grep).
 - Verificado: `npx eslint .`, `npx vitest run` (81/81) y `npx vite build` en verde. Entorno de prueba (backend/Vite descartables, `AUTH_HABILITADO=false` temporal, revertido) para revisión visual en el navegador: claro y oscuro × desktop/390px/landscape, sin cortes ni desbordes por el texto más grande.
 - Siguiente: Fase 1 (chrome principal -- login, pantalla de carga, topbar, toggle de tema), a la espera del visto bueno de Rodo sobre la Fase 0.
+
+## 2026-10-11 — SES-114 (cont.) — Rediseño fuerte, Fase 1 (chrome principal)
+
+- Topbar/marca/login: `.brand-name` tenía un font-size suelto de 19px (justo uno de los "candidatos a unificar" que el propio código ya señalaba) -- tokenizado a `--fs-xl`. Padding de topbar y login a `--sp-*` donde había coincidencia exacta con la escala nueva.
+- Encontrado y corregido de paso: `.clima-badge` y `.topbar-status` (dos pills hermanos, misma fila) tenían padding horizontal distinto entre sí (6px/10px vs 6px/12px) sin ninguna razón -- unificados a `--sp-2 --sp-3` ambos.
+- `.theme-toggle` ya estaba en 44px (verificado en la exploración previa), sin cambios.
+- Verificación específica del sistema `--topbar-h`: forzado el pill de estado a un texto largo real en 375px de ancho (el caso que rompía paneles en el historial del proyecto) -- la topbar pasó a 2 líneas y el buscador se acomodó solo debajo, sin superponerse. El `ResizeObserver` sigue midiendo bien después del cambio de padding.
+- Login no se vio en vivo en esta pasada (el entorno de prueba usa `AUTH_HABILITADO=false` para no pedir credenciales) -- su único cambio fue `16px` → `var(--sp-4)`, coincidencia exacta, cero diff visual posible por construcción.
+- Verificado: eslint/vitest(81)/build en verde. Entorno de prueba limpiado.
+- Siguiente: Fase 2 (controles flotantes sobre el mapa: zoom, escala, leyenda, FABs), a la espera del visto bueno de Rodo.
