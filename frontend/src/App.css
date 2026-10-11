@@ -33,7 +33,12 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   --border: #2C3138;
   --text: #E8EAED;
   --text-dim: #8A9099;
-  --text-dimmer: #6B7178;
+  /* Rediseño SES-114: 3.65:1 contra --bg, no llega al mínimo WCAG AA de
+     4.5:1 para texto normal (medido, no estimado). #808689 da 4.87:1 --
+     con margen sobre el mínimo pero todavía claramente más apagado que
+     --text-dim (5.59:1), para no invertir la jerarquía dim > dimmer. En
+     claro ya pasaba (4.82:1), queda igual. */
+  --text-dimmer: #808689;
   --text-soft: #C8CDD3;
 
   --amarillo: #FFC933;
@@ -41,6 +46,25 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   --naranja: #FF8C42;
   --rojo: #FF3B3B;
   --azul: #4FA8E8;
+
+  /* Rediseño SES-114: variantes de los colores de riesgo para USO COMO
+     TEXTO únicamente -- nunca para swatches/puntos/íconos, que siguen
+     usando --amarillo/--verde/--naranja/--rojo/--azul sin cambios
+     (codifican el nivel de riesgo; cambiar el matiz ahí perdería ese
+     significado). Contraste medido con la fórmula WCAG real, no a ojo:
+     en tema oscuro los 5 colores ya pasan 4.5:1 contra --bg y --surface-
+     solid salvo --rojo contra --surface-solid (4.47:1, por debajo del
+     mínimo) -- de ahí el único ajuste en :root. En tema claro los 5 caen
+     muy por debajo (hasta 1.4:1 el amarillo) contra --bg y --surface-
+     solid -- de ahí el override completo en [data-theme="light"].
+     Se van a confirmar sitio por sitio (fondo real detrás de cada texto)
+     en la fase de paneles del rediseño; estos son los valores verificados
+     contra --bg/--surface-solid en abstracto. */
+  --amarillo-text: var(--amarillo);
+  --verde-text: var(--verde);
+  --naranja-text: var(--naranja);
+  --rojo-text: #FF3D3D;
+  --azul-text: var(--azul);
 
   /* Insets de "zona segura" del dispositivo (notch, isla dinámica, barra de
      gestos, cámara del navegador con la URL): env() devuelve 0 en desktop y
@@ -110,15 +134,46 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   --r-xl: 20px;
   --r-pill: 24px;
 
-  --fs-2xs: 9px;
-  --fs-xs: 10px;
-  --fs-sm: 11px;
-  --fs-base: 12px;
-  --fs-md: 13px;
-  --fs-lg: 15px;
-  --fs-xl: 17px;
-  --fs-2xl: 24px;
-  --fs-3xl: 34px;
+  /* Rediseño SES-114: base de 12px a 14px. Esta app no es un dashboard de
+     BI leído de cerca y sentado -- es una herramienta de un vistazo, usada
+     parada cerca de una moto, a veces con poca atención sostenida. 14px es
+     el piso razonable para lectura sin forzar la vista. Misma cantidad de
+     pasos que antes, mismo criterio de escala, todo corrido hacia arriba
+     (fs-xl absorbe además el "19px" suelto que los comentarios de abajo
+     marcaban como candidato a unificar). */
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 19px;
+  --fs-2xl: 26px;
+  --fs-3xl: 36px;
+
+  /* Rediseño SES-114: escala de espaciado -- no existía ninguna, cada
+     panel tenía su padding/margin/gap tipeado suelto. Grid de base 4px,
+     mismo criterio que ya usaban radios/tipografía. Se consume pantalla
+     por pantalla en las fases siguientes del rediseño, no reemplaza nada
+     todavía solo por existir. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+
+  /* Rediseño SES-114: resuelve las 3 superficies flotantes translúcidas
+     que convivían sin unificar (rgba(surface,0.85/0.96/0.97) + blur 6px
+     en distintos paneles). Un solo tratamiento para todo lo que "flota"
+     sobre el mapa (legend, capas, actividad, stats, ruta-resumen, etc.).
+     Las superficies que ya eran opacas a propósito (login, toast,
+     navegacion-panel, report-sheet -- leen como "chrome fijo", no overlay
+     sobre el mapa) siguen usando --surface-solid sin cambios. */
+  --surface-float: rgba(var(--surface-rgb), 0.92);
+  --surface-float-blur: 8px;
 }
 
 [data-theme="light"] {
@@ -132,6 +187,18 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   --text-dim: #5B6169;
   --text-dimmer: #666C73;
   --text-soft: #3A3F45;
+
+  /* Rediseño SES-114: los 5 colores de riesgo a secas caen muy por debajo
+     de 4.5:1 como texto sobre fondo claro (de 1.40:1 el amarillo a 3.53:1
+     el rojo, contra --surface-solid). Estos valores sí pasan 4.5:1 contra
+     --bg (el más exigente de los dos fondos) y --surface-solid, medidos
+     con la fórmula WCAG real. Mismo matiz, más oscuros/saturados -- las
+     swatches/puntos/íconos de riesgo no usan esta variante, solo texto. */
+  --amarillo-text: #8F6900;
+  --verde-text: #178046;
+  --naranja-text: #BF4B00;
+  --rojo-text: #E20000;
+  --azul-text: #1874B7;
 }
 
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background 0.25s ease, color 0.25s ease; }
@@ -151,14 +218,20 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 @keyframes panelIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 .panel-enter { animation: panelIn 0.45s ease backwards; }
 
+/* Rediseño SES-114: regla formalizada (antes era una decisión implícita,
+   documentada solo como "quedaba mal" en un comentario suelto). .hazard-edge
+   significa "este panel muestra datos de riesgo que conviene notar" --
+   actividad, stats, ruta-resumen, detalle de zona, legend (x2), report-sheet
+   y onboarding lo usan a propósito. NO va en searchbar, topbar, capas-panel
+   ni en chrome puramente de navegación/configuración -- esos no muestran
+   datos de riesgo en sí, son controles. Si se agrega un panel nuevo, esta
+   regla decide si le corresponde, no el ojo de quien lo escribe. */
 .hazard-edge { position: relative; }
 .hazard-edge::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
   background: repeating-linear-gradient(-45deg, var(--amarillo) 0 7px, var(--bg) 7px 14px);
   opacity: 0.7; border-radius: 12px 12px 0 0;
 }
-/* (la franja sobre la searchbar se sacó del todo -- ver comentario en
-   App.jsx, quedaba mal incluso ya con el radio corregido) */
 
 /* ===== Pantalla de carga ===== */
 .loading-screen {
