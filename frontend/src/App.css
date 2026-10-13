@@ -181,6 +181,22 @@ button:focus-visible, input:focus-visible, a:focus-visible {
      sobre el mapa) siguen usando --surface-solid sin cambios. */
   --surface-float: rgba(var(--surface-rgb), 0.92);
   --surface-float-blur: 8px;
+
+  /* Rediseño SES-115: el archivo usaba 7 duraciones de transition/animation
+     sin ningún criterio (0.12s a 0.6s) para el mismo tipo de interacción en
+     sitios distintos. Esta escala nombra las que ya predominaban -- no
+     cambia ningún tiempo visible, solo les da nombre para que un elemento
+     nuevo elija una familia en vez de tipear "0.17s" a ojo. Quedaron afuera
+     a propósito dos valores de un solo uso (0.12s en legend-reset, 0.4s en
+     el dimming de fondo durante navegación): son más rápidos/lentos que su
+     categoría por una razón puntual documentada en el propio selector, no
+     por indecisión -- no correspondía forzarlos a la escala. */
+  --motion-fast: 0.15s;   /* micro-interacciones: botones chicos, legend, inputs */
+  --motion-base: 0.2s;    /* hover/active de FABs, toggles, opciones de ruta */
+  --motion-slow: 0.25s;   /* cambios de estado más notorios: tema, status pill */
+  --motion-panel: 0.45s;  /* entrada de paneles flotantes */
+  --motion-fade: 0.5s;    /* pantalla de carga */
+  --motion-reveal: 0.6s;  /* revelado del mapa, barra de stats */
 }
 
 [data-theme="light"] {
@@ -216,9 +232,9 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   --magenta-text: #DE004D;
 }
 
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background 0.25s ease, color 0.25s ease; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background var(--motion-slow) ease, color var(--motion-slow) ease; }
 .app { position: relative; height: 100vh; width: 100vw; overflow: hidden; }
-.map { height: 100%; width: 100%; transition: transform 0.6s ease, opacity 0.6s ease, filter 0.6s ease; }
+.map { height: 100%; width: 100%; transition: transform var(--motion-reveal) ease, opacity var(--motion-reveal) ease, filter var(--motion-reveal) ease; }
 
 .mapa-wrapper {
   position: relative; height: 100%; width: 100%; overflow: hidden;
@@ -231,7 +247,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .mapa-wrapper:not(.cargado) .map { opacity: 0; filter: blur(10px); transform: scale(1.04); }
 
 @keyframes panelIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
-.panel-enter { animation: panelIn 0.45s ease backwards; }
+.panel-enter { animation: panelIn var(--motion-panel) ease backwards; }
 
 /* Rediseño SES-114: regla formalizada (antes era una decisión implícita,
    documentada solo como "quedaba mal" en un comentario suelto). .hazard-edge
@@ -253,7 +269,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   position: fixed; inset: 0; z-index: 2000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
   background: var(--bg); color: var(--text);
-  transition: opacity 0.5s ease, visibility 0.5s ease;
+  transition: opacity var(--motion-fade) ease, visibility var(--motion-fade) ease;
 }
 .loading-screen.oculta { opacity: 0; visibility: hidden; pointer-events: none; }
 .loading-screen-marca { display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -298,7 +314,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 50%;
   background: rgba(var(--surface-rgb), 0.85); border: 1px solid var(--border); color: var(--text-dim);
-  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-float);
+  cursor: pointer; transition: all var(--motion-base) ease; box-shadow: var(--shadow-float);
 }
 .theme-toggle:hover { color: var(--amarillo); border-color: var(--amarillo); transform: rotate(15deg) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 
@@ -307,7 +323,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 50%;
   background: rgba(var(--surface-rgb), 0.85); border: 1px solid var(--border); color: var(--text-dim);
-  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-float);
+  cursor: pointer; transition: all var(--motion-base) ease; box-shadow: var(--shadow-float);
 }
 .capa-toggle:hover { color: #F2793B; border-color: #F2793B; transform: scale(1.08) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 .capa-toggle.capas-con-cambios { background: #F2793B; border-color: #F2793B; color: #14171A; }
@@ -334,7 +350,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .capas-opcion {
   display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 7px 6px; border-radius: var(--r-sm);
   background: none; border: 1px solid transparent; cursor: pointer; text-align: left;
-  font-family: 'Inter', sans-serif; transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif; transition: all var(--motion-fast) ease;
 }
 .capas-opcion:hover { background: rgba(var(--surface-rgb),0.6); }
 .capas-opcion.activa { border-color: var(--azul); background: rgba(79,168,232,0.1); }
@@ -435,7 +451,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .topbar-status {
   display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-base); color: var(--text-dim);
   background: rgba(var(--surface-rgb),0.85); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-xl); border: 1px solid var(--border);
-  transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif; box-shadow: var(--shadow-float);
+  transition: all var(--motion-slow) ease; font-family: 'Space Grotesk', sans-serif; box-shadow: var(--shadow-float);
 }
 .topbar-status.clickeable { cursor: pointer; }
 .topbar-status.clickeable:hover { border-color: var(--azul); box-shadow: var(--shadow-float-hover); }
@@ -490,7 +506,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .stats-barra-fila { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); }
 .stats-barra-label { width: 42px; flex-shrink: 0; color: var(--text-soft); }
 .stats-barra-track { flex: 1; height: 6px; background: var(--inset); border-radius: 4px; overflow: hidden; }
-.stats-barra-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.stats-barra-fill { height: 100%; border-radius: 4px; transition: width var(--motion-reveal) ease; }
 .stats-barra-num { width: 26px; text-align: right; color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
 .stats-top-titulo {
   display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-sm);
@@ -542,7 +558,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   color: var(--text); font-family: 'Inter', sans-serif; font-size: var(--fs-md); outline: none;
 }
 .ruta-form input:focus { border-color: var(--azul); }
-.ruta-form-pin { display: flex; background: none; border: none; cursor: pointer; color: var(--text-dim); }
+.ruta-form-pin { display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; background: none; border: none; cursor: pointer; color: var(--text-dim); }
 .ruta-form-pin.activo { color: var(--azul); filter: drop-shadow(0 0 4px rgba(79,168,232,0.6)); }
 /* relative para anclar el desplegable de sugerencias contra ESTA fila (el
    origen/destino puntual), no contra todo .ruta-form -- así el desplegable
@@ -569,7 +585,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-form-swap {
   display: flex; align-items: center; justify-content: center; margin: 4px 0 4px 2px;
   background: var(--inset); border: 1px solid var(--border);
-  color: var(--text-dim); border-radius: var(--r-xs); width: 26px; height: 26px; cursor: pointer;
+  color: var(--text-dim); border-radius: var(--r-xs); width: 36px; height: 36px; cursor: pointer;
 }
 .ruta-form-hint { font-size: var(--fs-sm); color: var(--azul-text); margin-top: 8px; }
 .ruta-form-miubicacion {
@@ -593,7 +609,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
   background: var(--inset); border: 1px solid var(--border); color: var(--text);
   border-radius: var(--r-lg); padding: 6px 10px; font-size: var(--fs-sm); cursor: pointer;
-  font-family: 'Inter', sans-serif; transition: border-color 0.2s ease;
+  font-family: 'Inter', sans-serif; transition: border-color var(--motion-base) ease;
 }
 .favorito-chip:hover:not(:disabled) { border-color: var(--azul); }
 .favorito-chip-guardar { color: var(--azul-text); border-color: rgba(79,168,232,0.4); }
@@ -628,7 +644,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      motivo real para ser distintos). */
   width: 44px; height: 44px; background: var(--surface-float); backdrop-filter: blur(var(--surface-float-blur)); color: var(--text);
   border: none; font-size: 18px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; border-bottom: 1px solid var(--border);
-  transition: background 0.2s ease;
+  transition: background var(--motion-base) ease;
 }
 .zoom-controls button:last-child { border-bottom: none; }
 .zoom-controls button:hover { background: rgba(var(--surface-rgb),0.7); }
@@ -686,21 +702,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .ruta-resumen-scroll { overflow-y: auto; min-height: 0; }
 .ruta-resumen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.ruta-resumen-editar { display: flex; background: none; border: none; cursor: pointer; color: var(--text-dim); opacity: 0.8; }
+.ruta-resumen-editar { display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; background: none; border: none; cursor: pointer; color: var(--text-dim); opacity: 0.8; }
 .ruta-resumen-editar:hover { opacity: 1; color: var(--azul); }
 .ruta-prioridad { display: flex; gap: 6px; margin-bottom: 10px; }
 .ruta-prioridad button {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
   background: var(--inset); border: 1px solid var(--border); color: var(--text-dim);
   border-radius: var(--r-sm); padding: 7px 4px; font-size: var(--fs-xs); cursor: pointer;
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700; transition: all 0.2s ease;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; transition: all var(--motion-base) ease;
 }
 .ruta-prioridad button.activa { border-color: var(--azul); color: var(--azul); background: rgba(79,168,232,0.1); }
 .ruta-opcion {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
   background: var(--inset); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; margin-bottom: 6px;
   cursor: pointer; text-align: left; font-family: 'Inter', sans-serif;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 .ruta-opcion:hover { transform: translateY(-1px); box-shadow: var(--shadow-float); border-color: var(--text-dimmer); }
 /* La opción activa se separa de las demás con el mismo lenguaje de profundidad
@@ -779,7 +795,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md); letter-spacing: 0.2px;
   background: linear-gradient(135deg, var(--verde), #2FBF71); color: #0B1620;
   box-shadow: 0 4px 16px rgba(61,220,132,0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 .ruta-resumen-iniciar:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,220,132,0.45); }
 
@@ -858,7 +874,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    convención de plataforma nativa más estricta, no el mínimo exigido acá.
    24px respeta el pedido de "compacto" sin dejar de cumplir el mínimo. */
 .legend-reset { background: none; border: none; color: var(--azul); font-size: var(--fs-2xs); cursor: pointer; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; min-height: 24px; padding: 0 2px; display: inline-flex; align-items: center; }
-.legend-item { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif; font-size: var(--fs-base); padding: 1px 0; min-height: 24px; transition: opacity 0.15s ease; }
+.legend-item { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif; font-size: var(--fs-base); padding: 1px 0; min-height: 24px; transition: opacity var(--motion-fast) ease; }
 .legend-item.inactive { opacity: 0.35; }
 .legend-swatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 /* Período de los datos de la capa (A10/A11/A15): chico y discreto, bajo el título. */
@@ -875,7 +891,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--azul); border: none; color: #0B1620;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-float); transition: all 0.2s ease;
+  box-shadow: var(--shadow-float); transition: all var(--motion-base) ease;
 }
 .recenter-fab:hover { transform: scale(1.05); box-shadow: var(--shadow-float-hover); }
 
@@ -888,7 +904,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   min-height: 44px;
   background: var(--surface-solid); border: 1px solid var(--border); color: var(--text);
   border-radius: var(--r-pill); padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md);
-  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-float);
+  cursor: pointer; transition: all var(--motion-base) ease; box-shadow: var(--shadow-float);
 }
 .route-fab:hover { border-color: var(--azul); transform: scale(1.03) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 
@@ -900,7 +916,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--surface-solid); border: 1px solid var(--border); color: var(--text);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s ease; box-shadow: var(--shadow-float);
+  transition: all var(--motion-base) ease; box-shadow: var(--shadow-float);
 }
 .herramientas-fab:hover { border-color: var(--azul); transform: scale(1.05) translateY(-1px); box-shadow: var(--shadow-float-hover); }
 .herramientas-fab.activo { background: var(--azul); border-color: var(--azul); color: #0B1620; }
@@ -913,7 +929,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .herramientas-menu button {
   display: flex; align-items: center; gap: 8px; background: var(--inset); border: 1px solid var(--border);
   color: var(--text); border-radius: var(--r-sm); padding: 9px 10px; font-size: var(--fs-base); cursor: pointer;
-  text-align: left; font-family: 'Inter', sans-serif; transition: border-color 0.2s ease;
+  text-align: left; font-family: 'Inter', sans-serif; transition: border-color var(--motion-base) ease;
   /* Rediseño SES-114: medido en el navegador, 37px -- mismo ajuste que
      .route-fab y mismo motivo. */
   min-height: 44px;
@@ -934,7 +950,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; gap: 8px;
   background: var(--amarillo); color: #14171A; border: none; border-radius: var(--r-pill); padding: 14px 20px;
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-lg); cursor: pointer;
-  box-shadow: 0 4px 20px rgba(255,201,51,0.35); transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 20px rgba(255,201,51,0.35); transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 .report-fab:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 24px rgba(255,201,51,0.5); }
 .report-fab.active { background: var(--border); color: var(--text); box-shadow: none; }
@@ -944,7 +960,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .report-sheet {
   position: absolute; bottom: var(--b4); right: calc(24px + var(--safe-right)); z-index: 1000; width: 280px;
-  background: var(--surface-solid); border: 1px solid var(--border); border-radius: 14px; padding: 18px; animation: panelIn 0.25s ease;
+  background: var(--surface-solid); border: 1px solid var(--border); border-radius: 14px; padding: 18px; animation: panelIn var(--motion-slow) ease;
   box-shadow: var(--shadow-float-hover);
 }
 .report-sheet h3 { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-lg); margin-bottom: 12px; color: var(--text); }
@@ -952,7 +968,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 /* Rediseño SES-114: medido en el navegador, 39px -- es la elección de
    categoría del incidente, acción primaria parado junto a la moto, mismo
    piso de 44px que route-fab/herramientas-menu. */
-.report-options button { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--inset); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: var(--r-sm); font-size: var(--fs-md); cursor: pointer; transition: border-color 0.15s ease; min-height: 44px; }
+.report-options button { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--inset); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: var(--r-sm); font-size: var(--fs-md); cursor: pointer; transition: border-color var(--motion-fast) ease; min-height: 44px; }
 .report-options button:hover { border-color: var(--amarillo); }
 /* Antes de tener un punto (GPS falló y todavía no tocaste el mapa), las
    categorías quedan visibles pero sin poder confirmarse -- confirmar sin
@@ -968,7 +984,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .maplibregl-popup-close-button {
   top: 6px !important; right: 6px !important; width: 22px; height: 22px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;
-  background: var(--inset); color: var(--text-dim); border: none; transition: all 0.15s ease;
+  background: var(--inset); color: var(--text-dim); border: none; transition: all var(--motion-fast) ease;
 }
 .maplibregl-popup-close-button:hover { background: var(--border); color: var(--text); }
 .maplibregl-popup-tip { border-top-color: var(--surface-solid) !important; border-bottom-color: var(--surface-solid) !important; }
@@ -1120,7 +1136,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .cluster-bubble {
   border: 2px solid; border-radius: 50%;
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md);
-  text-align: center; transition: transform 0.15s ease;
+  text-align: center; transition: transform var(--motion-fast) ease;
   box-shadow: 0 0 0 1.5px rgba(255,255,255,0.4), 0 2px 10px rgba(0,0,0,0.4);
 }
 .cluster-critico { animation: pulse 2s infinite; }
@@ -1149,7 +1165,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .legend-item:active, .actividad-item:active, .stats-top-item:active,
 .capas-opcion:active, .herramientas-menu button:active,
 .report-options button:active:not(:disabled), .ruta-resumen-compartir:active,
-.ruta-resumen-nueva:active, .ruta-form-buscar:active:not(:disabled) {
+.ruta-resumen-nueva:active, .ruta-form-buscar:active:not(:disabled),
+.recenter-fab:active, .viaje-salir:active, .detalle-cerrar:active,
+.onboarding-cerrar:active, .onboarding-entendido:active,
+.searchbar-icon:active:not(:disabled), .searchbar-clear:active,
+.ruta-form-swap:active, .ruta-form-pin:active, .ruta-resumen-editar:active,
+.report-sheet-cerrar:active {
   transform: scale(0.93);
 }
 
@@ -1544,7 +1565,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px;
   width: 100%; max-width: 320px; background: var(--surface-solid); border: 1px solid var(--border);
   border-radius: var(--r-lg); padding: 32px 28px; box-shadow: var(--shadow-float-hover);
-  animation: panelIn 0.5s ease both;
+  animation: panelIn var(--motion-fade) ease both;
 }
 .login-marca {
   width: 52px; height: 52px; border-radius: var(--r-pill); display: flex; align-items: center;
@@ -1563,7 +1584,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   background: var(--inset); border: 1px solid var(--border); border-radius: var(--r-sm);
   padding: 11px 13px; color: var(--text); font-size: 16px; /* 16px fijo: evita el zoom
   automático de iOS en inputs, no es parte de la escala tipográfica. */
-  font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: 'Inter', sans-serif; outline: none; transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
   width: 100%;
 }
 .login-input::placeholder { color: var(--text-dimmer); }
@@ -1572,7 +1593,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
   background: var(--amarillo); color: var(--bg); border: none; border-radius: var(--r-sm);
   padding: 12px; font-size: var(--fs-lg); font-weight: 700; font-family: 'Inter', sans-serif;
-  cursor: pointer; margin-top: 4px; transition: filter 0.15s ease, transform 0.15s ease;
+  cursor: pointer; margin-top: 4px; transition: filter var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 .login-boton:hover:not(:disabled) { filter: brightness(1.08); }
 .login-boton:active:not(:disabled) { transform: scale(0.98); }
