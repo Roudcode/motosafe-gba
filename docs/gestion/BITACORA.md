@@ -1393,3 +1393,16 @@ Rodo mandó capturas de dos apps (un mapa de delitos con zonas poligonales, una 
 - Encontrado y corregido de paso: el ícono de "Capas" del topbar se resalta con un punto cuando algo distinto del default está prendido (`capas-con-cambios`), pero esa comparación tenía `'clusters'` hardcodeado como "el default" -- con hexágonos como nuevo default, se habría prendido el aviso de "tenés algo cambiado" en el estado de fábrica, exactamente al revés de lo que significa esa señal. Corregido a comparar contra `'hexagonos'`.
 - Verificado en el navegador, en ambos temas y con el filtro de nivel de riesgo (clickear "Crítico" en la leyenda) para confirmar que la capa se recalcula sin romperse al cambiar qué zonas entran.
 - Verificado: eslint, vitest (86/86, suma los 5 nuevos de hexBin), build -- los tres en verde.
+
+## 2026-10-13 -- SES-115: limpieza de fin de sesión y repaso de regresión
+
+- Sacada de `backend/.env` la línea `AUTH_HABILITADO=false` que había quedado puesta desde el arranque de esta sesión larga para poder probar sin loguearse en cada reload. El proceso de backend que seguía corriendo (uvicorn --reload) no la recarga sola porque `--reload` vigila archivos `.py`, no `.env` -- un reinicio del proceso alcanza para que vuelva a pedir login real.
+- Esa misma línea era la causa de un test que fallaba (`test_con_login_activado_por_defecto_faltan_variables_y_no_arranca`), ya diagnosticado y anotado en la entrada anterior de hexágonos: confirmado de nuevo acá, sin la línea el test pasa limpio.
+- Repaso de regresión completo de todo lo nuevo de SES-115 junto, en el navegador, para confirmar que no se pisa entre sí:
+  - Destino rápido tocando un punto vacío del mapa (incluso sobre una celda de hexágono, que es la vista de fondo default ahora) -- abre la tarjeta "Punto en el mapa" como se espera, no choca con la capa de hexágonos por estar esta sin listener de click propio.
+  - Portal de Actividad: abre, filtra por barrio real (ej. "San Isidro" bajó 146 resultados a 3), barrios resueltos por TomTom sin pedir de más (sin 429 en `/lugares/reversa`, todas las llamadas 200 OK).
+  - Lector interno de notas: probado desde el popup de prensa del mapa y desde un ítem del portal, los dos abren el mismo panel flotante con el mapa atenuado detrás. Alto regulable (arrastrar el agarre) sigue funcionando.
+  - CSP de La Nación sigue bloqueando el iframe (error esperado en consola, ya contemplado con el link "Abrir en pestaña nueva" -- no es un bug, es la limitación que motivó ese botón).
+  - Cambiar la vista de fondo entre Hexágonos / Corredores / etc. desde el panel de Capas, ida y vuelta, sin romper nada.
+- Verificado: eslint, vitest (86/86), build del frontend, y pytest del backend (120 passed, 11 skipped) -- los cuatro en verde.
+- Pendiente de higiene, no bloqueante: `backend/.venv_test/` sigue sin trackear (virtualenv descartable de esta sesión, excluido a propósito de git).
