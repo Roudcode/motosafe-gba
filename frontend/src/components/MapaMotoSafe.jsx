@@ -44,7 +44,7 @@ import urlWorkerMaplibre from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { NIVELES, NIVELES_INSEGURIDAD_COLOR, CATEGORIAS_REPORTE, VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT, ORDEN_NIVELES } from '../constants'
 import { crearIconoCluster, crearIconoClusterInseguridad } from '../utils/ui'
 import { opacidadPorAntiguedad, esReciente, formatearAntiguedad, formatearVence } from '../utils/tiempo'
-import { hexBinZonas } from '../utils/hexBin'
+import { hexBinZonas, radioHexagonoPorZoom } from '../utils/hexBin'
 
 if (import.meta.env.PROD) setWorkerUrl(urlWorkerMaplibre)
 
@@ -448,6 +448,12 @@ function MapaMotoSafeInner({
   // de estilo (map.setStyle borra todas las capas custom, hay que
   // reagregarlas), no solo la primera vez.
   const [version, setVersion] = useState(0)
+  // Radio del hexágono de cobertura: cambia de a escalones al cruzar un
+  // umbral de zoom (ver radioHexagonoPorZoom), no en cada pixel de zoom --
+  // recomputar toda la grilla hexagonal en cada frame de un gesto de pinch
+  // sería carísimo y no aporta nada, solo importa el escalón final en el que
+  // el usuario se queda mirando.
+  const [radioHex, setRadioHex] = useState(() => radioHexagonoPorZoom(zoomInicial ?? 11))
 
   // Refs para callbacks/estado que cambian seguido, leídos desde listeners
   // que se registran una sola vez (evita closures viejas sin tener que
@@ -533,7 +539,14 @@ function MapaMotoSafeInner({
       onReady?.(map)
       setVersion((v) => v + 1)
     })
-    map.on('zoomend', () => onZoomChange?.(map.getZoom()))
+    map.on('zoomend', () => {
+      const z = map.getZoom()
+      onZoomChange?.(z)
+      setRadioHex((actual) => {
+        const siguiente = radioHexagonoPorZoom(z)
+        return siguiente === actual ? actual : siguiente
+      })
+    })
     // Tocar el mapa vacío marca destino directo (estilo Maps/Waze), SOLO
     // cuando no hay otro flujo ya usando el toque sobre el mapa (marcar
     // origen/destino/reporte -- campoActivo -- o cualquier otro gate que
@@ -742,10 +755,12 @@ function MapaMotoSafeInner({
   // Pedido de Rodo tras ver mapas de cobertura tipo Uber/Cabify: un hexágono
   // de borde nítido se entiende de un vistazo mejor que el heatmap difuminado
   // de arriba para "qué tan cubierta de riesgo está esta zona" -- el borde
-  // dice dónde termina, el heatmap no. 650m centro-a-vértice: a mano, viendo
-  // en pantalla, da celdas del tamaño de un barrio chico sin que CABA entera
-  // quede en 3 hexágonos ni en 400.
-  const RADIO_HEXAGONO_METROS = 650
+  // dice dónde termina, el heatmap no. El radio (centro a vértice) ya no es
+  // fijo: se ajusta de a escalones con el zoom (radioHex, ver
+  // radioHexagonoPorZoom) -- a la vista de entrada se ve igual que antes
+  // (650m, "un barrio chico"), pero alejado del todo pasa a celdas grandes
+  // (menos ruido visual, se lee el patrón de la ciudad) y acercado a celdas
+  // chicas (separa cuadra por cuadra, no "todo el barrio es rojo").
   useEffect(() => {
     const map = mapRef.current
     if (!map || version === 0) return
@@ -759,7 +774,18 @@ function MapaMotoSafeInner({
       return
     }
     const zonasConNivel = zonasFiltradas.map((z) => ({ lat: z.lat, lng: z.lng, cantidad: z.cantidad, nivel: z.ajuste.nivel }))
-    const datos = hexBinZonas(zonasConNivel, RADIO_HEXAGONO_METROS, ORDEN_NIVELES)
+    const datos = hexBinZonas(zonasConNivel, radioHex, ORDEN_NIVELES)
+    // Dentro de un mismo nivel, dos celdas no son iguales: un hexágono
+    // "alto" con 3 siniestros y uno "alto" con 80 se veían idénticos (la
+    // opacidad era un número fijo). Ahora la opacidad del relleno también
+    // escala con la cantidad de la celda -- el color sigue diciendo el
+    // nivel (categórico, como antes), la opacidad ahora dice además "cuánto
+    // peso real tiene este hexágono" (continuo), sin agregar una escala de
+    // color nueva que compita con la de NIVELES. El tope se saca del
+    // percentil 90 de las celdas visibles, no del máximo: con el máximo, una
+    // sola celda extrema aplana la escala para todas las demás.
+    const cantidades = datos.features.map((f) => f.properties.cantidad).sort((a, b) => a - b)
+    const tope = cantidades.length ? Math.max(1, cantidades[Math.floor(cantidades.length * 0.9)]) : 1
     map.addSource(sourceId, { type: 'geojson', data: datos })
     map.addLayer({
       id: layerId,
@@ -774,7 +800,7 @@ function MapaMotoSafeInner({
           'critico', NIVELES.critico.color,
           NIVELES.bajo.color,
         ],
-        'fill-opacity': 0.5 * atenuarFondo,
+        'fill-opacity': ['*', ['min', 0.78, ['interpolate', ['linear'], ['get', 'cantidad'], 0, 0.22, tope, 0.78]], atenuarFondo],
       },
     })
     // Borde propio (no fill-outline-color): esa propiedad en MapLibre GL JS
@@ -810,6 +836,7 @@ function MapaMotoSafeInner({
             <span class="popup-nivel" style="color:${NIVELES[p.nivel]?.color}">${NIVELES[p.nivel]?.label}</span>
             <strong>${p.cantidad} siniestros en esta celda</strong>
             <div class="popup-hex-desglose">${filasNivel}</div>
+            <span class="popup-hex-radio">Celda de ~${radioHex}m de radio</span>
           </div>
         `)
         .addTo(map)
@@ -830,7 +857,7 @@ function MapaMotoSafeInner({
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
 
-  }, [capaMapa, zonasFiltradas, atenuarFondo, version])
+  }, [capaMapa, zonasFiltradas, atenuarFondo, version, radioHex])
 
   // --- cluster de siniestros (capaMapa === 'clusters') ----------------------
   useEffect(() => {

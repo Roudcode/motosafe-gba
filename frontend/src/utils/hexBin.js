@@ -115,3 +115,23 @@ export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
   }
   return { type: 'FeatureCollection', features }
 }
+
+// Radio de hexágono según el zoom actual del mapa, inspirado en cómo H3 (la
+// grilla hexagonal de Uber, la misma familia de mapas de cobertura que dio
+// la idea original) cambia de "resolución" según qué tan lejos estás mirando
+// -- lejos, celdas grandes que muestran el patrón de la ciudad sin ruido
+// visual; cerca, celdas chicas que separan cuadra por cuadra. Antes el radio
+// era un único valor fijo (650m, elegido a ojo para la vista de entrada);
+// con eso, alejado del todo quedaban cientos de hexágonos diminutos
+// amontonados, y haciendo zoom a una esquina puntual el hexágono seguía
+// siendo "un barrio entero" en vez de distinguir la cuadra.
+//
+// Tres escalones nomás (no 16 niveles como H3 real): no hace falta más
+// granularidad que "alejado / como estaba antes / acercado", y cada
+// escalón de más es una recomputación de toda la grilla al cruzar el
+// umbral de zoom.
+export function radioHexagonoPorZoom(zoom) {
+  if (zoom < 11) return 1300
+  if (zoom < 13.5) return 650
+  return 320
+}

@@ -1046,6 +1046,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    puntos de color que ya usa la leyenda de "Nivel de riesgo" del sidebar. */
 .popup-hex-desglose { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--fs-2xs); color: var(--text-dim); }
 .popup-hex-punto { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+/* Tamaño de celda: el radio ahora cambia con el zoom (radioHexagonoPorZoom),
+   así que mostrarlo evita que alguien piense que es siempre "la misma
+   cuadra" -- buena práctica de mapas hexagonales (H3/Uber): decir qué
+   tamaño de celda se está mirando. */
+.popup-hex-radio { font-size: var(--fs-2xs); color: var(--text-dim); opacity: 0.75; margin-top: 2px; }
 .popup-votos { display: flex; gap: 6px; margin-top: 4px; }
 .popup-voto-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;

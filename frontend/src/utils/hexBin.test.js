@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hexBinZonas } from './hexBin'
+import { hexBinZonas, radioHexagonoPorZoom } from './hexBin'
 
 const ORDEN = ['bajo', 'medio', 'alto', 'critico']
 
@@ -57,5 +57,21 @@ describe('hexBinZonas', () => {
   it('sin zonas, devuelve un FeatureCollection vacío', () => {
     const resultado = hexBinZonas([], 500, ORDEN)
     expect(resultado.features).toEqual([])
+  })
+})
+
+describe('radioHexagonoPorZoom', () => {
+  it('da celdas grandes bien alejado', () => {
+    expect(radioHexagonoPorZoom(9)).toBe(1300)
+  })
+
+  it('da el radio de siempre (650) en el rango de zoom default', () => {
+    expect(radioHexagonoPorZoom(11)).toBe(650)
+    expect(radioHexagonoPorZoom(13)).toBe(650)
+  })
+
+  it('da celdas chicas acercado a nivel de barrio/calle', () => {
+    expect(radioHexagonoPorZoom(14)).toBe(320)
+    expect(radioHexagonoPorZoom(18)).toBe(320)
   })
 })
