@@ -188,6 +188,10 @@ function App() {
   const panelCapas = usePanelSaliente(capasAbiertas)
   const panelActividad = usePanelSaliente(actividadAbierta)
   const panelStats = usePanelSaliente(statsAbierto)
+  // zonaMostrada retiene la última zona no nula para poder seguir
+  // renderizando su contenido durante la animación de salida, incluso
+  // cuando zonaSeleccionada ya volvió a null al cerrar.
+  const [zonaMostrada, setZonaMostrada] = useState(null)
 
   const [rutaAbierta, setRutaAbierta] = useState(false)
   const [origenTexto, setOrigenTexto] = useState('')
@@ -1447,6 +1451,15 @@ function App() {
   // booleano para esconder la leyenda mientras se muestra, así los dos no
   // compiten por el mismo rincón de la pantalla en celular.
   const mostrandoOpcionesRuta = rutasCalculadas.length > 0 && !modoViaje
+  // Animación de salida del panel de ruta (SES-115): la leyenda y el FAB de
+  // reportar esperan a que panelRuta.montado baje a false (recién ahí
+  // "mostrandoOpcionesRuta" realmente liberó el rincón de la pantalla) en
+  // vez de reaccionar al booleano crudo -- si no, reaparecerían de golpe
+  // mientras el panel de ruta todavía se está desvaneciendo encima.
+  const panelRuta = usePanelSaliente(mostrandoOpcionesRuta)
+  const detalleVisible = rutasCalculadas.length === 0 && !rutaAbierta && !!zonaSeleccionada
+  const panelDetalle = usePanelSaliente(detalleVisible)
+  if (zonaSeleccionada && zonaSeleccionada !== zonaMostrada) setZonaMostrada(zonaSeleccionada)
   const mostrarAlerta = criticosVisibles > 0 && criticosVisibles <= 5 && misReportes.length === 0 && rutasCalculadas.length === 0
   let textoTopbar
   // Texto corto a propósito: con "· siguiendo tu ubicación" el pill se
@@ -1904,8 +1917,8 @@ function App() {
           giro (navegacion-panel, arriba) y cuánto falta (nav-resumen-mini,
           abajo). Tenerlo abierto durante la navegación era el problema de
           clutter más visible de las capturas que mandaste. */}
-      {mostrandoOpcionesRuta && (
-        <div className="ruta-resumen panel-enter hazard-edge">
+      {panelRuta.montado && (
+        <div className={`ruta-resumen panel-enter hazard-edge ${panelRuta.saliendo ? 'panel-exit' : ''}`}>
         {/* "Iniciar viaje" quedaba adentro del mismo scroll que la lista de
             rutas y zonas cruzadas -- con 2+ rutas y varias zonas, ese botón
             terminaba fuera de vista sin scrollear (Rodo lo reportó en
@@ -2063,18 +2076,18 @@ function App() {
         </div>
       )}
 
-      {rutasCalculadas.length === 0 && !rutaAbierta && zonaSeleccionada && (
-        <div className="detalle-panel panel-enter hazard-edge">
+      {panelDetalle.montado && zonaMostrada && (
+        <div className={`detalle-panel panel-enter hazard-edge ${panelDetalle.saliendo ? 'panel-exit' : ''}`}>
           <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)} aria-label="Cerrar detalle de zona"><X size={14} /></button>
-            <span className="popup-nivel" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
-            Gravedad estimada: {NIVELES[zonaSeleccionada.ajuste.nivel].label}
+            <span className="popup-nivel" style={{ color: NIVELES[zonaMostrada.ajuste.nivel].color }}>
+            Gravedad estimada: {NIVELES[zonaMostrada.ajuste.nivel].label}
           </span>
-          <strong className="detalle-nombre">{zonaSeleccionada.nombre}</strong>
-          <p className="detalle-motivo">{zonaSeleccionada.motivo}</p>
-          {zonaSeleccionada.prediccionModelo && (
+          <strong className="detalle-nombre">{zonaMostrada.nombre}</strong>
+          <p className="detalle-motivo">{zonaMostrada.motivo}</p>
+          {zonaMostrada.prediccionModelo && (
             <div className="detalle-modelo">
               <span className="detalle-modelo-titulo">Gravedad estimada si ocurre un siniestro</span>
-              {Object.entries(zonaSeleccionada.prediccionModelo).map(([clase, prob]) => (
+              {Object.entries(zonaMostrada.prediccionModelo).map(([clase, prob]) => (
                 <div className="detalle-modelo-fila" key={clase}>
                   <span className="detalle-modelo-label">{clase}</span>
                   <div className="detalle-modelo-track">
@@ -2083,23 +2096,23 @@ function App() {
                   <span className="detalle-modelo-num">{Math.round(prob * 100)}%</span>
                 </div>
               ))}
-              {zonaSeleccionada.contextoEstimado && (
+              {zonaMostrada.contextoEstimado && (
                 <p className="detalle-modelo-nota">Esta zona no tiene perfil histórico propio: se usó el perfil promedio de la ciudad.</p>
               )}
               <p className="detalle-modelo-nota">No estima la probabilidad de sufrir un siniestro durante tu viaje.</p>
             </div>
           )}
-          {zonaSeleccionada.ajustadoPorReciente && (
-            <p className="popup-ajuste">⬆ Nivel subido: {zonaSeleccionada.motivoAjuste}</p>
+          {zonaMostrada.ajustadoPorReciente && (
+            <p className="popup-ajuste">⬆ Nivel subido: {zonaMostrada.motivoAjuste}</p>
           )}
-          {zonaSeleccionada.ajuste.subio && (
+          {zonaMostrada.ajuste.subio && (
             <div className="detalle-ajuste">
-              <span className="detalle-ajuste-base">Base: {NIVELES[zonaSeleccionada.nivel].label}</span>
+              <span className="detalle-ajuste-base">Base: {NIVELES[zonaMostrada.nivel].label}</span>
               <span className="detalle-ajuste-flecha">→</span>
-              <span className="detalle-ajuste-ahora" style={{ color: NIVELES[zonaSeleccionada.ajuste.nivel].color }}>
-                Ahora: {NIVELES[zonaSeleccionada.ajuste.nivel].label}
+              <span className="detalle-ajuste-ahora" style={{ color: NIVELES[zonaMostrada.ajuste.nivel].color }}>
+                Ahora: {NIVELES[zonaMostrada.ajuste.nivel].label}
               </span>
-              <p className="detalle-ajuste-motivo">Subió por: {zonaSeleccionada.ajuste.motivos.join(' + ')}</p>
+              <p className="detalle-ajuste-motivo">Subió por: {zonaMostrada.ajuste.motivos.join(' + ')}</p>
             </div>
           )}
         </div>
@@ -2111,7 +2124,7 @@ function App() {
           + filtro por nivel no suma nada en ese momento y sí compite por el
           mismo espacio de pantalla en celular (a pedido de Rodo: que
           "Opciones de ruta" pueda usar ese lugar en vez de compartirlo). */}
-      {!vistaNavegacion && !mostrandoOpcionesRuta && (
+      {!vistaNavegacion && !panelRuta.montado && (
         <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
           <div className="legend-header">
             <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
@@ -2128,7 +2141,7 @@ function App() {
         </div>
       )}
 
-      {capaInseguridad !== 'apagado' && !vistaNavegacion && !mostrandoOpcionesRuta && (
+      {capaInseguridad !== 'apagado' && !vistaNavegacion && !panelRuta.montado && (
         <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
           <div className="legend-header">
             <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
@@ -2182,7 +2195,7 @@ function App() {
         </button>
       </div>
 
-      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''} ${mostrandoOpcionesRuta ? 'oculto-por-ruta' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte} aria-label={paso === 'idle' ? 'Reportar' : undefined}>
+      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''} ${panelRuta.montado ? 'oculto-por-ruta' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte} aria-label={paso === 'idle' ? 'Reportar' : undefined}>
         {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? <X size={16} /> : <TriangleAlert size={16} />}
         <span>{paso === 'buscando' ? 'Ubicando...' : paso === 'eligiendo' ? 'Cancelar' : 'Reportar'}</span>
       </button>
