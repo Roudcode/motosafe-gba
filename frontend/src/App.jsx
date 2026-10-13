@@ -26,6 +26,7 @@ import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
+import { ActividadPortal } from './components/ActividadPortal'
 // MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
 const MapaMotoSafe = lazy(() => import('./components/MapaMotoSafe').then((m) => ({ default: m.MapaMotoSafe })))
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
@@ -179,6 +180,7 @@ function App() {
   const [coberturaCapas, setCoberturaCapas] = useState(null)
   const [actividadAbierta, setActividadAbierta] = useState(false)
   const [statsAbierto, setStatsAbierto] = useState(false)
+  const [portalActividadAbierto, setPortalActividadAbierto] = useState(false)
   const sesion = useSesion()
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
@@ -188,6 +190,7 @@ function App() {
   const panelCapas = usePanelSaliente(capasAbiertas)
   const panelActividad = usePanelSaliente(actividadAbierta)
   const panelStats = usePanelSaliente(statsAbierto)
+  const panelPortalActividad = usePanelSaliente(portalActividadAbierto)
   // zonaMostrada retiene la última zona no nula para poder seguir
   // renderizando su contenido durante la animación de salida, incluso
   // cuando zonaSeleccionada ya volvió a null al cerrar.
@@ -1742,6 +1745,18 @@ function App() {
         </div>
       )}
 
+      {panelPortalActividad.montado && (
+        <ActividadPortal
+          saliendo={panelPortalActividad.saliendo}
+          reportesPrensa={reportesPrensa}
+          reportes={reportes}
+          zonasAjustadas={zonasAjustadas}
+          horaActual={horaActual}
+          onCerrar={() => setPortalActividadAbierto(false)}
+          onVerEnMapa={(punto) => { setVuelo({ ...punto, zoom: 16 }); setPortalActividadAbierto(false) }}
+        />
+      )}
+
       {/* Se oculta durante la navegación: no solo no hace falta buscar
           mientras estás en camino, sino que en pantalla chica quedaba
           asomando detrás de la tarjeta de "doblá acá" (se veía en las
@@ -2193,6 +2208,9 @@ function App() {
             )}
             <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
               <BarChart3 size={15} /> Estadísticas
+            </button>
+            <button onClick={() => { setPortalActividadAbierto(true); setHerramientasAbiertas(false) }}>
+              <Newspaper size={15} /> Actividad
             </button>
             {sesion && (
               <button onClick={() => { setHerramientasAbiertas(false); sesion.cerrarSesion() }} title={`Sesión de ${sesion.usuario}`}>

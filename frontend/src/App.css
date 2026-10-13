@@ -1194,7 +1194,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .onboarding-cerrar:active, .onboarding-entendido:active,
 .searchbar-icon:active:not(:disabled), .searchbar-clear:active,
 .ruta-form-swap:active, .ruta-form-pin:active, .ruta-resumen-editar:active,
-.report-sheet-cerrar:active {
+.report-sheet-cerrar:active, .portal-actividad-filtros-fila button:active,
+.portal-actividad-item-link:active {
   transform: scale(0.93);
 }
 
@@ -1634,3 +1635,60 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   background: rgba(255,59,59,0.1); border: 1px solid rgba(255,59,59,0.3); border-radius: var(--r-xs);
   padding: 8px 10px;
 }
+
+/* ===== Portal de Actividad (SES-115) =====
+   Pantalla completa, a propósito: es un "portal" (prensa + reportes de la
+   ciudad entera), no un panel más flotando sobre el mapa -- por eso usa
+   --bg sólido, no --surface-float. No lleva .hazard-edge: esa cinta marca
+   "panel de datos de riesgo de ESTA sesión/zona puntual" (actividad propia,
+   stats, detalle, ruta, legend); acá el contenido ya se autoexplica con
+   íconos de categoría por ítem, agregar la cinta hubiera sido redundante. */
+.portal-actividad {
+  position: fixed; inset: 0; z-index: 1950;
+  background: var(--bg); color: var(--text);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  padding: calc(var(--sp-4) + var(--safe-top)) calc(var(--sp-4) + var(--safe-right)) calc(var(--sp-4) + var(--safe-bottom)) calc(var(--sp-4) + var(--safe-left));
+}
+.portal-actividad-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.portal-actividad-titulo {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-xl); color: var(--amarillo);
+}
+.portal-actividad-filtros { display: flex; flex-direction: column; gap: var(--sp-2); flex-shrink: 0; }
+.portal-actividad-filtros-fila { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 2px; }
+.portal-actividad-filtros-fila button {
+  flex-shrink: 0; min-height: 28px; padding: var(--sp-1) var(--sp-3); border-radius: var(--r-pill);
+  border: 1px solid var(--border); background: var(--inset); color: var(--text-dim);
+  font-size: var(--fs-sm); font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--motion-fast) ease;
+}
+.portal-actividad-filtros-fila button.activo { background: var(--amarillo); color: #14171A; border-color: var(--amarillo); font-weight: 700; }
+.portal-actividad-select-zona {
+  align-self: flex-start; min-height: 32px; padding: 6px var(--sp-3); border-radius: var(--r-sm);
+  border: 1px solid var(--border); background: var(--inset); color: var(--text);
+  font-size: var(--fs-sm); font-family: 'Inter', sans-serif; cursor: pointer;
+}
+.portal-actividad-contador { font-size: var(--fs-xs); color: var(--text-dimmer); flex-shrink: 0; }
+.portal-actividad-lista { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-2); min-height: 0; }
+.portal-actividad-vacio { color: var(--text-dim); font-size: var(--fs-md); text-align: center; margin-top: var(--sp-7); }
+.portal-actividad-item {
+  display: flex; align-items: flex-start; gap: var(--sp-3); width: 100%; text-align: left;
+  background: var(--inset); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: var(--sp-3); cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif;
+  transition: border-color var(--motion-fast) ease;
+}
+.portal-actividad-item:hover, .portal-actividad-item:focus-visible { border-color: var(--azul); outline: none; }
+.portal-actividad-item-icono {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%; background: var(--surface-solid); color: var(--text-dim);
+}
+.portal-actividad-item-texto { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.portal-actividad-item-titulo { font-size: var(--fs-base); line-height: 1.35; }
+.portal-actividad-item-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; font-size: var(--fs-xs); color: var(--text-dim); }
+.portal-actividad-item-zona { display: flex; align-items: center; gap: 2px; }
+.portal-actividad-item-votos { display: flex; gap: var(--sp-2); }
+.portal-actividad-item-votos span { display: flex; align-items: center; gap: 2px; }
+.portal-actividad-item-link {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%; color: var(--text-dim); margin-left: auto;
+}
+.portal-actividad-item-link:hover { color: var(--azul); }
