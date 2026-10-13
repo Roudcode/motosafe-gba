@@ -58,6 +58,33 @@ describe('hexBinZonas', () => {
     const resultado = hexBinZonas([], 500, ORDEN)
     expect(resultado.features).toEqual([])
   })
+
+  it('con zonas de distinta fuente en la misma celda, desglosa cuánto es de cada una', () => {
+    const zonas = [
+      { lat: -34.6037, lng: -58.3816, cantidad: 10, nivel: 'medio', fuente: 'siniestros' },
+      { lat: -34.6038, lng: -58.3817, cantidad: 4, nivel: 'alto', fuente: 'inseguridad' },
+    ]
+    const resultado = hexBinZonas(zonas, 500, ORDEN)
+    const props = resultado.features[0].properties
+    expect(props.fuente_siniestros).toBe(10)
+    expect(props.fuente_inseguridad).toBe(4)
+    expect(props.cantidad).toBe(14)
+  })
+
+  it('una noticia dentro de una celda con datos reales suma a noticias', () => {
+    const zonas = [{ lat: -34.6037, lng: -58.3816, cantidad: 5, nivel: 'medio' }]
+    const noticias = [{ lat: -34.6038, lng: -58.3817 }, { lat: -34.6036, lng: -58.3815 }]
+    const resultado = hexBinZonas(zonas, 500, ORDEN, noticias)
+    expect(resultado.features[0].properties.noticias).toBe(2)
+  })
+
+  it('una noticia fuera de cualquier celda con datos reales no crea un hexágono vacío', () => {
+    const zonas = [{ lat: -34.6037, lng: -58.3816, cantidad: 5, nivel: 'medio' }]
+    const noticias = [{ lat: -34.8, lng: -58.6 }]
+    const resultado = hexBinZonas(zonas, 500, ORDEN, noticias)
+    expect(resultado.features.length).toBe(1)
+    expect(resultado.features[0].properties.noticias).toBe(0)
+  })
 })
 
 describe('radioHexagonoPorZoom', () => {

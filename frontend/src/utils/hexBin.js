@@ -71,16 +71,31 @@ function esquinasHexagono(cx, cy, size) {
   return puntos
 }
 
-// zonas: [{lat, lng, cantidad, nivel}]. nivel = el más alto de ORDEN_NIVELES
-// presente en la celda, no un promedio -- un hexágono con una zona crítica
-// entre varias de nivel bajo sigue siendo un hexágono que conviene mirar,
-// promediarlo lo escondería. radioMetros: tamaño del hexágono (centro a
-// vértice). Devuelve un FeatureCollection de polígonos, uno por celda no
-// vacía. Las propiedades de cada feature incluyen, además del total y el
-// nivel máximo, el desglose `cantidad_<nivel>` por nivel -- son propiedades
-// planas (no un objeto anidado) porque así las necesita MapLibre para
-// mostrarlas en un popup al hacer click en el hexágono.
-export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
+// zonas: [{lat, lng, cantidad, nivel, fuente?}]. nivel = el más alto de
+// ORDEN_NIVELES presente en la celda, no un promedio -- un hexágono con una
+// zona crítica entre varias de nivel bajo sigue siendo un hexágono que
+// conviene mirar, promediarlo lo escondería. `fuente` es opcional (SES-115,
+// vista "Todo" que mezcla siniestros + inseguridad en la misma grilla): si
+// viene, además del desglose por nivel se arma uno por fuente
+// (`fuente_siniestros`/`fuente_inseguridad`, ninguna fusión numérica rara,
+// solo "cuánto de este total es de cada origen"), para que el popup pueda
+// decir "18 siniestros · 7 delitos" en vez de un número mezclado sin
+// aclarar de dónde sale.
+//
+// radioMetros: tamaño del hexágono (centro a vértice). Devuelve un
+// FeatureCollection de polígonos, uno por celda no vacía. Las propiedades
+// de cada feature incluyen, además del total y el nivel máximo, el
+// desglose `cantidad_<nivel>` por nivel -- son propiedades planas (no un
+// objeto anidado) porque así las necesita MapLibre para mostrarlas en un
+// popup al hacer click en el hexágono.
+//
+// noticias: [{lat, lng}] opcional (SES-115, "influencia de las noticias"
+// pedida por Rodo) -- puntos de prensa que caen dentro de una celda ya
+// existente (con datos de riesgo reales) suman a `celda.noticias`. A
+// propósito NO crean una celda nueva si no hay ninguna zona de riesgo ahí:
+// esto es una capa de contexto sobre el riesgo ya mostrado ("acá además
+// pasó algo"), no un motivo para dibujar un hexágono vacío de riesgo.
+export function hexBinZonas(zonas, radioMetros, ordenNiveles, noticias = []) {
   const celdas = new Map()
   for (const zona of zonas) {
     const { x, y } = aMetros(zona.lat, zona.lng)
@@ -88,14 +103,21 @@ export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
     const clave = `${q},${r}`
     let celda = celdas.get(clave)
     if (!celda) {
-      celda = { q, r, cantidad: 0, nivelIndiceMax: 0, cantidadPorNivel: {} }
+      celda = { q, r, cantidad: 0, nivelIndiceMax: 0, cantidadPorNivel: {}, cantidadPorFuente: {}, noticias: 0 }
       celdas.set(clave, celda)
     }
     const cantidad = zona.cantidad || 0
     celda.cantidad += cantidad
     celda.cantidadPorNivel[zona.nivel] = (celda.cantidadPorNivel[zona.nivel] || 0) + cantidad
+    if (zona.fuente) celda.cantidadPorFuente[zona.fuente] = (celda.cantidadPorFuente[zona.fuente] || 0) + cantidad
     const indiceNivel = ordenNiveles.indexOf(zona.nivel)
     if (indiceNivel > celda.nivelIndiceMax) celda.nivelIndiceMax = indiceNivel
+  }
+  for (const noticia of noticias) {
+    const { x, y } = aMetros(noticia.lat, noticia.lng)
+    const { q, r } = pixelAAxial(x, y, radioMetros)
+    const celda = celdas.get(`${q},${r}`)
+    if (celda) celda.noticias += 1
   }
   const features = []
   for (const celda of celdas.values()) {
@@ -104,9 +126,17 @@ export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
       const { lat, lng } = metrosALatLng(ex, ey)
       return [lng, lat]
     })
+    const centro = metrosALatLng(x, y)
     esquinas.push(esquinas[0])
-    const propiedades = { cantidad: celda.cantidad, nivel: ordenNiveles[celda.nivelIndiceMax] }
+    const propiedades = {
+      cantidad: celda.cantidad,
+      nivel: ordenNiveles[celda.nivelIndiceMax],
+      noticias: celda.noticias,
+      centro_lat: centro.lat,
+      centro_lng: centro.lng,
+    }
     for (const nivel of ordenNiveles) propiedades[`cantidad_${nivel}`] = celda.cantidadPorNivel[nivel] || 0
+    for (const fuente of ['siniestros', 'inseguridad']) propiedades[`fuente_${fuente}`] = celda.cantidadPorFuente[fuente] || 0
     features.push({
       type: 'Feature',
       geometry: { type: 'Polygon', coordinates: [esquinas] },

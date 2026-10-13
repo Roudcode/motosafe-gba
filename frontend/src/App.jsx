@@ -12,6 +12,7 @@ import {
   RADIO_ALERTA_REPORTE_KM, MINUTOS_ALERTA_REPORTE_RECIENTE, CATEGORIAS_ALERTA_PROXIMIDAD,
   API_URL, CLAVE_AUTOR_ID, CLAVE_TOKENS_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
   CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
+  CLAVE_FILTRO_HEXAGONO, OPCIONES_FILTRO_HEXAGONO,
   CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
   CLAVE_CAPA_PRENSA,
 } from './constants'
@@ -142,6 +143,15 @@ function App() {
   // localStorage); quien ya eligió otra vista conserva su elección.
   const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'hexagonos'))
   const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
+  // Filtro DENTRO de la vista de hexágonos (SES-115): qué datos arma la
+  // grilla -- 'todo' por default, igual criterio que el filtro de categoría
+  // del portal de Actividad (arranca mostrando todo, se achica desde ahí).
+  // Independiente de capaInseguridad (ese es el toggle de la capa de puntos
+  // de delitos, una vista de fondo distinta) -- los datos de inseguridad ya
+  // se piden siempre (ver fetch de /hotspots-inseguridad más abajo, no
+  // depende de que esa capa esté prendida), así que este filtro puede
+  // usarlos sin necesidad de prender la otra capa también.
+  const [filtroHexagono, setFiltroHexagono] = useState(() => cargarDeLocalStorage(CLAVE_FILTRO_HEXAGONO, 'todo'))
   // Tráfico en vivo (TomTom): apagado por default -- no todos tienen la API key
   // configurada en el backend, y aunque la tengan, no queremos gastar cuota
   // gratuita para usuarios que nunca miraron esta capa.
@@ -631,6 +641,9 @@ function App() {
   useEffect(() => {
     guardarEnLocalStorage(CLAVE_CAPA_MAPA, capaMapa)
   }, [capaMapa])
+  useEffect(() => {
+    guardarEnLocalStorage(CLAVE_FILTRO_HEXAGONO, filtroHexagono)
+  }, [filtroHexagono])
 
   useEffect(() => {
     guardarEnLocalStorage(CLAVE_CAPA_INSEGURIDAD, capaInseguridad)
@@ -2000,6 +2013,7 @@ function App() {
           onClickZona={onClickZonaMapa}
           atenuarFondo={atenuarFondo}
           capaMapa={capaMapa}
+          filtroHexagono={filtroHexagono}
           corredoresFiltrados={corredoresFiltrados}
           capaInseguridad={capaInseguridad}
           inseguridadFiltrada={capaInseguridad === 'moto' ? inseguridadMotoFiltrada : inseguridadGeneralFiltrada}
@@ -2252,6 +2266,13 @@ function App() {
             <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
             {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
           </div>
+          {capaMapa === 'hexagonos' && (
+            <div className="portal-actividad-filtros-fila legend-filtro-hexagono">
+              {OPCIONES_FILTRO_HEXAGONO.map((f) => (
+                <button key={f.id} className={filtroHexagono === f.id ? 'activo' : ''} onClick={() => setFiltroHexagono(f.id)}>{f.label}</button>
+              ))}
+            </div>
+          )}
           <TextoCobertura meta={coberturaCapas?.[capaMapa === 'corredores' ? 'corredores' : 'hotspots']} prefijo="Siniestros" />
           {Object.entries(NIVELES).map(([key, val]) => (
             <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>

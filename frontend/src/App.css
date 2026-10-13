@@ -1685,6 +1685,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .portal-actividad-filtros { display: flex; flex-direction: column; gap: var(--sp-2); flex-shrink: 0; }
 .portal-actividad-filtros-fila { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 2px; }
+/* Mismos chips del portal de Actividad, reutilizados en la leyenda de
+   "Nivel de riesgo" para el filtro de fuente de los hexágonos (SES-115:
+   Todo/Siniestros/Inseguridad) -- la leyenda es angosta (min-width: 140px),
+   así que acá los botones no crecen tanto como en el portal. */
+.legend-filtro-hexagono { margin: 2px 0 4px; }
+.legend-filtro-hexagono button { padding: 3px var(--sp-2); font-size: var(--fs-2xs); min-height: 22px; }
 .portal-actividad-filtros-fila button {
   flex-shrink: 0; min-height: 28px; padding: var(--sp-1) var(--sp-3); border-radius: var(--r-pill);
   border: 1px solid var(--border); background: var(--inset); color: var(--text-dim);

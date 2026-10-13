@@ -62,6 +62,21 @@ export const CLAVE_TEMA = 'motosafe_tema'
 export const CLAVE_ONBOARDING = 'motosafe_onboarding_visto'
 export const CLAVE_CAPA_MAPA = 'motosafe_capa_mapa'
 export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
+// Qué datos arma la grilla de hexágonos (CLAVE_CAPA_MAPA==='hexagonos'), no
+// a confundir con CLAVE_CAPA_INSEGURIDAD: ese es el toggle de la capa de
+// puntos/clusters de delitos (otra vista de fondo aparte); esto es un
+// filtro DENTRO de la vista de hexágonos, pensado para poder mirar
+// siniestros y delitos como una sola lectura de "qué tan complicada está
+// esta zona" sin tener que prender una segunda capa superpuesta. 'todo' por
+// default: igual que el filtro de categoría del portal de Actividad
+// (FILTROS_CATEGORIA, 'todas' primero), se arranca viendo todo y se achica
+// desde ahí, no al revés.
+export const CLAVE_FILTRO_HEXAGONO = 'motosafe_filtro_hexagono'
+export const OPCIONES_FILTRO_HEXAGONO = [
+  { id: 'todo', label: 'Todo' },
+  { id: 'siniestros', label: 'Siniestros' },
+  { id: 'inseguridad', label: 'Inseguridad' },
+]
 export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
 // Prensa (noticias de robos scrapeadas, ver backend/scrapear_noticias_robos.py):
 // prendida por default -- a diferencia de tráfico (costo de API) o inseguridad

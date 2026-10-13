@@ -417,6 +417,7 @@ function MapaMotoSafeInner({
   onClickZona,
   atenuarFondo,
   capaMapa,
+  filtroHexagono,
   corredoresFiltrados,
   capaInseguridad,
   inseguridadFiltrada,
@@ -773,8 +774,24 @@ function MapaMotoSafeInner({
       if (map.getSource(sourceId)) map.removeSource(sourceId)
       return
     }
-    const zonasConNivel = zonasFiltradas.map((z) => ({ lat: z.lat, lng: z.lng, cantidad: z.cantidad, nivel: z.ajuste.nivel }))
-    const datos = hexBinZonas(zonasConNivel, radioHex, ORDEN_NIVELES)
+    // filtroHexagono (SES-115, pedido de Rodo: hexágonos como "visión
+    // central" en vez de una vista más entre varias) -- qué arma la grilla:
+    // 'siniestros' (como era antes, el modelo de predicción en vivo),
+    // 'inseguridad' (delitos históricos GCBA, la misma fuente que ya usa la
+    // capa de puntos aparte) o 'todo' (las dos en la misma celda). Cada zona
+    // lleva su `fuente` para que hexBinZonas pueda desglosar el total sin
+    // fundirlo en un número sin aclarar de dónde sale.
+    const zonasSiniestros = zonasFiltradas.map((z) => ({ lat: z.lat, lng: z.lng, cantidad: z.cantidad, nivel: z.ajuste.nivel, fuente: 'siniestros' }))
+    const zonasInseguridad = (inseguridadFiltrada || []).map((h) => ({ lat: h.latitud, lng: h.longitud, cantidad: h.cantidad_delitos, nivel: h.nivel_riesgo, fuente: 'inseguridad' }))
+    const zonasHex = filtroHexagono === 'siniestros' ? zonasSiniestros
+      : filtroHexagono === 'inseguridad' ? zonasInseguridad
+      : [...zonasSiniestros, ...zonasInseguridad]
+    // Puntos de prensa (SES-115, "influencia de las noticias"): no se
+    // cuentan como riesgo, solo marcan qué celdas con datos reales tienen
+    // además una noticia reciente encima (ver el filtro de noticias dentro
+    // de hexBinZonas, que no crea hexágonos nuevos solo por una noticia).
+    const puntosNoticias = (reportesPrensa || []).map((r) => ({ lat: r.lat, lng: r.lng }))
+    const datos = hexBinZonas(zonasHex, radioHex, ORDEN_NIVELES, puntosNoticias)
     // Dentro de un mismo nivel, dos celdas no son iguales: un hexágono
     // "alto" con 3 siniestros y uno "alto" con 80 se veían idénticos (la
     // opacidad era un número fijo). Ahora la opacidad del relleno también
@@ -786,6 +803,15 @@ function MapaMotoSafeInner({
     // sola celda extrema aplana la escala para todas las demás.
     const cantidades = datos.features.map((f) => f.properties.cantidad).sort((a, b) => a - b)
     const tope = cantidades.length ? Math.max(1, cantidades[Math.floor(cantidades.length * 0.9)]) : 1
+    // Paleta: 'inseguridad' sola pasa a violeta/magenta (la misma que ya usa
+    // esa capa de puntos en todo el resto de la app, NIVELES_INSEGURIDAD_COLOR)
+    // para que de un vistazo se note "esto es otra fuente de datos", no
+    // vaya a confundirse con los siniestros. 'todo' se queda con la paleta
+    // de NIVELES de siempre -- es la lectura combinada "qué tan complicada
+    // está la zona en general", no tiene sentido por fuente ahí.
+    const paleta = filtroHexagono === 'inseguridad' ? NIVELES_INSEGURIDAD_COLOR : {
+      bajo: NIVELES.bajo.color, medio: NIVELES.medio.color, alto: NIVELES.alto.color, critico: NIVELES.critico.color,
+    }
     map.addSource(sourceId, { type: 'geojson', data: datos })
     map.addLayer({
       id: layerId,
@@ -794,11 +820,11 @@ function MapaMotoSafeInner({
       paint: {
         'fill-color': [
           'match', ['get', 'nivel'],
-          'bajo', NIVELES.bajo.color,
-          'medio', NIVELES.medio.color,
-          'alto', NIVELES.alto.color,
-          'critico', NIVELES.critico.color,
-          NIVELES.bajo.color,
+          'bajo', paleta.bajo,
+          'medio', paleta.medio,
+          'alto', paleta.alto,
+          'critico', paleta.critico,
+          paleta.bajo,
         ],
         'fill-opacity': ['*', ['min', 0.78, ['interpolate', ['linear'], ['get', 'cantidad'], 0, 0.22, tope, 0.78]], atenuarFondo],
       },
@@ -813,11 +839,38 @@ function MapaMotoSafeInner({
       source: sourceId,
       paint: { 'line-color': 'rgba(255,255,255,0.35)', 'line-width': 1.2, 'line-opacity': atenuarFondo },
     })
+    // Insignia de noticias: un punto chico en las celdas que tienen al menos
+    // una noticia encima. Probado primero con una capa 'symbol' (el glyph
+    // "▤" que ya usa el cluster de prensa) pero OpenFreeMap no tiene
+    // cacheado ese rango de glyph para el font stack del estilo (404 en
+    // consola, "Unable to load glyph range... Rendering codepoint locally
+    // instead") -- en vez de depender de qué rangos Unicode decidió cachear
+    // un servidor de fuentes de terceros, un 'circle' no necesita ninguna
+    // fuente, se ve igual siempre. Capa aparte sobre la MISMA fuente (no
+    // necesita datos propios, MapLibre lo centra en el centroide del
+    // polígono) y filtrada para no dibujar nada en las celdas sin noticias.
+    const layerNoticiasId = 'hexagonos-cobertura-noticias'
+    map.addLayer({
+      id: layerNoticiasId,
+      type: 'circle',
+      source: sourceId,
+      filter: ['>', ['get', 'noticias'], 0],
+      paint: {
+        'circle-radius': 5,
+        'circle-color': '#ffffff',
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#14171A',
+        'circle-opacity': atenuarFondo,
+        'circle-stroke-opacity': atenuarFondo,
+        'circle-translate': [10, -10],
+      },
+    })
 
     // Antes el hexágono era puramente decorativo -- tocarlo no hacía nada,
     // a diferencia de clusters/corredores que sí abren un detalle. Mismo
     // patrón que corredores: popup con el total y el desglose por nivel de
     // esa celda (viene ya armado en properties, ver hexBinZonas).
+    const ETIQUETA_UNIDAD = { siniestros: 'siniestros', inseguridad: 'delitos', todo: 'eventos de riesgo' }
     let popup
     const onClick = (e) => {
       const f = e.features[0]
@@ -827,15 +880,17 @@ function MapaMotoSafeInner({
       const filasNivel = ORDEN_NIVELES
         .filter((nivel) => (p[`cantidad_${nivel}`] || 0) > 0)
         .reverse()
-        .map((nivel) => `<span><span class="popup-hex-punto" style="background:${NIVELES[nivel].color}"></span>${NIVELES[nivel].label}: ${p[`cantidad_${nivel}`]}</span>`)
+        .map((nivel) => `<span><span class="popup-hex-punto" style="background:${paleta[nivel]}"></span>${NIVELES[nivel].label}: ${p[`cantidad_${nivel}`]}</span>`)
         .join('')
       popup = new Popup({ closeButton: true, maxWidth: '280px' })
         .setLngLat(e.lngLat)
         .setHTML(`
           <div class="popup-content">
-            <span class="popup-nivel" style="color:${NIVELES[p.nivel]?.color}">${NIVELES[p.nivel]?.label}</span>
-            <strong>${p.cantidad} siniestros en esta celda</strong>
+            <span class="popup-nivel" style="color:${paleta[p.nivel]}">${NIVELES[p.nivel]?.label}</span>
+            <strong>${p.cantidad} ${ETIQUETA_UNIDAD[filtroHexagono] || ETIQUETA_UNIDAD.siniestros} en esta celda</strong>
             <div class="popup-hex-desglose">${filasNivel}</div>
+            ${filtroHexagono === 'todo' ? `<span class="popup-meta">${p.fuente_siniestros} siniestros · ${p.fuente_inseguridad} delitos</span>` : ''}
+            ${p.noticias > 0 ? `<span class="popup-meta">▤ ${p.noticias} noticia${p.noticias > 1 ? 's' : ''} reciente${p.noticias > 1 ? 's' : ''} en esta zona</span>` : ''}
             <span class="popup-meta">Celda de ~${radioHex}m de radio</span>
           </div>
         `)
@@ -852,12 +907,13 @@ function MapaMotoSafeInner({
       map.off('click', layerId, onClick)
       map.off('mouseenter', layerId, cursorOn)
       map.off('mouseleave', layerId, cursorOff)
+      if (map.getLayer(layerNoticiasId)) map.removeLayer(layerNoticiasId)
       if (map.getLayer(layerBordeId)) map.removeLayer(layerBordeId)
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
 
-  }, [capaMapa, zonasFiltradas, atenuarFondo, version, radioHex])
+  }, [capaMapa, filtroHexagono, zonasFiltradas, inseguridadFiltrada, reportesPrensa, atenuarFondo, version, radioHex])
 
   // --- cluster de siniestros (capaMapa === 'clusters') ----------------------
   useEffect(() => {
