@@ -966,6 +966,20 @@ function App() {
     if (campoActivo === 'reporte') { setUbicacionReporte(punto); setVuelo({ ...punto, zoom: 15 }) }
   }, [campoActivo])
 
+  // Tocar el mapa vacío marca destino directo (estilo Maps/Waze): reusa la
+  // misma tarjeta "lugar elegido" + botón "Ir" que ya usa la búsqueda de
+  // direcciones, así que no hace falta geocodificación inversa ni UI nueva
+  // -- mismo rótulo que ya usa "marcar en el mapa" en el formulario de ruta
+  // (Punto marcado en el mapa / Punto en el mapa), para que se lea como el
+  // mismo gesto en los dos lugares. Deshabilitado mientras cualquier otro
+  // flujo ya está usando el toque sobre el mapa (marcar origen/destino,
+  // reportar) o mientras no tendría sentido (navegando, con "Opciones de
+  // ruta" abierto).
+  const tapRapidoHabilitado = !campoActivo && paso === 'idle' && !vistaNavegacion && rutasCalculadas.length === 0
+  const tapMapaVacio = useCallback((punto) => {
+    setLugarElegido({ ...punto, label: 'Punto en el mapa' })
+  }, [])
+
   // Mismo motivo que clicMapa/manejarPaneoManual más arriba: referencia
   // estable para que MapaMotoSafe (en React.memo) no vuelva a renderizar el
   // mapa por cada tick de segundos de la topbar.
@@ -1872,6 +1886,8 @@ function App() {
           onTraficoEstado={onTraficoEstadoCambio}
           campoActivo={campoActivo}
           onClickMapa={clicMapa}
+          tapRapidoHabilitado={tapRapidoHabilitado}
+          onTapMapaVacio={tapMapaVacio}
           zonasFiltradas={zonasFiltradas}
           zonaResaltada={zonaResaltada}
           zonasCruzadasIds={zonasCruzadasIds}

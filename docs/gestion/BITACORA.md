@@ -1323,3 +1323,14 @@ Pedido de Rodo tras cerrar SES-114: mejora total, fuerte, en los detalles, aprov
 - Primer intento de esta tanda generó errores reales en consola (`ReferenceError: panelDetalle is not defined`, visto mientras la edición estaba a mitad de camino) -- quedaron en el historial de consola del navegador y se los distinguió explícitamente de un problema real releyendo con una navegación fresca y repitiendo eslint/vitest/build después de terminar la edición, todos en verde.
 - Verificado en el navegador con medición real (no solo mirando): apertura/cierre de detalle de zona con contenido real del modelo (zona con predicción Grave/Leve/Mortal), confirmado que el contenido sigue visible durante el fade de salida y que el nodo se desmonta después sin error de consola nuevo.
 - Verificado: eslint, vitest (81/81), build -- los tres en verde.
+
+## 2026-10-13 — SES-115 (cont.) — Feature nueva: tocar el mapa marca destino directo (estilo Maps)
+
+Pedido explícito de Rodo (no parte del rediseño visual): poder tocar cualquier punto vacío del mapa y que se marque como destino, igual que Google Maps/Waze.
+
+- Reutiliza por completo la tarjeta "lugar elegido" + botón "Ir" que ya existía para resultados de búsqueda (`lugarElegido`/`irAlLugar`) -- cero UI nueva, cero geocodificación inversa: el rótulo es "Punto en el mapa", mismo criterio de texto que ya usa "marcar en el mapa" en el formulario de ruta ("Punto marcado en el mapa").
+- La dificultad real era no pisar los flujos que YA usan el toque sobre el mapa: marcar origen/destino/reporte (`campoActivo`), elegir una ruta alternativa o ver el popup de un corredor (las únicas dos capas GL con su propio click), y los marcadores DOM (zonas, clusters, prensa), que ya hacían `stopPropagation()` en su propio handler. Resuelto en `MapaMotoSafe.jsx`: el listener genérico de click del mapa primero respeta `campoActivo` (como ya hacía), y si no hay nada de eso activo, chequea con `queryRenderedFeatures` si el toque cayó en `corredores-layer`/`rutas-layer` antes de interpretarlo como "mapa vacío".
+- Nueva condición en App.jsx (`tapRapidoHabilitado`): apagada mientras se está navegando, con "Opciones de ruta" abierta, o reportando -- en esos casos tocar el mapa no debería abrir una tarjeta de destino nueva.
+- Verificado en el navegador, no solo leyendo el código: tocar mapa vacío → aparece la tarjeta con pin azul → "Ir" arma el destino y abre el formulario de ruta (igual que buscar una dirección). Tocar directamente un cluster de hotspots → dispara SOLO el zoom nativo del cluster, sin que aparezca la tarjeta de destino en simultáneo (confirmado con medición real de qué elementos había en el DOM después de cada click, no a ojo).
+- Verificado: eslint, vitest (81/81), build -- los tres en verde.
+- Siguiente: portal de "Actividad" (prensa + reportes de usuarios combinados, con filtros de categoría/fecha/zona, como pantalla completa).

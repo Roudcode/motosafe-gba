@@ -402,6 +402,8 @@ function MapaMotoSafeInner({
   onTraficoEstado,
   campoActivo,
   onClickMapa,
+  tapRapidoHabilitado,
+  onTapMapaVacio,
   zonasFiltradas,
   zonaResaltada,
   zonasCruzadasIds,
@@ -447,6 +449,8 @@ function MapaMotoSafeInner({
   // un error para la regla react-hooks/refs de este lint.
   const campoActivoRef = useRef(campoActivo)
   const onClickMapaRef = useRef(onClickMapa)
+  const tapRapidoHabilitadoRef = useRef(tapRapidoHabilitado)
+  const onTapMapaVacioRef = useRef(onTapMapaVacio)
   const onClickZonaRef = useRef(onClickZona)
   const onClickRutaRef = useRef(onClickRuta)
   const onPaneoManualRef = useRef(onPaneoManual)
@@ -454,6 +458,8 @@ function MapaMotoSafeInner({
   useEffect(() => {
     campoActivoRef.current = campoActivo
     onClickMapaRef.current = onClickMapa
+    tapRapidoHabilitadoRef.current = tapRapidoHabilitado
+    onTapMapaVacioRef.current = onTapMapaVacio
     onClickZonaRef.current = onClickZona
     onClickRutaRef.current = onClickRuta
     onPaneoManualRef.current = onPaneoManual
@@ -519,8 +525,21 @@ function MapaMotoSafeInner({
       setVersion((v) => v + 1)
     })
     map.on('zoomend', () => onZoomChange?.(map.getZoom()))
+    // Tocar el mapa vacío marca destino directo (estilo Maps/Waze), SOLO
+    // cuando no hay otro flujo ya usando el toque sobre el mapa (marcar
+    // origen/destino/reporte -- campoActivo -- o cualquier otro gate que
+    // tapRapidoHabilitado decida en App.jsx, ej. estar navegando o con
+    // "Opciones de ruta" abierto). 'corredores-layer'/'rutas-layer' son las
+    // únicas capas GL con su propio click (popup de corredor, elegir ruta
+    // alterna): si el toque cayó en una de esas, no se interpreta como
+    // "mapa vacío" aunque no haya reportado feature por otro lado -- los
+    // marcadores DOM (zonas, clusters, prensa) ya hacen stopPropagation en
+    // su propio click, así que ni siquiera llegan acá.
     map.on('click', (e) => {
-      if (campoActivoRef.current) onClickMapaRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng })
+      if (campoActivoRef.current) { onClickMapaRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }); return }
+      if (!tapRapidoHabilitadoRef.current) return
+      const tocoCapaInteractiva = map.queryRenderedFeatures(e.point, { layers: ['corredores-layer', 'rutas-layer'].filter((id) => map.getLayer(id)) }).length > 0
+      if (!tocoCapaInteractiva) onTapMapaVacioRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng })
     })
     // 'dragstart' de maplibre solo lo dispara el handler de arrastre real
     // (gesto del usuario) -- easeTo/panTo/flyTo programáticos (los que usa
