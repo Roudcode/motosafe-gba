@@ -384,7 +384,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .navegacion-texto { display: flex; flex-direction: column; font-family: 'Inter', sans-serif; min-width: 0; }
 .navegacion-distancia {
-  font-size: var(--fs-md); color: var(--verde); font-family: 'Space Grotesk', sans-serif;
+  /* Rediseño SES-114: --verde-text, no --verde -- 1.78:1 contra superficie
+     clara, muy por debajo del mínimo (el chip de al lado, con el mismo
+     verde de FONDO y texto oscuro fijo encima, es un patrón distinto que
+     ya pasa de sobra y no se toca). */
+  font-size: var(--fs-md); color: var(--verde-text); font-family: 'Space Grotesk', sans-serif;
   font-weight: 700; letter-spacing: 0.02em;
 }
 .navegacion-texto strong {
@@ -395,8 +399,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .alerta-viaje {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1003;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 12px 22px; border-radius: var(--r-lg); font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700; font-size: 14px; text-align: center; max-width: 90vw;
+  padding: var(--sp-3) var(--sp-6); border-radius: var(--r-lg); font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700; font-size: var(--fs-base); text-align: center; max-width: 90vw;
 }
 .alerta-viaje-cabecera { display: flex; align-items: center; gap: 6px; }
 .alerta-viaje.alta { background: rgba(255,140,66,0.95); color: #14171A; }
@@ -602,7 +606,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   padding: 10px 18px; font-size: var(--fs-md); color: var(--text); font-family: 'Inter', sans-serif;
   max-width: 90vw; box-shadow: var(--shadow-float);
 }
-.ruta-banner button { background: none; border: 1px solid var(--border); color: var(--text-dim); border-radius: var(--r-md); padding: 3px 10px; font-size: var(--fs-sm); cursor: pointer; flex-shrink: 0; }
+/* Rediseño SES-114: medido en el navegador, 22px de alto -- por debajo
+   incluso del piso de 24px para un control secundario, y es el botón de
+   "Reintentar" de un banner de error de conexión (no debería ser el más
+   chico de la app justo ahí). */
+.ruta-banner button { background: none; border: 1px solid var(--border); color: var(--text-dim); border-radius: var(--r-md); padding: 3px 10px; font-size: var(--fs-sm); cursor: pointer; flex-shrink: 0; min-height: 28px; }
 .ruta-banner-error { border-color: var(--rojo); }
 .spinner-dark { border-color: rgba(232,234,237,0.25); border-top-color: var(--text); }
 
@@ -941,7 +949,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .report-sheet h3 { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-lg); margin-bottom: 12px; color: var(--text); }
 .report-options { display: flex; flex-direction: column; gap: 8px; }
-.report-options button { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--inset); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: var(--r-sm); font-size: var(--fs-md); cursor: pointer; transition: border-color 0.15s ease; }
+/* Rediseño SES-114: medido en el navegador, 39px -- es la elección de
+   categoría del incidente, acción primaria parado junto a la moto, mismo
+   piso de 44px que route-fab/herramientas-menu. */
+.report-options button { display: flex; align-items: center; gap: 10px; text-align: left; background: var(--inset); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: var(--r-sm); font-size: var(--fs-md); cursor: pointer; transition: border-color 0.15s ease; min-height: 44px; }
 .report-options button:hover { border-color: var(--amarillo); }
 /* Antes de tener un punto (GPS falló y todavía no tocaste el mapa), las
    categorías quedan visibles pero sin poder confirmarse -- confirmar sin
