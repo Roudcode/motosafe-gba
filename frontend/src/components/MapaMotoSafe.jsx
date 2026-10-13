@@ -829,14 +829,14 @@ function MapaMotoSafeInner({
         .reverse()
         .map((nivel) => `<span><span class="popup-hex-punto" style="background:${NIVELES[nivel].color}"></span>${NIVELES[nivel].label}: ${p[`cantidad_${nivel}`]}</span>`)
         .join('')
-      popup = new Popup({ closeButton: true })
+      popup = new Popup({ closeButton: true, maxWidth: '280px' })
         .setLngLat(e.lngLat)
         .setHTML(`
           <div class="popup-content">
             <span class="popup-nivel" style="color:${NIVELES[p.nivel]?.color}">${NIVELES[p.nivel]?.label}</span>
             <strong>${p.cantidad} siniestros en esta celda</strong>
             <div class="popup-hex-desglose">${filasNivel}</div>
-            <span class="popup-hex-radio">Celda de ~${radioHex}m de radio</span>
+            <span class="popup-meta">Celda de ~${radioHex}m de radio</span>
           </div>
         `)
         .addTo(map)
@@ -962,13 +962,17 @@ function MapaMotoSafeInner({
       const c = corredoresPorId.get(f.properties.id)
       if (!c) return
       popup?.remove()
-      popup = new Popup({ closeButton: true })
+      popup = new Popup({ closeButton: true, maxWidth: '280px' })
         .setLngLat(e.lngLat)
         .setHTML(`
           <div class="popup-content">
             <span class="popup-nivel" style="color:${NIVELES[c.nivel_riesgo]?.color}">${NIVELES[c.nivel_riesgo]?.label}</span>
             <strong>${c.calle}${c.tramos_totales > 1 ? ` — tramo ${c.tramo}/${c.tramos_totales}` : ''}</strong>
-            <span>${c.cantidad_siniestros} siniestros históricos · ${c.mortales} mortales · ${c.graves} graves</span>
+            <div class="popup-stats">
+              <div class="popup-stat"><strong>${c.cantidad_siniestros}</strong><span>siniestros</span></div>
+              <div class="popup-stat${c.mortales > 0 ? ' popup-stat-grave' : ''}"><strong>${c.mortales}</strong><span>mortales</span></div>
+              <div class="popup-stat"><strong>${c.graves}</strong><span>graves</span></div>
+            </div>
             ${c.ajustado_por_reciente ? `<span class="popup-ajuste">⬆ Nivel subido: ${escaparHtml(c.motivo_ajuste)}</span>` : ''}
           </div>
         `)
@@ -1021,13 +1025,21 @@ function MapaMotoSafeInner({
       onClickPunto: (id, coords) => {
         const h = porId.get(String(id))
         popup?.remove()
-        popup = new Popup({ closeButton: true })
+        // Comuna_moda llega como STRING con decimal ("10.0", resto de cómo
+        // Postgres/psycopg2 serializa la columna numérica de la moda) --
+        // Number() para coercionar antes de chequear, Number.isFinite solo
+        // no alcanza porque nunca es true para un string aunque sea
+        // numérico. Math.round acá nomás, sin tocar el dato en el backend:
+        // es un detalle de presentación ("Comuna 10", nunca "Comuna 10.0").
+        const comunaNum = Number(h.comuna_moda)
+        const comuna = Number.isFinite(comunaNum) ? Math.round(comunaNum) : h.comuna_moda
+        popup = new Popup({ closeButton: true, maxWidth: '280px' })
           .setLngLat(coords)
           .setHTML(`
             <div class="popup-content">
               <span class="popup-nivel" style="color:${NIVELES_INSEGURIDAD_COLOR[h.nivel_riesgo]}">${NIVELES[h.nivel_riesgo]?.label}</span>
               <strong>${h.cantidad_delitos} delitos históricos (${h.tipo_delito_moda || 'varios'})</strong>
-              <span>Comuna ${h.comuna_moda} · datos oficiales del GCBA, últimos 3 años</span>
+              <span class="popup-meta">Comuna ${comuna} · GCBA, últimos 3 años</span>
               ${h.ajustado_por_horario ? `<span class="popup-ajuste">⬆ ${escaparHtml(h.motivo_ajuste_horario)}</span>` : ''}
               ${h.ajustado_por_reciente ? `<span class="popup-ajuste">⬆ Nivel subido: ${escaparHtml(h.motivo_ajuste)}</span>` : ''}
             </div>
@@ -1064,12 +1076,19 @@ function MapaMotoSafeInner({
                 <button class="popup-voto-btn popup-voto-confirma" data-tipo="confirma">✓ Sigue ahí · ${rep.confirmaciones || 0} confirmaron</button>
                 <button class="popup-voto-btn popup-voto-desmiente" data-tipo="desmiente">✕ Ya no está (${rep.desmentidas || 0})</button>
               </div>`
-        popup = new Popup({ closeButton: true })
+        // Antes la línea de arriba (popup-nivel) apretaba tres cosas con
+        // separadores (quién reportó + antigüedad + vencimiento) y recién
+        // abajo decía QUÉ era -- al revés de lo que alguien busca primero al
+        // tocar un reporte. Ahora la categoría (lo más relevante: "¿qué está
+        // pasando acá?") es el eyebrow coloreado, quién reportó pasa a título,
+        // y el "cuándo" queda en una línea secundaria aparte, atenuada.
+        popup = new Popup({ closeButton: true, maxWidth: '260px' })
           .setLngLat([rep.lng, rep.lat])
           .setHTML(`
             <div class="popup-content">
-              <span class="popup-nivel" style="color:${color}">${esPropio ? 'Tu reporte' : 'Reporte de otro usuario'} · ${formatearAntiguedad(rep.creadoEn, horaActual)} · ${formatearVence(rep.venceEn)}</span>
-              <strong>${label}</strong>
+              <span class="popup-nivel" style="color:${color}">${label}</span>
+              <strong>${esPropio ? 'Tu reporte' : 'Reporte de otro usuario'}</strong>
+              <span class="popup-meta">${formatearAntiguedad(rep.creadoEn, horaActual)} · ${formatearVence(rep.venceEn)}</span>
               ${botonesVoto}
             </div>
           `)
