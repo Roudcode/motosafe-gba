@@ -72,10 +72,16 @@ export const CLAVE_CAPA_INSEGURIDAD = 'motosafe_capa_inseguridad'
 // (FILTROS_CATEGORIA, 'todas' primero), se arranca viendo todo y se achica
 // desde ahí, no al revés.
 export const CLAVE_FILTRO_HEXAGONO = 'motosafe_filtro_hexagono'
+// Labels cortas a propósito ("Delitos", no "Inseguridad"): en celular real
+// la leyenda es angosta y "Inseguridad" (11 letras) sola ya casi no entraba
+// al lado de "Siniestros" -- confirmado en capturas reales, el tercer chip
+// quedaba afuera sin ninguna pista de que existía. El id interno sigue
+// siendo 'inseguridad' (no cambia nada de la lógica), solo cambia lo que se
+// lee en el botón.
 export const OPCIONES_FILTRO_HEXAGONO = [
   { id: 'todo', label: 'Todo' },
   { id: 'siniestros', label: 'Siniestros' },
-  { id: 'inseguridad', label: 'Inseguridad' },
+  { id: 'inseguridad', label: 'Delitos' },
 ]
 export const CLAVE_CAPA_TRAFICO = 'motosafe_capa_trafico'
 // Prensa (noticias de robos scrapeadas, ver backend/scrapear_noticias_robos.py):

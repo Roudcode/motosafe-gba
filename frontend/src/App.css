@@ -1689,8 +1689,22 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    "Nivel de riesgo" para el filtro de fuente de los hexágonos (SES-115:
    Todo/Siniestros/Inseguridad) -- la leyenda es angosta (min-width: 140px),
    así que acá los botones no crecen tanto como en el portal. */
-.legend-filtro-hexagono { margin: 2px 0 4px; }
-.legend-filtro-hexagono button { padding: 3px var(--sp-2); font-size: var(--fs-2xs); min-height: 22px; }
+/* flex-wrap en vez del overflow-x: auto que trae .portal-actividad-filtros-fila
+   por default: esta leyenda es angosta (min-width: 140px, más angosta
+   todavía en celular) y con tres chips + overflow horizontal sin ninguna
+   pista visual de que hay scroll, el tercero ("Inseguridad") quedaba
+   directamente invisible -- confirmado en capturas reales del celular de
+   Rodo, se veían solo "Todo" y "Sinie..." cortado. Envolviendo a una
+   segunda fila, los tres quedan siempre a la vista sin gesto extra. */
+.legend-filtro-hexagono { margin: 2px 0 4px; flex-wrap: wrap; overflow-x: visible; }
+.legend-filtro-hexagono button { padding: 3px var(--sp-2); font-size: var(--fs-2xs); min-height: 22px; flex-shrink: 1; }
+/* Con flex-wrap ya no hace falta que entren los tres en una sola fila
+   (si no entran, bajan a una segunda), pero dar un poco más de ancho a la
+   leyenda cuando tiene este filtro reduce las chances de que caigan de a
+   uno por fila -- ":has()" ya es un patrón usado en este archivo (ver
+   .app:has(.nav-resumen-mini)), soportado en todo navegador que ya corre
+   el resto de la app. */
+.legend:has(.legend-filtro-hexagono) { min-width: 190px; }
 .portal-actividad-filtros-fila button {
   flex-shrink: 0; min-height: 28px; padding: var(--sp-1) var(--sp-3); border-radius: var(--r-pill);
   border: 1px solid var(--border); background: var(--inset); color: var(--text-dim);

@@ -803,15 +803,16 @@ function MapaMotoSafeInner({
     // sola celda extrema aplana la escala para todas las demás.
     const cantidades = datos.features.map((f) => f.properties.cantidad).sort((a, b) => a - b)
     const tope = cantidades.length ? Math.max(1, cantidades[Math.floor(cantidades.length * 0.9)]) : 1
-    // Paleta: 'inseguridad' sola pasa a violeta/magenta (la misma que ya usa
-    // esa capa de puntos en todo el resto de la app, NIVELES_INSEGURIDAD_COLOR)
-    // para que de un vistazo se note "esto es otra fuente de datos", no
-    // vaya a confundirse con los siniestros. 'todo' se queda con la paleta
-    // de NIVELES de siempre -- es la lectura combinada "qué tan complicada
-    // está la zona en general", no tiene sentido por fuente ahí.
-    const paleta = filtroHexagono === 'inseguridad' ? NIVELES_INSEGURIDAD_COLOR : {
-      bajo: NIVELES.bajo.color, medio: NIVELES.medio.color, alto: NIVELES.alto.color, critico: NIVELES.critico.color,
-    }
+    // Paleta: siempre la de NIVELES (verde/amarillo/naranja/rojo), en los
+    // tres filtros. Probado con 'inseguridad' en violeta/magenta
+    // (NIVELES_INSEGURIDAD_COLOR, la misma que usa la capa de puntos
+    // aparte) para marcar "otra fuente de datos" -- probado en el celular
+    // real (Rodo) salió al revés de lo buscado: el semáforo verde-amarillo-
+    // naranja-rojo se lee de un vistazo, cualquier otra escala de color hay
+    // que aprenderla. Mejor un único lenguaje de color en todo el mapa;
+    // cuál filtro está activo ya lo dice el chip prendido, no hace falta
+    // que el color del hexágono lo repita.
+    const paleta = { bajo: NIVELES.bajo.color, medio: NIVELES.medio.color, alto: NIVELES.alto.color, critico: NIVELES.critico.color }
     map.addSource(sourceId, { type: 'geojson', data: datos })
     map.addLayer({
       id: layerId,
@@ -839,32 +840,14 @@ function MapaMotoSafeInner({
       source: sourceId,
       paint: { 'line-color': 'rgba(255,255,255,0.35)', 'line-width': 1.2, 'line-opacity': atenuarFondo },
     })
-    // Insignia de noticias: un punto chico en las celdas que tienen al menos
-    // una noticia encima. Probado primero con una capa 'symbol' (el glyph
-    // "▤" que ya usa el cluster de prensa) pero OpenFreeMap no tiene
-    // cacheado ese rango de glyph para el font stack del estilo (404 en
-    // consola, "Unable to load glyph range... Rendering codepoint locally
-    // instead") -- en vez de depender de qué rangos Unicode decidió cachear
-    // un servidor de fuentes de terceros, un 'circle' no necesita ninguna
-    // fuente, se ve igual siempre. Capa aparte sobre la MISMA fuente (no
-    // necesita datos propios, MapLibre lo centra en el centroide del
-    // polígono) y filtrada para no dibujar nada en las celdas sin noticias.
-    const layerNoticiasId = 'hexagonos-cobertura-noticias'
-    map.addLayer({
-      id: layerNoticiasId,
-      type: 'circle',
-      source: sourceId,
-      filter: ['>', ['get', 'noticias'], 0],
-      paint: {
-        'circle-radius': 5,
-        'circle-color': '#ffffff',
-        'circle-stroke-width': 1.5,
-        'circle-stroke-color': '#14171A',
-        'circle-opacity': atenuarFondo,
-        'circle-stroke-opacity': atenuarFondo,
-        'circle-translate': [10, -10],
-      },
-    })
+    // La "influencia de las noticias" ya NO se muestra como un punto
+    // ambiente sobre cada celda: probado en el celular real quedó como
+    // ruido sin explicación ("¿por qué hay puntos blancos por todo el
+    // mapa?", sin ningún lugar en pantalla que lo aclarara). El dato sigue
+    // ahí -- `celda.noticias` sigue viniendo en properties y se sigue
+    // mostrando en el popup al tocar el hexágono ("▤ N noticias recientes
+    // en esta zona") -- solo se sacó la marca ambiente que nadie pedía ver
+    // todo el tiempo.
 
     // Antes el hexágono era puramente decorativo -- tocarlo no hacía nada,
     // a diferencia de clusters/corredores que sí abren un detalle. Mismo
@@ -907,7 +890,6 @@ function MapaMotoSafeInner({
       map.off('click', layerId, onClick)
       map.off('mouseenter', layerId, cursorOn)
       map.off('mouseleave', layerId, cursorOff)
-      if (map.getLayer(layerNoticiasId)) map.removeLayer(layerNoticiasId)
       if (map.getLayer(layerBordeId)) map.removeLayer(layerBordeId)
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
