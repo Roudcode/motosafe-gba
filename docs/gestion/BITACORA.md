@@ -1372,3 +1372,13 @@ Rodo pidió seguir con TomTom + caché agresiva para el filtro de barrio, ademá
 - Se sacó `zonaMasCercana` de `utils/geoRiesgo.js` (quedó sin uso, reemplazada por el barrio real) -- no se dejó como código muerto.
 - Verificado en el navegador con medición real, no solo mirando: selector de barrio poblándose con nombres reales tras abrir el portal, filtro por "Palermo" reduciendo de 151 a 3 resultados correctos, lector abierto desde un marcador de prensa del mapa con el scrim y el panel parcial visibles, mismo caso revisado en 375px. Se usó `curl` directo contra el backend para aislar que la causa del bug era el frontend, no el endpoint nuevo.
 - Verificado: pytest del backend (119 pasados, 1 solo falló por el propio bypass de auth que esta sesión agrega para probar sin login -- confirmado sacándolo temporalmente y repitiendo ese test solo, pasó limpio), eslint, vitest (81/81), build -- todo en verde.
+
+## 2026-10-13 — SES-115 (cont.) — Alto regulable del lector de notas
+
+Rodo probó el lector flotante y pidió una sola cosa más: que el alto se pueda regular arrastrando, para ver la nota más grande cuando hace falta.
+
+- Agarre (`.lector-nota-agarre`) arriba del panel, mismo patrón visual que un bottom-sheet nativo (barrita centrada). Arrastrándolo cambia `alturaLector` (estado en `%` de alto de pantalla, no en píxeles -- así no queda raro si el celular rota), clampeado entre 28vh y 94vh tanto en JS como en el CSS (min-height/max-height como respaldo).
+- `touch-action: none` en el agarre: sin esto, arrastrar en celular scrollea la página de atrás en vez de cambiar el alto del panel.
+- Accesible por teclado, no solo con el mouse/dedo: el agarre es un `role="slider"` enfocable, con flecha arriba/abajo moviendo el alto de a 5vh -- no se asumió que todos los visitantes van a poder arrastrar con precisión.
+- Verificado con medición real (no solo mirando): arrastre simulado hacia arriba/abajo confirmando el cambio real de `height` computado, clamp en los dos extremos (28vh/94vh) con un arrastre exagerado en cada sentido, control por teclado confirmado con el alto bajando un paso real por cada flecha, y revisado en 375px (el agarre se ve y se toca igual de bien).
+- Verificado: eslint, vitest (81/81), build -- los tres en verde.

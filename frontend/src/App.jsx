@@ -185,6 +185,29 @@ function App() {
   // también se abre desde los marcadores de prensa del mapa (MapaMotoSafe),
   // no solo desde el portal -- un solo lector, dos puntos de entrada.
   const [lectorNota, setLectorNota] = useState(null)
+  // Alto regulable del lector (SES-115, pedido de Rodo): arrastrando el
+  // "agarre" de arriba se puede ver la nota más grande. Guardado en % de
+  // alto de pantalla (no px) para que se adapte solo si el celular rota.
+  const [alturaLector, setAlturaLector] = useState(62)
+  const arrastrandoLectorRef = useRef(false)
+  useEffect(() => {
+    const mover = (e) => {
+      if (!arrastrandoLectorRef.current) return
+      const vh = ((window.innerHeight - e.clientY) / window.innerHeight) * 100
+      setAlturaLector(Math.min(94, Math.max(28, vh)))
+    }
+    const soltar = () => {
+      if (!arrastrandoLectorRef.current) return
+      arrastrandoLectorRef.current = false
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+    return () => {
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+    }
+  }, [])
   const sesion = useSesion()
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
@@ -1782,7 +1805,28 @@ function App() {
       {panelLectorNota.montado && lectorNotaMostrada && (
         <>
         <div className={`lector-nota-scrim ${panelLectorNota.saliendo ? 'panel-exit' : ''}`} onClick={() => setLectorNota(null)} />
-        <div className={`lector-nota panel-enter ${panelLectorNota.saliendo ? 'panel-exit' : ''}`} role="dialog" aria-label={`Leyendo: ${lectorNotaMostrada.titulo}`}>
+        <div
+          className={`lector-nota panel-enter ${panelLectorNota.saliendo ? 'panel-exit' : ''}`}
+          role="dialog"
+          aria-label={`Leyendo: ${lectorNotaMostrada.titulo}`}
+          style={{ height: `${alturaLector}vh` }}
+        >
+          <div
+            className="lector-nota-agarre"
+            onPointerDown={(e) => { e.preventDefault(); arrastrandoLectorRef.current = true; document.body.style.userSelect = 'none' }}
+            role="slider"
+            aria-label="Cambiar el alto del lector"
+            aria-valuenow={Math.round(alturaLector)}
+            aria-valuemin={28}
+            aria-valuemax={94}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp') setAlturaLector((a) => Math.min(94, a + 5))
+              if (e.key === 'ArrowDown') setAlturaLector((a) => Math.max(28, a - 5))
+            }}
+          >
+            <span className="lector-nota-agarre-barra" />
+          </div>
           <div className="lector-nota-header">
             <span className="lector-nota-fuente">{lectorNotaMostrada.fuente || 'Nota'}</span>
             <div className="lector-nota-acciones">

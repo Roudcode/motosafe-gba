@@ -1732,14 +1732,26 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   animation: panelIn var(--motion-panel) ease backwards;
 }
 .lector-nota-scrim.panel-exit { animation: panelOut 0.18s ease forwards; }
+/* El alto real lo pone App.jsx inline (style={{height}}), regulable
+   arrastrando .lector-nota-agarre -- min/max acá son el techo/piso de
+   seguridad (coinciden con el clamp de JS, por si algo lo rodea). */
 .lector-nota {
   position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 1970;
-  width: min(640px, calc(100vw - 24px)); max-height: min(72vh, 640px);
+  width: min(640px, calc(100vw - 24px)); min-height: 28vh; max-height: 94vh;
   background: var(--bg); border: 1px solid var(--border);
   border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--shadow-float-hover);
   display: flex; flex-direction: column; gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + var(--safe-bottom));
+  padding: 0 var(--sp-3) calc(var(--sp-3) + var(--safe-bottom));
 }
+/* Agarre para regular el alto (SES-115, pedido de Rodo: "ver más amplia la
+   noticia"). touch-action:none evita que el gesto de arrastre scrollee la
+   página atrás en celular en vez de cambiar el alto. */
+.lector-nota-agarre {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  height: 22px; margin: var(--sp-1) 0; cursor: ns-resize; touch-action: none;
+}
+.lector-nota-agarre-barra { width: 36px; height: 4px; border-radius: 2px; background: var(--border); transition: background var(--motion-fast) ease; }
+.lector-nota-agarre:hover .lector-nota-agarre-barra, .lector-nota-agarre:focus-visible .lector-nota-agarre-barra { background: var(--text-dim); }
 .lector-nota-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-shrink: 0; }
 .lector-nota-fuente { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md); color: var(--text-dim); }
 .lector-nota-acciones { display: flex; align-items: center; gap: var(--sp-3); }
