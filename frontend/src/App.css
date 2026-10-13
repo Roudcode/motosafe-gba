@@ -1668,27 +1668,69 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   font-size: var(--fs-sm); font-family: 'Inter', sans-serif; cursor: pointer;
 }
 .portal-actividad-contador { font-size: var(--fs-xs); color: var(--text-dimmer); flex-shrink: 0; }
-.portal-actividad-lista { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-2); min-height: 0; }
+.portal-actividad-lista { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; padding-bottom: var(--sp-3); }
 .portal-actividad-vacio { color: var(--text-dim); font-size: var(--fs-md); text-align: center; margin-top: var(--sp-7); }
+/* Rediseño SES-115 (cont.): tarjeta con elevación real (sombra, no solo
+   borde) -- Rodo lo pidió explícitamente ("no quedan muy bien"). El borde
+   sigue estando para quien tenga contraste reducido o esté en una pantalla
+   donde la sombra casi no se note, pero ya no es la única señal de que es
+   una tarjeta separada del fondo. */
 .portal-actividad-item {
   display: flex; align-items: flex-start; gap: var(--sp-3); width: 100%; text-align: left;
-  background: var(--inset); border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-solid); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-3); cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif;
-  transition: border-color var(--motion-fast) ease;
+  box-shadow: var(--shadow-float); transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease;
 }
-.portal-actividad-item:hover, .portal-actividad-item:focus-visible { border-color: var(--azul); outline: none; }
+.portal-actividad-item:hover, .portal-actividad-item:focus-visible {
+  border-color: var(--azul); box-shadow: var(--shadow-float-hover); transform: translateY(-1px); outline: none;
+}
+/* Insignia de categoría a color -- antes todos los ítems (robo, choque,
+   falta de iluminación...) tenían el mismo ícono gris plano, sin ninguna
+   jerarquía visual entre una urgencia y un aviso menor. Mismo criterio de
+   "fondo tintado al 15% + color sólido encima" que ya usan los badges de
+   ruta-resumen, no una paleta nueva. */
 .portal-actividad-item-icono {
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 50%; background: var(--surface-solid); color: var(--text-dim);
+  width: 36px; height: 36px; border-radius: 50%;
 }
-.portal-actividad-item-texto { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.portal-actividad-item-titulo { font-size: var(--fs-base); line-height: 1.35; }
+.portal-actividad-item-icono.categoria-rojo { background: rgba(255,59,59,0.15); color: var(--rojo-text); }
+.portal-actividad-item-icono.categoria-naranja { background: rgba(255,140,66,0.15); color: var(--naranja-text); }
+.portal-actividad-item-icono.categoria-azul { background: rgba(79,168,232,0.15); color: var(--azul-text); }
+.portal-actividad-item-icono.categoria-magenta { background: rgba(255,59,127,0.15); color: var(--magenta-text); }
+.portal-actividad-item-icono.categoria-amarillo { background: rgba(255,201,51,0.15); color: var(--amarillo-text); }
+.portal-actividad-item-icono.categoria-gris { background: var(--inset); color: var(--text-dim); }
+.portal-actividad-item-texto { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; padding-top: 2px; }
+.portal-actividad-item-titulo { font-size: var(--fs-base); line-height: 1.4; font-weight: 500; }
 .portal-actividad-item-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; font-size: var(--fs-xs); color: var(--text-dim); }
 .portal-actividad-item-zona { display: flex; align-items: center; gap: 2px; }
 .portal-actividad-item-votos { display: flex; gap: var(--sp-2); }
 .portal-actividad-item-votos span { display: flex; align-items: center; gap: 2px; }
 .portal-actividad-item-link {
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 50%; color: var(--text-dim); margin-left: auto;
+  width: 32px; height: 32px; border-radius: 50%; margin-left: auto; margin-top: 2px;
+  background: var(--inset); border: 1px solid var(--border); color: var(--text-dim);
+  transition: all var(--motion-fast) ease;
 }
-.portal-actividad-item-link:hover { color: var(--azul); }
+.portal-actividad-item-link:hover { color: var(--azul); border-color: var(--azul); }
+
+/* ===== Lector interno de notas (SES-115) =====
+   Modal sobre el propio portal (no sobre el mapa) -- se lee adentro de
+   MotoSafe en vez de perder el contexto saltando a otra pestaña. El aviso
+   de "si no carga, abrila en pestaña nueva" es honesto a propósito: muchos
+   diarios bloquean que su sitio se muestre en un iframe ajeno
+   (X-Frame-Options, para evitar clickjacking) y eso no se puede destrabar
+   desde este lado -- mejor decirlo que prometer algo que no siempre va a
+   funcionar. */
+.lector-nota {
+  position: absolute; inset: 0; z-index: 10; background: var(--bg);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.lector-nota-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-shrink: 0; }
+.lector-nota-fuente { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md); color: var(--text-dim); }
+.lector-nota-acciones { display: flex; align-items: center; gap: var(--sp-3); }
+.lector-nota-abrir {
+  display: flex; align-items: center; gap: 4px; font-size: var(--fs-sm); color: var(--azul-text);
+  white-space: nowrap;
+}
+.lector-nota-aviso { font-size: var(--fs-xs); color: var(--text-dimmer); margin: 0; flex-shrink: 0; }
+.lector-nota-iframe { flex: 1; width: 100%; border: 1px solid var(--border); border-radius: var(--r-md); background: #fff; min-height: 0; }

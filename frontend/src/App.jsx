@@ -1547,6 +1547,16 @@ function App() {
               <Layers size={15} />
             </button>
           )}
+          {!vistaNavegacion && (
+            <button
+              className="capa-toggle"
+              onClick={() => setPortalActividadAbierto(true)}
+              aria-label="Actividad: prensa y reportes de la ciudad"
+              title="Actividad"
+            >
+              <Newspaper size={15} />
+            </button>
+          )}
           {clima && !vistaNavegacion && (
             <div
               className="clima-badge"
@@ -2208,9 +2218,6 @@ function App() {
             )}
             <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
               <BarChart3 size={15} /> Estadísticas
-            </button>
-            <button onClick={() => { setPortalActividadAbierto(true); setHerramientasAbiertas(false) }}>
-              <Newspaper size={15} /> Actividad
             </button>
             {sesion && (
               <button onClick={() => { setHerramientasAbiertas(false); sesion.cerrarSesion() }} title={`Sesión de ${sesion.usuario}`}>

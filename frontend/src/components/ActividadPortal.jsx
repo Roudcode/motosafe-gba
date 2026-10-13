@@ -10,9 +10,12 @@
 // queda a más de DISTANCIA_MAX_ZONA_KM, se deja sin zona asignada en vez de
 // etiquetar con una zona que en los hechos está lejos (un dato fuera de
 // CABA no debería figurar como "Caballito" solo porque es la más próxima
-// de la lista).
+// de la lista). Pendiente de revisar con Rodo: el nombre real de zona
+// ("Zona 106 (13 siniestros...)") no es un dato que un usuario reconozca --
+// ver conversación de SES-115 sobre alternativas (barrio real vía reverse
+// geocoding) antes de tocar esto de nuevo.
 import { useMemo, useState } from 'react'
-import { X, Newspaper, Siren, ShieldAlert, Construction, TrafficCone, LightbulbOff, CarFront, Bike, MapPin, ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react'
+import { X, Newspaper, Siren, ShieldAlert, Construction, TrafficCone, LightbulbOff, CarFront, Bike, MapPin, ThumbsUp, ThumbsDown, BookOpen, ArrowUpRight } from 'lucide-react'
 import { CATEGORIAS_REPORTE } from '../constants'
 import { zonaMasCercana } from '../utils/geoRiesgo'
 import { formatearAntiguedad } from '../utils/tiempo'
@@ -27,6 +30,20 @@ const ICONOS_CATEGORIA = {
   pavimento: Construction,
   corte: TrafficCone,
   iluminacion: LightbulbOff,
+}
+
+// Un color por categoría (de la misma paleta de riesgo que ya usa el resto
+// de la app, no colores nuevos) -- antes todos los ítems tenían el mismo
+// ícono gris plano sin ninguna jerarquía visual entre "robo" y "falta de
+// iluminación", que son urgencias bastante distintas.
+const COLOR_CATEGORIA = {
+  robo: 'rojo',
+  choque: 'naranja',
+  moto: 'azul',
+  inseguro: 'magenta',
+  pavimento: 'amarillo',
+  corte: 'amarillo',
+  iluminacion: 'gris',
 }
 
 // Etiquetas cortas a mano, no la primera palabra de CATEGORIAS_REPORTE.label:
@@ -52,6 +69,13 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
   const [filtroCategoria, setFiltroCategoria] = useState('todas')
   const [filtroFecha, setFiltroFecha] = useState('7d')
   const [filtroZona, setFiltroZona] = useState('todas')
+  // Lector interno: en vez de salir de la pestaña de MotoSafe para leer una
+  // nota, se abre acá adentro en un iframe. Algunos diarios bloquean que su
+  // sitio se muestre dentro de un iframe ajeno (encabezado X-Frame-Options,
+  // para evitar clickjacking) -- eso no se puede destrabar desde este lado,
+  // así que el lector siempre deja a mano "Abrir en pestaña nueva" en vez de
+  // prometer que toda nota va a cargar acá.
+  const [lectorNota, setLectorNota] = useState(null)
 
   const zonas = useMemo(
     () => zonasAjustadas.map((z) => ({ id: z.id, nombre: z.nombre, lat: z.lat, lng: z.lng })),
@@ -147,10 +171,10 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
         )}
         {itemsFiltrados.map((item) => {
           const Icon = ICONOS_CATEGORIA[item.categoria] || Siren
-          // div+role en vez de <button>: el link a la nota de prensa de más
-          // abajo es un <a> real (para abrir en pestaña nueva/clic derecho/
-          // copiar link como cualquier link) -- un <a> adentro de un
-          // <button> es contenido interactivo anidado, inválido en HTML.
+          const color = COLOR_CATEGORIA[item.categoria] || 'gris'
+          // div+role en vez de <button>: el botón de "leer acá adentro" de
+          // más abajo es interactivo por su cuenta -- un control interactivo
+          // adentro de un <button> es contenido anidado inválido en HTML.
           return (
             <div
               key={item.id}
@@ -160,7 +184,7 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
               onClick={() => onVerEnMapa({ lat: item.lat, lng: item.lng })}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onVerEnMapa({ lat: item.lat, lng: item.lng }) } }}
             >
-              <span className="portal-actividad-item-icono"><Icon size={16} /></span>
+              <span className={`portal-actividad-item-icono categoria-${color}`}><Icon size={16} /></span>
               <span className="portal-actividad-item-texto">
                 <span className="portal-actividad-item-titulo">{item.titulo}</span>
                 <span className="portal-actividad-item-meta">
@@ -176,21 +200,35 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
                 </span>
               </span>
               {item.tipo === 'prensa' && item.url && (
-                <a
+                <button
                   className="portal-actividad-item-link"
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label="Ver nota original"
+                  onClick={(e) => { e.stopPropagation(); setLectorNota({ url: item.url, titulo: item.titulo, fuente: item.fuente }) }}
+                  aria-label="Leer nota"
+                  title="Leer nota"
                 >
-                  <ExternalLink size={14} />
-                </a>
+                  <BookOpen size={14} />
+                </button>
               )}
             </div>
           )
         })}
       </div>
+
+      {lectorNota && (
+        <div className="lector-nota" role="dialog" aria-label={`Leyendo: ${lectorNota.titulo}`}>
+          <div className="lector-nota-header">
+            <span className="lector-nota-fuente">{lectorNota.fuente}</span>
+            <div className="lector-nota-acciones">
+              <a className="lector-nota-abrir" href={lectorNota.url} target="_blank" rel="noopener noreferrer">
+                Abrir en pestaña nueva <ArrowUpRight size={13} />
+              </a>
+              <button className="detalle-cerrar" onClick={() => setLectorNota(null)} aria-label="Cerrar lector"><X size={16} /></button>
+            </div>
+          </div>
+          <p className="lector-nota-aviso">Algunos sitios no permiten mostrarse acá adentro -- si no carga, abrila en una pestaña nueva.</p>
+          <iframe className="lector-nota-iframe" src={lectorNota.url} title={lectorNota.titulo} />
+        </div>
+      )}
     </div>
   )
 }
