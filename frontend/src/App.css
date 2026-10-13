@@ -855,8 +855,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   box-shadow: 0 4px 14px rgba(0,0,0,0.35); font-family: 'Space Grotesk', sans-serif;
 }
 .velocimetro-icono { display: none; }
-.velocimetro strong { font-size: 18px; line-height: 1; color: var(--text); }
-.velocimetro span { font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+/* Rediseño SES-115: 18px/8px sueltos pasados a la escala -- el número
+   principal pasa a --fs-xl (19px, un toque más legible leyendo de un
+   vistazo mientras se maneja) y la etiqueta "KM/H" a --fs-2xs (10px, el
+   piso más chico de la escala: 8px quedaba por debajo de cualquier otro
+   texto de la app, demasiado chico para una etiqueta que también se lee
+   en movimiento). El breakpoint angosto (var(--fs-lg), más abajo en este
+   archivo) sigue reduciendo el número en pantallas chicas -- no se tocó. */
+.velocimetro strong { font-size: var(--fs-xl); line-height: 1; color: var(--text); }
+.velocimetro span { font-size: var(--fs-2xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Achicada a pedido de Rodo (era el elemento más grande de la esquina
    inferior izquierda sin aportar tanto): menos padding, tipografía y
@@ -1025,7 +1032,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .maplibregl-popup-close-button { color: var(--text-dim); font-size: 16px; }
 .popup-content { display: flex; flex-direction: column; gap: 4px; font-family: 'Inter', sans-serif; }
 .popup-nivel { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.popup-content strong { font-size: 14px; }
+.popup-content strong { font-size: var(--fs-base); }
 .popup-content p { font-size: var(--fs-base); color: var(--text-dim); }
 /* Linea de "por que subio de nivel" (ajustado_por_reciente / ajustado_por_horario,
    ver backend/main.py): discreta pero con color de alerta, no se confunde con
@@ -1045,7 +1052,13 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .popup-voto-desmiente { color: #FF3B3B; border-color: rgba(255,59,59,0.4); }
 .popup-modelo { display: flex; gap: 8px; margin-top: 2px; font-size: var(--fs-xs); color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; }
 .popup-modelo-estimado { font-size: var(--fs-xs); color: var(--azul); font-style: italic; }
-.popup-prensa-fuente { color: #C9CDD3; }
+/* Rediseño SES-115: estaba fijo en #C9CDD3 sin responder a --data-theme --
+   en tema claro eso es gris clarísimo sobre el fondo blanco del popup
+   (maplibregl-popup-content ya es theme-aware), ~1.5:1 de contraste, muy
+   por debajo de cualquier piso de legibilidad. --text-dim ya tiene las
+   dos variantes verificadas y es el token correcto para "texto secundario
+   atenuado", que es justo lo que es el nombre de la fuente de la nota. */
+.popup-prensa-fuente { color: var(--text-dim); }
 .popup-prensa-precision { font-size: var(--fs-2xs); color: var(--text-dim); font-style: italic; }
 .popup-ver-noticia {
   margin-top: 4px; padding: 6px 8px; border-radius: var(--r-sm); border: 1px solid var(--border);
@@ -1430,25 +1443,32 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 
 .marker-prensa-grupo span { font-size: 16px; line-height: 1; }
-.marker-prensa-grupo strong { font-size: 12px; }
+.marker-prensa-grupo strong { font-size: var(--fs-sm); }
 
 .popup-grupo-prensa { max-height: 290px; overflow-y: auto; }
+/* Rediseño SES-115: todo este bloque estaba en colores fijos de tema claro
+   (border/color/background), sin responder a --data-theme -- a diferencia
+   del resto del popup (maplibregl-popup-content, que sí usa --surface-solid).
+   En tema oscuro se veía como una tarjeta clara flotando adentro de un
+   popup oscuro. Pasado a los mismos tokens que ya usa el resto de la app
+   para este patrón (superficie secundaria = --inset, hover = --border,
+   mismo criterio que .searchbar-icon). */
 .popup-grupo-prensa-item {
   display: block;
   width: 100%;
   margin-top: 6px;
   padding: 7px;
-  border: 1px solid #d8dce1;
+  border: 1px solid var(--border);
   border-radius: 7px;
-  color: #20252b;
-  background: #f8f9fa;
+  color: var(--text);
+  background: var(--inset);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.3;
   text-align: left;
   cursor: pointer;
 }
-.popup-grupo-prensa-item:hover { background: #fff3c4; }
+.popup-grupo-prensa-item:hover { background: var(--border); }
 
 [data-theme='dark'] .capas-prensa-filtros button.activa {
   color: #221a00;
