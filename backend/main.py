@@ -1914,6 +1914,62 @@ def buscar_lugares(request: Request, q: str, limite: int = 5, lat: float | None 
     return datos
 
 
+# --- Geocodificación inversa: barrio real para el portal de Actividad (SES-115) ---
+# El pedido es "filtrar por zona" en el frontend, pero ni reportes_prensa ni
+# reportes_colaborativos tienen un barrio en la base (solo lat/lng) -- los
+# clusters numerados de ZONAS_RIESGO ("Zona 106") no significan nada para
+# quien no conoce el modelo. TomTom (la misma key que ya se usa arriba para
+# /lugares) sí da el barrio real de un punto.
+#
+# A propósito NO se usa Nominatim para esto: el proyecto ya tiene una
+# decisión tomada (DEC-011/A18) de no usarlo para nada que implique pedir
+# muchos puntos -- un feed de 150-300 notas/reportes resolviendo barrio uno
+# por uno es justo el tipo de volumen que esa política evita. TomTom no
+# tiene esa restricción, pero sí tiene costo/cupo por llamada: por eso la
+# cache acá es mucho más agresiva que la de /lugares (30 días, no 10
+# minutos -- el barrio de un punto no cambia) y la clave redondea a ~100 m,
+# así que decenas de notas de la misma cuadra piden TomTom una sola vez.
+TOMTOM_REVERSE_URL = 'https://api.tomtom.com/search/2/reverseGeocode/{lat},{lon}.json'
+_cache_reversa = {}
+_CACHE_REVERSA_TTL_SEGUNDOS = 30 * 24 * 3600
+
+
+@app.get("/lugares/reversa")
+# 300/min, no 60/min como /lugares: ese límite es por tecla escrita (un
+# humano no puede superarlo); este es un burst único de hasta ~150-300
+# puntos DISTINTOS la primera vez que alguien abre el portal con el feed
+# completo (measured: 100+ pedidos en pocos segundos con el redondeo de
+# ~100m ya aplicado) -- un límite de 60/min los frenaba a mitad de carga
+# con 429, aunque cada uno fuera a terminar cacheado 30 días.
+@limiter.limit("300/minute")
+def geocodificar_reversa(request: Request, lat: float, lng: float):
+    if not TOMTOM_API_KEY:
+        raise HTTPException(status_code=503, detail="TOMTOM_API_KEY no configurada")
+    clave = f"{round(lat, 3)},{round(lng, 3)}"
+    entrada = _cache_reversa.get(clave)
+    if entrada and time.time() - entrada['momento'] < _CACHE_REVERSA_TTL_SEGUNDOS:
+        return entrada['datos']
+    try:
+        respuesta = httpx.get(
+            TOMTOM_REVERSE_URL.format(lat=lat, lon=lng),
+            params={"key": TOMTOM_API_KEY, "language": "es-ES"},
+            timeout=10,
+        )
+        respuesta.raise_for_status()
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Geocodificación inversa no disponible")
+    direcciones = respuesta.json().get("addresses", [])
+    barrio = None
+    if direcciones:
+        direccion = direcciones[0].get("address", {})
+        barrio = direccion.get("municipalitySubdivision") or direccion.get("neighbourhood") or direccion.get("localName")
+    datos = {"barrio": barrio}
+    if len(_cache_reversa) > 2000:
+        _cache_reversa.clear()
+    _cache_reversa[clave] = {'datos': datos, 'momento': time.time()}
+    return datos
+
+
 @app.get("/rutas", response_model=list[RutaOut])
 @limiter.limit("20/minute")
 def calcular_rutas(

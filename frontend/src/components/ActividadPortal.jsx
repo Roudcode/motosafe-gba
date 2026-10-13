@@ -1,26 +1,21 @@
 // Portal de "Actividad": prensa + reportes de usuarios combinados en un solo
-// feed, estilo noticias, con filtros de categoría/fecha/zona. Pedido
+// feed, estilo noticias, con filtros de categoría/fecha/barrio. Pedido
 // explícito de Rodo -- no reemplaza el panel chico de "Actividad reciente"
 // (ese es solo el historial de TUS reportes, con su propio criterio de
 // vigencia/estado); esto es la ciudad entera.
 //
-// "Zona" no es un campo que exista en los datos (reportes_prensa y
-// reportes_colaborativos solo tienen lat/lng, ver backend/main.py) -- se
-// calcula contra la zona de ZONAS_RIESGO más cercana. Si la más cercana
-// queda a más de DISTANCIA_MAX_ZONA_KM, se deja sin zona asignada en vez de
-// etiquetar con una zona que en los hechos está lejos (un dato fuera de
-// CABA no debería figurar como "Caballito" solo porque es la más próxima
-// de la lista). Pendiente de revisar con Rodo: el nombre real de zona
-// ("Zona 106 (13 siniestros...)") no es un dato que un usuario reconozca --
-// ver conversación de SES-115 sobre alternativas (barrio real vía reverse
-// geocoding) antes de tocar esto de nuevo.
-import { useMemo, useState } from 'react'
-import { X, Newspaper, Siren, ShieldAlert, Construction, TrafficCone, LightbulbOff, CarFront, Bike, MapPin, ThumbsUp, ThumbsDown, BookOpen, ArrowUpRight } from 'lucide-react'
+// El filtro de barrio usa geocodificación inversa real (TomTom, vía
+// utils/barrio.js -> backend /lugares/reversa) -- la primera versión de
+// esta pantalla filtraba contra el cluster de ZONAS_RIESGO más cercano
+// ("Zona 106"), que no significa nada para quien no conoce el modelo. Ver
+// backend/main.py para por qué esto usa TomTom y no Nominatim (DEC-011).
+// El lector de notas vive en App.jsx (onAbrirLector), no acá: también se
+// abre desde los marcadores de prensa del mapa, no solo desde este portal.
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { X, Newspaper, Siren, ShieldAlert, Construction, TrafficCone, LightbulbOff, CarFront, Bike, MapPin, ThumbsUp, ThumbsDown, BookOpen } from 'lucide-react'
 import { CATEGORIAS_REPORTE } from '../constants'
-import { zonaMasCercana } from '../utils/geoRiesgo'
+import { resolverBarrio } from '../utils/barrio'
 import { formatearAntiguedad } from '../utils/tiempo'
-
-const DISTANCIA_MAX_ZONA_KM = 2
 
 const ICONOS_CATEGORIA = {
   robo: Siren,
@@ -34,8 +29,8 @@ const ICONOS_CATEGORIA = {
 
 // Un color por categoría (de la misma paleta de riesgo que ya usa el resto
 // de la app, no colores nuevos) -- antes todos los ítems tenían el mismo
-// ícono gris plano sin ninguna jerarquía visual entre "robo" y "falta de
-// iluminación", que son urgencias bastante distintas.
+// ícono gris plano sin ninguna jerarquía visual entre una urgencia y un
+// aviso menor.
 const COLOR_CATEGORIA = {
   robo: 'rojo',
   choque: 'naranja',
@@ -47,8 +42,8 @@ const COLOR_CATEGORIA = {
 }
 
 // Etiquetas cortas a mano, no la primera palabra de CATEGORIAS_REPORTE.label:
-// "Zona insegura" truncada a "Zona" se confundía con el selector de zona
-// GEOGRÁFICA que va debajo (dos cosas distintas con la misma palabra).
+// "Zona insegura" truncada a "Zona" se confundía con el selector de barrio
+// que va debajo (dos cosas distintas con la misma palabra).
 const ETIQUETA_CORTA_REPORTE = { inseguro: 'Inseguridad', pavimento: 'Pavimento', corte: 'Cortes', iluminacion: 'Iluminación' }
 const FILTROS_CATEGORIA = [
   { id: 'todas', label: 'Todas' },
@@ -65,22 +60,18 @@ const FILTROS_FECHA = [
   { id: 'todo', label: 'Todo', horas: Infinity },
 ]
 
-export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, horaActual, onCerrar, onVerEnMapa, saliendo }) {
+function claveBarrio(lat, lng) {
+  return `${lat.toFixed(3)},${lng.toFixed(3)}`
+}
+
+export function ActividadPortal({ reportesPrensa, reportes, horaActual, onCerrar, onVerEnMapa, onAbrirLector, saliendo }) {
   const [filtroCategoria, setFiltroCategoria] = useState('todas')
   const [filtroFecha, setFiltroFecha] = useState('7d')
-  const [filtroZona, setFiltroZona] = useState('todas')
-  // Lector interno: en vez de salir de la pestaña de MotoSafe para leer una
-  // nota, se abre acá adentro en un iframe. Algunos diarios bloquean que su
-  // sitio se muestre dentro de un iframe ajeno (encabezado X-Frame-Options,
-  // para evitar clickjacking) -- eso no se puede destrabar desde este lado,
-  // así que el lector siempre deja a mano "Abrir en pestaña nueva" en vez de
-  // prometer que toda nota va a cargar acá.
-  const [lectorNota, setLectorNota] = useState(null)
-
-  const zonas = useMemo(
-    () => zonasAjustadas.map((z) => ({ id: z.id, nombre: z.nombre, lat: z.lat, lng: z.lng })),
-    [zonasAjustadas]
-  )
+  const [filtroBarrio, setFiltroBarrio] = useState('todas')
+  // barrio resuelto por clave "lat,lng" (redondeada) -- undefined = todavía
+  // no se pidió, null = se pidió y TomTom no devolvió nada, string = listo.
+  const [barrios, setBarrios] = useState({})
+  const barriosPedidosRef = useRef(new Set())
 
   const items = useMemo(() => {
     const dePrensa = reportesPrensa.map((r) => {
@@ -102,35 +93,58 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
       fecha: r.creadoEn, lat: r.lat, lng: r.lng,
       confirmaciones: r.confirmaciones, desmentidas: r.desmentidas,
     }))
-    return [...dePrensa, ...deReportes]
-      .map((item) => {
-        const cercana = zonaMasCercana(item, zonas)
-        const zona = cercana && cercana.distanciaKm <= DISTANCIA_MAX_ZONA_KM ? cercana.zona : null
-        return { ...item, zona }
-      })
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-  }, [reportesPrensa, reportes, zonas])
+    return [...dePrensa, ...deReportes].sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+  }, [reportesPrensa, reportes])
 
-  const itemsFiltrados = useMemo(() => {
+  // Items según categoría/fecha, SIN aplicar todavía el filtro de barrio --
+  // es a partir de este conjunto (no de `items` entero) que se resuelve el
+  // barrio real contra TomTom: acotado a lo que de verdad se está mirando
+  // con los filtros actuales, no el feed completo de una sola vez.
+  const itemsParaBarrio = useMemo(() => {
     const horasMax = FILTROS_FECHA.find((f) => f.id === filtroFecha)?.horas ?? Infinity
     return items.filter((item) => {
       if (filtroCategoria !== 'todas' && item.categoria !== filtroCategoria) return false
-      if (filtroZona !== 'todas' && item.zona?.id !== filtroZona) return false
       if (horasMax !== Infinity) {
         const edadHoras = (horaActual - new Date(item.fecha).getTime()) / 3600000
         if (edadHoras > horasMax) return false
       }
       return true
     })
-  }, [items, filtroCategoria, filtroZona, filtroFecha, horaActual])
+  }, [items, filtroCategoria, filtroFecha, horaActual])
 
-  const zonasConActividad = useMemo(() => {
-    const vistas = new Map()
-    for (const item of items) {
-      if (item.zona && !vistas.has(item.zona.id)) vistas.set(item.zona.id, item.zona.nombre)
+  useEffect(() => {
+    // Sin bandera de "desmontado": el dedupe real es barriosPedidosRef (un
+    // ref sobrevive al doble montaje de StrictMode en desarrollo). Una
+    // bandera local acá adentro quedaba en `false` por el cleanup del
+    // primer montaje (StrictMode) antes de que el pedido de red llegara a
+    // responder, así que CADA respuesta real terminaba descartada -- el
+    // selector de barrio nunca se llenaba. setBarrios después de un
+    // desmonte real de verdad es inofensivo (React 18 lo ignora solo).
+    for (const item of itemsParaBarrio) {
+      const clave = claveBarrio(item.lat, item.lng)
+      if (barriosPedidosRef.current.has(clave)) continue
+      barriosPedidosRef.current.add(clave)
+      resolverBarrio(item.lat, item.lng, (barrio) => {
+        setBarrios((prev) => ({ ...prev, [clave]: barrio }))
+      })
     }
-    return [...vistas.entries()].sort((a, b) => a[1].localeCompare(b[1]))
-  }, [items])
+  }, [itemsParaBarrio])
+
+  const itemsFiltrados = useMemo(() => {
+    return itemsParaBarrio.filter((item) => {
+      if (filtroBarrio === 'todas') return true
+      return barrios[claveBarrio(item.lat, item.lng)] === filtroBarrio
+    })
+  }, [itemsParaBarrio, filtroBarrio, barrios])
+
+  const barriosConActividad = useMemo(() => {
+    const vistos = new Set()
+    for (const item of itemsParaBarrio) {
+      const barrio = barrios[claveBarrio(item.lat, item.lng)]
+      if (barrio) vistos.add(barrio)
+    }
+    return [...vistos].sort((a, b) => a.localeCompare(b))
+  }, [itemsParaBarrio, barrios])
 
   return (
     <div className={`portal-actividad panel-enter ${saliendo ? 'panel-exit' : ''}`} role="dialog" aria-label="Actividad">
@@ -150,15 +164,15 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
             <button key={f.id} className={filtroCategoria === f.id ? 'activo' : ''} onClick={() => setFiltroCategoria(f.id)}>{f.label}</button>
           ))}
         </div>
-        {zonasConActividad.length > 0 && (
+        {barriosConActividad.length > 0 && (
           <select
             className="portal-actividad-select-zona"
-            value={filtroZona}
-            onChange={(e) => setFiltroZona(e.target.value)}
-            aria-label="Filtrar por zona"
+            value={filtroBarrio}
+            onChange={(e) => setFiltroBarrio(e.target.value)}
+            aria-label="Filtrar por barrio"
           >
-            <option value="todas">Todas las zonas</option>
-            {zonasConActividad.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
+            <option value="todas">Todos los barrios</option>
+            {barriosConActividad.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
           </select>
         )}
       </div>
@@ -172,6 +186,7 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
         {itemsFiltrados.map((item) => {
           const Icon = ICONOS_CATEGORIA[item.categoria] || Siren
           const color = COLOR_CATEGORIA[item.categoria] || 'gris'
+          const barrio = barrios[claveBarrio(item.lat, item.lng)]
           // div+role en vez de <button>: el botón de "leer acá adentro" de
           // más abajo es interactivo por su cuenta -- un control interactivo
           // adentro de un <button> es contenido anidado inválido en HTML.
@@ -188,7 +203,7 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
               <span className="portal-actividad-item-texto">
                 <span className="portal-actividad-item-titulo">{item.titulo}</span>
                 <span className="portal-actividad-item-meta">
-                  {item.zona && <span className="portal-actividad-item-zona"><MapPin size={11} /> {item.zona.nombre}</span>}
+                  {barrio && <span className="portal-actividad-item-zona"><MapPin size={11} /> {barrio}</span>}
                   <span>{formatearAntiguedad(item.fecha, horaActual)}</span>
                   {item.tipo === 'prensa' && item.fuente && <span>· {item.fuente}</span>}
                   {item.tipo === 'reporte' && (item.confirmaciones > 0 || item.desmentidas > 0) && (
@@ -202,7 +217,7 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
               {item.tipo === 'prensa' && item.url && (
                 <button
                   className="portal-actividad-item-link"
-                  onClick={(e) => { e.stopPropagation(); setLectorNota({ url: item.url, titulo: item.titulo, fuente: item.fuente }) }}
+                  onClick={(e) => { e.stopPropagation(); onAbrirLector({ url: item.url, titulo: item.titulo, fuente: item.fuente }) }}
                   aria-label="Leer nota"
                   title="Leer nota"
                 >
@@ -213,22 +228,6 @@ export function ActividadPortal({ reportesPrensa, reportes, zonasAjustadas, hora
           )
         })}
       </div>
-
-      {lectorNota && (
-        <div className="lector-nota" role="dialog" aria-label={`Leyendo: ${lectorNota.titulo}`}>
-          <div className="lector-nota-header">
-            <span className="lector-nota-fuente">{lectorNota.fuente}</span>
-            <div className="lector-nota-acciones">
-              <a className="lector-nota-abrir" href={lectorNota.url} target="_blank" rel="noopener noreferrer">
-                Abrir en pestaña nueva <ArrowUpRight size={13} />
-              </a>
-              <button className="detalle-cerrar" onClick={() => setLectorNota(null)} aria-label="Cerrar lector"><X size={16} /></button>
-            </div>
-          </div>
-          <p className="lector-nota-aviso">Algunos sitios no permiten mostrarse acá adentro -- si no carga, abrila en una pestaña nueva.</p>
-          <iframe className="lector-nota-iframe" src={lectorNota.url} title={lectorNota.titulo} />
-        </div>
-      )}
     </div>
   )
 }

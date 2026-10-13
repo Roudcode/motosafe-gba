@@ -4,7 +4,7 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, LogOut, Wrench, WifiOff,
-  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper,
+  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper, ArrowUpRight,
 } from 'lucide-react'
 
 import {
@@ -181,6 +181,10 @@ function App() {
   const [actividadAbierta, setActividadAbierta] = useState(false)
   const [statsAbierto, setStatsAbierto] = useState(false)
   const [portalActividadAbierto, setPortalActividadAbierto] = useState(false)
+  // Lector de notas: vive acá (no adentro de ActividadPortal) porque
+  // también se abre desde los marcadores de prensa del mapa (MapaMotoSafe),
+  // no solo desde el portal -- un solo lector, dos puntos de entrada.
+  const [lectorNota, setLectorNota] = useState(null)
   const sesion = useSesion()
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
@@ -191,6 +195,9 @@ function App() {
   const panelActividad = usePanelSaliente(actividadAbierta)
   const panelStats = usePanelSaliente(statsAbierto)
   const panelPortalActividad = usePanelSaliente(portalActividadAbierto)
+  const panelLectorNota = usePanelSaliente(!!lectorNota)
+  const [lectorNotaMostrada, setLectorNotaMostrada] = useState(null)
+  if (lectorNota && lectorNota !== lectorNotaMostrada) setLectorNotaMostrada(lectorNota)
   // zonaMostrada retiene la última zona no nula para poder seguir
   // renderizando su contenido durante la animación de salida, incluso
   // cuando zonaSeleccionada ya volvió a null al cerrar.
@@ -1760,11 +1767,35 @@ function App() {
           saliendo={panelPortalActividad.saliendo}
           reportesPrensa={reportesPrensa}
           reportes={reportes}
-          zonasAjustadas={zonasAjustadas}
           horaActual={horaActual}
           onCerrar={() => setPortalActividadAbierto(false)}
           onVerEnMapa={(punto) => { setVuelo({ ...punto, zoom: 16 }); setPortalActividadAbierto(false) }}
+          onAbrirLector={setLectorNota}
         />
+      )}
+
+      {/* Lector de notas: pedido explícito de que NO tape toda la app --
+          panel flotante (como ruta-resumen/capas-panel), no pantalla
+          completa. Se abre desde acá (portal) y desde los marcadores de
+          prensa del mapa (MapaMotoSafe -> onAbrirLector), por eso vive al
+          nivel de App y no adentro de ActividadPortal. */}
+      {panelLectorNota.montado && lectorNotaMostrada && (
+        <>
+        <div className={`lector-nota-scrim ${panelLectorNota.saliendo ? 'panel-exit' : ''}`} onClick={() => setLectorNota(null)} />
+        <div className={`lector-nota panel-enter ${panelLectorNota.saliendo ? 'panel-exit' : ''}`} role="dialog" aria-label={`Leyendo: ${lectorNotaMostrada.titulo}`}>
+          <div className="lector-nota-header">
+            <span className="lector-nota-fuente">{lectorNotaMostrada.fuente || 'Nota'}</span>
+            <div className="lector-nota-acciones">
+              <a className="lector-nota-abrir" href={lectorNotaMostrada.url} target="_blank" rel="noopener noreferrer">
+                Abrir en pestaña nueva <ArrowUpRight size={13} />
+              </a>
+              <button className="detalle-cerrar" onClick={() => setLectorNota(null)} aria-label="Cerrar lector"><X size={16} /></button>
+            </div>
+          </div>
+          <p className="lector-nota-aviso">Algunos sitios no permiten mostrarse acá adentro -- si no carga, abrila en una pestaña nueva.</p>
+          <iframe className="lector-nota-iframe" src={lectorNotaMostrada.url} title={lectorNotaMostrada.titulo} />
+        </div>
+        </>
       )}
 
       {/* Se oculta durante la navegación: no solo no hace falta buscar
@@ -1913,6 +1944,7 @@ function App() {
           onClickMapa={clicMapa}
           tapRapidoHabilitado={tapRapidoHabilitado}
           onTapMapaVacio={tapMapaVacio}
+          onAbrirLector={setLectorNota}
           zonasFiltradas={zonasFiltradas}
           zonaResaltada={zonaResaltada}
           zonasCruzadasIds={zonasCruzadasIds}

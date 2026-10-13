@@ -16,22 +16,6 @@ export function distanciaKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-// Zona de ZONAS_RIESGO más cercana a un punto (lat/lng), con su distancia en
-// km. No hay ningún campo "zona"/"barrio" propio en reportes_prensa ni en
-// reportes_colaborativos (ver backend/main.py) -- solo lat/lng -- así que
-// "filtrar por zona" en el portal de Actividad se resuelve contra esto en
-// vez de contra un campo que no existe. `null` si la lista de zonas viene
-// vacía (zonas sin cargar todavía).
-export function zonaMasCercana(punto, zonas) {
-  let mejor = null
-  let mejorDistancia = Infinity
-  for (const zona of zonas) {
-    const d = distanciaKm(punto, zona)
-    if (d < mejorDistancia) { mejorDistancia = d; mejor = zona }
-  }
-  return mejor ? { zona: mejor, distanciaKm: mejorDistancia } : null
-}
-
 // Rumbo (bearing inicial, en grados 0-360 desde el norte) del punto a al
 // punto b. Se usa como fallback para la vista de navegación cuando el GPS no
 // entrega coords.heading (pasa seguido con poca velocidad o en navegadores

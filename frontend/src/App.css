@@ -1714,16 +1714,31 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .portal-actividad-item-link:hover { color: var(--azul); border-color: var(--azul); }
 
 /* ===== Lector interno de notas (SES-115) =====
-   Modal sobre el propio portal (no sobre el mapa) -- se lee adentro de
-   MotoSafe en vez de perder el contexto saltando a otra pestaña. El aviso
-   de "si no carga, abrila en pestaña nueva" es honesto a propósito: muchos
-   diarios bloquean que su sitio se muestre en un iframe ajeno
-   (X-Frame-Options, para evitar clickjacking) y eso no se puede destrabar
-   desde este lado -- mejor decirlo que prometer algo que no siempre va a
-   funcionar. */
+   Pedido explícito de Rodo: que NO tape toda la app como la primera
+   versión (ahí vivía adentro de .portal-actividad con inset:0, pantalla
+   completa). Ahora es un panel flotante tipo "hoja" anclada abajo, como un
+   bottom-sheet -- se ve/toca el resto de la app alrededor (atenuado por el
+   scrim), no se pierde el contexto de qué se estaba mirando. Se abre desde
+   acá Y desde los marcadores de prensa del mapa (ver App.jsx), por eso es
+   un panel de nivel de App, no algo interno de ActividadPortal.
+   El aviso de "si no carga, abrila en pestaña nueva" es honesto a
+   propósito: muchos diarios bloquean que su sitio se muestre en un iframe
+   ajeno (X-Frame-Options, para evitar clickjacking) y eso no se puede
+   destrabar desde este lado -- mejor decirlo que prometer algo que no
+   siempre va a funcionar. */
+.lector-nota-scrim {
+  position: fixed; inset: 0; z-index: 1965;
+  background: rgba(var(--bg-rgb), 0.55); backdrop-filter: blur(2px);
+  animation: panelIn var(--motion-panel) ease backwards;
+}
+.lector-nota-scrim.panel-exit { animation: panelOut 0.18s ease forwards; }
 .lector-nota {
-  position: absolute; inset: 0; z-index: 10; background: var(--bg);
+  position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 1970;
+  width: min(640px, calc(100vw - 24px)); max-height: min(72vh, 640px);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--shadow-float-hover);
   display: flex; flex-direction: column; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + var(--safe-bottom));
 }
 .lector-nota-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-shrink: 0; }
 .lector-nota-fuente { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md); color: var(--text-dim); }

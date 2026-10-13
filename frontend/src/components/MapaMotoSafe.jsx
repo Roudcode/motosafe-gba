@@ -132,7 +132,11 @@ function urlExternaSegura(valor) {
   }
 }
 
-function contenidoPopupPrensa(rep, etiquetaTipo, horaActual) {
+// alAbrirLector abre el lector interno (panel flotante, ver App.jsx) en vez
+// de saltar a una pestaña nueva -- mismo lector que ya usa el portal de
+// Actividad para notas de prensa, pedido explícito de Rodo de que funcione
+// también tocando una noticia directo en el mapa.
+function contenidoPopupPrensa(rep, etiquetaTipo, horaActual, alAbrirLector) {
   const contenido = document.createElement('div')
   contenido.className = 'popup-content'
   const fuente = document.createElement('span')
@@ -150,10 +154,11 @@ function contenidoPopupPrensa(rep, etiquetaTipo, horaActual) {
     const boton = document.createElement('button')
     boton.className = 'popup-ver-noticia'
     boton.type = 'button'
-    boton.textContent = 'Ver noticia completa'
+    boton.textContent = 'Leer nota'
     boton.addEventListener('click', (evento) => {
       evento.stopPropagation()
-      window.open(url, '_blank', 'noopener,noreferrer')
+      if (alAbrirLector) alAbrirLector({ url, titulo: rep.titular, fuente: rep.fuente })
+      else window.open(url, '_blank', 'noopener,noreferrer')
     })
     contenido.append(boton)
   }
@@ -404,6 +409,7 @@ function MapaMotoSafeInner({
   onClickMapa,
   tapRapidoHabilitado,
   onTapMapaVacio,
+  onAbrirLector,
   zonasFiltradas,
   zonaResaltada,
   zonasCruzadasIds,
@@ -451,6 +457,7 @@ function MapaMotoSafeInner({
   const onClickMapaRef = useRef(onClickMapa)
   const tapRapidoHabilitadoRef = useRef(tapRapidoHabilitado)
   const onTapMapaVacioRef = useRef(onTapMapaVacio)
+  const onAbrirLectorRef = useRef(onAbrirLector)
   const onClickZonaRef = useRef(onClickZona)
   const onClickRutaRef = useRef(onClickRuta)
   const onPaneoManualRef = useRef(onPaneoManual)
@@ -460,6 +467,7 @@ function MapaMotoSafeInner({
     onClickMapaRef.current = onClickMapa
     tapRapidoHabilitadoRef.current = tapRapidoHabilitado
     onTapMapaVacioRef.current = onTapMapaVacio
+    onAbrirLectorRef.current = onAbrirLector
     onClickZonaRef.current = onClickZona
     onClickRutaRef.current = onClickRuta
     onPaneoManualRef.current = onPaneoManual
@@ -985,7 +993,7 @@ function MapaMotoSafeInner({
       const etiquetaTipo = ETIQUETA_TIPO_INCIDENTE[rep.tipoIncidente] ?? ETIQUETA_TIPO_INCIDENTE.robo
       popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '260px' })
         .setLngLat(coords)
-        .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current))
+        .setDOMContent(contenidoPopupPrensa(rep, etiquetaTipo, horaActualRef.current, onAbrirLectorRef.current))
         .addTo(map)
     }
     const abrirGrupo = (id, coords) => {
