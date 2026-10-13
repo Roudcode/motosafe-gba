@@ -538,16 +538,17 @@ function MapaMotoSafeInner({
     // cuando no hay otro flujo ya usando el toque sobre el mapa (marcar
     // origen/destino/reporte -- campoActivo -- o cualquier otro gate que
     // tapRapidoHabilitado decida en App.jsx, ej. estar navegando o con
-    // "Opciones de ruta" abierto). 'corredores-layer'/'rutas-layer' son las
-    // únicas capas GL con su propio click (popup de corredor, elegir ruta
-    // alterna): si el toque cayó en una de esas, no se interpreta como
-    // "mapa vacío" aunque no haya reportado feature por otro lado -- los
-    // marcadores DOM (zonas, clusters, prensa) ya hacen stopPropagation en
-    // su propio click, así que ni siquiera llegan acá.
+    // "Opciones de ruta" abierto). 'corredores-layer'/'rutas-layer'/
+    // 'hexagonos-cobertura-layer' son las únicas capas GL con su propio click
+    // (popup de corredor, elegir ruta alterna, desglose del hexágono): si el
+    // toque cayó en una de esas, no se interpreta como "mapa vacío" aunque no
+    // haya reportado feature por otro lado -- los marcadores DOM (zonas,
+    // clusters, prensa) ya hacen stopPropagation en su propio click, así que
+    // ni siquiera llegan acá.
     map.on('click', (e) => {
       if (campoActivoRef.current) { onClickMapaRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }); return }
       if (!tapRapidoHabilitadoRef.current) return
-      const tocoCapaInteractiva = map.queryRenderedFeatures(e.point, { layers: ['corredores-layer', 'rutas-layer'].filter((id) => map.getLayer(id)) }).length > 0
+      const tocoCapaInteractiva = map.queryRenderedFeatures(e.point, { layers: ['corredores-layer', 'rutas-layer', 'hexagonos-cobertura-layer'].filter((id) => map.getLayer(id)) }).length > 0
       if (!tocoCapaInteractiva) onTapMapaVacioRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng })
     })
     // 'dragstart' de maplibre solo lo dispara el handler de arrastre real
@@ -786,7 +787,44 @@ function MapaMotoSafeInner({
       source: sourceId,
       paint: { 'line-color': 'rgba(255,255,255,0.35)', 'line-width': 1.2, 'line-opacity': atenuarFondo },
     })
+
+    // Antes el hexágono era puramente decorativo -- tocarlo no hacía nada,
+    // a diferencia de clusters/corredores que sí abren un detalle. Mismo
+    // patrón que corredores: popup con el total y el desglose por nivel de
+    // esa celda (viene ya armado en properties, ver hexBinZonas).
+    let popup
+    const onClick = (e) => {
+      const f = e.features[0]
+      if (!f) return
+      const p = f.properties
+      popup?.remove()
+      const filasNivel = ORDEN_NIVELES
+        .filter((nivel) => (p[`cantidad_${nivel}`] || 0) > 0)
+        .reverse()
+        .map((nivel) => `<span><span class="popup-hex-punto" style="background:${NIVELES[nivel].color}"></span>${NIVELES[nivel].label}: ${p[`cantidad_${nivel}`]}</span>`)
+        .join('')
+      popup = new Popup({ closeButton: true })
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div class="popup-content">
+            <span class="popup-nivel" style="color:${NIVELES[p.nivel]?.color}">${NIVELES[p.nivel]?.label}</span>
+            <strong>${p.cantidad} siniestros en esta celda</strong>
+            <div class="popup-hex-desglose">${filasNivel}</div>
+          </div>
+        `)
+        .addTo(map)
+    }
+    const cursorOn = () => { map.getCanvas().style.cursor = 'pointer' }
+    const cursorOff = () => { map.getCanvas().style.cursor = '' }
+    map.on('click', layerId, onClick)
+    map.on('mouseenter', layerId, cursorOn)
+    map.on('mouseleave', layerId, cursorOff)
+
     return () => {
+      popup?.remove()
+      map.off('click', layerId, onClick)
+      map.off('mouseenter', layerId, cursorOn)
+      map.off('mouseleave', layerId, cursorOff)
       if (map.getLayer(layerBordeId)) map.removeLayer(layerBordeId)
       if (map.getLayer(layerId)) map.removeLayer(layerId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)

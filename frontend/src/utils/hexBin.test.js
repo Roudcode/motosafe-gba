@@ -32,6 +32,20 @@ describe('hexBinZonas', () => {
     expect(resultado.features[0].properties.nivel).toBe('critico')
   })
 
+  it('expone el desglose de cantidad por nivel, no solo el total', () => {
+    const zonas = [
+      { lat: -34.6037, lng: -58.3816, cantidad: 10, nivel: 'bajo' },
+      { lat: -34.6038, lng: -58.3817, cantidad: 2, nivel: 'critico' },
+      { lat: -34.6036, lng: -58.3815, cantidad: 3, nivel: 'bajo' },
+    ]
+    const resultado = hexBinZonas(zonas, 500, ORDEN)
+    const props = resultado.features[0].properties
+    expect(props.cantidad_bajo).toBe(13)
+    expect(props.cantidad_critico).toBe(2)
+    expect(props.cantidad_medio).toBe(0)
+    expect(props.cantidad_alto).toBe(0)
+  })
+
   it('cada polígono es un hexágono cerrado (7 puntos, el primero y el último iguales)', () => {
     const zonas = [{ lat: -34.6037, lng: -58.3816, cantidad: 1, nivel: 'bajo' }]
     const resultado = hexBinZonas(zonas, 500, ORDEN)

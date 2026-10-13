@@ -1040,6 +1040,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 /* Rediseño SES-114: sincronizado con .ruta-resumen-ajuste (ver comentario
    ahí) -- mismo naranja-texto, mismo motivo. */
 .popup-ajuste { font-size: var(--fs-2xs); color: var(--naranja-text); font-style: italic; line-height: 1.3; }
+/* Desglose por nivel del popup de hexágonos de cobertura: una fila por nivel
+   presente en la celda, con un punto del color de NIVELES en vez de repetir
+   la etiqueta en texto -- se lee como una mini-leyenda, consistente con los
+   puntos de color que ya usa la leyenda de "Nivel de riesgo" del sidebar. */
+.popup-hex-desglose { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--fs-2xs); color: var(--text-dim); }
+.popup-hex-punto { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
 .popup-votos { display: flex; gap: 6px; margin-top: 4px; }
 .popup-voto-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;

@@ -76,7 +76,10 @@ function esquinasHexagono(cx, cy, size) {
 // entre varias de nivel bajo sigue siendo un hexágono que conviene mirar,
 // promediarlo lo escondería. radioMetros: tamaño del hexágono (centro a
 // vértice). Devuelve un FeatureCollection de polígonos, uno por celda no
-// vacía.
+// vacía. Las propiedades de cada feature incluyen, además del total y el
+// nivel máximo, el desglose `cantidad_<nivel>` por nivel -- son propiedades
+// planas (no un objeto anidado) porque así las necesita MapLibre para
+// mostrarlas en un popup al hacer click en el hexágono.
 export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
   const celdas = new Map()
   for (const zona of zonas) {
@@ -85,10 +88,12 @@ export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
     const clave = `${q},${r}`
     let celda = celdas.get(clave)
     if (!celda) {
-      celda = { q, r, cantidad: 0, nivelIndiceMax: 0 }
+      celda = { q, r, cantidad: 0, nivelIndiceMax: 0, cantidadPorNivel: {} }
       celdas.set(clave, celda)
     }
-    celda.cantidad += zona.cantidad || 0
+    const cantidad = zona.cantidad || 0
+    celda.cantidad += cantidad
+    celda.cantidadPorNivel[zona.nivel] = (celda.cantidadPorNivel[zona.nivel] || 0) + cantidad
     const indiceNivel = ordenNiveles.indexOf(zona.nivel)
     if (indiceNivel > celda.nivelIndiceMax) celda.nivelIndiceMax = indiceNivel
   }
@@ -100,10 +105,12 @@ export function hexBinZonas(zonas, radioMetros, ordenNiveles) {
       return [lng, lat]
     })
     esquinas.push(esquinas[0])
+    const propiedades = { cantidad: celda.cantidad, nivel: ordenNiveles[celda.nivelIndiceMax] }
+    for (const nivel of ordenNiveles) propiedades[`cantidad_${nivel}`] = celda.cantidadPorNivel[nivel] || 0
     features.push({
       type: 'Feature',
       geometry: { type: 'Polygon', coordinates: [esquinas] },
-      properties: { cantidad: celda.cantidad, nivel: ordenNiveles[celda.nivelIndiceMax] },
+      properties: propiedades,
     })
   }
   return { type: 'FeatureCollection', features }

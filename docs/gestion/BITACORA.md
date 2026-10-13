@@ -1406,3 +1406,13 @@ Rodo mandó capturas de dos apps (un mapa de delitos con zonas poligonales, una 
   - Cambiar la vista de fondo entre Hexágonos / Corredores / etc. desde el panel de Capas, ida y vuelta, sin romper nada.
 - Verificado: eslint, vitest (86/86), build del frontend, y pytest del backend (120 passed, 11 skipped) -- los cuatro en verde.
 - Pendiente de higiene, no bloqueante: `backend/.venv_test/` sigue sin trackear (virtualenv descartable de esta sesión, excluido a propósito de git).
+
+## 2026-10-13 -- SES-115: hexágonos clickeables, popup con desglose por nivel
+
+- Hasta acá los hexágonos de cobertura eran puramente decorativos (a diferencia de clusters y corredores, que sí abren un detalle al tocarlos) -- pedido propio como mejora, propuesto después de cerrar la tanda anterior y aprobado por Rodo ("avanza con TODO").
+- `hexBinZonas` (utils/hexBin.js) ahora además del total y el nivel máximo expone `cantidad_<nivel>` por cada nivel de ORDEN_NIVELES como propiedades planas del feature (MapLibre necesita propiedades planas, no objetos anidados, para leerlas en un popup). Test nuevo que verifica el desglose (87/87 en vitest).
+- `MapaMotoSafe.jsx`: mismo patrón que ya usa `corredores-layer` (Popup de maplibre-gl, cursor pointer al pasar por encima, cleanup en el return del effect) agregado a `hexagonos-cobertura-layer`. El popup muestra el nivel máximo de la celda, el total de siniestros, y una fila por nivel presente con un punto de color (mismo color que la leyenda del sidebar) en vez de repetir la etiqueta en texto.
+- Sumado `hexagonos-cobertura-layer` a la lista de capas excluidas del click genérico de "destino rápido" (antes solo `corredores-layer`/`rutas-layer`) -- como ahora el hexágono tiene su propio click, sin esto cada toque sobre un hexágono (que es casi toda la superficie del mapa, al ser la vista de fondo default) iba a abrir a la vez el popup Y la tarjeta de "Punto en el mapa", dos cosas compitiendo por el mismo toque.
+- CSS nuevo: `.popup-hex-desglose` / `.popup-hex-punto`, mismo lenguaje visual que el resto de los popups (`.popup-content`, `.popup-nivel`).
+- Verificado en el navegador, en los dos temas: popup abre con los datos correctos, destino rápido ya no se dispara sobre un hexágono pero sigue andando en el resto del mapa vacío.
+- Verificado: eslint, vitest (87/87), build -- los tres en verde.
