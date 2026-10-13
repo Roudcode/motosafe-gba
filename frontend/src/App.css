@@ -348,7 +348,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 /* ===== Panel unico de capas (reemplaza los dos toggles que ciclaban) ===== */
 .capas-panel {
   position: absolute; top: var(--y1); right: calc(20px + var(--safe-right)); z-index: 1005; width: 260px;
-  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur)); max-height: 80vh; overflow-y: auto;
   box-shadow: var(--shadow-float);
 }
@@ -476,7 +476,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .actividad-panel, .stats-panel {
   position: absolute; top: var(--y3); right: calc(20px + var(--safe-right)); z-index: 1001; width: 250px;
-  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur));
   max-height: calc(100vh - 190px); overflow-y: auto;
   box-shadow: var(--shadow-float);
@@ -557,7 +557,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-form {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1001;
   width: min(320px, 85vw); background: var(--surface-float); border: 1px solid var(--border);
-  border-radius: 14px; padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur));
+  border-radius: var(--r-lg); padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur));
   box-shadow: var(--shadow-float);
 }
 .ruta-form-fila { display: flex; align-items: center; gap: 8px; }
@@ -662,7 +662,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .detalle-panel {
   position: absolute; top: var(--y3); right: calc(20px + var(--safe-right)); z-index: 1000; width: 230px;
-  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur)); overflow: hidden;
   box-shadow: var(--shadow-float);
 }
@@ -701,7 +701,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .ruta-resumen {
   position: absolute; top: var(--y3); right: calc(20px + var(--safe-right)); z-index: 1000; width: 250px;
-  background: var(--surface-float); border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur));
   max-height: calc(100vh - 180px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3);
@@ -867,10 +867,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 /* Achicada a pedido de Rodo (era el elemento más grande de la esquina
    inferior izquierda sin aportar tanto): menos padding, tipografía y
-   swatches más chicos, ancho mínimo más angosto. */
+   swatches más chicos, ancho mínimo más angosto.
+   SES-115: radio de borde unificado a --r-lg (16px) en esta y en el resto
+   de las tarjetas/hojas grandes que flotan sobre el mapa (.capas-panel,
+   .actividad-panel/.stats-panel, .ruta-form, .detalle-panel,
+   .ruta-resumen, .report-sheet) -- cada una tenía su propio número suelto
+   (10px/12px/14px), y el lector de notas (.lector-nota, --r-lg desde que
+   se creó) se sentía más "pulido" solo por tener el borde más redondeado.
+   Mismo criterio que ya usaba .onboarding-card. Los popups chicos del mapa
+   y los botones/chips quedan con su radio propio a propósito: son otra
+   escala, bordes de 16px ahí se verían desproporcionados. */
 .legend {
   position: absolute; bottom: var(--b1); left: calc(20px + var(--safe-left)); z-index: 1000;
-  background: var(--surface-float); border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-2) var(--sp-3); backdrop-filter: blur(var(--surface-float-blur)); font-size: var(--fs-base);
   display: flex; flex-direction: column; gap: 3px; min-width: 140px; overflow: hidden;
   box-shadow: var(--shadow-float);
@@ -978,7 +987,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .report-sheet {
   position: absolute; bottom: var(--b4); right: calc(24px + var(--safe-right)); z-index: 1000; width: 280px;
-  background: var(--surface-solid); border: 1px solid var(--border); border-radius: 14px; padding: 18px; animation: panelIn var(--motion-slow) ease;
+  background: var(--surface-solid); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; animation: panelIn var(--motion-slow) ease;
   box-shadow: var(--shadow-float-hover);
 }
 .report-sheet h3 { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-lg); margin-bottom: 12px; color: var(--text); }
@@ -1519,7 +1528,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .lugar-card {
   position: absolute; top: calc(var(--y1) + 80px); left: 50%; transform: translateX(-50%); z-index: 1001;
   width: min(320px, 88vw); background: var(--surface-float); border: 1px solid var(--border);
-  border-radius: 14px; padding: var(--sp-3) var(--sp-4); box-shadow: var(--shadow-float); backdrop-filter: blur(var(--surface-float-blur));
+  border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4); box-shadow: var(--shadow-float); backdrop-filter: blur(var(--surface-float-blur));
   display: flex; flex-direction: column; gap: 10px;
 }
 .lugar-card-texto { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-md); color: var(--text); }

@@ -1471,3 +1471,15 @@ Rodo probó en el celular real la tanda anterior (filtro Todo/Siniestros/Insegur
 
 Verificado en el navegador con viewport de celular real (375×812): los tres chips entran en dos filas prolijas, sin overflow ni scroll oculto. Verificado también que sacar la capa de noticias no rompió el dato (`celda.noticias` sigue en properties, popup sigue mostrando la línea).
 Verificado: eslint, vitest (93/93, sin cambios de lógica que ameriten tests nuevos -- esto fue UI/paleta, no matemática de hexBin), build -- los tres en verde.
+
+## 2026-10-13 -- SES-115: unificación de bordes redondeados en paneles grandes
+
+Rodo, sobre el lector de notas: "me gustó mucho el diseño... bordes curveados, el desenfoque, la fuente, espacios, bordes redondeados... TODO está muy estético y lo quiero para TODA LA APP". Antes de salir a tocar CSS a ciegas en 10+ componentes, se acordó el alcance con una pregunta: paneles grandes nomás (leyenda, panel de capas, portal de Actividad/estadísticas, formulario de ruta, resumen de zona, resumen de ruta, hoja de reportar, tarjeta de lugar) -- los popups chicos del mapa y los botones/chips quedan como estaban, son otra escala visual.
+
+- **Causa real encontrada**: `.lector-nota` usa `border-radius: var(--r-lg)` (16px) + `box-shadow: var(--shadow-float-hover)`, mientras que el resto de los paneles grandes tenían números sueltos sin tokenizar -- `border-radius: 10px/12px/14px` repetidos a mano en `.legend`, `.capas-panel`, `.actividad-panel`/`.stats-panel`, `.ruta-form`, `.detalle-panel`, `.ruta-resumen`, `.report-sheet`, `.lugar-card`. Nada estaba "mal" visualmente (ya usaban los mismos --sp-*/--fs-*/fuentes), pero el radio más chico y menos consistente es justo lo que hacía sentir al lector "más pulido" en comparación.
+- **Fix**: los 8 paneles de arriba pasan todos a `border-radius: var(--r-lg)`, igual que `.onboarding-card` (que ya lo tenía bien desde antes) y `.lector-nota`. Un solo comentario centralizado en `.legend` documenta el criterio y por qué los popups/botones quedan afuera a propósito.
+- Sin tocar sombras, blur ni spacing -- esos ya eran consistentes entre paneles (todos comparten --shadow-float/--shadow-float-hover y --surface-float-blur), el único punto real de divergencia era el radio.
+- Verificado en el navegador, en los dos temas: panel de capas, formulario de ruta y hoja de "¿Qué estás viendo?" con el nuevo radio, sin romper ningún layout.
+- Verificado: eslint, vitest (93/93, sin tests nuevos -- cambio puramente de CSS, sin lógica), build -- los tres en verde.
+
+Pendiente, explicado pero no corregido (consultado con Rodo, no es prioridad ahora): en el filtro de hexágonos, "Todo" y "Delitos" se ven parecidos en la mayoría de las zonas porque el dataset de delitos (GCBA) es más denso que el de siniestros ahí -- al tomar el nivel más alto entre las dos fuentes, delitos gana casi siempre. No es un bug de color, es la data real; el popup ya desglosa cuánto es de cada fuente.
