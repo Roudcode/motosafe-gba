@@ -249,6 +249,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 @keyframes panelIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 .panel-enter { animation: panelIn var(--motion-panel) ease backwards; }
 
+/* Rediseño SES-115: salida simétrica a la entrada -- antes los paneles solo
+   tenían panelIn, así que desmontaban de golpe al cerrarse. Se usa junto
+   con el hook usePanelSaliente, que retrasa el desmonte de React lo
+   justo para que esta animación termine de jugar antes de que el nodo
+   desaparezca del todo. Duración más corta que la entrada (0.18s vs
+   0.45s) a propósito: una salida rápida se siente responsiva, una
+   entrada rápida se siente brusca -- mismo criterio que usan los
+   sistemas de diseño nativos de iOS/Android. */
+@keyframes panelOut { from { opacity: 1; translate: 0 0; } to { opacity: 0; translate: 0 6px; } }
+.panel-exit { animation: panelOut 0.18s ease forwards; pointer-events: none; }
+
 /* Rediseño SES-114: regla formalizada (antes era una decisión implícita,
    documentada solo como "quedaba mal" en un comentario suelto). .hazard-edge
    significa "este panel muestra datos de riesgo que conviene notar" --

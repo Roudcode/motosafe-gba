@@ -22,10 +22,10 @@ export function CapasPanel({
   filtroPrensa, onCambiarFiltroPrensa,
   cantidadReportesPrensa, cantidadReportesPrensaFiltrados,
   coberturaPrensa, horaActual,
-  onCerrar,
+  onCerrar, saliendo,
 }) {
   return (
-    <div className="capas-panel panel-enter hazard-edge">
+    <div className={`capas-panel panel-enter hazard-edge ${saliendo ? 'panel-exit' : ''}`}>
       <div className="capas-panel-header">
         <span className="cercanas-title">Capas del mapa</span>
         <button className="detalle-cerrar" onClick={onCerrar} aria-label="Cerrar capas"><X size={14} /></button>

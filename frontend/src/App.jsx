@@ -29,6 +29,7 @@ import { CapasPanel } from './components/CapasPanel'
 // MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
 const MapaMotoSafe = lazy(() => import('./components/MapaMotoSafe').then((m) => ({ default: m.MapaMotoSafe })))
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
+import { usePanelSaliente } from './hooks/usePanelSaliente'
 import { useSesion } from './sesion'
 
 // Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
@@ -182,6 +183,11 @@ function App() {
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
   const [toast, setToast] = useState(null)
+  // Animación de salida de paneles (SES-115): no cambia qué significa
+  // "abierto" en el resto de la app, solo cuándo deja de renderizarse.
+  const panelCapas = usePanelSaliente(capasAbiertas)
+  const panelActividad = usePanelSaliente(actividadAbierta)
+  const panelStats = usePanelSaliente(statsAbierto)
 
   const [rutaAbierta, setRutaAbierta] = useState(false)
   const [origenTexto, setOrigenTexto] = useState('')
@@ -1529,8 +1535,9 @@ function App() {
         </div>
       </header>
 
-      {capasAbiertas && (
+      {panelCapas.montado && (
         <CapasPanel
+          saliendo={panelCapas.saliendo}
           coberturaPrensa={coberturaCapas?.prensa}
           horaActual={horaActual}
           capaMapa={capaMapa}
@@ -1635,8 +1642,8 @@ function App() {
       )}
 
 
-      {actividadAbierta && tengoReportesPropios && (
-        <div className="actividad-panel panel-enter hazard-edge">
+      {panelActividad.montado && tengoReportesPropios && (
+        <div className={`actividad-panel panel-enter hazard-edge ${panelActividad.saliendo ? 'panel-exit' : ''}`}>
           <div className="actividad-header">
             <span className="cercanas-title">Actividad reciente</span>
             <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad"><X size={14} /></button>
@@ -1675,8 +1682,8 @@ function App() {
         </div>
       )}
 
-      {statsAbierto && (
-        <div className="stats-panel panel-enter hazard-edge">
+      {panelStats.montado && (
+        <div className={`stats-panel panel-enter hazard-edge ${panelStats.saliendo ? 'panel-exit' : ''}`}>
           <div className="stats-header">
             <span className="cercanas-title">Estadísticas de la Ciudad</span>
             <button className="detalle-cerrar" onClick={() => setStatsAbierto(false)} aria-label="Cerrar estadísticas"><X size={14} /></button>
