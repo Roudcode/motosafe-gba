@@ -2,7 +2,7 @@
 // definiciones de niveles de riesgo y catálogos fijos (categorías de reporte).
 // Se separan de App.jsx para que estén en un solo lugar y no mezcladas con lógica de UI.
 
-import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route, EyeOff, Siren } from 'lucide-react'
+import { Construction, TrafficCone, LightbulbOff, ShieldAlert, ShieldOff, Shield, CircleDot, Flame, Route, EyeOff, Siren, Hexagon } from 'lucide-react'
 
 export const CENTRO_GBA = { lat: -34.62, lng: -58.44 }
 export const UMBRAL_CRUCE_KM = 0.6
@@ -129,6 +129,7 @@ export const CATEGORIAS_REPORTE = [
 // en el panel). Clusters es el default.
 export const OPCIONES_CAPA_MAPA = [
   { id: 'apagado', label: 'Apagada', desc: 'No se dibuja en el mapa (la ruta y las alertas la siguen usando igual)', Icon: EyeOff },
+  { id: 'hexagonos', label: 'Hexágonos de cobertura', desc: 'Celdas con borde nítido · se entiende la zona de un vistazo', Icon: Hexagon },
   { id: 'clusters', label: 'Clusters de siniestros', desc: 'Zonas puntuales · predicción del modelo en vivo', Icon: CircleDot },
   { id: 'heatmap', label: 'Mapa de calor', desc: 'Densidad de siniestros de moto', Icon: Flame },
   { id: 'corredores', label: 'Corredores de riesgo', desc: 'Avenidas completas con score de riesgo', Icon: Route },

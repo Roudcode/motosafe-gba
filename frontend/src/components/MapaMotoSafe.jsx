@@ -41,9 +41,10 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 // se conserva el comportamiento de siempre, que no se pudo verificar en el
 // navegador del E2E.
 import urlWorkerMaplibre from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import { NIVELES, NIVELES_INSEGURIDAD_COLOR, CATEGORIAS_REPORTE, VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT } from '../constants'
+import { NIVELES, NIVELES_INSEGURIDAD_COLOR, CATEGORIAS_REPORTE, VIGENCIA_HORAS_POR_CATEGORIA, VIGENCIA_HORAS_DEFAULT, ORDEN_NIVELES } from '../constants'
 import { crearIconoCluster, crearIconoClusterInseguridad } from '../utils/ui'
 import { opacidadPorAntiguedad, esReciente, formatearAntiguedad, formatearVence } from '../utils/tiempo'
+import { hexBinZonas } from '../utils/hexBin'
 
 if (import.meta.env.PROD) setWorkerUrl(urlWorkerMaplibre)
 
@@ -734,6 +735,63 @@ function MapaMotoSafeInner({
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
      
+  }, [capaMapa, zonasFiltradas, atenuarFondo, version])
+
+  // --- hexágonos de cobertura (capaMapa === 'hexagonos') ---------------------
+  // Pedido de Rodo tras ver mapas de cobertura tipo Uber/Cabify: un hexágono
+  // de borde nítido se entiende de un vistazo mejor que el heatmap difuminado
+  // de arriba para "qué tan cubierta de riesgo está esta zona" -- el borde
+  // dice dónde termina, el heatmap no. 650m centro-a-vértice: a mano, viendo
+  // en pantalla, da celdas del tamaño de un barrio chico sin que CABA entera
+  // quede en 3 hexágonos ni en 400.
+  const RADIO_HEXAGONO_METROS = 650
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || version === 0) return
+    const sourceId = 'hexagonos-cobertura'
+    const layerId = 'hexagonos-cobertura-layer'
+    const layerBordeId = 'hexagonos-cobertura-borde'
+    if (capaMapa !== 'hexagonos') {
+      if (map.getLayer(layerBordeId)) map.removeLayer(layerBordeId)
+      if (map.getLayer(layerId)) map.removeLayer(layerId)
+      if (map.getSource(sourceId)) map.removeSource(sourceId)
+      return
+    }
+    const zonasConNivel = zonasFiltradas.map((z) => ({ lat: z.lat, lng: z.lng, cantidad: z.cantidad, nivel: z.ajuste.nivel }))
+    const datos = hexBinZonas(zonasConNivel, RADIO_HEXAGONO_METROS, ORDEN_NIVELES)
+    map.addSource(sourceId, { type: 'geojson', data: datos })
+    map.addLayer({
+      id: layerId,
+      type: 'fill',
+      source: sourceId,
+      paint: {
+        'fill-color': [
+          'match', ['get', 'nivel'],
+          'bajo', NIVELES.bajo.color,
+          'medio', NIVELES.medio.color,
+          'alto', NIVELES.alto.color,
+          'critico', NIVELES.critico.color,
+          NIVELES.bajo.color,
+        ],
+        'fill-opacity': 0.5 * atenuarFondo,
+      },
+    })
+    // Borde propio (no fill-outline-color): esa propiedad en MapLibre GL JS
+    // siempre dibuja 1px sin importar el zoom -- a un zoom alto quedaba
+    // invisible contra el fill. Una línea aparte con fill-opacity controla
+    // mejor el grosor real en pantalla.
+    map.addLayer({
+      id: layerBordeId,
+      type: 'line',
+      source: sourceId,
+      paint: { 'line-color': 'rgba(255,255,255,0.35)', 'line-width': 1.2, 'line-opacity': atenuarFondo },
+    })
+    return () => {
+      if (map.getLayer(layerBordeId)) map.removeLayer(layerBordeId)
+      if (map.getLayer(layerId)) map.removeLayer(layerId)
+      if (map.getSource(sourceId)) map.removeSource(sourceId)
+    }
+
   }, [capaMapa, zonasFiltradas, atenuarFondo, version])
 
   // --- cluster de siniestros (capaMapa === 'clusters') ----------------------

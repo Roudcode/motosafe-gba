@@ -135,7 +135,12 @@ function App() {
   const [actualizacionesCapas, setActualizacionesCapas] = useState({})
   const [recargaCapas, setRecargaCapas] = useState(0)
   const [tema, setTema] = useState(() => cargarDeLocalStorage(CLAVE_TEMA, 'light'))
-  const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'clusters'))
+  // 'hexagonos', no 'clusters': rediseño SES-115, a pedido explícito de Rodo
+  // tras comparar con mapas de cobertura tipo Uber/Cabify -- se entiende la
+  // zona de un vistazo mejor que los puntos o el heatmap. Solo afecta a quien
+  // nunca tocó el panel de Capas (esto es el valor de arranque antes de leer
+  // localStorage); quien ya eligió otra vista conserva su elección.
+  const [capaMapa, setCapaMapa] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_MAPA, 'hexagonos'))
   const [capaInseguridad, setCapaInseguridad] = useState(() => cargarDeLocalStorage(CLAVE_CAPA_INSEGURIDAD, 'apagado'))
   // Tráfico en vivo (TomTom): apagado por default -- no todos tienen la API key
   // configurada en el backend, y aunque la tengan, no queremos gastar cuota
@@ -1568,7 +1573,7 @@ function App() {
           {!vistaNavegacion && <ThemeToggle tema={tema} onCambiar={toggleTema} />}
           {!vistaNavegacion && (
             <button
-              className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'clusters' ? 'capas-con-cambios' : ''}`}
+              className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'hexagonos' ? 'capas-con-cambios' : ''}`}
               onClick={() => setCapasAbiertas((v) => !v)}
               aria-label="Capas del mapa"
               aria-expanded={capasAbiertas}
