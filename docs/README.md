@@ -1,6 +1,6 @@
 # MotoSafe GBA — Centro de documentación
 
-**Entrada única para Rodo, Claude y Codex. Actualizado: 2026-09-13.**
+**Entrada única para Rodo, Claude y Codex. Actualizado: 2026-10-13.**
 
 ## Para retomar el proyecto
 
@@ -45,6 +45,11 @@
 
 Centralizar significa mantener este índice y estos registros como punto de entrada. Los datos y el código conservan sus ubicaciones de ejecución; no se duplican dentro de documentación.
 
+## Pruebas técnicas — 2026-10-13
+
+- Estado actual: 93 tests frontend (`node node_modules/vitest/vitest.mjs run`) y 120 backend aprobados (11 skipped, de integración con PostgreSQL real no levantada en esta verificación), lint y build sin errores. Verificado en el navegador en los dos temas (claro/oscuro) y en un viewport de celular real (375×812). Detalle de cada tanda de SES-114/SES-115 en [BITACORA.md](gestion/BITACORA.md).
+- No hay E2E contra PostgreSQL real ni dispositivo físico en esta verificación puntual; sí hubo pasadas anteriores con PostGIS descartable (ver SES-070, SES-112, SES-113 en BITACORA) y con el navegador integrado de Claude Code actuando sobre la app real corriendo en local.
+
 ## Pruebas técnicas — 2026-09-15
 
-- [Pruebas actuales y límites](evidencias/2026-09-15/G02-T02/PRUEBAS.md): 80 tests frontend y 65 backend aprobados; navegador bloqueado por certificado.
+- [Pruebas actuales y límites](evidencias/2026-09-15/G02-T02/PRUEBAS.md): 80 tests frontend y 65 backend aprobados; navegador bloqueado por certificado. Conservado como registro histórico de esa fecha; ver la entrada de arriba para el estado vigente.
