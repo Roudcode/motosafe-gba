@@ -26,10 +26,10 @@
 | [QA de accesibilidad y visual](calidad/QA_ACCESIBILIDAD_VISUAL.md) | Matriz reproducible para teclado, zoom, temas, móvil, movimiento y red. |
 | [Matriz académica y demo](entrega/MATRIZ_ACADEMICA_Y_DEMO.md) | Objetivos, evidencia, límites y guion reproducible de presentación. |
 | [Actas y seguimiento con tutor](gestion/ACTAS_TUTOR.md) | Registro central de reuniones verificables; actualmente sin actas cargadas. |
-| [Guía detallada](1_Guia_DETALLADA.md) / [resumen](1_Guia_RESUMEN.md) | Explicación general; contiene información histórica desactualizada. Pendiente sincronizar con versión validada. |
-| [Manual detallado](2_Manual_DETALLADO.md) / [resumen](2_Manual_RESUMEN.md) | Operación; no ejecutar Run All del notebook para recuperar errores sin resolver A19. |
-| [Resultados detallados](3_Resultados_DETALLADO.md) / [resumen](3_Resultados_RESUMEN.md) | Resultados de versiones anteriores; no adjudicarlos automáticamente al modelo vigente. |
-| [Extensión de inseguridad](9_Extension_Futura_Inseguridad.md) | Documento histórico; parte de su alcance ya está implementado. |
+| [Guía detallada](1_Guia_DETALLADA.md) / [resumen](1_Guia_RESUMEN.md) | Actualizada 2026-10-13: Fases 1-13 son la historia original (sin reescribir), Fases 14-17 agregan login, búsqueda con TomTom, portal de Actividad y hexágonos de cobertura. DOCX homónimos todavía sin regenerar. |
+| [Manual detallado](2_Manual_DETALLADO.md) / [resumen](2_Manual_RESUMEN.md) | Actualizado 2026-10-13 contra los scripts reales (`iniciar.bat`, login, migraciones automáticas, `venv312`). No ejecutar Run All del notebook para recuperar errores sin resolver A19. |
+| [Resultados detallados](3_Resultados_DETALLADO.md) / [resumen](3_Resultados_RESUMEN.md) | Resultados de versiones anteriores; no adjudicarlos automáticamente al modelo vigente. Sin cambios en esta ronda: el modelo no se tocó en SES-114/115. |
+| [Extensión de inseguridad](9_Extension_Futura_Inseguridad.md) | Documento histórico de investigación, conservado sin reescribir; nota agregada 2026-10-13 al tope indicando que esta extensión ya está implementada y dónde. |
 | DOCX homónimos de guías/manuales/resultados | Copias existentes; aún no regeneradas ni sincronizadas. Markdown será el texto editable de referencia para futuras actualizaciones. |
 | [README raíz](../README.md) | Instalación e historia anterior. Su backlog antiguo se conserva como histórico; el operativo es BACKLOG.md. |
 

@@ -1,5 +1,12 @@
 # 9. Extensión futura — capa de inseguridad (robos/delitos)
 
+> **Nota 2026-10-13: esta extensión ya se implementó.** Este documento describe la investigación y el plan ORIGINAL (research de viabilidad, antes de construirla) — se conserva como evidencia de ese proceso, no se reescribe retroactivamente. Lo que hoy existe de verdad en el proyecto, y en qué se diferencia del plan de acá:
+> - **Clustering real**: 805 hotspots de inseguridad (303 de delito general con DBSCAN, 502 de robos con moto con HDBSCAN tras una segunda calibración — ver Fase 9 y Fase 13 de `1_Guia_DETALLADA.md`), no solo el plan de la sección 9.5.
+> - **Decisión de arquitectura confirmada**: dos ejes de riesgo paralelos, nunca fusionados en un número único sin desglose — tal como proponía la sección 9.4, y además extendido a la vista de hexágonos de cobertura (Fase 17), que puede combinar ambos ejes mostrando siempre cuánto corresponde a cada fuente.
+> - **Backend real**: `/hotspots-inseguridad` (no `/inseguridad` como sugería el plan original), con parámetro de tipo (`general`/`moto`), más `indice_inseguridad_comuna.csv` como variable adicional del modelo de siniestros.
+> - **Frontend real**: capa independiente y toggleable (Fase 11 de la Guía), con paleta propia, más integrada al score de ruta y a las alertas en viaje (Fase 10).
+> - **Lo que NO se hizo** exactamente como proponía el plan: no hay un modelo predictivo (Random Forest) para inseguridad como sí existe para siniestros — la sección 9.5, punto 4, ya dejaba esto como una opción válida ("mostrar únicamente densidad/frecuencia histórica... sin modelo de clasificación"), y es lo que terminó implementándose. `uso_moto`/`uso_arma` como variables de severidad específicas tampoco se usaron tal cual estaban planteadas acá.
+
 ## 9.1 Contexto y alcance actual
 
 MotoSafe GBA se acotó deliberadamente, en esta primera versión, a riesgo por **siniestralidad vial**. Inseguridad/delitos es un fenómeno relacionado pero de naturaleza distinta — otra fuente de datos, otro patrón espacial y temporal — y se identificó desde el inicio como una segunda pata del proyecto que requiere su propio desarrollo, no una extensión trivial del modelo de accidentes existente.

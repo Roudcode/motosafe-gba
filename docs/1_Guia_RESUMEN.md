@@ -1,6 +1,6 @@
 # MotoSafe GBA — Guía Completa del Proyecto
 
-Este documento explica qué es el proyecto, cómo está armado hoy, y qué de todo lo que ves funcionando es real y qué sigue siendo una simplificación. Es el documento para entender el panorama completo, no para ejecutar comandos (eso está en el Manual de Operación).
+**Actualizado: 2026-10-13.** Este documento explica qué es el proyecto, cómo está armado hoy, y qué de todo lo que ves funcionando es real y qué sigue siendo una simplificación. Es el documento para entender el panorama completo, no para ejecutar comandos (eso está en el Manual de Operación). Para el detalle sesión por sesión de todo lo construido después de la primera versión (login, búsqueda vía TomTom, portal de Actividad, hexágonos de cobertura) ver `docs/gestion/CONTINUIDAD.md` y `BITACORA.md`, o la Guía Detallada (Fases 14 a 17).
 
 ---
 
@@ -8,7 +8,7 @@ Este documento explica qué es el proyecto, cómo está armado hoy, y qué de to
 
 Una aplicación que muestra exposición histórica registrada en zonas de CABA. El modelo clasifica la gravedad esperable **si ocurre un siniestro**; no estima la probabilidad de sufrir uno durante un viaje. Se complementa con clima actual, reportes y una capa histórica de inseguridad.
 
-**Estado real a esta altura:** ya no es una maqueta. El mapa muestra predicciones calculadas en vivo por un modelo entrenado con 23.343 siniestros reales (que ahora también incluye el índice de inseguridad de cada comuna como variable) — no una regla inventada. Además de los hotspots puntuales, la app tiene una vista de corredores (avenidas completas con score de riesgo) y una capa de inseguridad histórica con sus propios hotspots (delito general y robos con moto, calculados con DBSCAN; los de siniestros usan HDBSCAN, ver más abajo).
+**Estado real a esta altura:** ya no es una maqueta. El mapa muestra predicciones calculadas en vivo por un modelo entrenado con 23.343 siniestros reales (que ahora también incluye el índice de inseguridad de cada comuna como variable) — no una regla inventada. Además de los hotspots puntuales, la app tiene una vista de corredores (avenidas completas con score de riesgo), una capa de inseguridad histórica con sus propios hotspots (delito general y robos con moto), y una **vista de hexágonos de cobertura** que hoy es la que se muestra por defecto (combina siniestros, inseguridad, o ambos según un filtro). También tiene una pantalla aparte ("Actividad") con prensa y reportes comunitarios combinados, búsqueda de lugares real (TomTom con respaldo en Nominatim), y pide login para entrar.
 
 ---
 
@@ -100,8 +100,12 @@ Una aplicación que muestra exposición histórica registrada en zonas de CABA. 
 ```
 motosafe-gba/
 ├── backend/
-│   ├── venv/                        → librerías Python de este proyecto
-│   ├── main.py                      → la API (hotspots, corredores, hotspots-inseguridad, predecir, reportes)
+│   ├── venv312/                     → librerías Python de este proyecto (instaladas con hashes, requirements.lock)
+│   ├── main.py                      → la API (hotspots, corredores, hotspots-inseguridad, predecir, reportes, reportes-prensa, lugares, lugares/reversa)
+│   ├── auth.py                      → login por usuario/contraseña propios (activado por defecto)
+│   ├── migrar.py                    → aplica migraciones de base de datos versionadas, se corre antes de levantar el servidor
+│   ├── run_dev.py                   → arranca el servidor real (lo usa backend/_iniciar_backend.bat)
+│   ├── scrapear_noticias_robos.py   → scraper de noticias de prensa (robos/choques), alimenta /reportes-prensa
 │   ├── cargar_hotspots.py           → script que cargó los 740 hotspots a la base
 │   ├── cargar_corredores.py         → carga la tabla de corredores de riesgo
 │   ├── cargar_hotspots_inseguridad.py → carga la tabla de hotspots de inseguridad
@@ -109,14 +113,14 @@ motosafe-gba/
 │   ├── columnas_modelo.pkl          → el orden de columnas que el modelo necesita
 │   ├── hotspots_contexto.csv        → comuna/vía/contraparte típica por zona
 │   ├── indice_inseguridad_comuna.csv → índice de inseguridad por comuna (0-1)
-│   └── tests/test_main.py           → 24 tests de la API
+│   └── tests/                       → 120+ tests de la API (11 se saltan si no hay PostgreSQL real levantado)
 ├── frontend/
 │   └── src/
 │       ├── App.jsx                  → lógica e interfaz principal
 │       ├── App.css                  → estilos
 │       ├── constants.js             → umbrales, paletas, catálogos fijos
-│       ├── components/              → CapasPanel, CapaCalor, Onboarding, etc.
-│       └── utils/                   → geoRiesgo.js, tiempo.js, ui.js
+│       ├── components/              → CapasPanel, ActividadPortal, LoginGate, Onboarding, etc.
+│       └── utils/                   → geoRiesgo.js, hexBin.js (grilla hexagonal), tiempo.js, ui.js
 ├── notebooks/
 │   ├── 01_eda_hotspots_moto.ipynb   → limpieza, clustering y modelos originales
 │   ├── fetch_delitos_caba.py        → descarga delitos de CABA (correr a mano, necesita internet real)
@@ -130,6 +134,7 @@ motosafe-gba/
 │   ├── indice_inseguridad_comuna.csv
 │   └── siniestros_viales_hechos.csv / victimas.csv (los originales del gobierno)
 ├── docker-compose.yml
+├── iniciar.bat                      → lanzador único (Docker + Backend + Frontend + Scraper + Túnel)
 ├── requirements.txt
 └── .gitignore
 ```
@@ -151,6 +156,9 @@ motosafe-gba/
 | Hotspot de inseguridad | Zona con delitos concentrados, encontrada con DBSCAN sobre el dataset de delitos (igual método que los hotspots de siniestros, dataset distinto) |
 | Score de ruta / desglose | El puntaje de riesgo de una ruta trazada, que suma siniestros e inseguridad cruzados pero siempre muestra cuánto aporta cada eje por separado |
 | Percentil (para nivel de riesgo) | El nivel bajo/medio/alto/crítico de cada zona no es un umbral fijo, es relativo: se calcula según en qué percentil (25/75/95) cae esa zona dentro de su propio dataset |
+| Hexágono de cobertura | Vista de fondo por defecto del mapa: celdas hexagonales con borde nítido en vez de puntos o degradé, que pueden armarse con siniestros, inseguridad o ambos |
+| Portal de Actividad | Pantalla aparte con prensa y reportes comunitarios combinados, filtrable por categoría/fecha/barrio |
+| Login | Pantalla de usuario/contraseña propia del proyecto, activada por defecto, para entrar a la app |
 
 ---
 
@@ -161,3 +169,5 @@ motosafe-gba/
 3. Documentado, no resuelto: el modelo predice mejor "leve" que "grave"/"mortal" por separado — es una limitación real de las variables disponibles (falta velocidad, uso de casco, alcohol — datos que el dataset del gobierno no tiene).
 4. **El índice de inseguridad se actualiza a mano, una vez al año** — no hay una API en vivo del GCBA para delitos, así que no se puede automatizar como el clima.
 5. **La capa de inseguridad general y la de robos con moto son excluyentes en el mapa** (no se pueden ver juntas): se decidió así porque se superponen bastante y mostrarlas a la vez solo duplicaría puntos sobre el mismo hecho, pero no está evaluado a fondo si convendría una tercera vista combinada.
+6. **Qué mecanismo de acceso público está activo hoy no se pudo confirmar solo leyendo el repositorio**: existen dos mecanismos de túnel distintos en el código (uno vía Cloudflare, en `iniciar.bat`; otro vía Tailscale Funnel, en la carpeta `tailscale/`, documentado en sesiones anteriores). Cuál de los dos expone la app en un momento dado depende de qué se haya corrido, no es algo fijo en el código — requiere confirmación directa de Rodo.
+7. **Un despliegue productivo en la nube (fuera de la PC de Rodo) está preparado y probado** (Docker Compose, migraciones automáticas, backup ensayado), pero no se confirmó en esta revisión si existe una instancia corriendo de forma permanente en un hosting — ver `docs/operacion/DESPLIEGUE_MVP.md`.

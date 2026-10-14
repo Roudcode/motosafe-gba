@@ -1,5 +1,7 @@
 # MotoSafe GBA — Guía Completa del Proyecto (explicada desde cero)
 
+**Actualizado: 2026-10-13.** Las Fases 1 a 13 describen la historia original del proyecto (siniestros, modelo, inseguridad, rutas con TomTom). Las Fases 14 a 17, agregadas en esta actualización, cubren lo construido después: reportes con identidad propia, la evolución de la búsqueda de lugares, el portal de Actividad y los hexágonos de cobertura. El detalle sesión por sesión de todo esto vive en `docs/gestion/BITACORA.md` y `docs/gestion/CONTINUIDAD.md`.
+
 ## Cómo leer este documento
 
 Este documento asume que no sabés nada de programación, ni de bases de datos, ni de Inteligencia Artificial. Cada vez que aparece un concepto técnico, se explica antes de usarlo. Si en algún momento sentís que "ya sabés esto", podés saltar el bloque — está marcado con un título claro para que puedas ubicarte.
@@ -138,6 +140,22 @@ Antes de tocar nada se midió la cobertura real de cada uno (algo que no estaba 
 
 Con delito general fue distinto: es un dataset mucho más grande (más de 400 mil casos, casi 20 veces más denso que robos con moto), y HDBSCAN no llegó a terminar ni una sola combinación en el entorno de trabajo usado para esta migración, ni esperando varios minutos. Es probable que en una computadora normal sí termine, solo que tardando más de lo razonable para probarlo a mano varias veces seguidas, así que se dejó armado un script aparte (`notebooks/sweep_hdbscan_inseguridad_general.py`) para correrlo una sola vez, sin apuro, y decidir después si vale la pena migrar esa capa también. Por ahora delito general sigue con DBSCAN.
 
+### Fase 14 — Reportes con identidad propia y dejar de confiar en localStorage
+
+Los reportes colaborativos pasaron a tener un borrado seguro: en vez de poder borrar cualquier reporte con solo conocer su ID público, cada reporte se crea junto con una credencial privada (un token) que solo recibe quien lo creó, una única vez, en el momento de crearlo — ese token nunca se vuelve a mostrar ni se puede recuperar. Más adelante se sumó un historial propio (`POST /reportes/mios`): el panel de "Actividad" de la app puede mostrarte el estado real de tus propios reportes (vigente, vencido, o retirado por consenso de otros usuarios) usando esa misma credencial, sin necesidad de una cuenta ni de iniciar sesión para eso — es una identidad anónima por dispositivo, no una cuenta de usuario.
+
+### Fase 15 — Búsqueda de lugares: de un servicio gratuito sin garantías a TomTom como fuente principal
+
+La búsqueda de direcciones y lugares ("Buscar farmacia", "Obelisco") pasó por varias correcciones reales, cada una encontrada probando la app en movimiento, no en el escritorio: el radio de búsqueda era muy corto para encontrar lugares fuera del centro de la ciudad; la búsqueda sesgaba sus resultados al centro de CABA sin importar dónde estuviera el usuario realmente parado; la app nunca pedía la ubicación del celular al abrirse, así que ese sesgo no tenía nada real para usar; y cuando un lugar no está en el proveedor principal (TomTom), la app consulta un segundo proveedor gratuito (Nominatim/OpenStreetMap) como respaldo, con un criterio de relevancia por similitud de texto para no traer resultados que no tienen nada que ver con lo buscado. El autocompletado mientras se escribe (que le pegaba a Nominatim en cada tecla) se sacó: la política de uso de Nominatim no permite ese patrón de consumo, así que la búsqueda ahora solo se dispara al confirmar (Enter o el botón de buscar).
+
+### Fase 16 — Un portal de "Actividad": prensa y reportes comunitarios en un solo lugar
+
+Además del mapa, la app tiene un portal a pantalla completa ("Actividad") que junta en una sola lista las noticias de prensa sobre robos/choques (scrapeadas de medios reales) y los reportes que cargan los propios usuarios, filtrable por categoría, por fecha, y por barrio real — el filtro de barrio usa geocodificación inversa de TomTom (convertir una coordenada en el nombre del barrio que le corresponde) con caché agresiva, para no pedirle al proveedor lo mismo una y otra vez. Tocar cualquier noticia abre un lector interno (un panel flotante, no una pestaña nueva) que muestra el artículo original dentro de la misma app, con la salida honesta de "abrir en una pestaña nueva" para los sitios que no permiten mostrarse embebidos.
+
+### Fase 17 — Hexágonos de cobertura: una forma nueva, y hoy la principal, de ver el riesgo en el mapa
+
+Inspirado en mapas de cobertura tipo Uber/Cabify, se sumó una grilla de celdas hexagonales (en vez de puntos sueltos o un heatmap difuminado) que agrupa el riesgo por zona, con el borde de cada celda marcando claramente dónde termina una zona y empieza otra. El tamaño de cada hexágono se ajusta solo según qué tan alejado esté mirando el mapa (celdas grandes alejado, para ver el patrón general; celdas chicas acercado, para distinguir cuadra por cuadra) y la celda puede armarse con los datos de siniestros, los de inseguridad (delitos), o ambos combinados — eligiendo siempre el nivel de riesgo más alto entre las fuentes que se estén mirando, y mostrando al tocar una celda cuánto de ese total corresponde a cada fuente por separado (nunca un número único que mezcle ambas sin aclarar de dónde sale). Pasó a ser la vista de fondo que se muestra por defecto al abrir la app.
+
 ---
 
 ## Parte 4 — Cómo se conecta todo, explicado con una analogía
@@ -199,13 +217,11 @@ Cuando abrís la aplicación: el salón (frontend) le pide a la cocina (backend)
           y se lo devuelve al navegador, que pinta el mapa.
 ```
 
-El mismo backend expone hoy más pedidos posibles que "dame las zonas de riesgo": entre otros, `/corredores` (avenidas completas con score de riesgo), `/hotspots-inseguridad` (los 805 hotspots de delitos), y `/reportes` (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga).
+El mismo backend expone hoy más pedidos posibles que "dame las zonas de riesgo": entre otros, `/corredores` (avenidas completas con score de riesgo), `/hotspots-inseguridad` (los 805 hotspots de delitos), `/reportes` (leer, crear o borrar reportes colaborativos, ya guardados en la base de datos y no solo en el navegador de quien los carga), `/reportes-prensa` (las noticias scrapeadas), `/lugares` (búsqueda de direcciones y lugares, vía TomTom con respaldo en Nominatim) y `/lugares/reversa` (geocodificación inversa para el filtro de barrio del portal de Actividad).
 
-Además, el navegador le habla directamente a dos servicios externos, aplicaciones gratuitas de terceros que se usan como piezas:
-- **Open-Meteo**: te da el clima real del momento.
-- **Nominatim**: convierte una dirección escrita ("Av. Rivadavia 1200") en coordenadas.
+El clima (Open-Meteo) es el único servicio externo al que el navegador le sigue hablando directo. Todo lo demás — búsqueda de lugares, cálculo de ruta, tráfico en vivo, geocodificación inversa — pasa primero por el backend propio (ver Fase 12 y Fase 15), así ninguna clave de acceso (TomTom) queda expuesta en el navegador.
 
-El cálculo de ruta y el tráfico en vivo (TomTom) son distintos: no se le habla directo desde el navegador, sino que el backend hace ese pedido por vos (ver Fase 12) — así la clave de acceso a TomTom nunca queda expuesta en el navegador.
+**Acceso y login:** desde que los reportes dejaron de vivir solo en el navegador (Fase 8/14), la app tiene una pantalla de inicio de sesión activada por defecto — usuario y contraseña propios del proyecto, no una cuenta de Google ni nada externo. Esto protege que cualquiera con el link público pueda entrar sin permiso. La app hoy es accesible desde fuera de la computadora donde corre, a través de un túnel temporal (ver el Manual de Operación para el detalle exacto del mecanismo vigente).
 
 ---
 
@@ -266,6 +282,10 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 | **Hotspot de inseguridad** | Una zona donde se repiten delitos con más frecuencia de lo normal. Delito general usa DBSCAN; robos con moto pasó a HDBSCAN (mismo algoritmo que los siniestros) después de una segunda calibración, porque el dataset es de tamaño parecido al de siniestros y se beneficiaba de lo mismo. |
 | **Score de ruta / desglose** | El número total de riesgo que suma una opción de ruta, siempre mostrado junto con cuánto de ese total corresponde a siniestro y cuánto a inseguridad, para no ocultar de qué tipo es el riesgo. |
 | **Percentil (para nivel de riesgo)** | La posición relativa de un valor dentro de su propio dataset (por ejemplo, "está en el percentil 95" significa que es más alto que el 95% de los demás casos). Se usa para definir los cortes entre bajo/medio/alto/crítico dentro de cada eje de riesgo. |
+| **Hexágono de cobertura** | Celda de una grilla hexagonal que agrupa el riesgo de una zona (su borde marca con claridad dónde termina), en vez de un punto suelto o un degradé difuminado. Es la vista de fondo que se muestra por defecto al abrir el mapa. |
+| **Portal de Actividad** | Pantalla aparte (no el mapa) que junta noticias de prensa y reportes comunitarios en una sola lista, filtrable por categoría, fecha y barrio real. |
+| **Login / credencial privada** | La app pide usuario y contraseña para entrar (protege el acceso público). Distinto de la "credencial privada" (token) que recibe cada reporte al crearse, que no es una cuenta sino la única forma de poder borrar ese reporte específico después. |
+| **Túnel** | Un mecanismo que expone una app que corre en una computadora local con una URL accesible desde internet, sin necesidad de publicarla en un servidor propio. Temporal por naturaleza: la URL cambia cada vez que se reinicia. |
 
 ---
 
@@ -275,7 +295,7 @@ Es importante que tengas esto clarísimo, porque en algún momento (en la defens
 No. El código está guardado en tu disco duro y también respaldado en GitHub. Lo único que se "apaga" es que los programas dejan de estar corriendo — hay que volver a levantarlos siguiendo el Manual de Operación.
 
 **¿Otra persona podría usar esta aplicación desde su celular ahora mismo?**
-No todavía. Hoy todo corre únicamente en tu computadora. Para que otra persona pueda usarlo desde afuera, habría que "publicar" (deploy) el proyecto en un servidor de internet — no forma parte de lo construido hasta ahora.
+Sí, mientras tu computadora esté prendida y la app levantada: un túnel temporal expone la app con una URL pública (distinta cada vez que se reinicia), y pide login para entrar. Es distinto de un **despliegue productivo real** (la app corriendo de forma permanente en un servidor en internet, sin depender de que tu PC esté prendida) — eso está preparado y probado (Docker Compose, migraciones automáticas, backup ensayado, documentado en `docs/operacion/DESPLIEGUE_MVP.md`), pero no se pudo confirmar en esta revisión si hoy existe esa instancia corriendo de forma permanente en un hosting en la nube, o si el acceso público actual depende solo del túnel temporal desde tu PC.
 
 **¿El modelo va a seguir prediciendo bien para siempre?**
 No necesariamente — fue entrenado con datos hasta 2025. Si cambian los patrones de siniestralidad, habría que volver a entrenarlo con datos más nuevos.

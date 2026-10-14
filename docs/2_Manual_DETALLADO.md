@@ -1,5 +1,14 @@
 # MotoSafe GBA — Manual de Operación (explicado paso a paso)
 
+**Actualizado: 2026-10-13.** Este manual describe el flujo de arranque vigente
+hoy, verificado contra los scripts reales del repositorio (`iniciar.bat`,
+`backend/_iniciar_backend.bat`). Las versiones anteriores de este documento
+describían activar un `venv` genérico y correr `uvicorn` a mano en varias
+terminales por separado — eso ya no es necesario, hay un lanzador único.
+Se conserva la sección 2 ("cada pieza a mano") para quien quiera entender
+o controlar cada pieza por separado, pero el camino recomendado es la
+sección 1.
+
 ## Antes de empezar: qué es una terminal y cómo se usa
 
 Una terminal (también llamada consola, o PowerShell en Windows) es una ventana donde le escribís órdenes a la computadora en forma de texto, en vez de hacer clic con el mouse. Cada línea que escribís se llama "comando". Apretás Enter, y la computadora ejecuta esa orden.
@@ -13,9 +22,9 @@ En este proyecto vas a usar **varias terminales al mismo tiempo**, cada una corr
 
 ---
 
-## 1. Levantar todo desde cero (después de reiniciar la PC)
+## 1. Levantar todo desde cero (después de reiniciar la PC) — camino recomendado
 
-El proyecto tiene tres piezas que tienen que estar corriendo al mismo tiempo, cada una en su propia terminal, para que la aplicación funcione completa. El orden importa.
+Hoy existe un lanzador único en la raíz del proyecto: `iniciar.bat`. Hace todo lo que antes requería varias terminales manuales, en un solo doble clic.
 
 ### Paso 1 — Abrir Docker Desktop
 
@@ -25,9 +34,38 @@ El proyecto tiene tres piezas que tienen que estar corriendo al mismo tiempo, ca
 
 **Cómo saber si ya está listo:** en la ventana de Docker Desktop, abajo a la izquierda, tiene que decir **"Engine running"** en verde. Puede tardar entre 30 segundos y 2 minutos la primera vez después de un reinicio — no lo cierres ni intentes nada más mientras carga.
 
-### Paso 2 — Levantar la base de datos
+### Paso 2 — Doble clic en `iniciar.bat`
 
-Con Docker ya listo, abrí una terminal (o usá la que tengas abierta) y escribí, línea por línea:
+Con Docker ya listo, andá a la carpeta `$HOME\Desktop\motosafe-gba` y hacé doble clic en `iniciar.bat`. Si tenés instalado Windows Terminal (`wt`), abre **una sola ventana con 5 pestañas**: Docker, Backend, Frontend, Scraper de noticias y Túnel. Si no lo tenés instalado, abre lo mismo pero en 4 ventanas de consola separadas.
+
+**Qué hace cada pestaña/ventana, en orden:**
+- **Docker:** corre `docker compose up -d`, levanta la base de datos PostgreSQL/PostGIS de fondo.
+- **Backend:** corre `backend\_iniciar_backend.bat`, que hace cuatro cosas en cadena, cada una dentro del entorno virtual del proyecto (`venv312`, no uno genérico):
+  1. Instala/verifica las dependencias de Python exactas del `requirements.lock` (con verificación de hash — rápido si ya están instaladas, no reinstala de cero cada vez).
+  2. **Chequea el login.** Si todavía no configuraste usuario/contraseña de acceso a la app (`AUTH_USERNAME`/`AUTH_PASSWORD_HASH` en `backend\.env`), el script se detiene y corre `generar_password.py`, que te pide un usuario y una contraseña y te devuelve las dos líneas para pegar en `backend\.env`. Guardás el archivo y volvés a ejecutar `iniciar.bat`.
+  3. **Aplica las migraciones de base de datos pendientes** (`migrar.py`) — no hace nada si ya están aplicadas, así que es seguro correrlo siempre.
+  4. Arranca el servidor en sí (`run_dev.py`, que a su vez levanta `uvicorn`).
+- **Frontend:** corre `npm run dev` dentro de `frontend\`, sirve la página del mapa.
+- **Scraper:** corre `scrapear_noticias_robos.py --guardar` una vez, para traer noticias de prensa nuevas al abrir la app. (Si no lo querés correr cada vez, usá `iniciar_app.bat` en vez de `iniciar.bat` — es el mismo lanzador pero sin esta pestaña.)
+- **Túnel:** corre `cloudflared tunnel --url https://localhost:5173 --no-tls-verify`, que expone la app detrás de una URL pública temporal (`*.trycloudflare.com`), visible en esa misma pestaña. Cambia cada vez que se reinicia — no es una dirección fija.
+
+**Cómo saber si funcionó:** la pestaña de Frontend te muestra una dirección local, normalmente `https://localhost:5173/` (con certificado autofirmado del propio Vite — el navegador va a avisar que no es de confianza, es esperado en desarrollo). Abrí esa dirección, o la del túnel si querés probar desde el celular.
+
+### Paso 3 — Iniciar sesión
+
+La app pide usuario y contraseña la primera vez que la abrís (la misma pantalla de login que configuraste con `generar_password.py` en el paso anterior). Esto es así por defecto (`AUTH_HABILITADO=true` salvo que se desactive explícitamente) — protege que cualquiera con el link del túnel pueda entrar sin permiso.
+
+### Paso 4 — Confirmar que todo está funcionando junto
+
+Una vez logueado, tenés que ver el mapa cargado con hexágonos o puntos de colores (verde, amarillo, naranja, rojo) repartidos por la ciudad, y en la esquina de abajo a la izquierda una leyenda con números al lado de cada color. Si en cambio ves "0 zonas registradas" o un cartel de "sin conexión", andá a la sección de problemas de este mismo documento.
+
+---
+
+## 2. Levantar cada pieza a mano (si no querés usar `iniciar.bat`)
+
+Útil para entender qué hace cada pieza por separado, o si `iniciar.bat` falla y necesitás aislar el problema.
+
+### Base de datos
 
 ```powershell
 cd $HOME\Desktop\motosafe-gba
@@ -35,48 +73,31 @@ docker compose up -d
 docker ps
 ```
 
-**Qué hace cada línea:**
-- `cd $HOME\Desktop\motosafe-gba`: le dice a la terminal "movete a la carpeta del proyecto".
-- `docker compose up -d`: lee un archivo llamado `docker-compose.yml` (que ya está preparado) y levanta la base de datos según esas instrucciones. El `-d` significa que se ejecuta "de fondo", sin ocupar la terminal.
-- `docker ps`: muestra una lista de todo lo que Docker tiene corriendo en este momento. Tiene que aparecer una fila con el nombre `motosafe-db` y la palabra "Up" en su estado — eso confirma que la base de datos está viva y disponible.
+`docker ps` tiene que mostrar una fila con `motosafe-db` y "Up" en su estado.
 
-### Paso 3 — Levantar el backend (el servidor de datos)
-
-Abrí una **terminal nueva** (no reutilices la anterior, dejala corriendo Docker) y escribí:
+### Backend (servidor de datos)
 
 ```powershell
 cd $HOME\Desktop\motosafe-gba\backend
-.\venv\Scripts\activate
-uvicorn main:app --reload
+venv312\Scripts\activate
+python migrar.py
+python run_dev.py
 ```
 
-**Qué hace cada línea:**
-- `cd ...\backend`: te movés a la carpeta donde vive el servidor de datos.
-- `.\venv\Scripts\activate`: activa el "entorno virtual" de Python — una carpeta especial donde están instaladas todas las librerías que este proyecto necesita, separadas de cualquier otro programa Python que tengas en la PC. Si funcionó, vas a ver que el principio de la línea de comandos ahora empieza con `(venv)`.
-- `uvicorn main:app --reload`: arranca el servidor de datos en sí. `main:app` le dice qué archivo de código correr (`main.py`, donde está escrita toda la lógica del servidor). `--reload` hace que, si modificás el código mientras el servidor está corriendo, se reinicie solo.
+`venv312\Scripts\activate` activa el entorno virtual del proyecto (no uno genérico llamado `venv` — ese nombre quedó de una versión anterior de este manual). `migrar.py` aplica las migraciones de base de datos pendientes antes de arrancar; `run_dev.py` levanta el servidor real. Tiene que aparecer **"Application startup complete."** Si el login todavía no está configurado, va a avisarlo — correr `python generar_password.py` primero y pegar las dos líneas que devuelve en `backend\.env`.
 
-**Cómo saber si funcionó:** tiene que aparecer, entre otras líneas, el texto **"Application startup complete."** Si eso aparece, el servidor está listo y escuchando pedidos. **Dejá esta terminal abierta y no le escribas nada más** — mientras esté abierta, el servidor sigue funcionando; si la cerrás, se apaga.
-
-### Paso 4 — Levantar el frontend (la parte visual)
-
-Abrí **otra terminal nueva** (ya tenés dos abiertas: Docker/base de datos, y el backend; esta es la tercera):
+### Frontend (la parte visual)
 
 ```powershell
 cd $HOME\Desktop\motosafe-gba\frontend
 npm run dev
 ```
 
-**Qué hace:** levanta un mini-servidor que te sirve la página web del mapa en tu navegador, y va actualizándola automáticamente cada vez que se modifica el código visual.
-
-**Cómo saber si funcionó:** la terminal te va a mostrar una dirección web, normalmente `http://localhost:5173/`. Copiá esa dirección (o hacele clic si tu terminal lo permite) y pegala en el navegador. **Dejá esta terminal abierta también.**
-
-### Paso 5 — Confirmar que todo está funcionando junto
-
-En el navegador, con la dirección del paso 4 abierta, tenés que ver el mapa cargado con puntos de colores (verde, amarillo, naranja, rojo) repartidos por la ciudad, y en la esquina de abajo a la izquierda una leyenda con números al lado de cada color. Si en cambio ves "0 zonas registradas" o un cartel de "sin conexión", andá a la sección de problemas de este mismo documento.
+Te va a mostrar una dirección como `https://localhost:5173/`. Vite sirve con HTTPS y certificado autofirmado en este proyecto — el navegador va a marcarlo como no confiable, es esperado.
 
 ---
 
-## 2. Levantar Jupyter (para trabajar en el análisis o el modelo)
+## 3. Levantar Jupyter (para trabajar en el análisis o el modelo)
 
 Jupyter es un programa aparte que no reemplaza al backend ni al frontend — es para cuando querés seguir trabajando en el análisis de datos o en el modelo de Machine Learning, no para usar la aplicación en sí.
 
@@ -84,7 +105,7 @@ Abrí una **terminal nueva** (podés tener Docker, backend, frontend, y esta cua
 
 ```powershell
 cd $HOME\Desktop\motosafe-gba\backend
-.\venv\Scripts\activate
+venv312\Scripts\activate
 cd ..\notebooks
 jupyter notebook
 ```
@@ -95,7 +116,7 @@ Esto abre una pestaña nueva en tu navegador con la interfaz de Jupyter. Hacé c
 
 ---
 
-## 3. Comandos de Git más usados (guardar y respaldar cambios)
+## 4. Comandos de Git más usados (guardar y respaldar cambios)
 
 Git es el sistema que guarda el historial de tu proyecto. Cada vez que hacés cambios importantes y querés guardarlos de forma permanente (tanto en tu compu como en internet, en GitHub), usás esta secuencia:
 
@@ -125,7 +146,7 @@ Te muestra los últimos 10 cambios guardados, cada uno con su descripción.
 
 ---
 
-## 4. Cómo reentrenar o modificar el modelo de Machine Learning
+## 5. Cómo reentrenar o modificar el modelo de Machine Learning
 
 Si en algún momento querés cambiar algo del modelo (agregar una variable nueva, probar otro algoritmo, etc.):
 
@@ -146,7 +167,7 @@ copy data\columnas_modelo.pkl backend\
 
 ---
 
-## 5. Problemas que ya pasaron durante esta sesión, y cómo se resuelven
+## 6. Problemas que ya pasaron durante esta sesión, y cómo se resuelven
 
 Esta sección existe porque cada uno de estos errores ya ocurrió al menos una vez mientras se construía el proyecto. Si te aparece alguno, seguramente la solución está acá.
 
@@ -156,8 +177,8 @@ Esta sección existe porque cada uno de estos errores ya ocurrió al menos una v
 
 ### "uvicorn no se reconoce como nombre de un cmdlet, función, archivo de script..."
 **Por qué pasa:** dos causas posibles.
-- El entorno virtual de Python no está activado (el principio de la línea no dice `(venv)`) → correr `.\venv\Scripts\activate`.
-- Estás parado en la carpeta equivocada. `uvicorn` solo funciona si estás dentro de `backend/` → correr `cd backend` primero.
+- El entorno virtual de Python no está activado (el principio de la línea no dice `(venv312)`) → correr `venv312\Scripts\activate`.
+- Estás parado en la carpeta equivocada. `run_dev.py` solo funciona si estás dentro de `backend/` → correr `cd backend` primero.
 
 ### "cd backend" dice que la ruta no existe
 **Por qué pasa:** estás parado en tu carpeta de usuario general (`C:\Users\tunombre`), no en el proyecto.
@@ -165,7 +186,7 @@ Esta sección existe porque cada uno de estos errores ya ocurrió al menos una v
 
 ### El frontend muestra "Sin conexión con el backend"
 **Por qué pasa:** el servidor de datos (backend) intentó conectarse a la base de datos en un momento en que Docker todavía no había terminado de levantarla.
-**Solución:** confirmar con `docker ps` que `motosafe-db` diga "Up". Después, ir a la terminal donde corre `uvicorn`, apretar `Ctrl + C`, y volver a escribir `uvicorn main:app --reload`.
+**Solución:** confirmar con `docker ps` que `motosafe-db` diga "Up". Después, ir a la terminal/pestaña donde corre el backend, apretar `Ctrl + C`, y volver a correr `python run_dev.py` (o cerrar y reabrir `iniciar.bat`).
 
 ### El mapa muestra "0 zonas registradas" aunque el backend parece andar bien
 **Por qué pasa:** puede ser un error en el código de la parte visual donde algo no se actualiza correctamente cuando llegan datos nuevos.
@@ -180,7 +201,7 @@ Esta sección existe porque cada uno de estos errores ya ocurrió al menos una v
 **Solución:**
 ```powershell
 cd $HOME\Desktop\motosafe-gba\backend
-.\venv\Scripts\activate
+venv312\Scripts\activate
 pip install nombre-de-la-libreria
 ```
 Después, en Jupyter, ir al menú **Kernel → Restart Kernel and Run All Cells**. Instalar la librería sola no alcanza — el "kernel" (el proceso de Python que ya está corriendo dentro del notebook) no se entera de la librería nueva hasta que se reinicia.
@@ -191,7 +212,7 @@ Después, en Jupyter, ir al menú **Kernel → Restart Kernel and Run All Cells*
 
 ---
 
-## 6. Mapa de rutas del proyecto, para no perderte
+## 7. Mapa de rutas del proyecto, para no perderte
 
 | Qué buscás | Dónde está |
 |---|---|
@@ -200,6 +221,10 @@ Después, en Jupyter, ir al menú **Kernel → Restart Kernel and Run All Cells*
 | El código de la parte visual | `...\motosafe-gba\frontend\src\App.jsx` |
 | El notebook con todo el análisis | `...\motosafe-gba\notebooks\01_eda_hotspots_moto.ipynb` |
 | Los datos (CSV, no se suben a GitHub) | `...\motosafe-gba\data\` |
-| La aplicación funcionando en el navegador | http://localhost:5173 |
+| El lanzador único (todo junto) | `...\motosafe-gba\iniciar.bat` (con scraper) / `iniciar_app.bat` (sin scraper) |
+| La aplicación funcionando en el navegador | https://localhost:5173 (certificado autofirmado, esperado) |
 | El servidor de datos, para probarlo directo | http://localhost:8000/docs |
+| URL pública temporal (túnel Cloudflare) | la pestaña "Tunel" de `iniciar.bat` muestra un link `*.trycloudflare.com` nuevo cada vez que se levanta — no es fijo |
 | El respaldo en internet del proyecto | https://github.com/Roudcode/motosafe-gba (repositorio privado) |
+
+**Nota sobre acceso público:** además del túnel de Cloudflare de arriba (el que usa `iniciar.bat` hoy), el repositorio tiene una carpeta `tailscale/` con otro mecanismo de túnel (Tailscale Funnel) y un script de vigilancia automática, documentado en sesiones anteriores de BITACORA.md. No se pudo confirmar con certeza, solo leyendo el repositorio, cuál de los dos mecanismos es el que está activo en este momento — es una pregunta para Rodo, no algo para asumir en una entrega académica.
