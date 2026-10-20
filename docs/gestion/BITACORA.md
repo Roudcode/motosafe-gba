@@ -1817,3 +1817,11 @@ Lo importante, dicho sin vueltas: Villa Pueyrredón y cualquier duplicado geocod
 Documentado en DEC-019 (`docs/gestion/DECISIONES.md`), `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md` (segunda sección de corrección) y la fila A09 de BACKLOG.md.
 
 Sin verificar: 100m y 0,0 están calibrados contra una muestra chica (36 filas de precisión alta en toda la tabla, un solo grupo multi-fuente real); no hay todavía una corrida real posterior a este cambio.
+
+## SES-135 (2026-10-20, misma noche) — Figura 4.3 actualizada al pipeline real de A09
+
+Pendiente anotado desde hace varias sesiones ("anotado para después"): la Figura 4.3 del Capítulo 4 (flujo de ingesta de prensa) seguía mostrando el diagrama original de SES-050, con una caja "Deduplicación por URL y geocoding opcional" que ya no describe el sistema real -- el geocoding no es opcional (es obligatorio y graduado por precisión desde SES-073/SES-133) y la deduplicación hoy es un paso de tres mecanismos distintos (título exacto en la misma corrida, URL exacta entre corridas, y semántica no destructiva desde DEC-017/018/019), no un único paso de "URL".
+
+Regenerado con matplotlib (mismo estilo que las Figuras 4.1/4.2: Times New Roman, cajas con el mismo criterio de línea sólida/punteada para "implementado" vs "preparado, no validado"), reflejando el orden real del código (`backend/scrapear_noticias_robos.py`, función `_evaluar_y_guardar`): Fuentes → Scheduler → Extractor (clasificación + dedup por título dentro de la misma corrida) → Geocodificación por zona (calle/intersección/barrio, con radio) → Deduplicación semántica (no destructiva, DEC-017/018/019) + URL exacta → PostgreSQL → API backend. La nota al pie se actualizó para mencionar explícitamente que la deduplicación semántica no resuelve los casos geocodificados a nivel barrio (DEC-019), en vez de dejarlo implícito.
+
+Reemplazada la imagen dentro del docx (mismo `rId`, mismo archivo de medios) sin tocar el resto del documento. Validado con `validate.py --original` (0 cambios de párrafos) y revisión visual en PDF de la página 24, donde queda embebida sin recortes ni solapamiento con el pie de figura.
