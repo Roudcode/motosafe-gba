@@ -1825,3 +1825,23 @@ Pendiente anotado desde hace varias sesiones ("anotado para después"): la Figur
 Regenerado con matplotlib (mismo estilo que las Figuras 4.1/4.2: Times New Roman, cajas con el mismo criterio de línea sólida/punteada para "implementado" vs "preparado, no validado"), reflejando el orden real del código (`backend/scrapear_noticias_robos.py`, función `_evaluar_y_guardar`): Fuentes → Scheduler → Extractor (clasificación + dedup por título dentro de la misma corrida) → Geocodificación por zona (calle/intersección/barrio, con radio) → Deduplicación semántica (no destructiva, DEC-017/018/019) + URL exacta → PostgreSQL → API backend. La nota al pie se actualizó para mencionar explícitamente que la deduplicación semántica no resuelve los casos geocodificados a nivel barrio (DEC-019), en vez de dejarlo implícito.
 
 Reemplazada la imagen dentro del docx (mismo `rId`, mismo archivo de medios) sin tocar el resto del documento. Validado con `validate.py --original` (0 cambios de párrafos) y revisión visual en PDF de la página 24, donde queda embebida sin recortes ni solapamiento con el pie de figura.
+
+## SES-136 (2026-10-20, misma noche) — A17: cinco extracciones más de App.jsx (navegación, detalle de zona, leyenda, búsqueda)
+
+Encaré el resto de A17 que había quedado frenado por "requiere más cuidado, estado compartido" (SES-131). Al mirar el código real con más detalle, el riesgo era menor de lo que parecía: los bloques de JSX candidatos consumen estado ya calculado más arriba en `App.jsx` (por props de solo lectura), no manejan estado propio entrelazado entre sí -- el acoplamiento real está en los `useEffect` que calculan `velocidadActual`, `etaInfo`, `pasoActual`, etc., y esos se quedan donde estaban. Extraer la parte de renderizado no toca esa lógica.
+
+Cinco componentes nuevos, mismo criterio que las extracciones anteriores (corte-y-pegado con props, sin cambio de comportamiento):
+
+- `NavegacionManiobra.jsx`: la tarjeta de "doblá acá" con el giro activo y preview del siguiente. 9 props.
+- `NavegacionResumen.jsx`: la tira mínima de navegación (velocidad/tiempo/distancia restante + botón salir), el botón de recentrar y el velocímetro en vivo -- tres bloques adyacentes. 10 props.
+- `DetalleZonaPanel.jsx`: el panel de detalle de una zona del mapa (gravedad, predicción del modelo, ajuste por reportes recientes). 3 props. `COLOR_CLASE_MODELO` (constante de colores del modelo) se movió adentro, era de uso exclusivo de este panel.
+- `LegendStack.jsx`: la leyenda de nivel de riesgo + la de inseguridad, con sus filtros. 13 props. La función `TextoCobertura` (línea de cobertura bajo cada leyenda) se movió adentro, era de uso exclusivo de este bloque.
+- `SearchBar.jsx`: la barra de búsqueda de lugar/calle con sugerencias y recientes, más la tarjeta del lugar elegido al seleccionar un resultado. 12 props.
+
+Una corrección real que surgió al extraer: `NavegacionManiobra` guardaba el ícono de la maniobra en una variable `ManiobraIcon` (PascalCase) y lo renderizaba como `<ManiobraIcon/>` -- un patrón que ESLint (`react-hooks/static-components`) no marcaba mientras vivía adentro de una IIFE anónima dentro de `App.jsx`, pero sí marcó al quedar en un componente nombrado de verdad ("Components created during render"). No es un bug nuevo de esta sesión, es un patrón preexistente que la extracción hizo visible. Se corrigió con el mismo criterio que ya usa `climaInfo.Icon` en el propio `App.jsx`: en vez de una variable PascalCase, un objeto con la clave `Icon` (`maniobra.Icon`), que ESLint no confunde con una declaración de componente.
+
+`App.jsx` bajó de 2265 a 2066 líneas (-199). Imports de `lucide-react` recortados a los que siguen en uso (`Search`, `Navigation`, `Square`, `Gauge`, `CornerDownRight`, `Clock`, `ArrowUp` se movieron a los componentes nuevos); `OPCIONES_CAPA_INSEGURIDAD`, `NIVELES_INSEGURIDAD_COLOR`, `OPCIONES_FILTRO_HEXAGONO` y `formatearPeriodo` también se sacaron del import de `App.jsx` por la misma razón.
+
+Verificado con `npx eslint src/` (0 errores en todo el proyecto), `npx vitest run` (93/93 en verde, sin regresiones) y `npm run build` (build de producción limpio, mismo warning preexistente de tamaño de chunk). Sin verificación visual en navegador en vivo -- misma limitación de siempre (necesita backend + PostgreSQL + auth + GPS real para Modo Viaje).
+
+Lo que queda de A17, ahora sí genuinamente más complejo: el formulario de ruta (`ruta-form`, origen/destino con `sugOrigen`/`sugDestino`/`campoActivo`/`marcarEnMapa`, con más acoplamiento cruzado real), el panel de actividad reciente y los distintos banners de error de capas. Candidato para una sesión dedicada, no para seguir hoy.

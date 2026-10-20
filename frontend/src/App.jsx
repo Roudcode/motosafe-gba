@@ -2,17 +2,17 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 import './App.css'
 
 import {
-  Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed,
+  X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed,
   Compass, WifiOff,
-  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper, ArrowUpRight, ArrowUp,
+  Siren, ShieldAlert, Layers, Newspaper, ArrowUpRight,
 } from 'lucide-react'
 
 import {
   CENTRO_GBA, UMBRAL_CRUCE_KM, UMBRAL_ALERTA_KM, ORDEN_NIVELES, PESO_RIESGO,
   RADIO_ALERTA_REPORTE_KM, MINUTOS_ALERTA_REPORTE_RECIENTE, CATEGORIAS_ALERTA_PROXIMIDAD,
   API_URL, CLAVE_AUTOR_ID, CLAVE_TOKENS_REPORTES, CLAVE_NIVELES, CLAVE_FAVORITOS, CLAVE_TEMA, CLAVE_ONBOARDING, CLAVE_CAPA_MAPA, NIVELES, CATEGORIAS_REPORTE,
-  CLAVE_CAPA_INSEGURIDAD, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
-  CLAVE_FILTRO_HEXAGONO, OPCIONES_FILTRO_HEXAGONO,
+  CLAVE_CAPA_INSEGURIDAD, CLAVE_CAPA_TRAFICO, UMBRAL_ZOOM_TRAFICO,
+  CLAVE_FILTRO_HEXAGONO,
   CLAVE_CACHE_HOTSPOTS, CLAVE_CACHE_CORREDORES, CLAVE_CACHE_INSEGURIDAD_GENERAL, CLAVE_CACHE_INSEGURIDAD_MOTO,
   CLAVE_CAPA_PRENSA,
 } from './constants'
@@ -20,7 +20,7 @@ import { siguientePaso, distanciaKm, calcularAjuste, geocodificar, calcularRumbo
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
 } from './utils/riesgoRuta'
-import { formatearAntiguedad, formatearDistancia, formatearPeriodo } from './utils/tiempo'
+import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
 import { cargarDeLocalStorage, guardarEnLocalStorage, generarUuidV4Fallback } from './utils/storage'
 import { LoadingScreen } from './components/LoadingScreen'
@@ -31,17 +31,17 @@ import { ActividadPortal } from './components/ActividadPortal'
 import { RutaResumenPanel } from './components/RutaResumenPanel'
 import { HerramientasMenu } from './components/HerramientasMenu'
 import { ReportSheet } from './components/ReportSheet'
+import { NavegacionManiobra } from './components/NavegacionManiobra'
+import { NavegacionResumen } from './components/NavegacionResumen'
+import { DetalleZonaPanel } from './components/DetalleZonaPanel'
+import { LegendStack } from './components/LegendStack'
+import { SearchBar } from './components/SearchBar'
 // MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
 const MapaMotoSafe = lazy(() => import('./components/MapaMotoSafe').then((m) => ({ default: m.MapaMotoSafe })))
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
 import { usePanelSaliente } from './hooks/usePanelSaliente'
 import { useSesion } from './sesion'
 
-// Colores para mostrar la probabilidad cruda del modelo (LEVE/GRAVE/MORTAL) en el
-// panel de detalle de zona — mismos tonos semánticos que los niveles de riesgo
-// (bajo=verde, alto=naranja, crítico=rojo), pero mapeados a las clases reales del
-// modelo en vez de al nivel ya traducido.
-const COLOR_CLASE_MODELO = { LEVE: '#3DDC84', GRAVE: '#FF8C42', MORTAL: '#FF3B3B' }
 
 // Nivel de zoom "de navegación", tipo Waze/Google Maps al arrancar un viaje
 // (mucho más cerca que el zoom de exploración general, zoomInicial=11 más
@@ -1671,38 +1671,11 @@ function App() {
 
       {toast && <div className="toast panel-enter">{toast}</div>}
 
-      {modoViaje && rutasCalculadas.length > 0 && rutasCalculadas[rutaSeleccionada]?.pasos?.[pasoActual] && (() => {
-        const pasos = rutasCalculadas[rutaSeleccionada].pasos
-        const pasoActivo = pasos[pasoActual]
-        const pasoSiguiente = pasos[pasoActual + 1]
-        const ManiobraIcon = iconoManiobra(pasoActivo)
-        return (
-          <div className="navegacion-panel panel-enter">
-            <span className="navegacion-icono-chip"><ManiobraIcon size={26} /></span>
-            <div className="navegacion-texto">
-              {miUbicacion && (
-                <span className="navegacion-distancia">
-                  {formatearDistancia(distanciaManiobraKm(pasoActivo))}
-                </span>
-              )}
-              <strong>{textoManiobra(pasoActivo)}</strong>
-              {/* Preview del giro siguiente, más chico -- ayuda en cruces
-                  seguidos a no quedar "ciego" un paso adelante, que era el
-                  caso hasta ahora (solo se veía el giro inmediato). Separado
-                  del resto con su propio borde superior en vez de solo ser
-                  texto más chico, para que se lea como un dato secundario y
-                  no como continuación del mismo mensaje. */}
-              {pasoSiguiente && (
-                <div className="navegacion-luego">
-                  <span className="navegacion-luego-etiqueta">Luego</span>
-                  <CornerDownRight size={13} />
-                  <span className="navegacion-luego-texto">{textoManiobra(pasoSiguiente)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })()}
+      <NavegacionManiobra
+        modoViaje={modoViaje} rutasCalculadas={rutasCalculadas} rutaSeleccionada={rutaSeleccionada} pasoActual={pasoActual}
+        miUbicacion={miUbicacion} distanciaManiobraKm={distanciaManiobraKm}
+        formatearDistancia={formatearDistancia} textoManiobra={textoManiobra} iconoManiobra={iconoManiobra}
+      />
 
       {alertaViaje && (
         <div className={`alerta-viaje panel-enter ${alertaViaje.nivel === 'critico' ? 'critica' : 'alta'}`}>
@@ -1890,55 +1863,11 @@ function App() {
           Sin hazard-edge: la franja de "cinta de peligro" sobre una píldora
           se veía mal (a pedido de Rodo) -- ese motivo queda reservado para
           paneles de datos de riesgo, no para el buscador. */}
-      {!vistaNavegacion && (
-        <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
-          <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input type="text" placeholder="Buscar lugar, calle o local..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={() => { setBuscaEnFoco(false); setTimeout(sugBusqueda.limpiar, 150) }} aria-label="Buscar lugar, calle o local" autoComplete="off" />
-          {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
-          {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
-          {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
-            <ul className="ruta-form-sugerencias searchbar-sugerencias">
-              {sugBusqueda.resultados.map((s, i) => (
-                <li key={i}>
-                  <button type="button" onMouseDown={() => buscarEnMapa(s)}>
-                    <MapPin size={12} /> {s.label}
-                  </button>
-                </li>
-              ))}
-              {sugBusqueda.buscada && sugBusqueda.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección. Probá con más detalle.</li>}
-              {sugBusqueda.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
-            </ul>
-          )}
-          {buscaEnFoco && !busqueda.trim() && recientes.length > 0 && (
-            <ul className="ruta-form-sugerencias searchbar-sugerencias">
-              <li className="ruta-form-sin-resultados">Recientes</li>
-              {recientes.map((r, i) => (
-                <li key={`${r.label}-${i}`}>
-                  <button type="button" onMouseDown={() => buscarEnMapa(r)}>
-                    <Clock size={12} /> {r.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {lugarElegido && !rutaAbierta && (
-        <div className="lugar-card panel-enter" role="dialog" aria-label="Lugar elegido">
-          <div className="lugar-card-texto">
-            <MapPin size={14} />
-            <span>
-              {lugarElegido.label}
-              {lugarElegido.categoria && <em className="lugar-card-categoria">{lugarElegido.categoria}</em>}
-            </span>
-          </div>
-          <div className="lugar-card-acciones">
-            <button type="button" className="lugar-card-cerrar" onClick={() => setLugarElegido(null)}>Cerrar</button>
-            <button type="button" className="lugar-card-ir" onClick={irAlLugar}><Navigation size={13} /> Ir</button>
-          </div>
-        </div>
-      )}
+      <SearchBar
+        vistaNavegacion={vistaNavegacion} busqueda={busqueda} setBusqueda={setBusqueda} sugBusqueda={sugBusqueda}
+        buscaEnFoco={buscaEnFoco} setBuscaEnFoco={setBuscaEnFoco} recientes={recientes} buscarEnMapa={buscarEnMapa}
+        lugarElegido={lugarElegido} setLugarElegido={setLugarElegido} rutaAbierta={rutaAbierta} irAlLugar={irAlLugar}
+      />
 
       {rutaAbierta && (
         <div className="ruta-form panel-enter">
@@ -2088,93 +2017,14 @@ function App() {
         cerrarTodoRuta={cerrarTodoRuta}
       />
 
-      {/* Tira mínima de navegación activa: reemplaza al panel completo de
-          arriba mientras hay ruta + Modo Viaje. Es la barra de "cuánto
-          falta" que le faltaba a la app -- antes, una vez que arrancabas a
-          navegar, no había NINGÚN indicador de progreso del viaje. */}
-      {rutasCalculadas.length > 0 && modoViaje && (
-        <div className="nav-resumen-mini panel-enter" role="status" aria-live="polite">
-          {velocidadActual != null && (
-            <div className="viaje-velocidad" title="Velocidad actual (GPS)">
-              <strong>{Math.round(velocidadActual * 3.6)}</strong>
-              <span>km/h</span>
-            </div>
-          )}
-          <div className="viaje-tiempo">
-            <strong>{etaInfo ? etaInfo.minRestante : rutasConScore[rutaSeleccionada]?.min} min</strong>
-            <span>
-              {etaInfo ? etaInfo.distanciaRestanteKm.toFixed(1) : rutasConScore[rutaSeleccionada]?.km} km
-              {etaInfo && <> · llegás {etaInfo.horaLlegada}</>}
-            </span>
-          </div>
-          <button className="viaje-salir" onClick={() => desactivarModoViaje()} aria-label="Detener navegación">
-            <Square size={12} /> <span>Salir</span>
-          </button>
-        </div>
-      )}
+      <NavegacionResumen
+        rutasCalculadas={rutasCalculadas} modoViaje={modoViaje} velocidadActual={velocidadActual}
+        etaInfo={etaInfo} rutasConScore={rutasConScore} rutaSeleccionada={rutaSeleccionada}
+        desactivarModoViaje={desactivarModoViaje} siguiendoUbicacion={siguiendoUbicacion}
+        recentrarUbicacion={recentrarUbicacion} vistaNavegacion={vistaNavegacion}
+      />
 
-      {/* Botón de recentrar (estilo Waze/Maps): aparece solo cuando el
-          usuario paneó el mapa a mano durante el viaje y la cámara dejó de
-          seguir al GPS -- ver siguiendoUbicacion más arriba. */}
-      {modoViaje && !siguiendoUbicacion && (
-        <button className="recenter-fab panel-enter" onClick={recentrarUbicacion} aria-label="Volver a mi ubicación">
-          <LocateFixed size={18} />
-        </button>
-      )}
-
-      {/* Velocímetro en vivo (mismo lugar que en Waze/Maps: círculo abajo a
-          la izquierda). Solo aparece si el GPS realmente entrega velocidad
-          -- no todos los navegadores/dispositivos la dan, y mostrar 0 fijo
-          sería peor que no mostrar nada. */}
-      {vistaNavegacion && velocidadActual != null && (
-        <div className="velocimetro panel-enter" title="Velocidad actual (GPS)">
-          <Gauge size={12} className="velocimetro-icono" />
-          <strong>{Math.round(velocidadActual * 3.6)}</strong>
-          <span>km/h</span>
-        </div>
-      )}
-
-      {panelDetalle.montado && zonaMostrada && (
-        <div className={`detalle-panel panel-enter hazard-edge ${panelDetalle.saliendo ? 'panel-exit' : ''}`}>
-          <button className="detalle-cerrar" onClick={() => setZonaSeleccionada(null)} aria-label="Cerrar detalle de zona"><X size={14} /></button>
-            <span className="popup-nivel" style={{ color: NIVELES[zonaMostrada.ajuste.nivel].color }}>
-            Gravedad estimada: {NIVELES[zonaMostrada.ajuste.nivel].label}
-          </span>
-          <strong className="detalle-nombre">{zonaMostrada.nombre}</strong>
-          <p className="detalle-motivo">{zonaMostrada.motivo}</p>
-          {zonaMostrada.prediccionModelo && (
-            <div className="detalle-modelo">
-              <span className="detalle-modelo-titulo">Gravedad estimada si ocurre un siniestro</span>
-              {Object.entries(zonaMostrada.prediccionModelo).map(([clase, prob]) => (
-                <div className="detalle-modelo-fila" key={clase}>
-                  <span className="detalle-modelo-label">{clase}</span>
-                  <div className="detalle-modelo-track">
-                    <div className="detalle-modelo-fill" style={{ width: `${prob * 100}%`, background: COLOR_CLASE_MODELO[clase] || '#8A9099' }} />
-                  </div>
-                  <span className="detalle-modelo-num">{Math.round(prob * 100)}%</span>
-                </div>
-              ))}
-              {zonaMostrada.contextoEstimado && (
-                <p className="detalle-modelo-nota">Esta zona no tiene perfil histórico propio: se usó el perfil promedio de la ciudad.</p>
-              )}
-              <p className="detalle-modelo-nota">No estima la probabilidad de sufrir un siniestro durante tu viaje.</p>
-            </div>
-          )}
-          {zonaMostrada.ajustadoPorReciente && (
-            <p className="popup-ajuste"><ArrowUp size={12} /> Nivel subido: {zonaMostrada.motivoAjuste}</p>
-          )}
-          {zonaMostrada.ajuste.subio && (
-            <div className="detalle-ajuste">
-              <span className="detalle-ajuste-base">Base: {NIVELES[zonaMostrada.nivel].label}</span>
-              <span className="detalle-ajuste-flecha">→</span>
-              <span className="detalle-ajuste-ahora" style={{ color: NIVELES[zonaMostrada.ajuste.nivel].color }}>
-                Ahora: {NIVELES[zonaMostrada.ajuste.nivel].label}
-              </span>
-              <p className="detalle-ajuste-motivo">Subió por: {zonaMostrada.ajuste.motivos.join(' + ')}</p>
-            </div>
-          )}
-        </div>
-      )}
+      <DetalleZonaPanel panelDetalle={panelDetalle} zonaMostrada={zonaMostrada} setZonaSeleccionada={setZonaSeleccionada} />
 
       {/* La leyenda se esconde mientras está abierto "Opciones de ruta": ahí
           el riesgo ya se lee en cada tarjeta de ruta (bajo/medio/alto/
@@ -2182,47 +2032,13 @@ function App() {
           + filtro por nivel no suma nada en ese momento y sí compite por el
           mismo espacio de pantalla en celular (a pedido de Rodo: que
           "Opciones de ruta" pueda usar ese lugar en vez de compartirlo). */}
-      {!vistaNavegacion && !panelRuta.montado && (
-        <div className="legend-stack">
-          <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
-            <div className="legend-header">
-              <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
-              {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
-            </div>
-            {capaMapa === 'hexagonos' && (
-              <div className="portal-actividad-filtros-fila legend-filtro-hexagono">
-                {OPCIONES_FILTRO_HEXAGONO.map((f) => (
-                  <button key={f.id} className={filtroHexagono === f.id ? 'activo' : ''} onClick={() => setFiltroHexagono(f.id)}>{f.label}</button>
-                ))}
-              </div>
-            )}
-            <TextoCobertura meta={coberturaCapas?.[capaMapa === 'corredores' ? 'corredores' : 'hotspots']} prefijo="Siniestros" />
-            {Object.entries(NIVELES).map(([key, val]) => (
-              <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
-                <span className="legend-swatch" style={{ background: val.color }} />
-                {val.label}
-                <span className="legend-count">{conteos[key]}</span>
-              </button>
-            ))}
-          </div>
-
-          {capaInseguridad !== 'apagado' && (
-            <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
-              <div className="legend-header">
-                <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
-              </div>
-              <TextoCobertura meta={coberturaCapas?.[`inseguridad_${capaInseguridad}`]} prefijo="Delitos" />
-              {Object.entries(NIVELES).map(([key, val]) => (
-                <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
-                  <span className="legend-swatch" style={{ background: NIVELES_INSEGURIDAD_COLOR[key] }} />
-                  {val.label}
-                  <span className="legend-count">{conteosInseguridad[key]}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <LegendStack
+        vistaNavegacion={vistaNavegacion} panelRutaMontado={panelRuta.montado} capaMapa={capaMapa}
+        filtroHexagono={filtroHexagono} setFiltroHexagono={setFiltroHexagono} coberturaCapas={coberturaCapas}
+        nivelesActivos={nivelesActivos} toggleNivel={toggleNivel} conteos={conteos}
+        hayFiltrosApagados={hayFiltrosApagados} restablecerFiltros={restablecerFiltros}
+        capaInseguridad={capaInseguridad} conteosInseguridad={conteosInseguridad}
+      />
 
       {!rutaAbierta && rutasCalculadas.length === 0 && (
         <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}><Compass size={16} /> <span>Trazar ruta</span></button>
@@ -2243,21 +2059,6 @@ function App() {
         ubicacionReporte={ubicacionReporte} confirmarReporte={confirmarReporte}
       />
     </div>
-  )
-}
-
-// Línea de cobertura bajo el título de una leyenda: el período de los datos es
-// lo principal (con eso se juzga la vigencia del riesgo); la fecha en que se
-// generó el archivo de la capa va solo en el tooltip.
-function TextoCobertura({ meta, prefijo }) {
-  const periodo = formatearPeriodo(meta?.desde, meta?.hasta)
-  if (!periodo) return null
-  const detalle = `${meta.descripcion}: ${meta.desde} a ${meta.hasta} (${meta.registros.toLocaleString('es-AR')} registros). ${meta.fuente}.`
-    + (meta.archivo_generado ? ` Archivo de la capa generado el ${meta.archivo_generado}.` : '')
-  return (
-    <p className="legend-cobertura" title={detalle}>
-      {prefijo} {periodo} · GCBA
-    </p>
   )
 }
 
