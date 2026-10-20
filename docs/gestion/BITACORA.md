@@ -1748,3 +1748,15 @@ No se implementó un auto-descarte en producción. `firma_titular` ya documenta 
 Evidencia completa y tres caminos posibles (auto-descarte a jacc≥0,70, marcar-para-revisión sin descartar, o dejarlo como está) en `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md`, pendiente de la decisión de Rodo antes de tocar producción.
 
 El otro pendiente de A09, validación de calles sin conjunto etiquetado, sigue sin abordarse: no hay un conjunto de casos reales armado para medirlo y no se fabricó uno para evitarlo.
+
+## SES-130 (2026-10-20) — A09: implementa deduplicación semántica automática, sin revisión humana, no destructiva
+
+A partir de la medición de SES-129, Rodo pidió la opción de marcar-para-revisión pero sin el paso de revisión humana: automatizar la decisión, no borrar nada.
+
+Implementado en `_detectar_duplicado_semantico` (`backend/scrapear_noticias_robos.py`): antes de insertar una nota nueva, busca entre las filas ya guardadas del mismo `tipo_incidente` la intersección de tres señales -- ventana de 5 días, radio de 1500m, similitud de título (Jaccard de tokens) ≥0,70. El umbral es el más conservador medido (no un punto medio) justamente porque acá no hay humano revisando antes de que la marca tenga efecto. Si las tres se cumplen, la fila se guarda igual -- nunca se pierde el dato crudo -- pero queda marcada con `duplicado_de_id` apuntando a la original.
+
+Columna nueva `duplicado_de_id` (nullable, FK a la misma tabla) en `backend/migrations/004_duplicados_prensa.sql`, con el mismo patrón de red de seguridad en `_asegurar_tabla` que ya tienen `tipo_incidente` y `relacionado_moto`. `_FILTRO_FUENTES_PRENSA_SQL` en `backend/main.py` ahora excluye `duplicado_de_id IS NOT NULL` del mismo modo que ya excluye las filas viejas de Google Noticias: no se borra, se deja de contar en `/reportes-prensa` y en el ajuste de riesgo por reportes recientes.
+
+5 pruebas nuevas en `backend/tests/test_scrapear_noticias_robos.py`, con los mismos casos reales de la medición: el par de Moreno (jacc 0,73, dos medios independientes) se detecta y marca; el par límite de Merlo/La Matanza (jacc 0,44, mismo tema y patrón narrativo, hechos distintos) se rechaza correctamente; el mismo par de Moreno puesto a más de 1500m se rechaza aunque el título coincida casi textual. 127/127 pruebas de backend en verde (excluidas `test_integracion_postgres.py`, que necesita base real, y `test_run_dev.py`, que falla por falta de `uvicorn` en este entorno -- ninguna de las dos por este cambio).
+
+Sin verificar esta sesión: el filtro de ventana de días y de `duplicado_de_id IS NULL` vive en el `WHERE` de la consulta SQL real, no en código Python testeable sin Postgres -- inalcanzable desde este entorno. Tampoco se aplicó la migración ni se corrió el scraper contra la base real para ver cuántas filas existentes quedarían marcadas. Evidencia completa en `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md`.

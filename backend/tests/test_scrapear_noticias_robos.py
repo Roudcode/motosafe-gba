@@ -1,5 +1,10 @@
 import pytest
-from scrapear_noticias_robos import categoria_de, encontrar_localidad, extraer_fecha_publicacion, extraer_ubicacion, encontrar_zona, firma_titular, parsear_rss, relacionado_con_moto, zona_de_ubicacion
+from datetime import datetime, timezone
+from scrapear_noticias_robos import (
+    categoria_de, encontrar_localidad, extraer_fecha_publicacion, extraer_ubicacion, encontrar_zona,
+    firma_titular, parsear_rss, relacionado_con_moto, zona_de_ubicacion,
+    _detectar_duplicado_semantico, _tokens_similitud,
+)
 
 
 def test_categoria_no_confunde_subcadena_de_robo():
@@ -249,3 +254,79 @@ def test_un_429_corta_los_pedidos_del_resto_de_la_corrida(monkeypatch):
     with pytest.raises(scraper.NominatimBloqueado):
         scraper._buscar_nominatim('Nordelta, Tigre, Buenos Aires, Argentina')
     assert len(pedidos) == 1
+
+
+# --- A09 (SES-129/130): deduplicacion semantica entre fuentes ---
+
+class _CursorFalso:
+    """Cursor minimo para _detectar_duplicado_semantico: el filtro de
+    ventana de dias y de duplicado_de_id IS NULL vive en el WHERE de la
+    consulta real (SQL, no probado aqui sin Postgres); estos tests cubren
+    lo que SI corre en Python despues del fetchall: el umbral de similitud
+    de titulo y el radio geografico, con casos reales medidos en
+    docs/evidencias/2026-10-20/A09-dedup-semantica/."""
+    def __init__(self, filas):
+        self._filas = filas
+
+    def execute(self, sql, params=None):
+        pass
+
+    def fetchall(self):
+        return self._filas
+
+
+# Moreno, caso real (jacc titulo = 0.73): dos medios independientes (no un
+# agregador reflejando a otro) cubriendo el mismo hecho.
+_TITULAR_MORENO_NUEVO = 'Moreno: un jubilado mató a tiros a uno de los delincuentes que intentó asaltar a su nieto'
+_TITULAR_MORENO_YA_GUARDADO = 'Un jubilado mató a balazos a uno de los delincuentes que intentó asaltar el comercio de su nieto en Moreno'
+_LAT_MORENO, _LNG_MORENO = -34.6534, -58.7880
+
+
+def test_detecta_duplicado_semantico_entre_medios_independientes():
+    cursor = _CursorFalso([(5, _TITULAR_MORENO_YA_GUARDADO, _LAT_MORENO, _LNG_MORENO)])
+    resultado = _detectar_duplicado_semantico(
+        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO,
+        datetime(2026, 10, 1, tzinfo=timezone.utc),
+    )
+    assert resultado == 5
+
+
+def test_no_confunde_dos_hechos_distintos_del_mismo_partido_y_tema():
+    """Caso real al limite (jacc titulo = 0.44): un policia de la Ciudad
+    asesinado en Merlo y un comisario bonaerense asesinado en La Matanza --
+    mismo patron narrativo (policia, asesinado, robo), hechos distintos. El
+    umbral conservador (0.70) tiene que rechazar este par."""
+    titulo_nuevo = 'Un comisario de la policía bonaerense fue asesinado durante un intento de robo en La Matanza'
+    titular_candidato = 'Un policía de la Ciudad fue asesinado durante un intento de robo en Merlo: recibió dos disparos en el pecho'
+    cursor = _CursorFalso([(9, titular_candidato, -34.6534, -58.7880)])
+    resultado = _detectar_duplicado_semantico(
+        cursor, titulo_nuevo, 'inseguridad', -34.6534, -58.7880,
+        datetime(2026, 10, 1, tzinfo=timezone.utc),
+    )
+    assert resultado is None
+
+
+def test_no_marca_duplicado_si_el_candidato_esta_lejos_aunque_el_titulo_coincida():
+    """Mismo par de Moreno (jacc 0.73, por encima del umbral), pero la
+    candidata esta geograficamente lejos (>1500m): no puede ser el mismo
+    hecho aunque el titulo sea casi idéntico, asi que no se marca."""
+    lat_lejos, lng_lejos = _LAT_MORENO + 0.05, _LNG_MORENO  # ~5.5km al norte
+    cursor = _CursorFalso([(5, _TITULAR_MORENO_YA_GUARDADO, lat_lejos, lng_lejos)])
+    resultado = _detectar_duplicado_semantico(
+        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO,
+        datetime(2026, 10, 1, tzinfo=timezone.utc),
+    )
+    assert resultado is None
+
+
+def test_sin_candidatas_no_hay_duplicado():
+    cursor = _CursorFalso([])
+    resultado = _detectar_duplicado_semantico(
+        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO,
+        datetime(2026, 10, 1, tzinfo=timezone.utc),
+    )
+    assert resultado is None
+
+
+def test_tokens_similitud_ignora_stopwords_y_palabras_cortas():
+    assert _tokens_similitud('Un robo en La Plata') == {'robo', 'plata'}

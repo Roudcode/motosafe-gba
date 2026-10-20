@@ -97,3 +97,52 @@ casos reales con calle + partido esperado, en la misma línea que
 `prensa_etiquetada.csv`, y no hay uno armado todavía para este aspecto
 puntual. Queda sin medir, no se inventó una muestra para no repetir el
 error que esta skill evita (no fabricar evidencia).
+
+## Implementación (SES-130, mismo día)
+
+Rodo decidió el camino: automatizar sin revisión humana, pero sin
+descartar ninguna fila (variante de la opción 2 del README original,
+sacando el paso de revisión manual).
+
+Diseño final en `backend/scrapear_noticias_robos.py`
+(`_detectar_duplicado_semantico`): antes de insertar una nota nueva, se
+busca entre las filas ya guardadas del mismo `tipo_incidente` (no ya
+marcadas como duplicado de otra) **la intersección de tres señales**, no
+el título solo:
+
+1. **Tiempo**: publicadas dentro de los últimos `DIAS_VENTANA_DUPLICADO`
+   = 5 días una de la otra.
+2. **Espacio**: a menos de `RADIO_DUPLICADO_METROS` = 1500 m (mismo punto
+   geocodificado, no solo mismo partido).
+3. **Título**: similitud Jaccard de tokens ≥ `UMBRAL_DUPLICADO_SEMANTICO`
+   = 0,70 — el umbral más conservador medido arriba, no un punto medio,
+   justamente porque acá no hay humano revisando antes de actuar.
+
+Si las tres se cumplen, la fila nueva se guarda igual (nunca se pierde el
+dato crudo) pero queda marcada con `duplicado_de_id` apuntando a la
+original (columna agregada en
+`backend/migrations/004_duplicados_prensa.sql`, con el mismo patrón de
+seguridad en `_asegurar_tabla`). `_FILTRO_FUENTES_PRENSA_SQL` en
+`backend/main.py` excluye las filas marcadas de `/reportes-prensa` y del
+ajuste de riesgo por reportes recientes — mismo mecanismo que ya usa para
+las filas viejas de Google Noticias (no se borra nada, se deja de
+contar).
+
+Verificado con 5 pruebas nuevas en `backend/tests/test_scrapear_noticias_robos.py`,
+usando los mismos casos reales de esta medición: el par de Moreno (jacc
+0,73, dos medios independientes) se detecta y marca; el par límite de
+Merlo/La Matanza (jacc 0,44) se rechaza correctamente aunque comparta
+partido y tema; el mismo par de Moreno a más de 1500 m se rechaza aunque
+el título coincida. 127/127 pruebas de backend en verde (sin contar
+`test_integracion_postgres.py`, que necesita una base real, y
+`test_run_dev.py`, que falla por falta de `uvicorn` en este entorno —
+ninguna de las dos relacionada con este cambio).
+
+**Lo que no se pudo verificar esta sesión**: el filtro de ventana de
+días y de `duplicado_de_id IS NULL` vive en el `WHERE` de la consulta SQL
+real, no en código Python — no hay forma de probarlo sin una base
+Postgres real, inalcanzable desde este entorno. Tampoco se corrió el
+scraper contra la base de producción para medir cuántas filas reales
+quedarían marcadas con esta lógica. Falta aplicar la migración
+(`backend/migrar.py`) y correr el scraper real contra la base para
+confirmar en vivo.

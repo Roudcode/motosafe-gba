@@ -1072,7 +1072,13 @@ VIGENCIA_HORAS_PRENSA = 24 * 30  # "ultimo mes", pedido explicito de Rodo -- no 
 # Google Noticias se retiró por su robots.txt (DEC-011). Sus filas viejas siguen
 # en la tabla, pero la API no las devuelve ni las usa para el riesgo. No se
 # borran: limpiar la tabla es una decisión aparte, con backup (SES-080).
-_FILTRO_FUENTES_PRENSA_SQL = "NOT starts_with(fuente, 'Google Noticias')"
+#
+# duplicado_de_id IS NULL (A09, SES-129/130): scrapear_noticias_robos.py marca
+# una fila como duplicado semantico de otra (mismo hecho, cubierto por un medio
+# distinto) sin borrarla -- el dato crudo queda completo y auditable en la
+# tabla. Este filtro es lo que la excluye de lo que de verdad se muestra y se
+# cuenta, igual que ya hace con Google Noticias.
+_FILTRO_FUENTES_PRENSA_SQL = "NOT starts_with(fuente, 'Google Noticias') AND duplicado_de_id IS NULL"
 
 # Fecha de referencia de cada nota: la de publicación si es plausible (no más de
 # un día después de la ingesta ni más de VIGENCIA_HORAS_PRENSA antes), y si no, la

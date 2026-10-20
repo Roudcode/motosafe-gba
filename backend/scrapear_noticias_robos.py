@@ -263,7 +263,7 @@ import sys
 import time
 import unicodedata
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 import httpx
@@ -603,10 +603,109 @@ def firma_titular(titulo, nombre_fuente):
 
     La firma conserva el título editorial completo de cada fuente directa.
     No intenta deduplicación semántica: dos titulares parecidos pueden
-    describir incidentes distintos.
+    describir incidentes distintos. Esa deduplicación semántica -- el mismo
+    hecho cubierto por dos medios, con URL y título distintos -- se maneja
+    por separado, contra la base, en _detectar_duplicado_semantico.
     """
     del nombre_fuente
     return normalizar(titulo)
+
+
+# --- A09: deduplicacion semantica entre fuentes (SES-129/130) ---
+#
+# El chequeo de arriba (firma_titular) y el ON CONFLICT(url_fuente) del
+# INSERT dedupean por titulo exacto (solo dentro de la misma corrida) o URL
+# exacta (entre corridas) -- ninguno detecta el caso real mas comun: el
+# mismo hecho cubierto por dos medios distintos, con URL y titulo distintos.
+#
+# Medido sobre 450 filas reales de reportes_prensa (docs/evidencias/
+# 2026-10-20/A09-dedup-semantica/): comparando similitud de titulo (Jaccard
+# de tokens sin stopwords) entre pares de fuente distinta, a partir de
+# jaccard >= 0.70 TODOS los pares encontrados eran duplicados inequivocos
+# del mismo hecho; por debajo de ~0.45 el metodo ya confunde hechos
+# distintos que comparten partido y tema (ej. "policia asesinado en un
+# robo" en dos partidos distintos). El margen es angosto.
+#
+# Decision (Rodo, 2026-10-20): automatizar sin revision humana, pero sin
+# borrar nada. Una fila detectada como duplicado semantico se guarda
+# igual -- el dato crudo queda completo y auditable -- pero se marca con
+# duplicado_de_id (ver migrations/004_duplicados_prensa.sql) y
+# _FILTRO_FUENTES_PRENSA_SQL en main.py la excluye de /reportes-prensa y
+# del ajuste de riesgo por reportes recientes. Nada se pierde ni queda
+# fuera de alcance para revisar o revertir despues.
+#
+# Para que la automatizacion sin revision humana no arriesgue un falso
+# merge (perder un hecho real de la cuenta de exposicion), se exige la
+# interseccion de tres señales, no el titulo solo: mismo tipo_incidente,
+# cerca en el tiempo (DIAS_VENTANA_DUPLICADO) y cerca en el espacio
+# (RADIO_DUPLICADO_METROS) -- y el umbral de similitud mas conservador
+# medido (UMBRAL_DUPLICADO_SEMANTICO), no un punto medio.
+UMBRAL_DUPLICADO_SEMANTICO = 0.70
+RADIO_DUPLICADO_METROS = 1500
+DIAS_VENTANA_DUPLICADO = 5
+
+_STOPWORDS_SIMILITUD = {
+    'el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'a', 'y', 'que', 'por',
+    'con', 'su', 'se', 'al', 'del', 'le', 'lo',
+}
+
+
+def _tokens_similitud(titulo):
+    """Palabras significativas de un titular para comparar similitud entre
+    fuentes: sin acentos/mayusculas (normalizar), sin puntuacion, sin
+    stopwords ni palabras de una o dos letras (que no discriminan)."""
+    texto = re.sub(r'[^a-z0-9\s]', ' ', normalizar(titulo))
+    return {p for p in texto.split() if p not in _STOPWORDS_SIMILITUD and len(p) > 2}
+
+
+def _distancia_metros(lat1, lng1, lat2, lng2):
+    """Haversine simple, igual a la de main.py (_distancia_metros) -- de
+    sobra de precision para radios de hasta un par de km."""
+    import math
+    R = 6371000
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lng2 - lng1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, publicado_en):
+    """Busca entre las filas ya guardadas (mismo tipo de incidente, no ya
+    marcadas como duplicado de otra) si alguna, cerca en el tiempo y en el
+    espacio, tiene un titulo lo bastante parecido como para ser el mismo
+    hecho cubierto por otro medio. Devuelve el id de la mejor candidata si
+    supera el umbral conservador, o None. No decide borrar nada -- eso lo
+    hace el llamador marcando duplicado_de_id en el INSERT."""
+    referencia = publicado_en or datetime.now(timezone.utc)
+    desde = referencia - timedelta(days=DIAS_VENTANA_DUPLICADO)
+    cur.execute("""
+        SELECT id, titular, lat, lng
+        FROM reportes_prensa
+        WHERE tipo_incidente = %s
+          AND duplicado_de_id IS NULL
+          AND COALESCE(publicado_en, creado_en) >= %s
+    """, (categoria, desde))
+    candidatos = cur.fetchall()
+
+    tokens_nuevo = _tokens_similitud(titulo)
+    if not tokens_nuevo:
+        return None
+
+    mejor_id, mejor_similitud = None, 0.0
+    for cid, ctitular, clat, clng in candidatos:
+        if clat is None or clng is None:
+            continue
+        if _distancia_metros(lat, lng, clat, clng) > RADIO_DUPLICADO_METROS:
+            continue
+        tokens_cand = _tokens_similitud(ctitular)
+        if not tokens_cand:
+            continue
+        similitud = len(tokens_nuevo & tokens_cand) / len(tokens_nuevo | tokens_cand)
+        if similitud > mejor_similitud:
+            mejor_similitud, mejor_id = similitud, cid
+
+    return mejor_id if mejor_similitud >= UMBRAL_DUPLICADO_SEMANTICO else None
 
 
 def _contiene_termino(texto_norm, termino):
@@ -1282,6 +1381,10 @@ def _asegurar_tabla(cur):
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS tipo_incidente VARCHAR(20) NOT NULL DEFAULT 'robo'")
     cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS relacionado_moto BOOLEAN NOT NULL DEFAULT FALSE")
     cur.execute("ALTER TABLE reportes_prensa ALTER COLUMN url_fuente TYPE TEXT")
+    # A09 (SES-129/130): columna de deduplicacion semantica -- ver
+    # migrations/004_duplicados_prensa.sql, misma logica de red de seguridad
+    # que las dos columnas de arriba.
+    cur.execute("ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS duplicado_de_id INTEGER REFERENCES reportes_prensa(id)")
 
 
 def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, contadores, publicado_en=None):
@@ -1339,11 +1442,16 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
 
     if guardar:
         try:
+            # A09 (SES-129/130): se busca ANTES de insertar, contra lo que ya
+            # esta guardado -- si matchea, la fila se guarda igual (nada se
+            # pierde) pero marcada; _FILTRO_FUENTES_PRENSA_SQL en main.py la
+            # excluye de los calculos de exposicion.
+            duplicado_de_id = _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, publicado_en)
             cur.execute("""
-                INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en, duplicado_de_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (url_fuente) DO NOTHING
-            """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en))
+            """, (lat, lng, nivel, radio, titulo, url, nombre_fuente, categoria, es_moto, publicado_en, duplicado_de_id))
             guardada = cur.rowcount > 0
             # Commit por fila: una transacción abierta toda la corrida retenía
             # locks sobre reportes_prensa que, combinados con el DDL de la API,
@@ -1352,6 +1460,9 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
             if guardada:
                 contadores['guardadas'] += 1
                 contadores['guardadas_por_fuente'][nombre_fuente] = contadores['guardadas_por_fuente'].get(nombre_fuente, 0) + 1
+                if duplicado_de_id is not None:
+                    contadores['duplicadas_semanticas'] += 1
+                    print(f"  [duplicado semantico de id={duplicado_de_id}] ({categoria}) {titulo}")
             else:
                 # ON CONFLICT (url_fuente) DO NOTHING: la nota ya estaba. Antes
                 # esto no se contaba y el log no distinguía "ya estaba" de "no se guardó".
@@ -1397,7 +1508,7 @@ def main():
 
     contadores = {
         'candidatas': 0, 'candidatas_moto': 0, 'ubicadas': 0, 'guardadas': 0, 'ya_en_base': 0,
-        'duplicadas': 0, 'fuera_de_zona': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
+        'duplicadas': 0, 'duplicadas_semanticas': 0, 'fuera_de_zona': 0, 'firmas_vistas': set(), 'candidatas_por_tipo': {},
         'candidatas_por_fuente': {}, 'ubicadas_por_fuente': {}, 'guardadas_por_fuente': {},
     }
 
@@ -1496,6 +1607,8 @@ def main():
              else " (dry-run, no se guardo nada -- corré con --guardar para insertar)"))
     print(f"  Relacionadas con moto: {contadores['candidatas_moto']} candidatas")
     print(f"  Sin ubicar porque el geocode cayó fuera de la zona de la nota: {contadores['fuera_de_zona']}")
+    if guardar:
+        print(f"  Guardadas pero marcadas como duplicado semantico de otra fuente (A09): {contadores['duplicadas_semanticas']}")
     for fuente in sorted(contadores['candidatas_por_fuente']):
         candidatas = contadores['candidatas_por_fuente'][fuente]
         ubicadas = contadores['ubicadas_por_fuente'].get(fuente, 0)

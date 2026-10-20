@@ -1,0 +1,11 @@
+-- A09 (SES-129/130): deduplicacion semantica entre fuentes de prensa.
+-- El mismo hecho real cubierto por dos medios distintos tiene URL y
+-- titulo distintos, asi que ni la deduplicacion por titulo exacto (dentro
+-- de una corrida) ni el UNIQUE de url_fuente (entre corridas) lo detectan.
+-- La fila duplicada no se borra -- se guarda igual, con el dato crudo
+-- completo y auditable -- pero queda marcada con una referencia a la fila
+-- original, y main.py la excluye de /reportes-prensa y del ajuste de
+-- riesgo por reportes recientes (_FILTRO_FUENTES_PRENSA_SQL). Ver
+-- docs/evidencias/2026-10-20/A09-dedup-semantica/README.md para la
+-- medicion que calibro el umbral usado en scrapear_noticias_robos.py.
+ALTER TABLE reportes_prensa ADD COLUMN IF NOT EXISTS duplicado_de_id INTEGER REFERENCES reportes_prensa(id);
