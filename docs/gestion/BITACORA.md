@@ -1760,3 +1760,16 @@ Columna nueva `duplicado_de_id` (nullable, FK a la misma tabla) en `backend/migr
 5 pruebas nuevas en `backend/tests/test_scrapear_noticias_robos.py`, con los mismos casos reales de la medición: el par de Moreno (jacc 0,73, dos medios independientes) se detecta y marca; el par límite de Merlo/La Matanza (jacc 0,44, mismo tema y patrón narrativo, hechos distintos) se rechaza correctamente; el mismo par de Moreno puesto a más de 1500m se rechaza aunque el título coincida casi textual. 127/127 pruebas de backend en verde (excluidas `test_integracion_postgres.py`, que necesita base real, y `test_run_dev.py`, que falla por falta de `uvicorn` en este entorno -- ninguna de las dos por este cambio).
 
 Sin verificar esta sesión: el filtro de ventana de días y de `duplicado_de_id IS NULL` vive en el `WHERE` de la consulta SQL real, no en código Python testeable sin Postgres -- inalcanzable desde este entorno. Tampoco se aplicó la migración ni se corrió el scraper contra la base real para ver cuántas filas existentes quedarían marcadas. Evidencia completa en `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md`.
+
+## SES-131 (2026-10-20) — A17: dos extracciones más de App.jsx (HerramientasMenu, ReportSheet)
+
+Mientras se esperaba la corrida real del scraper de A09 (dry-run en segundo plano en la máquina de Rodo/Codex), se siguió con A17.
+
+Extraídos dos bloques más, mismo criterio que `RutaResumenPanel` (SES-128): autocontenidos, interfaz de props chica, corte-y-pegue sin cambio de comportamiento.
+
+- `HerramientasMenu.jsx`: el menú flotante de "más herramientas" (ubicación, modo viaje, vista inclinada, estadísticas, cerrar sesión). 11 props.
+- `ReportSheet.jsx`: el botón flotante "Reportar" y la hoja de categorías que se abre al tocarlo. 7 props (usa `CATEGORIAS_REPORTE` importado directo de `constants.js`, no como prop).
+
+`App.jsx` bajó de 2305 a 2265 líneas. Lint sacó 6 imports de íconos sin uso tras la extracción (`TriangleAlert`, `Bike`, `Box`, `BarChart3`, `LogOut`, `Wrench`). Verificado con 93/93 tests, lint y build limpios; sin verificación visual en navegador en vivo (misma limitación de siempre: necesita el stack completo con Postgres + auth).
+
+Lo que queda de A17 sigue siendo lo más complicado: navegación activa (`navegacion-panel`, `nav-resumen-mini`, `velocimetro`), que comparten estado de viaje en vivo entre sí (velocidad, distancia restante, ETA), la barra de búsqueda y el panel de detalle de zona. Esos tienen estado compartido real, no son un corte-y-pegue tan directo como los cuatro bloques ya extraídos -- quedan para una sesión que se dedique específicamente a desenredar ese estado compartido antes de separar la UI.

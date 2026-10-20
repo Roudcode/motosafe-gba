@@ -3,7 +3,7 @@ import './App.css'
 
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed,
-  TriangleAlert, Compass, Bike, Box, BarChart3, LogOut, Wrench, WifiOff,
+  Compass, WifiOff,
   Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper, ArrowUpRight, ArrowUp,
 } from 'lucide-react'
 
@@ -29,6 +29,8 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { CapasPanel } from './components/CapasPanel'
 import { ActividadPortal } from './components/ActividadPortal'
 import { RutaResumenPanel } from './components/RutaResumenPanel'
+import { HerramientasMenu } from './components/HerramientasMenu'
+import { ReportSheet } from './components/ReportSheet'
 // MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
 const MapaMotoSafe = lazy(() => import('./components/MapaMotoSafe').then((m) => ({ default: m.MapaMotoSafe })))
 import { useBusquedaDireccion } from './hooks/useBusquedaDireccion'
@@ -2226,62 +2228,20 @@ function App() {
         <button className="route-fab panel-enter" style={{ animationDelay: '0.22s' }} onClick={abrirPanelRuta}><Compass size={16} /> <span>Trazar ruta</span></button>
       )}
 
-      <div className="herramientas-stack">
-        {herramientasAbiertas && (
-          <div className="herramientas-menu panel-enter">
-            <button onClick={() => { pedirUbicacion(); setHerramientasAbiertas(false) }}>
-              {buscandoUbicacion ? <span className="spinner" /> : <LocateFixed size={15} />} Mi ubicación
-            </button>
-            <button className={modoViaje ? 'activo' : ''} onClick={toggleModoViaje}>
-              <Bike size={15} /> Modo Viaje {modoViaje ? '· activo' : ''}
-            </button>
-            {modoViaje && (
-              <button className={vistaNavegacion ? 'activo' : ''} onClick={() => setVistaNavegacion((v) => !v)}>
-                <Box size={15} /> Vista inclinada {vistaNavegacion ? '· activa' : ''}
-              </button>
-            )}
-            <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
-              <BarChart3 size={15} /> Estadísticas
-            </button>
-            {sesion && (
-              <button onClick={() => { setHerramientasAbiertas(false); sesion.cerrarSesion() }} title={`Sesión de ${sesion.usuario}`}>
-                <LogOut size={15} /> Cerrar sesión
-              </button>
-            )}
-          </div>
-        )}
-        <button
-          className={`herramientas-fab ${herramientasAbiertas ? 'activo' : ''}`}
-          onClick={() => setHerramientasAbiertas((v) => !v)}
-          aria-label="Más herramientas"
-          aria-expanded={herramientasAbiertas}
-        >
-          {herramientasAbiertas ? <X size={18} /> : <Wrench size={18} />}
-        </button>
-      </div>
+      <HerramientasMenu
+        herramientasAbiertas={herramientasAbiertas} setHerramientasAbiertas={setHerramientasAbiertas}
+        pedirUbicacion={pedirUbicacion} buscandoUbicacion={buscandoUbicacion}
+        modoViaje={modoViaje} toggleModoViaje={toggleModoViaje}
+        vistaNavegacion={vistaNavegacion} setVistaNavegacion={setVistaNavegacion}
+        setStatsAbierto={setStatsAbierto} setActividadAbierta={setActividadAbierta} setCapasAbiertas={setCapasAbiertas}
+        sesion={sesion}
+      />
 
-      <button className={`report-fab panel-enter ${paso !== 'idle' ? 'active' : ''} ${panelRuta.montado ? 'oculto-por-ruta' : ''}`} style={{ animationDelay: '0.3s' }} onClick={iniciarReporte} aria-label={paso === 'idle' ? 'Reportar' : undefined}>
-        {paso === 'buscando' ? <span className="spinner" /> : paso === 'eligiendo' ? <X size={16} /> : <TriangleAlert size={16} />}
-        <span>{paso === 'buscando' ? 'Ubicando...' : paso === 'eligiendo' ? 'Cancelar' : 'Reportar'}</span>
-      </button>
-
-      {paso === 'eligiendo' && (
-        <div className="report-sheet hazard-edge">
-          <div className="report-sheet-cabecera">
-            <h3>¿Qué estás viendo en la vía?</h3>
-            <button type="button" className="report-sheet-cerrar" aria-label="Cancelar reporte" onClick={() => { setPaso('idle'); setCampoActivo(null) }}><X size={16} /></button>
-          </div>
-          <div className={`report-options ${!ubicacionReporte ? 'deshabilitadas' : ''}`}>
-            {CATEGORIAS_REPORTE.map((cat) => (
-              <button key={cat.id} onClick={() => confirmarReporte(cat.id)}><cat.Icon size={15} /> {cat.label}</button>
-            ))}
-          </div>
-          <p className="report-hint">
-            <MapPin size={12} />
-            {ubicacionReporte ? 'Ubicación por GPS -- tocá el mapa si no es exacta.' : 'Tocá el mapa para marcar dónde fue.'}
-          </p>
-        </div>
-      )}
+      <ReportSheet
+        paso={paso} setPaso={setPaso} setCampoActivo={setCampoActivo}
+        panelRutaMontado={panelRuta.montado} iniciarReporte={iniciarReporte}
+        ubicacionReporte={ubicacionReporte} confirmarReporte={confirmarReporte}
+      />
     </div>
   )
 }
