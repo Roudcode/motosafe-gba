@@ -4,7 +4,7 @@ import './App.css'
 import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, LogOut, Wrench, WifiOff,
-  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper, ArrowUpRight,
+  Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper, ArrowUpRight, ArrowUp,
 } from 'lucide-react'
 
 import {
@@ -1579,40 +1579,53 @@ function App() {
           <span className="brand-badge">GBA</span>
         </div>
         <div className="topbar-right">
-          {/* En navegación se saca todo lo que no es la información de viaje
-              en sí -- tema, capas y clima son decisiones de exploración, no
-              algo que se toque manejando. Menos chrome arriba también le
-              deja más aire vertical a la tarjeta de próximo giro. */}
-          {!vistaNavegacion && <ThemeToggle tema={tema} onCambiar={toggleTema} />}
-          {!vistaNavegacion && (
-            <button
-              className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'hexagonos' ? 'capas-con-cambios' : ''}`}
-              onClick={() => setCapasAbiertas((v) => !v)}
-              aria-label="Capas del mapa"
-              aria-expanded={capasAbiertas}
-              title="Capas del mapa"
-            >
-              <Layers size={15} />
-            </button>
-          )}
-          {!vistaNavegacion && (
-            <button
-              className="capa-toggle"
-              onClick={() => setPortalActividadAbierto(true)}
-              aria-label="Actividad: prensa y reportes de la ciudad"
-              title="Actividad"
-            >
-              <Newspaper size={15} />
-            </button>
-          )}
-          {clima && !vistaNavegacion && (
-            <div
-              className="clima-badge"
-              title={`${climaInfo.label}: el nivel de riesgo que ves ya tiene en cuenta este clima`}
-            >
-              <climaInfo.Icon size={13} /> {Math.round(clima.temperatura)}°C
-            </div>
-          )}
+          {/* SES-120: separado en dos filas fijas (iconos+clima arriba,
+              estado abajo) en vez de depender de que el flex-wrap de
+              celular decida solo cuándo no entra. El pill de estado
+              (textoTopbar) cambia mucho de largo según el caso -- "3
+              zonas", "2 zonas críticas", "Ruta: 1.6 km · 5 min", "Modo
+              Viaje" -- y con todo en una sola fila de flex, a veces entraba
+              y a veces no, asi que la topbar cambiaba de alto de forma
+              impredecible segun el texto (eso es lo que se vio como "a
+              veces se agranda todo", no una medida puntual mal puesta).
+              Fijando el pill siempre en su propia fila, el alto de la
+              topbar deja de depender del contenido. */}
+          <div className="topbar-right-iconos">
+            {/* En navegación se saca todo lo que no es la información de viaje
+                en sí -- tema, capas y clima son decisiones de exploración, no
+                algo que se toque manejando. Menos chrome arriba también le
+                deja más aire vertical a la tarjeta de próximo giro. */}
+            {!vistaNavegacion && <ThemeToggle tema={tema} onCambiar={toggleTema} />}
+            {!vistaNavegacion && (
+              <button
+                className={`capa-toggle ${capaInseguridad !== 'apagado' || capaMapa !== 'hexagonos' ? 'capas-con-cambios' : ''}`}
+                onClick={() => setCapasAbiertas((v) => !v)}
+                aria-label="Capas del mapa"
+                aria-expanded={capasAbiertas}
+                title="Capas del mapa"
+              >
+                <Layers size={15} />
+              </button>
+            )}
+            {!vistaNavegacion && (
+              <button
+                className="capa-toggle"
+                onClick={() => setPortalActividadAbierto(true)}
+                aria-label="Actividad: prensa y reportes de la ciudad"
+                title="Actividad"
+              >
+                <Newspaper size={15} />
+              </button>
+            )}
+            {clima && !vistaNavegacion && (
+              <div
+                className="clima-badge"
+                title={`${climaInfo.label}: el nivel de riesgo que ves ya tiene en cuenta este clima`}
+              >
+                <climaInfo.Icon size={13} /> {Math.round(clima.temperatura)}°C
+              </div>
+            )}
+          </div>
           <div
             className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${tengoReportesPropios ? 'clickeable' : ''}`}
             onClick={() => { if (tengoReportesPropios) { setActividadAbierta((v) => !v); setCapasAbiertas(false) } }}
@@ -2239,7 +2252,7 @@ function App() {
             </div>
           )}
           {zonaMostrada.ajustadoPorReciente && (
-            <p className="popup-ajuste">⬆ Nivel subido: {zonaMostrada.motivoAjuste}</p>
+            <p className="popup-ajuste"><ArrowUp size={12} /> Nivel subido: {zonaMostrada.motivoAjuste}</p>
           )}
           {zonaMostrada.ajuste.subio && (
             <div className="detalle-ajuste">
@@ -2261,42 +2274,44 @@ function App() {
           mismo espacio de pantalla en celular (a pedido de Rodo: que
           "Opciones de ruta" pueda usar ese lugar en vez de compartirlo). */}
       {!vistaNavegacion && !panelRuta.montado && (
-        <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
-          <div className="legend-header">
-            <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
-            {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+        <div className="legend-stack">
+          <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
+            <div className="legend-header">
+              <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
+              {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+            </div>
+            {capaMapa === 'hexagonos' && (
+              <div className="portal-actividad-filtros-fila legend-filtro-hexagono">
+                {OPCIONES_FILTRO_HEXAGONO.map((f) => (
+                  <button key={f.id} className={filtroHexagono === f.id ? 'activo' : ''} onClick={() => setFiltroHexagono(f.id)}>{f.label}</button>
+                ))}
+              </div>
+            )}
+            <TextoCobertura meta={coberturaCapas?.[capaMapa === 'corredores' ? 'corredores' : 'hotspots']} prefijo="Siniestros" />
+            {Object.entries(NIVELES).map(([key, val]) => (
+              <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
+                <span className="legend-swatch" style={{ background: val.color }} />
+                {val.label}
+                <span className="legend-count">{conteos[key]}</span>
+              </button>
+            ))}
           </div>
-          {capaMapa === 'hexagonos' && (
-            <div className="portal-actividad-filtros-fila legend-filtro-hexagono">
-              {OPCIONES_FILTRO_HEXAGONO.map((f) => (
-                <button key={f.id} className={filtroHexagono === f.id ? 'activo' : ''} onClick={() => setFiltroHexagono(f.id)}>{f.label}</button>
+
+          {capaInseguridad !== 'apagado' && (
+            <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
+              <div className="legend-header">
+                <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
+              </div>
+              <TextoCobertura meta={coberturaCapas?.[`inseguridad_${capaInseguridad}`]} prefijo="Delitos" />
+              {Object.entries(NIVELES).map(([key, val]) => (
+                <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
+                  <span className="legend-swatch" style={{ background: NIVELES_INSEGURIDAD_COLOR[key] }} />
+                  {val.label}
+                  <span className="legend-count">{conteosInseguridad[key]}</span>
+                </button>
               ))}
             </div>
           )}
-          <TextoCobertura meta={coberturaCapas?.[capaMapa === 'corredores' ? 'corredores' : 'hotspots']} prefijo="Siniestros" />
-          {Object.entries(NIVELES).map(([key, val]) => (
-            <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
-              <span className="legend-swatch" style={{ background: val.color }} />
-              {val.label}
-              <span className="legend-count">{conteos[key]}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {capaInseguridad !== 'apagado' && !vistaNavegacion && !panelRuta.montado && (
-        <div className="legend legend-inseguridad panel-enter hazard-edge" style={{ animationDelay: '0.22s' }}>
-          <div className="legend-header">
-            <span className="legend-title">{OPCIONES_CAPA_INSEGURIDAD.find((o) => o.id === capaInseguridad)?.label} <em>(datos GCBA)</em></span>
-          </div>
-          <TextoCobertura meta={coberturaCapas?.[`inseguridad_${capaInseguridad}`]} prefijo="Delitos" />
-          {Object.entries(NIVELES).map(([key, val]) => (
-            <button key={key} className={`legend-item ${nivelesActivos.has(key) ? '' : 'inactive'}`} onClick={() => toggleNivel(key)}>
-              <span className="legend-swatch" style={{ background: NIVELES_INSEGURIDAD_COLOR[key] }} />
-              {val.label}
-              <span className="legend-count">{conteosInseguridad[key]}</span>
-            </button>
-          ))}
         </div>
       )}
 

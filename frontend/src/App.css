@@ -272,7 +272,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .hazard-edge::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
   background: repeating-linear-gradient(-45deg, var(--amarillo) 0 7px, var(--bg) 7px 14px);
-  opacity: 0.7; border-radius: 12px 12px 0 0;
+  opacity: 0.7; border-radius: var(--r-md) var(--r-md) 0 0;
 }
 
 /* ===== Pantalla de carga ===== */
@@ -313,7 +313,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .onboarding-cerrar { position: absolute; top: 12px; right: 12px; }
 .onboarding-entendido {
   margin-top: 8px; width: 100%; background: var(--amarillo); color: #14171A; border: none;
-  border-radius: 10px; padding: 11px; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  border-radius: var(--r-md); padding: 11px; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
   font-size: var(--fs-md); cursor: pointer;
 }
 
@@ -352,7 +352,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur)); max-height: 80vh; overflow-y: auto;
   box-shadow: var(--shadow-float);
 }
-.capas-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.capas-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
 .capas-grupo-titulo {
   display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-xs);
   text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dimmer); margin: 12px 0 6px;
@@ -395,13 +395,25 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    principal (es lo primero que se lee de un vistazo, antes que la calle),
    y el "después" separado con su propio borde y opacidad reducida para que
    se lea como dato secundario, no como continuación del mismo mensaje. */
+/* SES-119: 18px suelto. El breakpoint angosto (linea ~1373) ya lo pisa con
+   --r-lg para celular -- se pasa la base al mismo token para que no sea un
+   valor distinto "por accidente" en desktop/tablet.
+   El borde tambien era un hairline blanco fijo (rgba(255,255,255,0.08)) en
+   vez de var(--border) -- en tema claro, --surface-solid pasa a blanco y
+   ese borde quedaba practicamente invisible (blanco sobre blanco), a
+   diferencia de cualquier otra tarjeta flotante de la app, que siempre usa
+   var(--border) y por eso se ve bien en los dos temas. El inset highlight
+   que lo acompañaba era el mismo problema (solo se nota en oscuro, no lo
+   usa ninguna otra tarjeta) asi que se saca en vez de arreglarlo para los
+   dos temas: la sombra grande ya alcanza para la jerarquia de esta tarjeta,
+   que es la mas prominente en pantalla durante la navegacion. */
 .navegacion-panel {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1002;
   display: flex; align-items: center; gap: 14px;
-  background: var(--surface-solid); border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px; padding: 14px 22px 14px 14px;
+  background: var(--surface-solid); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 14px 22px 14px 14px;
   width: max-content; max-width: min(90vw, 460px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 .navegacion-icono-chip {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -442,15 +454,37 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: space-between;
   padding: calc(14px + var(--safe-top)) calc(var(--sp-5) + var(--safe-right)) 14px calc(var(--sp-5) + var(--safe-left));
-  background: linear-gradient(180deg, rgba(var(--bg-rgb),0.92) 0%, rgba(var(--bg-rgb),0) 100%);
+  /* El degrade se apagaba a 0% de opacidad justo donde vive la fila de
+     iconos (marca + toggles + clima + estado) -- en un punto cualquiera del
+     mapa, si una burbuja de hotspot o un cluster de prensa quedaba
+     geometricamente debajo de esa fila (pasa seguido: el mapa se mueve, la
+     topbar no), se veia "a traves" de los botones, como si vivieran
+     flotando sobre el dato en vez de tener su propia superficie (SES-117,
+     visto real con el buscador abierto sobre Palermo). No es un problema de
+     capas -- el click siempre fue de la topbar (pointer-events lo confirma)
+     -- es que el fondo dejaba de taparlo ahi. Un segundo stop solido antes
+     de empezar a desvanecer mantiene la fila de controles siempre legible y
+     el degrade sigue existiendo (se sigue viendo "flotante" sobre el mapa),
+     solo que ahora se angosta al tramo bajo la fila de iconos en vez de
+     empezar a comerse la fila misma. */
+  background: linear-gradient(180deg, rgba(var(--bg-rgb),0.92) 0%, rgba(var(--bg-rgb),0.92) 65%, rgba(var(--bg-rgb),0) 100%);
   pointer-events: none;
 }
 .brand { display: flex; align-items: center; gap: var(--sp-2); font-family: 'Space Grotesk', sans-serif; }
 .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--amarillo); box-shadow: 0 0 10px rgba(255,201,51,0.7); }
 .brand-name { font-weight: 700; font-size: var(--fs-xl); letter-spacing: -0.02em; color: var(--text); }
-.brand-badge { font-size: var(--fs-sm); font-weight: 700; background: var(--amarillo); color: #14171A; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.03em; }
+/* SES-119: 4px suelto -- rectangulo suave al lado de dos pills hermanos
+   (.clima-badge/.topbar-status, --r-xl) en la misma fila del topbar. Pasa a
+   --r-pill para compartir el mismo lenguaje de cápsula. */
+.brand-badge { font-size: var(--fs-sm); font-weight: 700; background: var(--amarillo); color: #14171A; padding: 2px 7px; border-radius: var(--r-pill); letter-spacing: 0.03em; }
 
 .topbar-right { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+/* SES-120: subgrupo iconos+clima (antes eran hijos sueltos de .topbar-right
+   junto con el pill de estado). En desktop esto no cambia nada -- sigue
+   siendo una sola fila con los mismos elementos adentro -- pero permite que
+   en celular el pill de estado se separe a una fila propia fija en vez de
+   depender de si el resto entra o no (ver media query). */
+.topbar-right-iconos { display: flex; align-items: center; gap: 10px; }
 .clima-badge {
   /* Rediseño SES-114: mismo padding que .topbar-status (antes 6px 10px vs
      6px 12px -- dos pills hermanos en la misma fila con aire horizontal
@@ -481,7 +515,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   max-height: calc(100vh - 190px); overflow-y: auto;
   box-shadow: var(--shadow-float);
 }
-.actividad-header, .stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.actividad-header, .stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
 .actividad-item {
   display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none;
   padding: 7px 0; cursor: pointer; text-align: left; border-top: 1px solid var(--border); color: var(--text);
@@ -509,7 +543,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .stats-subtitulo { font-size: var(--fs-sm); color: var(--text-dim); margin-bottom: 12px; }
 .stats-indice {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  background: var(--inset); border-radius: 10px; padding: 14px; margin-bottom: 14px;
+  background: var(--inset); border-radius: var(--r-md); padding: 14px; margin-bottom: 14px;
 }
 .stats-indice-numero { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-3xl); line-height: 1; }
 .stats-indice-label { font-size: var(--fs-xs); color: var(--text-dim); text-align: center; margin-top: 4px; }
@@ -521,7 +555,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .stats-barra-num { width: 26px; text-align: right; color: var(--text-dim); font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
 .stats-top-titulo {
   display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-sm);
-  text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 8px; padding-top: 6px; border-top: 1px solid var(--border);
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: var(--sp-2); padding-top: 6px; border-top: 1px solid var(--border);
 }
 .stats-top-item {
   display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none;
@@ -530,11 +564,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .stats-top-item:hover .cercanas-nombre { color: var(--azul-text); }
 .stats-top-rank { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-sm); color: var(--text-dimmer); width: 18px; flex-shrink: 0; }
 
+/* SES-120: padding vertical bajado de --sp-3 (12px) a --sp-2 (8px) -- era
+   el unico chip/tarjeta de la topbar con mas aire vertical que el icono de
+   36px adentro necesita (36 + 24 = 60px de alto total), mientras que los
+   pills hermanos (clima-badge, topbar-status) usan --sp-2 vertical y se ven
+   bien. Con --sp-2 el buscador baja a ~52px, menos pesado, sin tocar el
+   tamaño del icono ni del input. */
 .searchbar {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1000;
   display: flex; align-items: center; gap: var(--sp-2);
   background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-pill);
-  padding: var(--sp-3) var(--sp-4); width: min(340px, 80vw); backdrop-filter: blur(var(--surface-float-blur));
+  padding: var(--sp-2) var(--sp-4); width: min(340px, 80vw); backdrop-filter: blur(var(--surface-float-blur));
   box-shadow: var(--shadow-float);
 }
 /* La lupa es el botón de buscar: círculo con fondo para que se vea clickeable
@@ -580,14 +620,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-form-sugerencias {
   position: absolute; top: calc(100% + 4px); left: 16px; right: 0; z-index: 1010;
   list-style: none; background: var(--surface-solid); border: 1px solid var(--border);
-  border-radius: 10px; padding: 4px; box-shadow: var(--shadow-float-hover);
+  border-radius: var(--r-md); padding: 4px; box-shadow: var(--shadow-float-hover);
   max-height: 180px; overflow-y: auto;
 }
 .ruta-form-sugerencias li + li { margin-top: 2px; }
 .ruta-form-sin-resultados { padding: 6px 10px; color: var(--text-dim); font-size: var(--fs-sm); }
 .ruta-form-sugerencias button {
   display: flex; align-items: flex-start; gap: 7px; width: 100%; text-align: left;
-  background: none; border: none; border-radius: 7px; padding: 8px 9px;
+  background: none; border: none; border-radius: var(--r-sm); padding: 8px 9px;
   color: var(--text); font-family: 'Inter', sans-serif; font-size: var(--fs-base); line-height: 1.35;
   cursor: pointer; transition: background 0.12s ease;
 }
@@ -643,7 +683,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .zoom-controls {
   position: absolute; top: var(--yzoom); right: calc(20px + var(--safe-right)); z-index: 1000;
-  display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+  display: flex; flex-direction: column; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border);
   box-shadow: var(--shadow-float);
 }
 /* 44px, no 36px: mismo piso de touch target que theme-toggle/capa-toggle
@@ -666,7 +706,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   padding: var(--sp-4); backdrop-filter: blur(var(--surface-float-blur)); overflow: hidden;
   box-shadow: var(--shadow-float);
 }
-.cercanas-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 8px; }
+.cercanas-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: var(--sp-2); }
 .cercanas-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .cercanas-nombre { flex: 1; font-size: var(--fs-base); line-height: 1.3; }
 
@@ -712,7 +752,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   display: flex; flex-direction: column;
 }
 .ruta-resumen-scroll { overflow-y: auto; min-height: 0; }
-.ruta-resumen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ruta-resumen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
 .ruta-resumen-editar { display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; background: none; border: none; cursor: pointer; color: var(--text-dim); opacity: 0.8; }
 .ruta-resumen-editar:hover { opacity: 1; color: var(--azul); }
 .ruta-prioridad { display: flex; gap: 6px; margin-bottom: 10px; }
@@ -725,7 +765,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-prioridad button.activa { border-color: var(--azul); color: var(--azul); background: rgba(79,168,232,0.1); }
 .ruta-opcion {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
-  background: var(--inset); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; margin-bottom: 6px;
+  background: var(--inset); border: 1px solid var(--border); border-radius: var(--r-md); padding: 9px 11px; margin-bottom: 6px;
   cursor: pointer; text-align: left; font-family: 'Inter', sans-serif;
   transition: transform var(--motion-fast) ease, box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
@@ -741,7 +781,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .ruta-opcion-num { font-size: var(--fs-sm); font-weight: 700; color: var(--text); font-family: 'Space Grotesk', sans-serif; }
 .ruta-opcion-badge {
   display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: var(--fs-2xs); font-weight: 700;
-  padding: 1px 6px; border-radius: 10px; text-transform: none; vertical-align: middle;
+  padding: 1px 6px; border-radius: var(--r-pill); text-transform: none; vertical-align: middle;
 }
 /* Rediseño SES-114 (Fase 4): *-text en vez del color base -- son textos
    chicos (badges/íconos de datos), no swatches. El fondo tintado de los
@@ -802,7 +842,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    seguir", no una opción más entre varias. */
 .ruta-resumen-iniciar {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
-  margin-top: 12px; padding: 11px; border: none; border-radius: 10px; cursor: pointer;
+  margin-top: 12px; padding: 11px; border: none; border-radius: var(--r-md); cursor: pointer;
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-md); letter-spacing: 0.2px;
   background: linear-gradient(135deg, var(--verde), #2FBF71); color: #0B1620;
   box-shadow: 0 4px 16px rgba(61,220,132,0.35);
@@ -877,17 +917,30 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    Mismo criterio que ya usaba .onboarding-card. Los popups chicos del mapa
    y los botones/chips quedan con su radio propio a propósito: son otra
    escala, bordes de 16px ahí se verían desproporcionados. */
-.legend {
+/* SES-117: antes .legend y .legend-inseguridad se posicionaban cada una
+   por su cuenta (bottom: var(--b1) una, bottom: 172px fijo la otra para
+   "apilarse arriba"), asumiendo una altura fija para la primera. En
+   celular, con el filtro de hexagonos (Todo/Siniestros/Delitos) sumando
+   una fila mas, la leyenda principal crecia mas alto de lo que ese 172px
+   fijo preveia, y la de inseguridad terminaba superponiendose por encima
+   en vez de apilarse limpia (visto real, con la capa de delitos
+   encendida). .legend-stack contiene a las dos en una columna flex
+   (column-reverse: la primera en el DOM -- riesgo de siniestros -- queda
+   abajo, la segunda -- inseguridad -- arriba, mismo orden visual que
+   antes) que se apila sola segun el alto real de cada tarjeta, sin pixeles
+   adivinados. */
+.legend-stack {
   position: absolute; bottom: var(--b1); left: calc(20px + var(--safe-left)); z-index: 1000;
+  display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 8px;
+}
+.legend {
   background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: var(--sp-2) var(--sp-3); backdrop-filter: blur(var(--surface-float-blur)); font-size: var(--fs-base);
   display: flex; flex-direction: column; gap: 3px; min-width: 140px; overflow: hidden;
   box-shadow: var(--shadow-float);
 }
 
-/* La leyenda de inseguridad se apila arriba de la principal (misma columna,
-   no al lado) cuando esa capa esta prendida, para no superponerse. */
-.legend-inseguridad { bottom: 172px; border-color: #FF3B3B; }
+.legend-inseguridad { border-color: #FF3B3B; }
 .legend-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .legend-title { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 3px; }
 .legend-title em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.6; }
@@ -985,9 +1038,13 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .spinner { width: 14px; height: 14px; border: 2px solid rgba(20,23,26,0.3); border-top-color: #14171A; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* SES-119: 18px suelto -- el resto de la familia de paneles flotantes
+   (capas-panel, actividad/stats-panel, detalle-panel) usa var(--sp-4) de
+   padding parejo; report-sheet era el unico con un valor propio, 2px por
+   encima del token. */
 .report-sheet {
   position: absolute; bottom: var(--b4); right: calc(24px + var(--safe-right)); z-index: 1000; width: 280px;
-  background: var(--surface-solid); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; animation: panelIn var(--motion-slow) ease;
+  background: var(--surface-solid); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4); animation: panelIn var(--motion-slow) ease;
   box-shadow: var(--shadow-float-hover);
 }
 .report-sheet h3 { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-lg); margin-bottom: 12px; color: var(--text); }
@@ -1003,17 +1060,35 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-options.deshabilitadas { opacity: 0.4; pointer-events: none; }
 .report-hint { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: var(--fs-sm); color: var(--text-dim); }
 
-.maplibregl-popup-content { background: var(--surface-solid); color: var(--text); border-radius: 10px; border: 1px solid var(--border); padding: 10px 12px; }
+/* SES-121: maplibre-gl.css (el CSS propio de la librería) se carga DESPUÉS
+   de App.css en el bundle final -- no importa en qué orden estén las
+   reglas DENTRO de este archivo, cualquier propiedad de .maplibregl-* que
+   también exista en el CSS de la librería (background, border-radius,
+   padding acá) pierde el empate de especificidad porque llega después.
+   Confirmado con getComputedStyle en vivo: esta tarjeta estaba literalmente
+   mostrando el blanco/3px/padding por default de maplibre, no nada de lo
+   de acá abajo -- en tema oscuro, texto claro sobre fondo blanco, casi
+   ilegible. Mismo patron que ya se usó para .maplibregl-ctrl-attrib
+   (SES-105) y .maplibregl-popup-tip (ahí abajo): todo lo que compite con
+   una propiedad de la librería necesita !important. */
+.maplibregl-popup-content {
+  background: var(--surface-solid) !important; color: var(--text); border-radius: var(--r-md) !important;
+  border: 1px solid var(--border); padding: 10px 12px !important; box-shadow: var(--shadow-float) !important;
+}
 /* El botón nativo de cerrar (una "x" sin estilo propio, flotando sobre el
    borde de la tarjeta) y la puntita del globo quedaban con el blanco/negro
    por defecto del navegador, sin relación con el tema -- mismo tratamiento
-   que ya tienen los demás botones de cerrar de la app (lugar, reporte). */
+   que ya tienen los demás botones de cerrar de la app (lugar, reporte).
+   Mismo problema de cascada que .maplibregl-popup-content: sin !important,
+   quedaba con el fondo transparente y las esquinas cuadradas de la
+   librería en vez del círculo (confirmado, no era un circulo, era un
+   rectangulo con una esquina cortada). */
 .maplibregl-popup-close-button {
-  top: 6px !important; right: 6px !important; width: 22px; height: 22px; border-radius: 50%;
+  top: 6px !important; right: 6px !important; width: 22px; height: 22px; border-radius: 50% !important;
   display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;
-  background: var(--inset); color: var(--text-dim); border: none; transition: all var(--motion-fast) ease;
+  background: var(--inset) !important; color: var(--text-dim); border: none !important; transition: all var(--motion-fast) ease;
 }
-.maplibregl-popup-close-button:hover { background: var(--border); color: var(--text); }
+.maplibregl-popup-close-button:hover { background: var(--border) !important; color: var(--text); }
 .maplibregl-popup-tip { border-top-color: var(--surface-solid) !important; border-bottom-color: var(--surface-solid) !important; }
 
 /* ---- Atribución del mapa (SES-105) -----------------------------------
@@ -1037,8 +1112,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   width: 18px !important; height: 18px !important;
 }
 .maplibregl-ctrl-attrib-button:hover { background-color: var(--azul) !important; }
-.maplibregl-popup-tip { border-top-color: var(--surface-solid); border-bottom-color: var(--surface-solid); }
-.maplibregl-popup-close-button { color: var(--text-dim); font-size: 16px; }
 .popup-content { display: flex; flex-direction: column; gap: 4px; font-family: 'Inter', sans-serif; }
 .popup-nivel { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 /* line-height 1.3: sin esto, un título largo que ocupa 2-3 líneas (tramo de
@@ -1051,7 +1124,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    el resto del contenido fijo del popup (que no cambia con la hora/reportes). */
 /* Rediseño SES-114: sincronizado con .ruta-resumen-ajuste (ver comentario
    ahí) -- mismo naranja-texto, mismo motivo. */
-.popup-ajuste { font-size: var(--fs-2xs); color: var(--naranja-text); font-style: italic; line-height: 1.3; }
+.popup-ajuste { display: flex; align-items: center; gap: 4px; font-size: var(--fs-2xs); color: var(--naranja-text); font-style: italic; line-height: 1.3; }
+.popup-ajuste svg { flex-shrink: 0; }
 /* Rediseño SES-115 ("mejorar el diseño de los popups, la información, el
    entendimiento"): metadato secundario genérico -- fecha, comuna, radio de
    celda, vencimiento -- lo que antes era un <span> suelto sin estilo propio
@@ -1079,10 +1153,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .popup-hex-desglose { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--fs-2xs); color: var(--text-dim); }
 .popup-hex-punto { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
 .popup-votos { display: flex; gap: 6px; margin-top: 4px; }
+/* SES-121: usaba var(--surface), un token que no existe en ningún :root
+   de este archivo (existen --surface-solid, --surface-float, --surface-rgb,
+   pero "--surface" a secas nunca se definió) -- un var() a un custom
+   property inexistente cae al valor inicial de background-color, que es
+   transparent. El boton quedaba sin ningún relleno visible, solo el borde
+   fino, que es justo la pinta de "no pertenece al resto de los botones de
+   la app" que se reportó. --inset es el token correcto para un botón chico
+   que vive encima de una superficie solida (mismo patrón que
+   .searchbar-icon, .lugar-card-cerrar). */
 .popup-voto-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
   padding: 6px 8px; border-radius: var(--r-sm); border: 1px solid var(--border);
-  background: var(--surface); color: var(--text); font-size: var(--fs-2xs); font-weight: 600;
+  background: var(--inset); color: var(--text); font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer; white-space: nowrap;
 }
 .popup-voto-btn:hover { filter: brightness(1.15); }
@@ -1098,9 +1181,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    atenuado", que es justo lo que es el nombre de la fuente de la nota. */
 .popup-prensa-fuente { color: var(--text-dim); }
 .popup-prensa-precision { font-size: var(--fs-2xs); color: var(--text-dim); font-style: italic; }
+/* SES-121: mismo bug que .popup-voto-btn de aca arriba -- var(--surface)
+   no existe, el botón de "Leer nota" (el que lleva al lector interno)
+   quedaba sin relleno visible. */
 .popup-ver-noticia {
   margin-top: 4px; padding: 6px 8px; border-radius: var(--r-sm); border: 1px solid var(--border);
-  background: var(--surface); color: var(--text); font-size: var(--fs-2xs); font-weight: 600;
+  background: var(--inset); color: var(--text); font-size: var(--fs-2xs); font-weight: 600;
   cursor: pointer;
 }
 .popup-ver-noticia:hover { filter: brightness(1.15); }
@@ -1245,11 +1331,16 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      52 mi" sin el "n"). flex-wrap deja que lo que no entra baje a una
      segunda línea en vez de desbordarse fuera de la vista. */
   .topbar { flex-wrap: wrap; row-gap: 8px; }
-  /* width:100% para que, al bajar de línea, "justify-content: flex-end"
-     tenga TODO el ancho disponible para alinear contra -- sin esto, al
-     quedar sola en su propia línea de flex-wrap, la fila se pegaba contra
-     la izquierda en vez de mantenerse contra el borde derecho. */
-  .topbar-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; width: 100%; }
+  /* SES-120: antes era flex-wrap y dependía de si "iconos + clima + pill
+     de estado" entraban juntos en una fila -- entraban con "3 zonas" pero
+     no con "2 zonas críticas" ni con "Ruta: 1.6 km · 5 min", asi que la
+     topbar cambiaba de alto segun el texto, no segun una medida fija (eso
+     es lo que se percibia como "a veces se agranda todo"). Ahora son
+     siempre dos filas fijas: iconos+clima arriba (le sobra espacio de
+     sobra, nunca necesita envolver) y el pill de estado solo abajo,
+     alineado al mismo borde derecho. */
+  .topbar-right { flex-direction: column; align-items: flex-end; row-gap: 8px; width: 100%; }
+  .topbar-right-iconos { justify-content: flex-end; width: 100%; }
   .topbar-status { font-size: var(--fs-sm); }
   .clima-badge { font-size: var(--fs-sm); }
   /* Los offsets fijos que había acá (96px, 152px...) se sacaron: --y1/--y2
@@ -1272,7 +1363,23 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .ruta-resumen, .detalle-panel { top: auto; width: min(300px, 78vw); max-height: 34vh; }
   .detalle-panel { bottom: calc(210px + var(--safe-bottom)); right: 12px; left: auto; }
   /* Con una zona abierta, la leyenda (abajo a la izquierda) se tapaba con su tarjeta (SES-087). */
-  .app:has(.detalle-panel) .legend { display: none; }
+  .app:has(.detalle-panel) .legend-stack { display: none; }
+  /* Mismo problema, otro par de paneles: "Estadisticas" y "Actividad" (ver
+     stats-panel/actividad-panel mas abajo) ocupan right:12px, width:82vw --
+     en un celular angosto eso llega hasta bastante antes del borde
+     izquierdo, pisando la esquina superior de la leyenda (titulo "NIVEL DE
+     RIESGO" y los pills Todo/Siniestros/Delitos quedaban tapados, visto
+     real con "Estadisticas" abierto, SES-117). Mismo criterio que ya existia
+     para detalle-panel: la leyenda no aporta nada mientras se esta leyendo
+     otro panel de datos, asi que se esconde en vez de competir por el mismo
+     rincon de pantalla. */
+  .app:has(.stats-panel) .legend-stack,
+  .app:has(.actividad-panel) .legend-stack { display: none; }
+  /* capas-panel ("Capas del mapa") es mas alto todavia que
+     stats/actividad -- llega hasta el borde inferior de la pantalla en
+     celular, asi que sin esto tapa la leyenda entera, no solo la esquina
+     (visto real). Mismo criterio. */
+  .app:has(.capas-panel) .legend-stack { display: none; }
   /* La leyenda se esconde mientras "Opciones de ruta" está abierto (ver
      mostrandoOpcionesRuta en App.jsx), y ese rincón queda libre justo para
      este panel -- por eso "Opciones de ruta" va abajo a la IZQUIERDA (donde
@@ -1299,7 +1406,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   .ruta-resumen { padding: 11px; }
   .ruta-opcion { padding: 7px 9px; margin-bottom: 5px; }
   .ruta-opcion-desglose { display: none; }
-  .ruta-prioridad { margin-bottom: 8px; }
+  .ruta-prioridad { margin-bottom: var(--sp-2); }
   .ruta-prioridad button { padding: 6px 4px; }
   .ruta-resumen-detalle { max-height: 90px; }
   /* Sin tope de ancho, la leyenda crecía para que el título ("NIVEL DE
@@ -1307,7 +1414,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      angosto eso la hacía invadir el panel de rutas/cercanas del otro lado
      (ambos pueden estar abiertos a la vez, ver captura real). Un ancho fijo
      fuerza al título a partirse en dos líneas en vez de ensancharse. */
-  .legend { left: 12px; bottom: calc(90px + var(--safe-bottom)); padding: 8px 10px; width: 124px; min-width: 0; }
+  .legend-stack { left: 12px; bottom: calc(90px + var(--safe-bottom)); }
+  .legend { padding: 8px 10px; width: 124px; min-width: 0; }
   .legend-title { font-size: var(--fs-sm); }
   .route-fab { right: 16px; bottom: var(--b3); }
   .herramientas-stack { right: 16px; bottom: calc(138px + var(--safe-bottom)); }
@@ -1341,7 +1449,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    soporte de moto (alto de pantalla bajo, sin importar el ancho real). */
 @media (orientation: landscape) and (max-height: 500px) {
   .topbar { padding-top: calc(8px + var(--safe-top)); padding-bottom: 8px; }
-  .brand-name { font-size: 16px; }
+  .brand-name { font-size: var(--fs-lg); }
   /* Sin top fijo acá: --y1/--y3/--yzoom siguen solos el alto real de la
      topbar (que ya achicamos arriba con menos padding), así que no hace
      falta repetir el offset a mano para landscape. */
@@ -1353,8 +1461,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
      izquierdo, donde estaba la leyenda (que se esconde mientras este panel
      está abierto), para no competir con nada y dejar ver el trazado. */
   .ruta-resumen { left: calc(12px + var(--safe-left)); right: auto; }
-  .legend { bottom: calc(8px + var(--safe-bottom)); padding: 8px 10px; }
-  .legend-inseguridad { bottom: calc(120px + var(--safe-bottom)); }
+  .legend-stack { bottom: calc(8px + var(--safe-bottom)); }
+  .legend { padding: 8px 10px; }
   .route-fab, .report-fab, .herramientas-stack { bottom: calc(8px + var(--safe-bottom)); }
   /* En vertical estos tres se apilan por "bottom" con el mismo right:24px, sin
      pisarse. Acá, al compartir todos el mismo bottom, tienen que separarse por
@@ -1390,7 +1498,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   margin: 2px 0 10px;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--inset);
 }
 
@@ -1399,9 +1507,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: var(--sp-2);
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -1415,7 +1523,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .capas-prensa-filtros-titulo strong {
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   letter-spacing: 0;
 }
 
@@ -1436,52 +1544,71 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   color: var(--text);
   background: var(--inset);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
+/* SES-121: usaba un amarillo propio (#ffd65a/#d69e00/#513b00 en claro,
+   #ffc933/#221a00 pisado aparte para oscuro) en vez de var(--amarillo), que
+   es el mismo token que ya usa CUALQUIER otro "activo" de la app
+   (portal-actividad-filtros-fila, brand-badge, onboarding-entendido...).
+   Con el token no hace falta el override de tema aparte: es el mismo
+   amarillo en los dos temas, como el resto de la app. */
 .capas-prensa-filtros button.activa {
-  border-color: #d69e00;
-  color: #513b00;
-  background: #ffd65a;
+  border-color: var(--amarillo);
+  color: #14171A;
+  background: var(--amarillo);
   font-weight: 700;
 }
 
+/* SES-122: dos vueltas sobre este marcador.
+   1) SES-121 ya lo sacó del gris-azulado fijo que no cambiaba con el tema.
+   2) Rodo señaló que, aun así, seguía sintiéndose "raro" -- el borde de 2px
+   del color de texto y el glyph ▤ (un carácter de fuente, no un ícono real)
+   lo hacían leer como una caja ajena al resto del mapa. Acá no hay dato que
+   justifique un borde grueso de color (a diferencia de cluster-bubble, cuyo
+   borde SÍ es el nivel de riesgo): es solo "hay noticias acá", así que pasa
+   al mismo lenguaje que cualquier otra cápsula flotante de la app (topbar,
+   brand-badge, searchbar): borde fino + sombra suave en vez de contorno
+   duro, y forma de pastilla (--r-pill) en vez de caja. El glyph se
+   reemplaza por el mismo ícono Newspaper de lucide-react que ya usa
+   CapasPanel para esta capa -- mismo ícono en el toggle y en el marcador,
+   no una aproximación. */
 .marker-prensa-cluster {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   min-width: 38px;
-  height: 32px;
-  padding: 0 7px;
-  border: 2px solid #c9cdd3;
-  border-radius: 8px;
-  color: #fff;
-  background: #3a3f4b;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .28);
-  font-size: 13px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-float);
+  font-size: var(--fs-sm);
   font-weight: 800;
 }
 
-.marker-prensa-cluster span { font-size: 16px; line-height: 1; }
+.marker-prensa-cluster svg { flex-shrink: 0; }
 
 .marker-prensa-grupo {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   min-width: 34px;
   min-height: 28px;
-  padding: 4px 7px;
-  border: 2px solid #c9cdd3;
-  border-radius: 8px;
-  color: #fff;
-  background: #3a3f4b;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .38);
-  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-float);
+  font-size: var(--fs-sm);
 }
 
-.marker-prensa-grupo span { font-size: 16px; line-height: 1; }
+.marker-prensa-grupo svg { flex-shrink: 0; }
 .marker-prensa-grupo strong { font-size: var(--fs-sm); }
 
 .popup-grupo-prensa { max-height: 290px; overflow-y: auto; }
@@ -1498,7 +1625,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   margin-top: 6px;
   padding: 7px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   color: var(--text);
   background: var(--inset);
   font: inherit;
@@ -1509,10 +1636,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 }
 .popup-grupo-prensa-item:hover { background: var(--border); }
 
-[data-theme='dark'] .capas-prensa-filtros button.activa {
-  color: #221a00;
-  background: #ffc933;
-}
 
 /* Mientras el panel de opciones de ruta está abierto, Reportar taparía su botón "Nueva ruta" (SES-087). */
 .report-fab.oculto-por-ruta { display: none; }
@@ -1537,7 +1660,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    "Farmacia". Mismo tratamiento visual que un subtítulo de tarjeta de Maps. */
 .lugar-card-categoria { font-style: normal; font-size: var(--fs-xs); color: var(--text-dim); margin-top: 1px; }
 .lugar-card-acciones { display: flex; justify-content: flex-end; gap: 8px; }
-.lugar-card-acciones button { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: var(--fs-md); cursor: pointer; border: 1px solid var(--border); }
+.lugar-card-acciones button { min-height: 36px; padding: 0 14px; border-radius: var(--r-md); font-size: var(--fs-md); cursor: pointer; border: 1px solid var(--border); }
 .lugar-card-cerrar { background: var(--inset); color: var(--text); }
 .lugar-card-ir { display: inline-flex; align-items: center; gap: 6px; background: var(--azul); color: #fff; border-color: var(--azul); font-weight: 600; }
 
@@ -1549,8 +1672,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   left: 50%; right: auto; bottom: calc(14px + var(--safe-bottom)); transform: translateX(-50%);
   width: min(94vw, 440px); max-width: none; box-sizing: border-box;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 10px 10px 10px 14px; border-radius: 18px;
-  background: rgba(var(--surface-rgb),0.97); border: 1.5px solid var(--verde);
+  padding: 10px 10px 10px 14px; border-radius: var(--r-lg);
+  background: rgba(var(--surface-rgb),0.97); border: 1px solid var(--verde);
   box-shadow: var(--shadow-float);
 }
 .viaje-velocidad {
@@ -1558,14 +1681,20 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   min-width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--border);
   font-family: 'Space Grotesk', sans-serif; line-height: 1;
 }
-.viaje-velocidad strong { font-size: 18px; }
-.viaje-velocidad span { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+/* SES-119: 18px suelto -- igual rol que .velocimetro strong (velocidad
+   actual), que ya usa --fs-xl desde SES-115. Mismo numero, misma pantalla
+   conceptual, misma escala. */
+.viaje-velocidad strong { font-size: var(--fs-xl); }
+.viaje-velocidad span { font-size: var(--fs-2xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
 .viaje-tiempo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.viaje-tiempo strong { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); line-height: 1.1; }
+/* SES-119: 24px suelto -- es el numero principal de la barra de viaje (el
+   que se lee de un vistazo), asi que pasa al escalon mas grande de la
+   escala (--fs-2xl, 26px) en vez de quedar en un valor intermedio propio. */
+.viaje-tiempo strong { font-family: 'Space Grotesk', sans-serif; font-size: var(--fs-2xl); font-weight: 700; color: var(--text); line-height: 1.1; }
 .viaje-tiempo span { font-family: 'Inter', sans-serif; font-size: var(--fs-sm); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .viaje-salir {
   display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-  min-height: 44px; padding: 0 14px; border-radius: 12px; cursor: pointer;
+  min-height: 44px; padding: 0 14px; border-radius: var(--r-md); cursor: pointer;
   background: rgba(255,59,59,0.12); color: #D92D2D; border: 1px solid rgba(255,59,59,0.35);
   font-family: 'Inter', sans-serif; font-size: var(--fs-md); font-weight: 600;
 }
@@ -1573,7 +1702,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .app:has(.nav-resumen-mini) .velocimetro { display: none; }
 .app:has(.nav-resumen-mini) .report-fab { bottom: calc(96px + var(--safe-bottom)); padding: 14px; border-radius: 50%; }
 .app:has(.nav-resumen-mini) .report-fab span { display: none; }
-.navegacion-distancia { font-size: 22px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+/* SES-119: 22px suelto. El comentario de SES-095 arriba dice que esta
+   version (durante el viaje) le da mas peso a la distancia que la version
+   de reposo (--fs-md, linea ~418) -- para que ese "mas peso" sea real y no
+   un valor intermedio arbitrario, pasa al mismo escalon que el numero
+   principal de la barra de viaje (--fs-2xl). */
+.navegacion-distancia { font-size: var(--fs-2xl); font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
 
 /* Durante el viaje: el aviso de reruteo y la hoja de reporte se acomodan sobre
    la barra inferior y no tapan la tarjeta de maniobra ni el mapa (SES-097). */
@@ -1610,12 +1744,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   border-top: 1px solid var(--border); min-width: 0; font-family: 'Inter', sans-serif;
 }
 .navegacion-luego-etiqueta {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--text-dim); background: var(--inset); border-radius: 6px; padding: 2px 6px; flex-shrink: 0;
+  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-dim); background: var(--inset); border-radius: var(--r-xs); padding: 2px 6px; flex-shrink: 0;
 }
 .navegacion-luego-texto { font-size: var(--fs-sm); color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.app:has(.nav-resumen-mini) .legend,
-.app:has(.nav-resumen-mini) .legend-inseguridad { display: none; }
+.app:has(.nav-resumen-mini) .legend-stack { display: none; }
 .app:has(.nav-resumen-mini) .topbar-status { display: none; }
 
 /* ---- Login (SES-104) -------------------------------------------------

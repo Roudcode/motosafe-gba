@@ -251,7 +251,7 @@ function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
 function elementoGrupoPrensa(cantidad) {
   const el = document.createElement('div')
   el.className = 'marker-prensa-grupo'
-  el.innerHTML = `<span aria-hidden="true">▤</span><strong>${cantidad}</strong>`
+  el.innerHTML = `<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg><strong>${cantidad}</strong>`
   el.style.cursor = 'pointer'
   return el
 }
@@ -514,29 +514,40 @@ function MapaMotoSafeInner({
     })
     mapRef.current = map
 
+    // En celular, MapLibre arranca la atribucion ABIERTA por defecto (el control
+    // se crea con open="" y la clase maplibregl-compact-show de entrada, no es
+    // algo que decida despues) y tapa «Reportar», el panel de navegacion y el
+    // velocimetro (SES-083/086). La correccion anterior vivia solo adentro de
+    // map.on('load'), que dispara recien cuando terminan de cargar tiles/datos
+    // -- en ese lapso (perceptible, sobre todo con conexion lenta) se veia la
+    // atribucion expandida de arranque y despues "saltaba" cerrada de golpe
+    // (SES-117, lo que Rodo reporto como "salta mucho" en vertical). El nodo
+    // del control ya existe apenas se construye el mapa (se agrega en el
+    // constructor, no en 'load'), asi que corregirlo ACA, antes del primer
+    // paint, evita el salto en vez de solo corregirlo despues de que ya se vio.
+    // Por debajo de 480 px se mantiene colapsada al boton «i». MapLibre la
+    // vuelve a abrir cada vez que cambia el tamano del mapa (por ejemplo al
+    // iniciar un viaje), asi que un MutationObserver corrige ese atributo; el
+    // clic del usuario en el boton «i» se respeta (se marca por un segundo).
+    // En escritorio queda abierta.
+    const atribucion = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
+    const esCelular = () => window.matchMedia('(max-width: 480px)').matches
+    let abiertaPorUsuario = false
+    atribucion?.querySelector('.maplibregl-ctrl-attrib-button')?.addEventListener('click', () => {
+      abiertaPorUsuario = true
+      setTimeout(() => { abiertaPorUsuario = false }, 1000)
+    })
+    const corregirAtribucion = () => {
+      if (!atribucion || abiertaPorUsuario || !esCelular()) return
+      atribucion.classList.remove('maplibregl-compact-show')
+      atribucion.removeAttribute('open')
+    }
+    if (atribucion) {
+      new MutationObserver(corregirAtribucion).observe(atribucion, { attributes: true, attributeFilter: ['open'] })
+    }
+    corregirAtribucion()
+
     map.on('load', () => {
-      // En celular, MapLibre deja la atribución expandida y tapa «Reportar», el
-      // panel de navegación y el velocímetro (SES-083/086). Por debajo de 480 px
-      // se mantiene colapsada al botón «i». MapLibre la vuelve a abrir cada vez
-      // que cambia el tamaño del mapa (por ejemplo al iniciar un viaje), así que
-      // un MutationObserver corrige ese atributo; el clic del usuario en el botón
-      // «i» se respeta (se marca por un segundo). En escritorio queda abierta.
-      const atribucion = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
-      const esCelular = () => window.matchMedia('(max-width: 480px)').matches
-      let abiertaPorUsuario = false
-      atribucion?.querySelector('.maplibregl-ctrl-attrib-button')?.addEventListener('click', () => {
-        abiertaPorUsuario = true
-        setTimeout(() => { abiertaPorUsuario = false }, 1000)
-      })
-      const corregirAtribucion = () => {
-        if (!atribucion || abiertaPorUsuario || !esCelular()) return
-        atribucion.classList.remove('maplibregl-compact-show')
-        atribucion.removeAttribute('open')
-      }
-      if (atribucion) {
-        new MutationObserver(corregirAtribucion).observe(atribucion, { attributes: true, attributeFilter: ['open'] })
-      }
-      corregirAtribucion()
       onReady?.(map)
       setVersion((v) => v + 1)
     })
@@ -873,7 +884,7 @@ function MapaMotoSafeInner({
             <strong>${p.cantidad} ${ETIQUETA_UNIDAD[filtroHexagono] || ETIQUETA_UNIDAD.siniestros} en esta celda</strong>
             <div class="popup-hex-desglose">${filasNivel}</div>
             ${filtroHexagono === 'todo' ? `<span class="popup-meta">${p.fuente_siniestros} siniestros · ${p.fuente_inseguridad} delitos</span>` : ''}
-            ${p.noticias > 0 ? `<span class="popup-meta">▤ ${p.noticias} noticia${p.noticias > 1 ? 's' : ''} reciente${p.noticias > 1 ? 's' : ''} en esta zona</span>` : ''}
+            ${p.noticias > 0 ? `<span class="popup-meta"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg> ${p.noticias} noticia${p.noticias > 1 ? 's' : ''} reciente${p.noticias > 1 ? 's' : ''} en esta zona</span>` : ''}
             <span class="popup-meta">Celda de ~${radioHex}m de radio</span>
           </div>
         `)
@@ -1193,7 +1204,7 @@ function MapaMotoSafeInner({
       maxZoom: 14,
       renderBubble: (_niveles, cantidad) => ({
         size: 38,
-        html: `<div class="marker-prensa-cluster"><span aria-hidden="true">▤</span><strong>${cantidad}</strong></div>`,
+        html: `<div class="marker-prensa-cluster"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg><strong>${cantidad}</strong></div>`,
       }),
       renderPunto: (props) => {
         const grupo = grupos.get(String(props.id))
