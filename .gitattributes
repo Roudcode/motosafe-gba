@@ -1,3 +1,12 @@
 # Los scripts de shell corren dentro de contenedores Linux: con CRLF fallan
 # ("/bin/sh^M"). core.autocrlf=true en Windows los convertiría al hacer checkout.
 *.sh text eol=lf
+
+# Normalizacion explicita de fin de linea para evitar drift CRLF/LF al
+# trabajar desde Windows con distintas configuraciones de autocrlf (20/10/2026).
+*.py text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.bat text eol=crlf
