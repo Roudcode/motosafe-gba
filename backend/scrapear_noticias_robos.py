@@ -646,25 +646,50 @@ DIAS_VENTANA_DUPLICADO = 5
 
 # Hallazgo real de la primera corrida en produccion (20/10, ver README de
 # docs/evidencias/2026-10-20/A09-dedup-semantica/): el mismo tiroteo de
-# Villa Pueyrredon, cubierto por Clarin/TN/Minutouno/La Nacion el mismo dia
-# con coordenadas CASI IDENTICAS entre si, no supero el umbral de titulo en
-# ningun par (el mas alto, Clarin vs TN, dio 0,467) -- medios grandes
-# escriben bajadas editoriales muy distintas del mismo hecho. El umbral de
-# 0.70 solo atrapa republicaciones casi calcadas, no esto.
+# Villa Pueyrredon, cubierto por 4 medios el mismo dia con coordenadas
+# CASI IDENTICAS entre si, no supero el umbral de titulo en ningun par
+# (jaccard real entre 0.13 y 0.39) -- medios grandes escriben bajadas
+# editoriales muy distintas del mismo hecho. El umbral de 0.70 solo atrapa
+# republicaciones casi calcadas, no esto.
 #
-# La correccion no es bajar el umbral de titulo en general (eso reabre el
-# riesgo de falso merge ya medido: por debajo de jacc ~0.45 el metodo
-# confunde hechos distintos del mismo partido y tema). Es reconocer que la
-# distancia geografica no es una señal binaria "adentro o afuera del
-# radio": una coincidencia casi exacta de coordenadas, cuando ADEMAS ambas
-# notas se geocodificaron a nivel preciso (calle/interseccion, radio
-# <=150m -- no al centroide vago de un barrio, radio 800m, que varias
-# notas sin calle pueden compartir por coincidencia sin ser el mismo
-# hecho), es evidencia mucho mas fuerte que "esta a menos de 1500m" y
-# alcanza con mucha menos superposicion de titulo.
-UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA = 0.15
-RADIO_COINCIDENCIA_PRECISA_METROS = 300  # provisional -- a ajustar con los grupos reales que mida Rodo/Codex contra la base
-RADIO_MAX_GEOCODE_PRECISO_METROS = 150  # 'calle'/'interseccion'; excluye 'barrio' (centroide, 800m)
+# CORRECCION (misma noche, tras medir contra la base real): ese caso tiene
+# radio_metros=800 en las 4 filas -- nivel 'barrio', geocodificado al
+# centroide del barrio, no a una calle o interseccion real. El gate de
+# precision de abajo (radio_metros<=150 en ambas filas) lo excluye por
+# diseño, a proposito: a nivel barrio la coordenada es el mismo centroide
+# para cualquier nota de esa zona, nunca una señal real de "mismo lugar
+# exacto", y bajar el umbral de titulo ahi sin esa garantia reabriria el
+# riesgo de falso merge ya medido (jacc <0.45 confunde hechos distintos
+# del mismo partido). Resultado honesto: este mecanismo NO resuelve
+# Villa Pueyrredon ni ningun otro caso geocodificado a nivel barrio --
+# sigue abierto, sin una señal automatica confiable para esos casos.
+#
+# Lo que SI mide la base real (Codex, mismo dia): de 36 filas con
+# radio_metros<=150 en toda reportes_prensa, el unico grupo multi-fuente
+# es Jose C. Paz (3 medios, distancia 0m entre si -- coordenada identica
+# hasta el 7o decimal, mismo hecho real). Los dos unicos pares de fuente
+# distinta que caen dentro de los 1500m del radio general y NO son el
+# mismo hecho estan a 963m y 1319m. No hay un solo caso real entre 1m y
+# ~960m para calibrar un punto medio -- la señal es binaria (0m = mismo
+# hecho, ~960m+ = hechos distintos), asi que se fija un radio chico con
+# margen para el jitter de geocodificacion sin acercarse a los 963m que
+# ya se sabe que son falsos positivos.
+#
+# Ademas: medido el titulo real de Jose C. Paz, el jaccard entre las dos
+# notas de Infobae del MISMO hecho (confirmado por coordenada identica) es
+# 0.0 -- cero palabras en comun. El umbral de titulo no discrimina nada
+# cuando la coordenada ya es casi exacta y precisa; en ese escenario, la
+# señal real es geografia+tiempo+categoria, no el titulo. Por eso el
+# umbral de titulo en esta rama se fija en 0.0 (no se exige superposicion
+# de titulo en absoluto): alcanza con no tener candidatas vacias de
+# tokens. El riesgo de falso merge que esto podria reabrir ya esta acotado
+# por las otras tres señales (radio <=100m, geocodificacion precisa en
+# ambas filas, ventana de 5 dias, mismo tipo_incidente) -- no hay en los
+# datos reales medidos ningun par de hechos DISTINTOS que cumpla las
+# cuatro a la vez.
+UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA = 0.0
+RADIO_COINCIDENCIA_PRECISA_METROS = 100  # grounded en la muestra real de Codex (20/10): 0m=mismo hecho, 963m+=falsos positivos
+RADIO_MAX_GEOCODE_PRECISO_METROS = 150  # 'calle'/'interseccion'; excluye 'barrio' (centroide, 800m) -- por eso Villa Pueyrredon queda afuera
 
 _STOPWORDS_SIMILITUD = {
     'el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'a', 'y', 'que', 'por',

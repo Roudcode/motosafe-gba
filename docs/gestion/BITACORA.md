@@ -1797,3 +1797,23 @@ Actualizados los 5 tests existentes para incluir el nuevo parámetro `radio_metr
 Documentado en DEC-018 (`docs/gestion/DECISIONES.md`) y en `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md` (sección "Corrección").
 
 Sin verificar esta sesión: el radio de 300m sigue sin calibrar contra datos reales (pendiente la muestra de Codex), y el fix no se probó todavía contra una corrida real en producción -- la única corrida real que existe (la que encontró el problema) fue con el código anterior a este cambio.
+
+## SES-134 (2026-10-20, misma noche) — A09: corrige DEC-018 con datos reales (DEC-019) — Villa Pueyrredón sigue sin resolverse
+
+Codex trajo lo que le pedí para calibrar el radio de 300m del ajuste de SES-133: la distancia real entre pares de filas con geocodificación precisa (`radio_metros≤150`) en toda la base de producción. El resultado obligó a corregir dos cosas que el ajuste anterior no tenía en cuenta, no solo a ajustar un número.
+
+**Primer problema, el más serio**: Villa Pueyrredón -- el caso real que motivó todo el trabajo de SES-133 -- tiene `radio_metros=800` en las 4 filas (nivel `barrio`, no `calle`/`interseccion`). El guard de precisión que agregué en SES-133 exige `radio_metros≤150` en ambas filas antes de aplicar el umbral laxo. Como consecuencia, el mecanismo implementado nunca iba a detectar el caso que lo motivó, sin importar qué radio de distancia se usara -- esto no se había verificado contra el dato real de esa fila hasta que Codex lo señaló.
+
+**Segundo problema**: de toda `reportes_prensa`, solo 36 filas tienen geocodificación precisa (`radio_metros≤150`); el resto (745) está a nivel `barrio`. Dentro de esas 36, el único grupo multi-fuente real es José C. Paz (Infobae ×2, Minutouno), coordenada idéntica hasta el 7º decimal. Medí el jaccard real entre los títulos de las dos notas de Infobae del mismo hecho (confirmado por la coordenada): 0,0. El umbral de 0,15 fijado en SES-133 tampoco lo hubiera detectado.
+
+Los dos únicos pares de precisión alta que Codex confirmó como hechos distintos están a 963m y 1319m. No hay un solo caso real medido entre 1m y ~960m -- la señal de distancia es binaria con los datos disponibles (0m = mismo hecho, ~960m+ = hechos distintos).
+
+Corrección aplicada en `backend/scrapear_noticias_robos.py`: `RADIO_COINCIDENCIA_PRECISA_METROS` bajó de 300 (estimado) a 100 (dato real, con margen contra los 963m conocidos). `UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA` bajó de 0,15 a 0,0: dentro de la rama de coincidencia precisa, exigir superposición de título solo generaba un falso negativo (José C. Paz) sin evitar ningún falso positivo medido -- la geografía+tiempo+categoría ya hace el trabajo ahí.
+
+Lo importante, dicho sin vueltas: Villa Pueyrredón y cualquier duplicado geocodificado a nivel `barrio` siguen sin una solución automática. Vuelve a ser un pendiente abierto de A09, no algo que SES-133 haya cerrado -- esa sesión implementó un mecanismo que resuelve un problema distinto (duplicados con geocodificación precisa, como José C. Paz), no el que lo motivó.
+
+2 pruebas nuevas con los casos reales exactos que trajo Codex (José C. Paz, detecta; par a 963m, no detecta). Corregidos también los docstrings de los tests de SES-133 que describían a Villa Pueyrredón como geocodificado "a nivel calle" -- era hipotético, no el dato real. 34/34 pruebas del scraper, 131/131 de todo el backend.
+
+Documentado en DEC-019 (`docs/gestion/DECISIONES.md`), `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md` (segunda sección de corrección) y la fila A09 de BACKLOG.md.
+
+Sin verificar: 100m y 0,0 están calibrados contra una muestra chica (36 filas de precisión alta en toda la tabla, un solo grupo multi-fuente real); no hay todavía una corrida real posterior a este cambio.

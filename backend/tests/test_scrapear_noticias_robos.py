@@ -336,14 +336,14 @@ def test_sin_candidatas_no_hay_duplicado():
 
 
 def test_detecta_duplicado_con_coordenada_casi_exacta_y_titulos_distintos():
-    """Caso real encontrado en la primera corrida en produccion (20/10): el
-    tiroteo de Villa Pueyrredon, cubierto por cuatro medios grandes el mismo
-    dia con coordenadas casi identicas entre si, pero titulos editoriales
-    tan distintos que ningun par llega al 0.70 (el mas alto, Clarin vs TN,
-    dio 0.467). Con ambas notas geocodificadas a nivel preciso ('calle',
-    radio 150) y una distancia minima entre coordenadas, el umbral baja a
-    UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA y el par pasa a
-    detectarse."""
+    """Mecanismo de la coincidencia precisa, con titulos tan distintos como
+    los reales de Villa Pueyrredon (jaccard real entre 0.13 y 0.39) pero
+    geocodificados HIPOTETICAMENTE a nivel 'calle' (radio 150). El caso real
+    de Villa Pueyrredon fue geocodificado a nivel 'barrio' (radio 800) y por
+    eso NO se detecta (ver test_no_usa_coincidencia_precisa_si_la_geocodificacion_es_vaga
+    y DEC-019) -- este test confirma que el mecanismo funciona cuando la
+    geocodificacion SI es precisa, como en el caso real de Jose C. Paz
+    (3 fuentes, distancia 0m, confirmado contra la base real el 20/10)."""
     lat, lng = -34.57945, -58.50408
     titulo_clarin = 'Un tiroteo en Villa Pueyrredón dejó un herido de bala tras una discusión de tránsito'
     titulo_tn = 'Villa Pueyrredón: balearon a un hombre tras una discusión de tránsito entre automovilistas'
@@ -359,12 +359,13 @@ def test_detecta_duplicado_con_coordenada_casi_exacta_y_titulos_distintos():
 
 
 def test_no_usa_coincidencia_precisa_si_la_geocodificacion_es_vaga():
-    """Misma coordenada casi exacta y mismos titulos de Villa Pueyrredon,
-    pero con radio 'barrio' (800, geocodificacion vaga) en vez de 'calle':
-    no se activa la coincidencia precisa -- dos notas sin direccion propia
-    pueden coincidir en el mismo centroide de barrio por pura coincidencia,
-    sin ser el mismo hecho. Se exige el umbral conservador de siempre, que
-    este par no supera."""
+    """Caso real: Villa Pueyrredon fue geocodificado a nivel 'barrio'
+    (radio_metros=800) en las 4 filas, no a nivel calle/interseccion. Con
+    esa coordenada y esos titulos, no se activa la coincidencia precisa --
+    dos notas sin direccion propia pueden coincidir en el mismo centroide
+    de barrio por pura coincidencia, sin ser el mismo hecho. Se exige el
+    umbral conservador de siempre, que este par no supera. Confirma que
+    el mecanismo de DEC-018 NO resuelve este caso (DEC-019)."""
     lat, lng = -34.57945, -58.50408
     titulo_clarin = 'Un tiroteo en Villa Pueyrredón dejó un herido de bala tras una discusión de tránsito'
     titulo_tn = 'Villa Pueyrredón: balearon a un hombre tras una discusión de tránsito entre automovilistas'
@@ -378,3 +379,44 @@ def test_no_usa_coincidencia_precisa_si_la_geocodificacion_es_vaga():
 
 def test_tokens_similitud_ignora_stopwords_y_palabras_cortas():
     assert _tokens_similitud('Un robo en La Plata') == {'robo', 'plata'}
+
+
+def test_detecta_duplicado_real_jose_c_paz_coordenada_identica():
+    """Caso real confirmado contra la base de produccion (20/10, Codex):
+    Jose C. Paz, 3 fuentes (Infobae x2, Minutouno), coordenada identica
+    hasta el 7o decimal (-34.5039998, -58.7976767), radio_metros=80 en
+    las 3 filas -- nivel preciso. Es el unico grupo multi-fuente entre las
+    36 filas de precision alta de toda la tabla; confirma el mecanismo de
+    coincidencia precisa contra un caso real, no solo hipotetico."""
+    lat, lng = -34.5039998, -58.7976767
+    titulo_infobae_1 = '"Disculpá, amigo": las últimas palabras del joven asesinado para robarle la moto'
+    titulo_infobae_2 = 'Conmoción en José C. Paz: volvía del gimnasio y dos falsos repartidores lo mataron'
+    titulo_minutouno = 'Quién era Elías Vázquez, el joven de 23 años asesinado por motochorros'
+    cursor = _CursorFalso([
+        (4, titulo_infobae_1, lat, lng, 80),
+        (15, titulo_infobae_2, lat, lng, 80),
+    ])
+    resultado = _detectar_duplicado_semantico(
+        cursor, titulo_minutouno, 'robo', lat, lng, 80,
+        datetime(2026, 10, 20, tzinfo=timezone.utc),
+    )
+    assert resultado in (4, 15)
+
+
+def test_no_marca_duplicado_entre_hechos_reales_distintos_a_963_metros():
+    """Caso real confirmado contra la base de produccion (20/10, Codex): el
+    par de precision alta mas cercano entre hechos QUE NO son el mismo
+    (Inforbano 'La Matanza: Salvaje entradera a una jubilada' vs Zona Oeste
+    Diario 'Susto en una escuela de La Matanza: un alumno llevó un arma')
+    esta a 963m -- confirma que RADIO_COINCIDENCIA_PRECISA_METROS=100 deja
+    margen de sobra sin acercarse a un falso positivo real conocido."""
+    lat_a, lng_a = -34.7801281, -58.6151766
+    lat_b, lng_b = -34.7780034, -58.6253957
+    titulo_a = 'Susto en una escuela de La Matanza: un alumno llevó un arma'
+    titulo_b = 'La Matanza: Salvaje entradera a una jubilada'
+    cursor = _CursorFalso([(570, titulo_a, lat_a, lng_a, 150)])
+    resultado = _detectar_duplicado_semantico(
+        cursor, titulo_b, 'robo', lat_b, lng_b, 80,
+        datetime(2026, 10, 20, tzinfo=timezone.utc),
+    )
+    assert resultado is None

@@ -160,3 +160,25 @@ Implementado como un umbral graduado en `_detectar_duplicado_semantico`: con coo
 7 pruebas nuevas con el caso real de Villa Pueyrredón (título ficticio pero jaccard calibrado igual al par real medido, 0,385) y su contraparte de guarda (mismo par, pero con geocodificación vaga en vez de precisa, para confirmar que la coincidencia precisa no se activa sin eso). 129/129 pruebas de backend en verde.
 
 **Sin verificar todavía**: si este ajuste efectivamente captura el caso de Villa Pueyrredón contra la base real (no se volvió a correr el scraper después de este cambio) ni el radio de 300m contra los grupos reales que Codex todavía no trajo.
+
+## Segunda corrección (misma noche, DEC-019): Villa Pueyrredón no se resuelve -- el guard de precisión lo excluye por diseño
+
+Codex midió contra la base real de producción (no contra una muestra ficticia): de toda `reportes_prensa`, solo 36 filas tienen `radio_metros≤150` (nivel `calle`/`interseccion`, el gate de precisión que exige la corrección anterior). El resto (745 filas) está a nivel `barrio` (radio 800, centroide compartido).
+
+Dos hallazgos que cambian la conclusión anterior:
+
+**Villa Pueyrredón tiene `radio_metros=800` en las 4 filas.** El caso que motivó todo este trabajo fue geocodificado a nivel `barrio`, no `calle`/`interseccion`. El guard de precisión de la corrección anterior (exige `radio_metros≤150` en ambas filas) lo excluye por diseño -- no importa qué radio de distancia se use, nunca iba a pasar por esa rama. El mecanismo implementado nunca resolvió el caso que lo motivó; eso no se había verificado contra el dato real de esa fila hasta ahora.
+
+**Dentro de las 36 filas de precisión real, el único grupo multi-fuente es José C. Paz** (Infobae ×2, Minutouno), coordenada idéntica hasta el 7º decimal, radio 80m en las tres. Midiendo el jaccard real entre los títulos de las dos notas de Infobae -- confirmadas como el mismo hecho por la coordenada idéntica -- da **0,0**. Cero palabras en común. El umbral de 0,15 fijado en la corrección anterior tampoco hubiera detectado este caso real.
+
+Los dos únicos pares de fuente distinta dentro de esas 36 filas que NO son el mismo hecho están a 963m y 1.319m. No hay un solo caso real medido entre 1m y ~960m: la señal de distancia es binaria (0m = mismo hecho confirmado, ~960m+ = hechos distintos confirmados), sin zona gris con datos.
+
+**Corrección aplicada**: `RADIO_COINCIDENCIA_PRECISA_METROS` bajó de 300 (estimado) a 100 (dato real, con margen de sobra contra los 963m conocidos). `UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA` bajó de 0,15 a 0,0: dentro de la rama de coincidencia precisa, el título no aporta nada que la geografía+tiempo+categoría no aporte ya -- medido contra el único caso real disponible (José C. Paz), exigir superposición de título solo generaba un falso negativo sin evitar ningún falso positivo medido.
+
+**Lo que queda abierto, de nuevo**: Villa Pueyrredón y cualquier duplicado geocodificado a nivel `barrio` siguen sin una solución automática. La coordenada a ese nivel es un centroide que cualquier nota de la zona comparte por default, no evidencia de "mismo lugar exacto" -- usarla ahí reabriría el riesgo de falso merge medido en SES-129. No hay, por ahora, una señal confiable para esos casos sin el paso de revisión humana que Rodo ya descartó explícitamente.
+
+2 pruebas nuevas con el caso real exacto de José C. Paz (detecta) y de los dos falsos positivos confirmados a 963m (no detecta). 34/34 pruebas del scraper, 131/131 de todo el backend.
+
+Documentado en DEC-019 (`docs/gestion/DECISIONES.md`).
+
+**Sin verificar todavía**: si 100m y 0,0 son suficientes contra una muestra más grande (la actual son 36 filas, un solo grupo multi-fuente real); confirmar contra una corrida real posterior que José C. Paz (o un caso equivalente futuro) efectivamente queda marcado.
