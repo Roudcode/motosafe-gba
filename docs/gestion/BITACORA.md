@@ -1734,3 +1734,17 @@ Se extrajo a `frontend/src/components/RutaResumenPanel.jsx`. Es un corte-y-pegue
 Verificado con `npx vitest run` (93/93 en verde, sin regresiones), `npx eslint` (0 errores en los dos archivos) y `npm run build` (build de producción limpio, mismo warning preexistente de tamaño de chunk que no tiene que ver con este cambio). No verificado en vivo en el navegador, misma razón que SES-126 (requiere backend + PostgreSQL + auth).
 
 Sigue pendiente de A17 (no cerrado con esto): el resto de `App.jsx` sigue teniendo ~2300 líneas y ~35 `useEffect`. El panel de ruta era el bloque más grande y de menor acoplamiento; lo que queda (barra de búsqueda, navegación activa, detalle de zona, portal de actividad inline) tiene más estado compartido entre sí y requiere más cuidado para separar sin romper nada -- candidato para la próxima sesión que toque A17, no para intentarlo todo de una vez.
+
+## SES-129 (2026-10-20) — A09: medición de duplicación semántica entre fuentes de prensa
+
+Investigado el pendiente de A09 "deduplicación semántica" con el mismo criterio que D02: medir antes de implementar, no suponer.
+
+El extractor dedupe hoy solo por título exacto dentro de una corrida (`firma_titular`, set que se descarta al terminar) y por URL exacta entre corridas (`ON CONFLICT (url_fuente) DO NOTHING`). Ninguna de las dos detecta el mismo incidente cubierto por dos medios distintos, con URL y título distintos — el caso real que infla el conteo de exposición en una zona puntual.
+
+Medido con similitud Jaccard de título sobre las 450 filas reales de `docs/evidencias/2026-10-06/A09-regeocodificacion/propuesta.csv` (20 fuentes, snapshot real de `reportes_prensa`): 9 pares cross-fuente (~2%) son duplicados inequívocos del mismo incidente a un umbral conservador (jacc ≥0,70); por debajo de jacc ~0,45 el método ya confunde incidentes distintos que comparten partido y tema narrativo. El problema es real pero acotado, no masivo.
+
+No se implementó un auto-descarte en producción. `firma_titular` ya documenta por escrito que evitar la deduplicación semántica fue una decisión deliberada (el costo de perder un incidente real por un falso merge es mayor que el de contarlo dos veces), y la medición confirma que ese riesgo es concreto, no teórico: el margen entre "duplicado seguro" y "falso positivo seguro" es angosto. Cambiar el flujo de guardado de `_evaluar_y_guardar` sin poder validarlo en vivo contra la base real de este entorno (sin acceso a Postgres desde aquí) no corresponde decidirlo unilateralmente.
+
+Evidencia completa y tres caminos posibles (auto-descarte a jacc≥0,70, marcar-para-revisión sin descartar, o dejarlo como está) en `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md`, pendiente de la decisión de Rodo antes de tocar producción.
+
+El otro pendiente de A09, validación de calles sin conjunto etiquetado, sigue sin abordarse: no hay un conjunto de casos reales armado para medirlo y no se fabricó uno para evitarlo.

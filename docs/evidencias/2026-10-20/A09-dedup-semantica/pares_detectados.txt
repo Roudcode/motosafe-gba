@@ -1,0 +1,102 @@
+194 pares cross-fuente con Jaccard >= 0.25 (de 450 filas, 101025 pares totales)
+
+jacc=1.00 ratio=1.00
+  [Periódico Para Todos] Dos detenidos por un robo agravado en una carnicería de Los Polvorines
+  [Zona Oeste Diario] Dos detenidos por un robo agravado en una carnicería de Los Polvorines
+
+jacc=0.92 ratio=0.98
+  [0221] Detuvieron a un joven en Ensenada que estuvo prófugo seis años por balear a otro hombre en un robo
+  [Google Noticias La Plata] Detuvieron a un joven en Ensenada que estuvo prófugo seis años por balear a otro hombre en un robo - 0221
+
+jacc=0.92 ratio=0.98
+  [Google Noticias La Plata] Dos motochorros fueron detenidos en La Plata tras intentar deshacerse de un arma en medio de una persecución - 0221
+  [0221] Dos motochorros fueron detenidos en La Plata tras intentar deshacerse de un arma en medio de una persecución
+
+jacc=0.91 ratio=0.97
+  [Google Noticias La Plata] Un policía de La Plata terminó en el hospital tras un fuerte choque entre una moto y un auto - 0221
+  [0221] Un policía de La Plata terminó en el hospital tras un fuerte choque entre una moto y un auto
+
+jacc=0.89 ratio=0.97
+  [Google Noticias La Plata] Emboscaron a un conductor de DiDi en La Plata, lo atacaron a puntazos y le robaron la moto - 0221
+  [0221] Emboscaron a un conductor de DiDi en La Plata, lo atacaron a puntazos y le robaron la moto
+
+jacc=0.77 ratio=0.91
+  [Primer Plano Online] Dos agentes de la Policía Local de Ituzaingó abatieron a motochorro que intentó asaltarlos en Merlo
+  [Google Noticias zona oeste] Dos agentes de la Policía Local de Ituzaingó abatieron a motochorro que intentó asaltarlos en Merlo - Primer Plano Onlin
+
+jacc=0.75 ratio=0.78
+  [Google Noticias La Plata] Un policía de 23 años terminó hospitalizado tras un fuerte choque entre una moto y un auto en La Plata - La Plata 1
+  [0221] Un policía de La Plata terminó en el hospital tras un fuerte choque entre una moto y un auto
+
+jacc=0.73 ratio=0.79
+  [Primer Plano Online] Un jubilado mató a balazos a uno de los delincuentes que intentó asaltar el comercio de su nieto en Moreno
+  [Minutouno] Moreno: un jubilado mató a tiros a uno de los delincuentes que intentó asaltar a su nieto
+
+jacc=0.70 ratio=0.60
+  [Inforbano] Un alumno llevó un revólver a una escuela de La Matanza y el arma se disparó dentro del aula
+  [Diario Popular] La Matanza: un alumno llevó un arma al colegio y disparó dentro del aula
+
+jacc=0.67 ratio=0.81
+  [Google Noticias GBA - seguridad] La Matanza: en medio de la tormenta, un policía se defendió a los tiros de un robo y mató a un ladrón - infobae.com
+  [Google Noticias zona oeste] En medio del temporal, un policía se defendió a los tiros de un robo y mató a un ladrón en La Matanza - TN
+
+jacc=0.62 ratio=0.85
+  [Google Noticias GBA - seguridad] Una pareja de policías mató a tres delincuentes durante un intento de robo en La Matanza - infobae.com
+  [Google Noticias zona oeste] Una pareja de policías mató a tres ladrones en un intento de robo en La Matanza - Clarin.com
+
+jacc=0.60 ratio=0.83
+  [Infobae] La Matanza termina su peor semana de violencia en la historia reciente: hubo más de un asesinato por día
+  [Google Noticias zona oeste] Provincia de Buenos Aires: La Matanza termina su peor semana de violencia en la historia reciente: hubo más de un asesin
+
+jacc=0.60 ratio=0.79
+  [Infobae] La Matanza: dos delincuentes escapaban en una moto robada, chocaron contra un patrullero y uno murió atropellado por otr
+  [Zona Oeste Diario] Persecución fatal en La Matanza: escapaban en una moto robada, chocaron con un patrullero y uno murió atropellado
+
+jacc=0.57 ratio=0.69
+  [Google Noticias GBA - seguridad] Barracas: detuvieron a tres menores de edad por intentar robar una moto y suman 18 antecedentes - Aire de Santa Fe
+  [Minutouno] Detuvieron a tres jóvenes por intentar robar una moto en Barracas: entre los tres suman 18 antecedentes
+
+jacc=0.54 ratio=0.71
+  [0221] Asaltaron y maniataron en La Plata a la mamá y al hermano del exjugador de Estudiantes Luciano Galletti
+  [Google Noticias La Plata] Violento robo en La Plata: maniataron a la mamá y al hermano del ex Estudiantes Luciano Galletti - enagenda.com.ar
+
+jacc=0.50 ratio=0.52
+  [Infobae] La Matanza termina su peor semana de violencia en la historia reciente: hubo más de un asesinato por día
+  [Diario Conurbano] La Matanza: hubo más de un asesinato por día en la última semana
+
+jacc=0.50 ratio=0.76
+  [Google Noticias GBA - seguridad] La Matanza: un agente de la Policía Federal abatió a un ladrón durante un intento de robo - Aire de Santa Fe
+  [Google Noticias zona oeste] Un agente de la Policía Federal abatió a un ladrón que intentó robarle en La Matanza - perfil.com
+
+jacc=0.50 ratio=0.77
+  [Google Noticias GBA - seguridad] Inseguridad en La Matanza: asesinaron a un chofer de una aplicación durante un intento de robo - La Voz del Interior
+  [Google Noticias zona oeste] Conmoción en La Matanza: asesinaron a un chofer de aplicación durante un intento de robo en Rafael Castillo - lanoticia1
+
+jacc=0.46 ratio=0.67
+  [La Nación] Murió Jorge Ríos, el jubilado que había matado a un ladrón que había entrado en su casa de Quilmes
+  [Minutouno] Murió Jorge Ríos, el jubilado de Quilmes que mató a un ladrón en legítima defensa
+
+jacc=0.46 ratio=0.62
+  [0221] Video: persiguieron a un adolescente de La Plata y lo tiraron a una zanja para robarle la bicicleta
+  [Google Noticias La Plata] Robo de bicicleta en La Plata: persiguieron a un adolescente y lo tiraron a una zanja en Puente de Fierro - infocielo.co
+
+jacc=0.46 ratio=0.47
+  [Inforbano] Un alumno llevó un revólver a una escuela de La Matanza y el arma se disparó dentro del aula
+  [Primer Plano Online] La Matanza: estudiante llevó pistola cargada a la escuela y el arma se disparó dentro de su mochila
+
+jacc=0.46 ratio=0.57
+  [Inforbano] Un alumno llevó un revólver a una escuela de La Matanza y el arma se disparó dentro del aula
+  [Zona Oeste Diario] Susto en una escuela de La Matanza: un alumno llevó un arma en la mochila y se disparó al apoyarla en el piso
+
+jacc=0.45 ratio=0.78
+  [Diario Conurbano] Virrey del Pino: un policía se defendió a tiros de un robo y mató a un delincuente
+  [Infobae] Avellaneda: un policía se defendió a tiros de un intento de robo e hirió a un delincuente
+
+jacc=0.45 ratio=0.76
+  [Infobae] Avellaneda: un policía se defendió a tiros de un intento de robo e hirió a un delincuente
+  [Zona Sur Diario] Avellaneda: un policía se defendió a los tiros de un robo y baleó a un adolescente de 17 años
+
+jacc=0.44 ratio=0.64
+  [Google Noticias GBA - seguridad] Un policía de la Ciudad fue asesinado durante un intento de robo en Merlo: recibió dos disparos en el pecho - La Nación
+  [Google Noticias zona oeste] Un comisario de la policía bonaerense fue asesinado durante un intento de robo en La Matanza - La Nación
+
