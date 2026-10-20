@@ -1,0 +1,97 @@
+{
+  "composicion": [
+    {
+      "split": "entrenamiento <2023 (split 2023->2024)",
+      "filas": 11644,
+      "proporcion_clase_pct": {
+        "LEVE": 93.41,
+        "GRAVE": 5.12,
+        "MORTAL": 1.47
+      },
+      "conteo_clase": {
+        "LEVE": 10877,
+        "GRAVE": 596,
+        "MORTAL": 171
+      },
+      "pct_edad_desconocida": 45.3,
+      "pct_lluvia_si": 5.87,
+      "comunas_distintas": 16
+    },
+    {
+      "split": "evaluacion 2024 (split 2023->2024)",
+      "filas": 3331,
+      "proporcion_clase_pct": {
+        "LEVE": 92.4,
+        "GRAVE": 6.3,
+        "MORTAL": 1.29
+      },
+      "conteo_clase": {
+        "LEVE": 3078,
+        "GRAVE": 210,
+        "MORTAL": 43
+      },
+      "pct_edad_desconocida": 12.13,
+      "pct_lluvia_si": 5.82,
+      "comunas_distintas": 16
+    },
+    {
+      "split": "entrenamiento <2024 (split 2024->2025)",
+      "filas": 15559,
+      "proporcion_clase_pct": {
+        "LEVE": 93.84,
+        "GRAVE": 4.83,
+        "MORTAL": 1.33
+      },
+      "conteo_clase": {
+        "LEVE": 14600,
+        "GRAVE": 752,
+        "MORTAL": 207
+      },
+      "pct_edad_desconocida": 45.39,
+      "pct_lluvia_si": 5.96,
+      "comunas_distintas": 16
+    },
+    {
+      "split": "evaluacion 2025 (split 2024->2025)",
+      "filas": 4448,
+      "proporcion_clase_pct": {
+        "LEVE": 91.68,
+        "GRAVE": 7.6,
+        "MORTAL": 0.72
+      },
+      "conteo_clase": {
+        "LEVE": 4078,
+        "GRAVE": 338,
+        "MORTAL": 32
+      },
+      "pct_edad_desconocida": 41.1,
+      "pct_lluvia_si": 6.7,
+      "comunas_distintas": 16
+    }
+  ],
+  "experimento_tamano_entrenamiento": {
+    "n_entrenamiento_chico_2023": 11644,
+    "n_entrenamiento_grande_2024": 15559,
+    "f1_macro_full_2023_train__test_2024": 0.28587404101797426,
+    "f1_macro_full_2024_train__test_2025": 0.3689032743352121,
+    "f1_macro_2024_train_submuestreado_a_tamano_2023__test_2025": {
+      "repeticiones": 10,
+      "valores": [
+        0.37360214469117164,
+        0.38425510591558326,
+        0.3774911906611771,
+        0.3767162641916533,
+        0.3851323340028698,
+        0.3725741869697797,
+        0.38142327182857844,
+        0.38781166017174123,
+        0.3776708550214946,
+        0.3797848487785849
+      ],
+      "media": 0.37964618622326346,
+      "desvio": 0.004742005666061585,
+      "min": 0.3725741869697797,
+      "max": 0.38781166017174123
+    }
+  }
+}
