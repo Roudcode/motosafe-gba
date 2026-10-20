@@ -1,6 +1,6 @@
 # MotoSafe GBA — Centro de documentación
 
-**Entrada única para Rodo, Claude y Codex. Actualizado: 2026-10-13.**
+**Entrada única para Rodo, Claude y Codex. Actualizado: 2026-10-20.**
 
 ## Para retomar el proyecto
 
