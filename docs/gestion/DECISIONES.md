@@ -25,6 +25,56 @@ Separar decisiones tomadas de recomendaciones. Una propuesta de Codex/Claude no 
 - Efectos, límites y costo de mantenimiento: la cobertura de prensa disminuye de forma marcada. La corrida histórica de 267 guardadas incluía 234 del agregador y no puede compararse con la base directa. La ampliación futura exige RSS, sitemap, API o exportación expresamente permitidos.
 - Qué queda pendiente y cuándo revisarla: medir precisión y cobertura de medios directos con muestra humana; incorporar nuevas fuentes sólo tras comprobar sus condiciones de uso.
 
+### DEC-012 — Cambio del modelo productivo a la variante sin edad
+
+- Fecha / estado / autor de la decisión: 2026-10-05 / Vigente / Rodolfo, con evidencia de Codex (SES-066).
+- Problema e IDs relacionados: A02, A03, A04. El protocolo de evaluación temporal (2026-09-15) mostró que la variante con edad y sexo caía de F1 macro 0,378 (split aleatorio interno) a 0,262 (evaluación temporal real sobre 2024), evidencia de sobreajuste a patrones de época más que a señal estable.
+- Opciones consideradas: mantener la variante con edad y sexo; retirar solo la edad; retirar edad y sexo.
+- Decisión y motivo: se retira la edad de la víctima (y su indicador de edad desconocida) y se reentrena. La variante sin edad generaliza mejor entre años (F1 macro evaluación 0,286 en ese momento, recalculado a 0,3032 el 18/10 incluyendo el índice de inseguridad) que la que incluye demografía completa. Sacar también el sexo mejora aún más el F1 macro pero a costa de buena parte del recall de GRAVE, así que se mantiene el sexo.
+- Evidencia o instrucción de Rodo que la respalda: docs/evidencias/2026-09-15/A02-A03-A04/ y docs/evidencias/2026-10-05/A02-A04-recalibracion/.
+- Efectos, límites y costo de mantenimiento: reentrenamiento del artefacto productivo, recalibración de umbrales de percentil y huella SHA256 verificada en `/health`. La demografía disponible no aporta señal estable entre años en este dataset: incluirla la degrada en vez de mejorarla.
+- Qué queda pendiente y cuándo revisarla: D02 (estabilidad año a año) sigue mostrando que el F1 macro varía según el split temporal elegido (2023→2024 vs 2024→2025, intervalos no superpuestos); es un hallazgo abierto, no algo que esta decisión resuelva.
+
+### DEC-013 — No aplicar calibración isotónica en producción
+
+- Fecha / estado / autor de la decisión: 2026-10-05 / Vigente / Rodolfo, con evidencia de Codex (SES-066).
+- Problema e IDs relacionados: A04. ECE alto sin calibrar (0,30 a 0,32 según variante) en el holdout temporal real.
+- Opciones consideradas: aplicar `CalibratedClassifierCV` (isotonic) sobre el holdout temporal; mantener el modelo sin calibrar.
+- Decisión y motivo: no se aplica. La calibración isotónica baja el ECE de 0,30 a 0,01, pero bajo decisión por argmax hunde el recall de GRAVE/MORTAL a menos de 0,07 (la clase mayoritaria domina). El sistema productivo clasifica por percentiles sobre un score continuo, no por argmax, y no sufre ese colapso, así que el beneficio de calibrar no se traslada al uso real.
+- Evidencia o instrucción de Rodo que la respalda: docs/evidencias/2026-10-05/A02-A04-recalibracion/.
+- Efectos, límites y costo de mantenimiento: el ECE alto sin calibrar queda documentado como hallazgo, no corregido. Si en el futuro el sistema pasa a decidir por argmax en algún punto, esta decisión debe revisarse.
+- Qué queda pendiente y cuándo revisarla: ninguno identificado mientras el sistema siga clasificando por percentiles.
+
+### DEC-014 — Alcance de A01/A02: la gravedad condicionada queda en criterio del proyecto
+
+- Fecha / estado / autor de la decisión: 2026-10-09 (SES-113) / Vigente / Rodolfo.
+- Problema e IDs relacionados: A01, A02. Si el criterio de "gravedad condicionada a un siniestro observado" (no probabilidad de ocurrencia) necesitaba someterse a una instancia de revisión académica externa separada, más allá de la evaluación de la cátedra.
+- Opciones consideradas: solicitar formalmente esa revisión externa; dejar el criterio definido en el informe y bajo la evaluación ordinaria del proyecto.
+- Decisión y motivo: Rodo decidió que esto queda en criterio del proyecto, no pendiente de una instancia externa separada. El contrato formal y las etiquetas de interfaz ya dejan explícita la gravedad condicionada; eso alcanza.
+- Evidencia o instrucción de Rodo que la respalda: BITACORA.md, SES-113 (2026-10-09).
+- Efectos, límites y costo de mantenimiento: A01 y A02 pasan a Validado. Ninguno.
+- Qué queda pendiente y cuándo revisarla: ninguno.
+
+### DEC-015 — Costo relativo por clase: corte de percentil p75/p95
+
+- Fecha / estado / autor de la decisión: 2026-10-18 / Vigente / Rodolfo, con evidencia de Codex.
+- Problema e IDs relacionados: A04. Qué costo relativo asignarle a un falso positivo frente a un falso negativo por clase, al decidir el corte de percentil que separa riesgo medio/alto/crítico.
+- Opciones consideradas: distintos cortes de percentil (se midió sensibilidad de recall/precisión en p25/p50/p75/p95) sobre el modelo sin edad en producción, usando 2023 como referencia y 2024 como evaluación real nunca usada para calibrar nada.
+- Decisión y motivo: se mantiene el corte vigente (percentil 75 para "alto", percentil 95 para "crítico"). El recall de MORTAL se mantiene casi plano entre p50 y p75 (83,7% a 74,4%), mientras que el de GRAVE cae de forma gradual en todo el rango (74,8% en p50 a 11,9% en p95). Ese corte pondera el costo de un MORTAL no detectado muy por encima del de una falsa alarma, en el punto donde MORTAL todavía conserva casi todo su recall posible; bajarlo más no gana casi nada en MORTAL y exige marcar como alto riesgo hasta el 60% de las combinaciones zona-hora (p50), lo que vacía de sentido la señal.
+- Evidencia o instrucción de Rodo que la respalda: docs/evidencias/2026-10-18/A04-decision-costo-por-clase/.
+- Efectos, límites y costo de mantenimiento: el recall más bajo de GRAVE bajo este corte (48,1%) es la consecuencia aceptada de la decisión, documentada como tal, no un defecto sin revisar. A04 pasa a Validado.
+- Qué queda pendiente y cuándo revisarla: ninguno identificado; revisar si cambia la composición de clases del dataset en una actualización futura del modelo.
+
+### DEC-016 — Retiro del principio de versionado "capítulo entregado no se reescribe"
+
+- Fecha / estado / autor de la decisión: 2026-10-20 / Vigente / Rodolfo.
+- Problema e IDs relacionados: el principio de versionado original (adoptado 2026-09-15, SES-055) establecía que un capítulo ya entregado a la cátedra no se reescribe, salvo excepción documentada. Al aplicarlo esta semana a Capítulo 4 (ya entregado) y Capítulo 7 (recuperado, no entregado) generó un tratamiento distinto entre capítulos sin que esa distinción le sirviera al proyecto: las Entregas parciales (1 a 9) son una fotografía a esa fecha para la cátedra, no una versión final que deba quedar congelada.
+- Opciones consideradas: mantener el principio original (notas de versión fechadas en capítulos ya entregados); retirarlo y mantener todos los capítulos directamente actualizados, dejando la trazabilidad de cada corrección en la bitácora en vez de en el cuerpo del capítulo.
+- Decisión y motivo: se retira el principio original. Los capítulos (entregados o no) se corrigen directo, sin notas de versión fechadas. Lo que debe estar siempre completo y al día es la Entrega Final; las entregas parciales reflejan el estado a su fecha, y ese estado queda preservado en BITACORA.md, CONTINUIDAD.md y la bitácora de Claude en el Project, no en el capítulo. Además, se revisan los capítulos que describen trabajo a futuro (Introducción, Metodología) para que no sigan afirmando como pendiente algo que un capítulo posterior del mismo informe ya reporta como hecho.
+- Evidencia o instrucción de Rodo que la respalda: conversación del 2026-10-20 ("yo entregué esto, pero lo podemos modificar... para la entrega final que vamos a hacer al final debe estar todo actualizado hasta la fecha").
+- Efectos, límites y costo de mantenimiento: Capítulo 4 ya no necesita notas de versión fechadas (no las tenía agregadas; se mantiene con los números vigentes). Se corrigió además un pasaje de Capítulo 2.5 que seguía afirmando que no existía política de costos por clase, cuando esa política ya está definida en DEC-015 y documentada en Capítulo 4; y un pasaje de 4.8 sobre integración continua que ya no reflejaba que el CI corre pytest completo contra un PostgreSQL/PostGIS real desde el 05/10.
+- Qué queda pendiente y cuándo revisarla: revisar 2.7 (declaración de uso de IA) — la división de roles que describe (Codex implementación, Claude redacción académica) puede haber quedado desactualizada si Claude pasó a hacer desarrollo directo; confirmar con Rodo antes de tocarla.
+
 ## Plantilla
 
 ### DEC-XXX — Título

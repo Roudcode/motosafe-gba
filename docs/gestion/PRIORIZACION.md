@@ -1,6 +1,8 @@
 # Orden de avance propuesto
 
-Actualizado: 2026-09-13. **Recomendación, no autorización para ejecutar todos los ítems.** El alcance y los estados viven en BACKLOG; esta página agrupa trabajo, no es otra lista de tareas.
+Actualizado: 2026-09-13; nota de estado agregada 2026-10-20. **Recomendación, no autorización para ejecutar todos los ítems.** El alcance y los estados viven en BACKLOG; esta página agrupa trabajo, no es otra lista de tareas.
+
+**Nota de estado (20/10):** el cuarto bloque (evidencia científica) y buena parte del tercero (experiencia móvil) ya avanzaron sustancialmente desde que se escribió este orden — A02/A03/A04/D02 están validados o validados parcialmente (ver BACKLOG), y SES-117 a SES-123 cubrieron auditorías visuales de vertical de celular, design tokens y consistencia general. Los bloques y su lógica de selección siguen siendo válidos; lo que ya no es preciso es leer el cuarto bloque como "todavía sin empezar". El estado ítem por ítem vive en BACKLOG, no acá.
 
 ## Primer bloque recomendado: una base confiable y visible
 

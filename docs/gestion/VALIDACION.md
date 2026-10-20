@@ -16,6 +16,7 @@ Guardar fecha, ID, commit/base, entorno, entradas, resultado esperado, observado
 | GPS | Traza de detención, giro entre fixes, pérdida de señal, desvío y llegada; distinguir simulación de prueba de campo. |
 | ML/datos | Split/fechas/hashes, baseline, métricas por clase, incertidumbre, faltantes y evaluación independiente. |
 | Operación | Arranque limpio, fallo de upstream/base, límites y recuperación; no usar datos productivos para pruebas destructivas. |
+| Documentos de tesis (.docx) | Edición por XML sobre el documento descomprimido (nunca reescritura del archivo entero); `merge_runs.py` antes de buscar texto; cada reemplazo se valida con un `assert` de ocurrencia única antes de aplicarse; `validate.py --original` confirma XSD y conteo de párrafos sin cambios; render a PDF/JPEG y revisión visual página por página de cada pasaje tocado antes de darlo por cerrado. |
 
 ## Matriz visual propuesta
 
