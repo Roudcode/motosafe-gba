@@ -1,0 +1,723 @@
+{
+  "protocolo": {
+    "train_hasta": 2023,
+    "seleccion": 2024,
+    "evaluacion_independiente": 2025,
+    "indice_inseguridad": "excluido: no hay version temporalmente fechada"
+  },
+  "filas": {
+    "train": 15559,
+    "seleccion": 3331,
+    "evaluacion": 4448
+  },
+  "faltantes": {
+    "edad_train": 0.4538852111318208,
+    "edad_seleccion": 0.12128489942960072,
+    "edad_evaluacion": 0.41097122302158273
+  },
+  "resultados": [
+    {
+      "variante": "base",
+      "columnas": [
+        "hora",
+        "edad_victima",
+        "edad_desconocida",
+        "temperatura",
+        "humedad",
+        "dia_semana",
+        "comuna",
+        "tipo_de_via_siniestro",
+        "contraparte_siniestro",
+        "sexo_victima",
+        "lluvia"
+      ],
+      "f1_macro_seleccion": 0.25777042041431314,
+      "f1_macro_evaluacion": 0.35607605935786313,
+      "reporte_evaluacion": {
+        "GRAVE": {
+          "precision": 0.13573883161512026,
+          "recall": 0.7011834319526628,
+          "f1-score": 0.22744721689059502,
+          "support": 338.0
+        },
+        "LEVE": {
+          "precision": 0.9792874896437448,
+          "recall": 0.5796959293771456,
+          "f1-score": 0.7282809611829945,
+          "support": 4078.0
+        },
+        "MORTAL": {
+          "precision": 0.0625,
+          "recall": 0.5625,
+          "f1-score": 0.1125,
+          "support": 32.0
+        },
+        "accuracy": 0.5888039568345323,
+        "macro avg": {
+          "precision": 0.39250877375295506,
+          "recall": 0.6144597871099361,
+          "f1-score": 0.35607605935786313,
+          "support": 4448.0
+        },
+        "weighted avg": {
+          "precision": 0.9085913012259672,
+          "recall": 0.5888039568345323,
+          "f1-score": 0.6857929224400342,
+          "support": 4448.0
+        }
+      },
+      "matriz_confusion": [
+        [
+          237,
+          47,
+          54
+        ],
+        [
+          1498,
+          2364,
+          216
+        ],
+        [
+          11,
+          3,
+          18
+        ]
+      ],
+      "clases": [
+        "GRAVE",
+        "LEVE",
+        "MORTAL"
+      ],
+      "brier_por_clase": {
+        "GRAVE": 0.12432542713764375,
+        "LEVE": 0.2100666965478184,
+        "MORTAL": 0.033764630729817426
+      },
+      "ece_multiclase": 0.19828357303952857,
+      "intervalo_bootstrap_f1_macro_95": [
+        0.3370191128879507,
+        0.3763265422383198
+      ],
+      "metricas_por_edad_desconocida": {
+        "0": {
+          "filas": 2620,
+          "f1_macro": 0.24075614223397476
+        },
+        "1": {
+          "filas": 1828,
+          "f1_macro": 0.3327853881278539
+        }
+      },
+      "metricas_por_comuna": {
+        "1": {
+          "filas": 496,
+          "soporte_por_clase": {
+            "LEVE": 472,
+            "GRAVE": 22,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.33941843284786627
+        },
+        "10": {
+          "filas": 284,
+          "soporte_por_clase": {
+            "LEVE": 262,
+            "GRAVE": 18,
+            "MORTAL": 4
+          },
+          "f1_macro": 0.3520261934746347
+        },
+        "11": {
+          "filas": 225,
+          "soporte_por_clase": {
+            "LEVE": 196,
+            "GRAVE": 29
+          },
+          "f1_macro": 0.3170407195838014
+        },
+        "12": {
+          "filas": 313,
+          "soporte_por_clase": {
+            "LEVE": 289,
+            "GRAVE": 20,
+            "MORTAL": 4
+          },
+          "f1_macro": 0.31237731237731237
+        },
+        "13": {
+          "filas": 272,
+          "soporte_por_clase": {
+            "LEVE": 252,
+            "GRAVE": 19,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3014010958702607
+        },
+        "14": {
+          "filas": 313,
+          "soporte_por_clase": {
+            "LEVE": 281,
+            "GRAVE": 31,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.32840670304250325
+        },
+        "15": {
+          "filas": 345,
+          "soporte_por_clase": {
+            "LEVE": 317,
+            "GRAVE": 27,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.37872934644457823
+        },
+        "2": {
+          "filas": 137,
+          "soporte_por_clase": {
+            "LEVE": 124,
+            "GRAVE": 12,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.46845670053217225
+        },
+        "3": {
+          "filas": 289,
+          "soporte_por_clase": {
+            "LEVE": 267,
+            "GRAVE": 20,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.44105771817636225
+        },
+        "4": {
+          "filas": 352,
+          "soporte_por_clase": {
+            "LEVE": 318,
+            "GRAVE": 28,
+            "MORTAL": 6
+          },
+          "f1_macro": 0.335216206155361
+        },
+        "5": {
+          "filas": 274,
+          "soporte_por_clase": {
+            "LEVE": 254,
+            "GRAVE": 18,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.37781011791646524
+        },
+        "6": {
+          "filas": 205,
+          "soporte_por_clase": {
+            "LEVE": 195,
+            "GRAVE": 10
+          },
+          "f1_macro": 0.25712486222642106
+        },
+        "7": {
+          "filas": 336,
+          "soporte_por_clase": {
+            "LEVE": 312,
+            "GRAVE": 23,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3355099438020475
+        },
+        "8": {
+          "filas": 250,
+          "soporte_por_clase": {
+            "LEVE": 223,
+            "GRAVE": 21,
+            "MORTAL": 6
+          },
+          "f1_macro": 0.3924350159644278
+        },
+        "9": {
+          "filas": 340,
+          "soporte_por_clase": {
+            "LEVE": 304,
+            "GRAVE": 35,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3736284807434312
+        },
+        "<NA>": {
+          "filas": 17,
+          "soporte_por_clase": {
+            "LEVE": 12,
+            "GRAVE": 5
+          },
+          "f1_macro": 0.4631578947368421
+        }
+      }
+    },
+    {
+      "variante": "sin_edad",
+      "columnas": [
+        "hora",
+        "temperatura",
+        "humedad",
+        "dia_semana",
+        "comuna",
+        "tipo_de_via_siniestro",
+        "contraparte_siniestro",
+        "sexo_victima",
+        "lluvia"
+      ],
+      "f1_macro_seleccion": 0.3048311321536194,
+      "f1_macro_evaluacion": 0.3689032743352121,
+      "reporte_evaluacion": {
+        "GRAVE": {
+          "precision": 0.13198757763975155,
+          "recall": 0.5029585798816568,
+          "f1-score": 0.2091020910209102,
+          "support": 338.0
+        },
+        "LEVE": {
+          "precision": 0.9588752196836555,
+          "recall": 0.6689553702795488,
+          "f1-score": 0.7880976455293948,
+          "support": 4078.0
+        },
+        "MORTAL": {
+          "precision": 0.06031746031746032,
+          "recall": 0.59375,
+          "f1-score": 0.10951008645533142,
+          "support": 32.0
+        },
+        "accuracy": 0.6558003597122302,
+        "macro avg": {
+          "precision": 0.3837267525469558,
+          "recall": 0.5885546500537352,
+          "f1-score": 0.3689032743352121,
+          "support": 4448.0
+        },
+        "weighted avg": {
+          "precision": 0.8895762378242676,
+          "recall": 0.6558003597122302,
+          "f1-score": 0.7392183066547909,
+          "support": 4448.0
+        }
+      },
+      "matriz_confusion": [
+        [
+          170,
+          112,
+          56
+        ],
+        [
+          1110,
+          2728,
+          240
+        ],
+        [
+          8,
+          5,
+          19
+        ]
+      ],
+      "clases": [
+        "GRAVE",
+        "LEVE",
+        "MORTAL"
+      ],
+      "brier_por_clase": {
+        "GRAVE": 0.12271784183037625,
+        "LEVE": 0.20787101079594567,
+        "MORTAL": 0.0354698195873194
+      },
+      "ece_multiclase": 0.2055716414417435,
+      "intervalo_bootstrap_f1_macro_95": [
+        0.35036232873844075,
+        0.38742858786193723
+      ],
+      "metricas_por_edad_desconocida": {
+        "0": {
+          "filas": 2620,
+          "f1_macro": 0.3106997280908242
+        },
+        "1": {
+          "filas": 1828,
+          "f1_macro": 0.3234769548483995
+        }
+      },
+      "metricas_por_comuna": {
+        "1": {
+          "filas": 496,
+          "soporte_por_clase": {
+            "LEVE": 472,
+            "GRAVE": 22,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.3564895828659458
+        },
+        "10": {
+          "filas": 284,
+          "soporte_por_clase": {
+            "LEVE": 262,
+            "GRAVE": 18,
+            "MORTAL": 4
+          },
+          "f1_macro": 0.36562716000561074
+        },
+        "11": {
+          "filas": 225,
+          "soporte_por_clase": {
+            "LEVE": 196,
+            "GRAVE": 29
+          },
+          "f1_macro": 0.2926315789473684
+        },
+        "12": {
+          "filas": 313,
+          "soporte_por_clase": {
+            "LEVE": 289,
+            "GRAVE": 20,
+            "MORTAL": 4
+          },
+          "f1_macro": 0.306652576489533
+        },
+        "13": {
+          "filas": 272,
+          "soporte_por_clase": {
+            "LEVE": 252,
+            "GRAVE": 19,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.29224864479879714
+        },
+        "14": {
+          "filas": 313,
+          "soporte_por_clase": {
+            "LEVE": 281,
+            "GRAVE": 31,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3613032581453634
+        },
+        "15": {
+          "filas": 345,
+          "soporte_por_clase": {
+            "LEVE": 317,
+            "GRAVE": 27,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3966392685904881
+        },
+        "2": {
+          "filas": 137,
+          "soporte_por_clase": {
+            "LEVE": 124,
+            "GRAVE": 12,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.47864396654719243
+        },
+        "3": {
+          "filas": 289,
+          "soporte_por_clase": {
+            "LEVE": 267,
+            "GRAVE": 20,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.44312378335050956
+        },
+        "4": {
+          "filas": 352,
+          "soporte_por_clase": {
+            "LEVE": 318,
+            "GRAVE": 28,
+            "MORTAL": 6
+          },
+          "f1_macro": 0.3699781741551893
+        },
+        "5": {
+          "filas": 274,
+          "soporte_por_clase": {
+            "LEVE": 254,
+            "GRAVE": 18,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.3740562199355191
+        },
+        "6": {
+          "filas": 205,
+          "soporte_por_clase": {
+            "LEVE": 195,
+            "GRAVE": 10
+          },
+          "f1_macro": 0.3056169836355595
+        },
+        "7": {
+          "filas": 336,
+          "soporte_por_clase": {
+            "LEVE": 312,
+            "GRAVE": 23,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.35990795139916987
+        },
+        "8": {
+          "filas": 250,
+          "soporte_por_clase": {
+            "LEVE": 223,
+            "GRAVE": 21,
+            "MORTAL": 6
+          },
+          "f1_macro": 0.4196602617655249
+        },
+        "9": {
+          "filas": 340,
+          "soporte_por_clase": {
+            "LEVE": 304,
+            "GRAVE": 35,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3826190809797367
+        },
+        "<NA>": {
+          "filas": 17,
+          "soporte_por_clase": {
+            "LEVE": 12,
+            "GRAVE": 5
+          },
+          "f1_macro": 0.4631578947368421
+        }
+      }
+    },
+    {
+      "variante": "sin_demografia",
+      "columnas": [
+        "hora",
+        "temperatura",
+        "humedad",
+        "dia_semana",
+        "comuna",
+        "tipo_de_via_siniestro",
+        "contraparte_siniestro",
+        "lluvia"
+      ],
+      "f1_macro_seleccion": 0.3694711486406017,
+      "f1_macro_evaluacion": 0.3592868678130218,
+      "reporte_evaluacion": {
+        "GRAVE": {
+          "precision": 0.12,
+          "recall": 0.07100591715976332,
+          "f1-score": 0.08921933085501858,
+          "support": 338.0
+        },
+        "LEVE": {
+          "precision": 0.9271523178807947,
+          "recall": 0.8925944090240314,
+          "f1-score": 0.9095452273863068,
+          "support": 4078.0
+        },
+        "MORTAL": {
+          "precision": 0.043478260869565216,
+          "recall": 0.4375,
+          "f1-score": 0.07909604519774012,
+          "support": 32.0
+        },
+        "accuracy": 0.8268884892086331,
+        "macro avg": {
+          "precision": 0.36354352625011993,
+          "recall": 0.4670334420612649,
+          "f1-score": 0.3592868678130218,
+          "support": 4448.0
+        },
+        "weighted avg": {
+          "precision": 0.8594600846820383,
+          "recall": 0.8268884892086331,
+          "f1-score": 0.841234857139542,
+          "support": 4448.0
+        }
+      },
+      "matriz_confusion": [
+        [
+          24,
+          269,
+          45
+        ],
+        [
+          175,
+          3640,
+          263
+        ],
+        [
+          1,
+          17,
+          14
+        ]
+      ],
+      "clases": [
+        "GRAVE",
+        "LEVE",
+        "MORTAL"
+      ],
+      "brier_por_clase": {
+        "GRAVE": 0.14767633888496043,
+        "LEVE": 0.26168291217729817,
+        "MORTAL": 0.04304739471637128
+      },
+      "ece_multiclase": 0.2850169517887031,
+      "intervalo_bootstrap_f1_macro_95": [
+        0.3436743458837122,
+        0.37547423142226444
+      ],
+      "metricas_por_edad_desconocida": {
+        "0": {
+          "filas": 2620,
+          "f1_macro": 0.36842490085160634
+        },
+        "1": {
+          "filas": 1828,
+          "f1_macro": 0.3144399460188934
+        }
+      },
+      "metricas_por_comuna": {
+        "1": {
+          "filas": 496,
+          "soporte_por_clase": {
+            "LEVE": 472,
+            "GRAVE": 22,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.3419124353906962
+        },
+        "10": {
+          "filas": 284,
+          "soporte_por_clase": {
+            "LEVE": 262,
+            "GRAVE": 18,
+            "MORTAL": 4
+          },
+          "f1_macro": 0.33349389852280026
+        },
+        "11": {
+          "filas": 225,
+          "soporte_por_clase": {
+            "LEVE": 196,
+            "GRAVE": 29
+          },
+          "f1_macro": 0.3371308016877637
+        },
+        "12": {
+          "filas": 313,
+          "soporte_por_clase": {
+            "LEVE": 289,
+            "GRAVE": 20,
+            "MORTAL": 4
+          },
+          "f1_macro": 0.39168875210167853
+        },
+        "13": {
+          "filas": 272,
+          "soporte_por_clase": {
+            "LEVE": 252,
+            "GRAVE": 19,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3448412698412699
+        },
+        "14": {
+          "filas": 313,
+          "soporte_por_clase": {
+            "LEVE": 281,
+            "GRAVE": 31,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3794810853634383
+        },
+        "15": {
+          "filas": 345,
+          "soporte_por_clase": {
+            "LEVE": 317,
+            "GRAVE": 27,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.38393299327878766
+        },
+        "2": {
+          "filas": 137,
+          "soporte_por_clase": {
+            "LEVE": 124,
+            "GRAVE": 12,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.41365461847389556
+        },
+        "3": {
+          "filas": 289,
+          "soporte_por_clase": {
+            "LEVE": 267,
+            "GRAVE": 20,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.38676688862562464
+        },
+        "4": {
+          "filas": 352,
+          "soporte_por_clase": {
+            "LEVE": 318,
+            "GRAVE": 28,
+            "MORTAL": 6
+          },
+          "f1_macro": 0.335958847319694
+        },
+        "5": {
+          "filas": 274,
+          "soporte_por_clase": {
+            "LEVE": 254,
+            "GRAVE": 18,
+            "MORTAL": 2
+          },
+          "f1_macro": 0.3439395718367187
+        },
+        "6": {
+          "filas": 205,
+          "soporte_por_clase": {
+            "LEVE": 195,
+            "GRAVE": 10
+          },
+          "f1_macro": 0.35127314814814814
+        },
+        "7": {
+          "filas": 336,
+          "soporte_por_clase": {
+            "LEVE": 312,
+            "GRAVE": 23,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3096774193548387
+        },
+        "8": {
+          "filas": 250,
+          "soporte_por_clase": {
+            "LEVE": 223,
+            "GRAVE": 21,
+            "MORTAL": 6
+          },
+          "f1_macro": 0.34371136338091496
+        },
+        "9": {
+          "filas": 340,
+          "soporte_por_clase": {
+            "LEVE": 304,
+            "GRAVE": 35,
+            "MORTAL": 1
+          },
+          "f1_macro": 0.3185124864277959
+        },
+        "<NA>": {
+          "filas": 17,
+          "soporte_por_clase": {
+            "LEVE": 12,
+            "GRAVE": 5
+          },
+          "f1_macro": 0.22727272727272727
+        }
+      }
+    }
+  ]
+}

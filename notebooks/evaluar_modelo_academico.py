@@ -106,6 +106,21 @@ def medir(nombre: str, train: pd.DataFrame, validacion: pd.DataFrame, test: pd.D
             "filas": int(len(grupo)),
             "f1_macro": float(f1_score(y_test[posiciones], pred_test[posiciones], average="macro", zero_division=0)),
         }
+    # D02: estabilidad por comuna. El soporte de GRAVE/MORTAL dentro de una
+    # sola comuna es chico (ver conteos reales en el reporte), así que f1_macro
+    # por comuna es ruidoso y se publica con su soporte al lado -- no para
+    # comparar comunas entre sí con el mismo rigor que la evaluación agregada,
+    # sino para que una caída puntual en alguna no quede escondida en el
+    # promedio general.
+    comunas = {}
+    for comuna, grupo in test.groupby("comuna"):
+        posiciones = np.flatnonzero(test["comuna"].to_numpy() == comuna)
+        soporte_por_clase = grupo["gravedad_siniestro"].value_counts().to_dict()
+        comunas[str(comuna)] = {
+            "filas": int(len(grupo)),
+            "soporte_por_clase": {str(k): int(v) for k, v in soporte_por_clase.items()},
+            "f1_macro": float(f1_score(y_test[posiciones], pred_test[posiciones], average="macro", zero_division=0)),
+        }
     return {
         "variante": nombre,
         "columnas": columnas,
@@ -116,6 +131,7 @@ def medir(nombre: str, train: pd.DataFrame, validacion: pd.DataFrame, test: pd.D
         "clases": [str(c) for c in clases], "brier_por_clase": brier, "ece_multiclase": ece(y_test, probas, clases),
         "intervalo_bootstrap_f1_macro_95": intervalo_f1(y_test, pred_test),
         "metricas_por_edad_desconocida": grupos_faltante,
+        "metricas_por_comuna": comunas,
     }
 
 

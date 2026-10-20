@@ -207,6 +207,36 @@ def test_hotspots_sin_contexto_propio_usa_perfil_generico_pero_no_rompe():
     assert "prediccion_modelo" in hotspot
 
 
+def test_hotspots_con_contexto_propio_incluye_confianza_estabilidad_valida():
+    """
+    confianza_estabilidad (cuanto coinciden 10 modelos bootstrap en el nivel de
+    esa zona, ver notebooks/calcular_confianza_zonas.py) viene cargada desde
+    hotspots_contexto.csv para un cluster con fila propia: tiene que ser un
+    numero en [0, 1], no None.
+    """
+    fila_db = {
+        "id": 1, "cluster": 0, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_siniestros": 50, "mortales": 1, "graves": 3, "nivel_riesgo": "bajo",
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])):
+        r = client.get("/hotspots")
+    hotspot = r.json()[0]
+    assert hotspot["confianza_estabilidad"] is not None
+    assert 0.0 <= hotspot["confianza_estabilidad"] <= 1.0
+
+
+def test_hotspots_sin_contexto_propio_confianza_estabilidad_es_none():
+    """Un cluster sin fila propia no tiene bootstrap calculado: no se inventa un numero."""
+    fila_db = {
+        "id": 2, "cluster": 99999, "latitud": -34.6, "longitud": -58.4,
+        "cantidad_siniestros": 10, "mortales": 0, "graves": 0, "nivel_riesgo": "bajo",
+    }
+    with patch("main.psycopg2.connect", return_value=_mock_db([fila_db])):
+        r = client.get("/hotspots")
+    hotspot = r.json()[0]
+    assert hotspot["confianza_estabilidad"] is None
+
+
 def test_niveles_relativos_desde_matriz_clasifica_contra_cortes_fijos():
     """
     niveles_relativos_desde_matriz ya no recalcula percentiles sobre el lote de
@@ -292,7 +322,9 @@ def test_hotspots_diferencia_niveles_entre_si_no_todos_iguales():
     contexto_original = main.contexto_hotspots
     contexto_falso = contexto_original.copy() if hasattr(contexto_original, 'copy') else None
     import pandas as pd
-    contexto_falso = pd.DataFrame([{"cluster": i, **perfiles[i - 1]} for i in range(1, len(perfiles) + 1)])
+    contexto_falso = pd.DataFrame([
+        {"cluster": i, **perfiles[i - 1], "confianza_estabilidad": None} for i in range(1, len(perfiles) + 1)
+    ])
     with patch.object(main, "contexto_hotspots", contexto_falso):
         with patch("main.psycopg2.connect", return_value=_mock_db(filas_db)):
             with patch("main.datetime", _RelojFijo):

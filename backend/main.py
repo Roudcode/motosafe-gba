@@ -398,6 +398,29 @@ def predecir_para_fila(comuna, tipo_via, hora, dia_semana, contraparte, edad, se
 UMBRALES_HOTSPOTS = {'p25': 0.6950040471874488, 'p75': 0.8270579939778988, 'p95': 1.0243031457262397}
 UMBRALES_CORREDORES = {'p25': 0.7188575554056662, 'p75': 0.8516986379914744, 'p95': 1.0372954984662501}
 
+# confianza_estabilidad (columna de hotspots_contexto.csv, expuesta en /hotspots):
+# qué tan sensible es el nivel_riesgo de ESA zona puntual a la variabilidad propia
+# de reentrenar el modelo, no a si generaliza bien de un año a otro (eso ya lo mide
+# D02). Se entrenaron 10 Random Forest con los mismos hiperparámetros de
+# modelo_final sobre 10 remuestras bootstrap del dataset completo (el mismo
+# universo que usa reentrenar_modelo.py, sin recorte por año), se evaluó cada uno
+# sobre la misma grilla de 336 escenarios (24 horas x 7 días x lluvia sí/no) que
+# calibra UMBRALES_HOTSPOTS, y se midió en qué fracción de esos 10 modelos la zona
+# cae en el mismo nivel de riesgo que el resto -- esa fracción, promediada sobre
+# los 336 escenarios, es confianza_estabilidad (ver notebooks/calcular_confianza_zonas.py
+# y docs/evidencias/2026-10-18/confianza-zonas-bootstrap/).
+#
+# Resultado real sobre las 740 zonas: acuerdo global entre los 10 modelos 84,9%
+# (mediana 90,0%), con 'crítico' y 'alto' sensiblemente menos estables (78,5-78,9%
+# de acuerdo) que 'bajo' y 'medio' (85,3-90,3%) -- la inestabilidad se concentra
+# justo en los niveles que más importan para una decisión de seguridad. Por zona,
+# la mediana de acuerdo es 83,8%, con un mínimo de 52,6% y solo 1 zona (de 740) por
+# debajo del 60%. NO reemplaza nivel_riesgo (que sigue siendo 100% el output de
+# modelo_final.pkl, sin tocar su calibración): es una medida adicional, honesta,
+# de cuánto puede sostenerse esa clasificación puntual si el modelo se reentrena.
+# None cuando el hotspot no tiene fila propia en hotspots_contexto.csv (no hay
+# bootstrap calculado para un perfil genérico que no es una zona real).
+
 
 def _huella_artefactos_riesgo():
     """SHA256 de los artefactos que alimentaron la calibracion de UMBRALES_HOTSPOTS/
@@ -422,7 +445,7 @@ def _huella_artefactos_riesgo():
 # Se pega a mano junto con los umbrales de arriba cada vez que se corre
 # calibrar_umbrales_riesgo.py (que ahora imprime esta huella al final). Si no
 # coincide con _huella_artefactos_riesgo() en runtime, /health lo expone.
-_HUELLA_UMBRALES_CALIBRADOS = '75fa3d611b18ac3a1eb2f6f5f988a984a2701f98c674d2e6673beca03719a536'
+_HUELLA_UMBRALES_CALIBRADOS = '19401654e33717952769b8af10a349a55de4e8d064ed4bfde0a672b9241a4fff'
 try:
     UMBRALES_RIESGO_ACTUALIZADOS = _huella_artefactos_riesgo() == _HUELLA_UMBRALES_CALIBRADOS
 except OSError:
@@ -616,7 +639,7 @@ def obtener_hotspots(request: Request):
     # en Python puro, mas el filtro lineal sobre contexto_hotspots en cada vuelta.
     # El clima es el mismo para las 740 filas (una sola ciudad, un solo momento),
     # así que se pide una vez (con cache) y no por hotspot.
-    columnas_contexto = ['cluster', 'comuna_moda', 'tipo_via_moda', 'contraparte_moda', 'edad_promedio', 'sexo_moda']
+    columnas_contexto = ['cluster', 'comuna_moda', 'tipo_via_moda', 'contraparte_moda', 'edad_promedio', 'sexo_moda', 'confianza_estabilidad']
     contexto = pd.DataFrame({'cluster': [h['cluster'] for h in resultado]}).merge(
         contexto_hotspots[columnas_contexto], on='cluster', how='left',
     )
@@ -634,6 +657,9 @@ def obtener_hotspots(request: Request):
     contexto['contraparte_moda'] = contexto['contraparte_moda'].fillna(_CONTEXTO_GENERICO['contraparte'])
     contexto['edad_promedio'] = contexto['edad_promedio'].fillna(_CONTEXTO_GENERICO['edad'])
     contexto['sexo_moda'] = contexto['sexo_moda'].fillna(_CONTEXTO_GENERICO['sexo'])
+    # confianza_estabilidad NO se completa con un generico: no se calculo para
+    # un hotspot sin fila propia (ver comentario largo mas abajo), asi que
+    # queda None en vez de inventar un numero.
 
     filas = pd.DataFrame({
         'hora': hora_actual,
@@ -667,6 +693,8 @@ def obtener_hotspots(request: Request):
         h['prediccion_modelo'] = probs
         h['contexto_estimado'] = bool(contexto_estimado.iloc[i])
         h['clima'] = clima_actual
+        valor_confianza = contexto['confianza_estabilidad'].iloc[i]
+        h['confianza_estabilidad'] = None if pd.isna(valor_confianza) else round(float(valor_confianza), 3)
         _aplicar_ajuste_riesgo(h, h['latitud'], h['longitud'], reportes_choque_recientes, 'choque')
 
     return resultado
