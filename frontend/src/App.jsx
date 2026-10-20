@@ -5,6 +5,7 @@ import {
   Search, X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed, Pencil, Zap, Scale,
   ShieldCheck, CircleCheck, TriangleAlert, Compass, Bike, Box, BarChart3, LogOut, Wrench, WifiOff,
   Siren, ShieldAlert, Layers, Navigation, Square, Gauge, CornerDownRight, Clock, Newspaper, ArrowUpRight, ArrowUp,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 
 import {
@@ -242,6 +243,12 @@ function App() {
   const [zonaMostrada, setZonaMostrada] = useState(null)
 
   const [rutaAbierta, setRutaAbierta] = useState(false)
+  // R-04 (Capitulo 6): la prueba real con 12 motociclistas pidio mostrar
+  // menos por default y dejar el detalle del calculo como algo opcional
+  // (Casos 4 y 10). Arranca cerrado: cada tarjeta de ruta muestra de
+  // entrada solo tiempo, distancia y la advertencia principal; cobertura
+  // por fuente y el desglose de puntos quedan detras de este toggle.
+  const [detalleRutaAbierto, setDetalleRutaAbierto] = useState(false)
   const [origenTexto, setOrigenTexto] = useState('')
   const [destinoTexto, setDestinoTexto] = useState('')
   const [origenPunto, setOrigenPunto] = useState(null)
@@ -2112,11 +2119,13 @@ function App() {
                   ? <><CircleCheck size={12} /> sin zonas registradas cerca</>
                   : <><TriangleAlert size={12} /> exposición {NIVELES[r.nivelRelativo]?.label.toLowerCase()} entre alternativas</>}
               </span>
-              <span className="ruta-opcion-cobertura" title="Proporción de puntos del trazado próximos a registros de cada fuente; no mide la probabilidad de un siniestro.">
-                Cobertura: siniestros {r.coberturaPorFuente.siniestro == null ? 'sin datos' : `${Math.round(r.coberturaPorFuente.siniestro * 100)}%`}
-                {' · '}inseguridad {r.coberturaPorFuente.inseguridad == null ? 'sin datos' : `${Math.round(r.coberturaPorFuente.inseguridad * 100)}%`}
-              </span>
-              {r.riesgo > 0 && (
+              {detalleRutaAbierto && (
+                <span className="ruta-opcion-cobertura">
+                  Cobertura: siniestros {r.coberturaPorFuente.siniestro == null ? 'sin datos' : `${Math.round(r.coberturaPorFuente.siniestro * 100)}%`}
+                  {' · '}inseguridad {r.coberturaPorFuente.inseguridad == null ? 'sin datos' : `${Math.round(r.coberturaPorFuente.inseguridad * 100)}%`}
+                </span>
+              )}
+              {detalleRutaAbierto && r.riesgo > 0 && (
                 <span className="ruta-opcion-desglose">
                   {r.cantSiniestros > 0 && <span className="desglose-item desglose-siniestro" title={`${r.cantSiniestros} zonas de siniestro cruzadas`}><Siren size={11} /> {r.cantSiniestros}</span>}
                   {r.cantInseguridad > 0 && <span className="desglose-item desglose-inseguridad" title={`${r.cantInseguridad} zonas de inseguridad cruzadas`}><ShieldAlert size={11} /> {r.cantInseguridad}</span>}
@@ -2131,6 +2140,30 @@ function App() {
           <p className="ruta-cobertura-aviso">
             La exposición compara zonas históricas registradas; no estima la probabilidad de un siniestro ni confirma cobertura completa fuera de las áreas con datos.
           </p>
+          {/* R-04/R-05 (Capitulo 6): toggle de detalle + ejemplo visual fijo
+              en vez de un tooltip que solo aparece con hover (inutil en
+              celular, que es como la mayoria usa esto en la calle). La
+              prueba real mostro que el texto aclaratorio solo no alcanza
+              para que se entienda "cobertura" (Casos 1, 3, 10, 12); un
+              ejemplo concreto con numeros reales es mas dificil de leer mal
+              que una definicion abstracta. */}
+          <button
+            type="button"
+            className="ruta-detalle-toggle"
+            onClick={() => setDetalleRutaAbierto((v) => !v)}
+            aria-expanded={detalleRutaAbierto}
+          >
+            {detalleRutaAbierto ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {detalleRutaAbierto ? 'Ocultar cómo se calcula' : 'Ver cómo se calcula'}
+          </button>
+          {detalleRutaAbierto && (
+            <p className="ruta-detalle-ejemplo">
+              Ejemplo: "siniestros 40%" significa que 4 de cada 10 tramos de esta ruta pasan cerca de un punto con
+              siniestros de moto ya registrados; el 60% restante no tiene ese registro, no significa que ahí no
+              ocurran. Los "pts" de cada zona son un puntaje interno para ordenar rutas entre sí, no una chance de
+              choque.
+            </p>
+          )}
           {zonasCruzadasOrdenadas.length > 0 && (
             <div className="ruta-resumen-detalle">
               {zonasCruzadasOrdenadas.slice(0, 6).map((z) => (

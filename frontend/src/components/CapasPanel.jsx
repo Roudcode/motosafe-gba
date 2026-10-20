@@ -62,6 +62,15 @@ export function CapasPanel({
           </span>
         </button>
       ))}
+      {/* R-04 (Capitulo 6, Caso 9 del Apendice A): la nota generica del pie
+          del panel ya decia esto desde el 07/09, y aun asi un caso real de
+          la prueba del 15/09 siguio pensando que apagar esta capa tambien
+          la saca del calculo de ruta. Una nota generica al fondo de todo
+          el panel no alcanza; esta queda pegada a las opciones que
+          describe, donde la persona la esta mirando en ese momento. */}
+      <p className="capas-grupo-nota">
+        Es solo una capa visual: tu ruta y las alertas en viaje siempre consideran la inseguridad, esté prendida o no esta vista.
+      </p>
 
       <span className="capas-grupo-titulo">Tráfico</span>
       <button
@@ -102,9 +111,15 @@ export function CapasPanel({
             <strong>{cantidadReportesPrensaFiltrados} de {cantidadReportesPrensa}</strong>
           </div>
           <div className="capas-prensa-filtros-opciones">
+          {/* R-05 (Capitulo 6, Caso 12 del Apendice A): "Seguridad" no decia que
+              incluye. La categoria real del backend (ver
+              PALABRAS_CLAVE_INSEGURIDAD en scrapear_noticias_robos.py) son
+              hechos de violencia (tiroteos, homicidios, secuestros), ya
+              separados de robo y de choque -- "Violencia" nombra lo que el
+              filtro de verdad trae, en vez de un termino paraguas. */}
           {[
             ['todos', 'Todo', Newspaper], ['moto', 'Motos', Bike], ['robo', 'Robos', ShieldAlert],
-            ['inseguridad', 'Seguridad', ShieldAlert], ['choque', 'Choques', CarFront],
+            ['inseguridad', 'Violencia', ShieldAlert], ['choque', 'Choques', CarFront],
           ].map(([filtro, etiqueta, Icono]) => (
             <button key={filtro} className={filtroPrensa === filtro ? 'activa' : ''} onClick={() => onCambiarFiltroPrensa(filtro)} aria-pressed={filtroPrensa === filtro}>
               <Icono size={12} /> {etiqueta}
