@@ -1724,3 +1724,13 @@ Con eso descartado como siguiente paso inmediato, se avanzó un pendiente de baj
 Actualizados en consecuencia: Capítulo 6 (6.5, la barrera ética ya no dice "sigue pendiente"; 6.6, la síntesis ya no cuenta la política de privacidad entre lo abierto) y Capítulo 8 (8.4, la recomendación pasa de pendiente a cerrada, con nota de que fue necesario reformular la redacción porque citar la ruta del archivo entre paréntesis generaba un salto de justificación feo en el render a PDF -- se sacó la ruta literal del cuerpo del texto).
 
 Validado con `validate.py --original` contra ambos capítulos (0 cambios de párrafos en Capítulo 1-6, misma estructura en Capítulo 8) y revisión visual en PDF de las páginas tocadas.
+
+## 2026-10-20 -- SES-128: A17, primera extracción real de App.jsx (Claude)
+
+Primer paso de la separación incremental de `App.jsx` que A17 venía pidiendo desde hace varias sesiones (2140 líneas en la última medición, 2398 después de los cambios de R-04/R-05/SES-126). Se identificó el bloque de JSX más grande y más autocontenido que seguía inline: el panel completo de "Opciones de ruta" (`ruta-resumen`, 145 líneas), con una interfaz de props razonablemente chica (13 props: `panelRuta`, `rutasConScore`, `rutaSeleccionada`/`setRutaSeleccionada`, los tres índices de prioridad, `detalleRutaAbierto`/`setDetalleRutaAbierto`, `zonasCruzadasOrdenadas` y tres callbacks).
+
+Se extrajo a `frontend/src/components/RutaResumenPanel.jsx`. Es un corte-y-pegue con props, no un rediseño: el JSX y el comportamiento son idénticos a los que tenía adentro de `App.jsx`, incluidos los cambios de R-04/R-05 de SES-126 (el toggle de detalle y el ejemplo visual del score). `App.jsx` pasó de 2398 a 2306 líneas; se sacaron del import de `lucide-react` los siete íconos que quedaron sin uso ahí (`Pencil`, `Zap`, `Scale`, `ShieldCheck`, `CircleCheck`, `ChevronDown`, `ChevronUp`), verificado con `eslint` antes y después del retiro.
+
+Verificado con `npx vitest run` (93/93 en verde, sin regresiones), `npx eslint` (0 errores en los dos archivos) y `npm run build` (build de producción limpio, mismo warning preexistente de tamaño de chunk que no tiene que ver con este cambio). No verificado en vivo en el navegador, misma razón que SES-126 (requiere backend + PostgreSQL + auth).
+
+Sigue pendiente de A17 (no cerrado con esto): el resto de `App.jsx` sigue teniendo ~2300 líneas y ~35 `useEffect`. El panel de ruta era el bloque más grande y de menor acoplamiento; lo que queda (barra de búsqueda, navegación activa, detalle de zona, portal de actividad inline) tiene más estado compartido entre sí y requiere más cuidado para separar sin romper nada -- candidato para la próxima sesión que toque A17, no para intentarlo todo de una vez.
