@@ -644,6 +644,28 @@ UMBRAL_DUPLICADO_SEMANTICO = 0.70
 RADIO_DUPLICADO_METROS = 1500
 DIAS_VENTANA_DUPLICADO = 5
 
+# Hallazgo real de la primera corrida en produccion (20/10, ver README de
+# docs/evidencias/2026-10-20/A09-dedup-semantica/): el mismo tiroteo de
+# Villa Pueyrredon, cubierto por Clarin/TN/Minutouno/La Nacion el mismo dia
+# con coordenadas CASI IDENTICAS entre si, no supero el umbral de titulo en
+# ningun par (el mas alto, Clarin vs TN, dio 0,467) -- medios grandes
+# escriben bajadas editoriales muy distintas del mismo hecho. El umbral de
+# 0.70 solo atrapa republicaciones casi calcadas, no esto.
+#
+# La correccion no es bajar el umbral de titulo en general (eso reabre el
+# riesgo de falso merge ya medido: por debajo de jacc ~0.45 el metodo
+# confunde hechos distintos del mismo partido y tema). Es reconocer que la
+# distancia geografica no es una señal binaria "adentro o afuera del
+# radio": una coincidencia casi exacta de coordenadas, cuando ADEMAS ambas
+# notas se geocodificaron a nivel preciso (calle/interseccion, radio
+# <=150m -- no al centroide vago de un barrio, radio 800m, que varias
+# notas sin calle pueden compartir por coincidencia sin ser el mismo
+# hecho), es evidencia mucho mas fuerte que "esta a menos de 1500m" y
+# alcanza con mucha menos superposicion de titulo.
+UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA = 0.15
+RADIO_COINCIDENCIA_PRECISA_METROS = 300  # provisional -- a ajustar con los grupos reales que mida Rodo/Codex contra la base
+RADIO_MAX_GEOCODE_PRECISO_METROS = 150  # 'calle'/'interseccion'; excluye 'barrio' (centroide, 800m)
+
 _STOPWORDS_SIMILITUD = {
     'el', 'la', 'los', 'las', 'un', 'una', 'de', 'en', 'a', 'y', 'que', 'por',
     'con', 'su', 'se', 'al', 'del', 'le', 'lo',
@@ -670,17 +692,23 @@ def _distancia_metros(lat1, lng1, lat2, lng2):
     return 2 * R * math.asin(math.sqrt(a))
 
 
-def _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, publicado_en):
+def _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, radio_metros, publicado_en):
     """Busca entre las filas ya guardadas (mismo tipo de incidente, no ya
     marcadas como duplicado de otra) si alguna, cerca en el tiempo y en el
     espacio, tiene un titulo lo bastante parecido como para ser el mismo
-    hecho cubierto por otro medio. Devuelve el id de la mejor candidata si
-    supera el umbral conservador, o None. No decide borrar nada -- eso lo
-    hace el llamador marcando duplicado_de_id en el INSERT."""
+    hecho cubierto por otro medio. Devuelve el id de la mejor candidata, o
+    None. No decide borrar nada -- eso lo hace el llamador marcando
+    duplicado_de_id en el INSERT.
+
+    El umbral de titulo exigido no es fijo: baja mucho
+    (UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA) cuando la coordenada es
+    casi identica Y ambas notas se geocodificaron a nivel preciso -- ver el
+    comentario junto a esas constantes. Si cualquiera de las dos condiciones
+    no se cumple, se exige el umbral conservador de siempre."""
     referencia = publicado_en or datetime.now(timezone.utc)
     desde = referencia - timedelta(days=DIAS_VENTANA_DUPLICADO)
     cur.execute("""
-        SELECT id, titular, lat, lng
+        SELECT id, titular, lat, lng, radio_metros
         FROM reportes_prensa
         WHERE tipo_incidente = %s
           AND duplicado_de_id IS NULL
@@ -692,20 +720,29 @@ def _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, publicado_en
     if not tokens_nuevo:
         return None
 
-    mejor_id, mejor_similitud = None, 0.0
-    for cid, ctitular, clat, clng in candidatos:
+    mejor_id, mejor_puntaje = None, -1.0
+    for cid, ctitular, clat, clng, cradio in candidatos:
         if clat is None or clng is None:
             continue
-        if _distancia_metros(lat, lng, clat, clng) > RADIO_DUPLICADO_METROS:
+        distancia = _distancia_metros(lat, lng, clat, clng)
+        if distancia > RADIO_DUPLICADO_METROS:
             continue
         tokens_cand = _tokens_similitud(ctitular)
         if not tokens_cand:
             continue
         similitud = len(tokens_nuevo & tokens_cand) / len(tokens_nuevo | tokens_cand)
-        if similitud > mejor_similitud:
-            mejor_similitud, mejor_id = similitud, cid
 
-    return mejor_id if mejor_similitud >= UMBRAL_DUPLICADO_SEMANTICO else None
+        coincidencia_precisa = (
+            distancia <= RADIO_COINCIDENCIA_PRECISA_METROS
+            and radio_metros is not None and radio_metros <= RADIO_MAX_GEOCODE_PRECISO_METROS
+            and cradio is not None and cradio <= RADIO_MAX_GEOCODE_PRECISO_METROS
+        )
+        umbral = UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA if coincidencia_precisa else UMBRAL_DUPLICADO_SEMANTICO
+
+        if similitud >= umbral and similitud > mejor_puntaje:
+            mejor_puntaje, mejor_id = similitud, cid
+
+    return mejor_id
 
 
 def _contiene_termino(texto_norm, termino):
@@ -1446,7 +1483,7 @@ def _evaluar_y_guardar(titulo, descripcion, url, nombre_fuente, guardar, cur, co
             # esta guardado -- si matchea, la fila se guarda igual (nada se
             # pierde) pero marcada; _FILTRO_FUENTES_PRENSA_SQL en main.py la
             # excluye de los calculos de exposicion.
-            duplicado_de_id = _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, publicado_en)
+            duplicado_de_id = _detectar_duplicado_semantico(cur, titulo, categoria, lat, lng, radio, publicado_en)
             cur.execute("""
                 INSERT INTO reportes_prensa (lat, lng, nivel_precision, radio_metros, titular, url_fuente, fuente, tipo_incidente, relacionado_moto, publicado_en, duplicado_de_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)

@@ -1773,3 +1773,27 @@ Extraídos dos bloques más, mismo criterio que `RutaResumenPanel` (SES-128): au
 `App.jsx` bajó de 2305 a 2265 líneas. Lint sacó 6 imports de íconos sin uso tras la extracción (`TriangleAlert`, `Bike`, `Box`, `BarChart3`, `LogOut`, `Wrench`). Verificado con 93/93 tests, lint y build limpios; sin verificación visual en navegador en vivo (misma limitación de siempre: necesita el stack completo con Postgres + auth).
 
 Lo que queda de A17 sigue siendo lo más complicado: navegación activa (`navegacion-panel`, `nav-resumen-mini`, `velocimetro`), que comparten estado de viaje en vivo entre sí (velocidad, distancia restante, ETA), la barra de búsqueda y el panel de detalle de zona. Esos tienen estado compartido real, no son un corte-y-pegue tan directo como los cuatro bloques ya extraídos -- quedan para una sesión que se dedique específicamente a desenredar ese estado compartido antes de separar la UI.
+
+## SES-133 (2026-10-20, noche) — A09: corrige el umbral de título con un umbral graduado por precisión de coordenada (DEC-018)
+
+Codex corrió el scraper real contra producción (`--guardar`, primera corrida desde que se aplicó la migración 004): 51 filas nuevas, 0 marcadas como duplicado. Entre esas 51 encontró un caso real que la implementación de SES-130 no detectó: un tiroteo en Villa Pueyrredón cubierto por 4 medios distintos, con coordenadas casi idénticas (misma intersección, geocodificada a nivel preciso en los cuatro casos) pero títulos editorialmente distintos entre sí -- la similitud Jaccard entre los pares de títulos reales que midió Codex rondó 0,133 a 0,385, todos por debajo del umbral de 0,70 fijado en DEC-017.
+
+El hallazgo es válido y esperable: 0,70 se fijó como el punto más conservador medido sobre 450 filas (SES-129) justamente para minimizar falsos merges sin revisión humana, a costa de dejar pasar casos reales donde los medios redactan el título de forma distinta para el mismo hecho. Bajar el umbral global para capturar este caso reabriría el riesgo de falso merge ya medido (por debajo de jacc ~0,45 el método confunde incidentes distintos del mismo partido y tema).
+
+En vez de bajar el umbral global, se gradúa según qué tan precisa es la coincidencia geográfica (DEC-018). Agregado a `backend/scrapear_noticias_robos.py`:
+
+```
+UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA = 0.15
+RADIO_COINCIDENCIA_PRECISA_METROS = 300       # provisional
+RADIO_MAX_GEOCODE_PRECISO_METROS = 150        # 'calle'/'interseccion'; excluye 'barrio' (800m)
+```
+
+`_detectar_duplicado_semantico` ahora recibe también el `radio_metros` con el que se geocodificó la nota nueva, y lo compara contra el `radio_metros` ya guardado de cada candidata. Si ambas notas se geocodificaron a nivel preciso (`radio_metros` ≤150m, es decir `calle` o `interseccion`, nunca el centroide de `barrio` a 800m) y además están a ≤300m entre sí, el umbral de título exigido baja de 0,70 a 0,15 -- la coordenada casi exacta ya hace improbable que sean dos hechos distintos, así que alcanza con que los títulos compartan tema. Fuera de esa condición (geocodificación vaga, o coordenadas lejanas) se mantiene el umbral estricto de 0,70 sin cambios.
+
+El radio de 300m es una estimación provisoria, no medida: se eligió por quedar claramente por encima de la imprecisión típica de un geocoder a nivel de calle/intersección y por debajo del radio general de 1500m que ya filtra candidatas. Codex va a mandar una muestra real de grupos con la misma coordenada redondeada para calibrarlo contra datos reales en vez de contra una estimación.
+
+Actualizados los 5 tests existentes para incluir el nuevo parámetro `radio_metros` (se usó 800, nivel `barrio`, en los casos de Moreno y Merlo/La Matanza para que sigan ejercitando el umbral estricto y no el nuevo umbral laxo por accidente). Agregados 2 tests nuevos calibrados con los valores reales de Villa Pueyrredón que midió Codex: uno confirma que con geocodificación precisa y coordenadas casi idénticas el par se marca aunque el título esté lejos del umbral estricto; el otro confirma que con la misma coordenada y los mismos títulos, si la geocodificación es vaga (`barrio`, 800m) no se activa el umbral laxo. 32/32 pruebas del scraper en verde, 129/129 de todo el backend.
+
+Documentado en DEC-018 (`docs/gestion/DECISIONES.md`) y en `docs/evidencias/2026-10-20/A09-dedup-semantica/README.md` (sección "Corrección").
+
+Sin verificar esta sesión: el radio de 300m sigue sin calibrar contra datos reales (pendiente la muestra de Codex), y el fix no se probó todavía contra una corrida real en producción -- la única corrida real que existe (la que encontró el problema) fue con el código anterior a este cambio.

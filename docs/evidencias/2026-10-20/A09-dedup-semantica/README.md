@@ -146,3 +146,17 @@ scraper contra la base de producción para medir cuántas filas reales
 quedarían marcadas con esta lógica. Falta aplicar la migración
 (`backend/migrar.py`) y correr el scraper real contra la base para
 confirmar en vivo.
+
+## Corrección (SES-133, misma noche): el umbral de título solo era insuficiente en producción real
+
+La primera corrida real con `--guardar` (Rodo/Codex, mismo día) guardó 51 filas nuevas, 0 marcadas como duplicado semántico. Antes de aceptar ese número, Codex verificó un caso concreto del propio log: el tiroteo de Villa Pueyrredón, cubierto por Clarín, TN, Minutouno y La Nación el mismo día, con coordenadas geocodificadas prácticamente idénticas entre sí. Ninguna quedó marcada.
+
+Calculado con la propia `_tokens_similitud`: el par más parecido de los seis (Clarín vs. TN) dio jaccard 0,467, muy por debajo del umbral de 0,70. Los otros cinco pares, más bajo todavía. No es un bug: es exactamente el trade-off medido antes de implementar (por debajo de jacc ~0,45 el método empieza a confundir hechos distintos), aplicado de forma pareja sin distinguir qué tan fuerte era la otra señal disponible -- la coordenada.
+
+La corrección no fue bajar el umbral de título en general (eso reabre el riesgo de falso merge ya medido). Fue reconocer que la cercanía geográfica no es una señal binaria "adentro o afuera del radio de 1500m": una coincidencia **casi exacta** de coordenadas, cuando además ambas notas se geocodificaron a nivel preciso (`calle`/`interseccion`, radio ≤150m -- no al centroide vago de `barrio`, radio 800m, que varias notas sin dirección pueden compartir por coincidencia sin ser el mismo hecho), es mucha más evidencia que "está cerca" y alcanza con mucha menos superposición de título.
+
+Implementado como un umbral graduado en `_detectar_duplicado_semantico`: con coordenada casi exacta (≤300m, provisional) y geocodificación precisa en ambas notas, el umbral de título baja a 0,15; en cualquier otro caso se mantiene el 0,70 de siempre. El radio de 300m es provisional -- Rodo le pidió a Codex una lista de grupos reales de la base (notas de distinta fuente geocodificadas al mismo punto) para calibrarlo con datos en vez de a ojo; queda pendiente ajustarlo cuando esa lista esté.
+
+7 pruebas nuevas con el caso real de Villa Pueyrredón (título ficticio pero jaccard calibrado igual al par real medido, 0,385) y su contraparte de guarda (mismo par, pero con geocodificación vaga en vez de precisa, para confirmar que la coincidencia precisa no se activa sin eso). 129/129 pruebas de backend en verde.
+
+**Sin verificar todavía**: si este ajuste efectivamente captura el caso de Villa Pueyrredón contra la base real (no se volvió a correr el scraper después de este cambio) ni el radio de 300m contra los grupos reales que Codex todavía no trajo.

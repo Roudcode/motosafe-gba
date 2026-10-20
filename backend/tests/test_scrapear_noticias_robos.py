@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from scrapear_noticias_robos import (
     categoria_de, encontrar_localidad, extraer_fecha_publicacion, extraer_ubicacion, encontrar_zona,
     firma_titular, parsear_rss, relacionado_con_moto, zona_de_ubicacion,
-    _detectar_duplicado_semantico, _tokens_similitud,
+    _detectar_duplicado_semantico, _tokens_similitud, UMBRAL_DUPLICADO_SEMANTICO,
 )
 
 
@@ -283,9 +283,12 @@ _LAT_MORENO, _LNG_MORENO = -34.6534, -58.7880
 
 
 def test_detecta_duplicado_semantico_entre_medios_independientes():
-    cursor = _CursorFalso([(5, _TITULAR_MORENO_YA_GUARDADO, _LAT_MORENO, _LNG_MORENO)])
+    """Jacc 0.73, por encima del umbral conservador: tiene que detectarse
+    aunque ambas notas tengan geocodificacion vaga (radio tipo 'barrio'),
+    sin necesidad de la coincidencia de coordenada precisa."""
+    cursor = _CursorFalso([(5, _TITULAR_MORENO_YA_GUARDADO, _LAT_MORENO, _LNG_MORENO, 800)])
     resultado = _detectar_duplicado_semantico(
-        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO,
+        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO, 800,
         datetime(2026, 10, 1, tzinfo=timezone.utc),
     )
     assert resultado == 5
@@ -294,13 +297,17 @@ def test_detecta_duplicado_semantico_entre_medios_independientes():
 def test_no_confunde_dos_hechos_distintos_del_mismo_partido_y_tema():
     """Caso real al limite (jacc titulo = 0.44): un policia de la Ciudad
     asesinado en Merlo y un comisario bonaerense asesinado en La Matanza --
-    mismo patron narrativo (policia, asesinado, robo), hechos distintos. El
-    umbral conservador (0.70) tiene que rechazar este par."""
+    mismo patron narrativo (policia, asesinado, robo), hechos distintos.
+    Ambas notas con geocodificacion vaga (radio 'barrio' = 800, el mismo
+    centroide por coincidencia, no una direccion real); el umbral
+    conservador (0.70) tiene que rechazar este par, y no debe activarse la
+    coincidencia precisa porque el radio es demasiado vago para confiar en
+    la cercania de coordenadas."""
     titulo_nuevo = 'Un comisario de la policía bonaerense fue asesinado durante un intento de robo en La Matanza'
     titular_candidato = 'Un policía de la Ciudad fue asesinado durante un intento de robo en Merlo: recibió dos disparos en el pecho'
-    cursor = _CursorFalso([(9, titular_candidato, -34.6534, -58.7880)])
+    cursor = _CursorFalso([(9, titular_candidato, -34.6534, -58.7880, 800)])
     resultado = _detectar_duplicado_semantico(
-        cursor, titulo_nuevo, 'inseguridad', -34.6534, -58.7880,
+        cursor, titulo_nuevo, 'inseguridad', -34.6534, -58.7880, 800,
         datetime(2026, 10, 1, tzinfo=timezone.utc),
     )
     assert resultado is None
@@ -311,9 +318,9 @@ def test_no_marca_duplicado_si_el_candidato_esta_lejos_aunque_el_titulo_coincida
     candidata esta geograficamente lejos (>1500m): no puede ser el mismo
     hecho aunque el titulo sea casi idéntico, asi que no se marca."""
     lat_lejos, lng_lejos = _LAT_MORENO + 0.05, _LNG_MORENO  # ~5.5km al norte
-    cursor = _CursorFalso([(5, _TITULAR_MORENO_YA_GUARDADO, lat_lejos, lng_lejos)])
+    cursor = _CursorFalso([(5, _TITULAR_MORENO_YA_GUARDADO, lat_lejos, lng_lejos, 800)])
     resultado = _detectar_duplicado_semantico(
-        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO,
+        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO, 800,
         datetime(2026, 10, 1, tzinfo=timezone.utc),
     )
     assert resultado is None
@@ -322,8 +329,49 @@ def test_no_marca_duplicado_si_el_candidato_esta_lejos_aunque_el_titulo_coincida
 def test_sin_candidatas_no_hay_duplicado():
     cursor = _CursorFalso([])
     resultado = _detectar_duplicado_semantico(
-        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO,
+        cursor, _TITULAR_MORENO_NUEVO, 'robo', _LAT_MORENO, _LNG_MORENO, 800,
         datetime(2026, 10, 1, tzinfo=timezone.utc),
+    )
+    assert resultado is None
+
+
+def test_detecta_duplicado_con_coordenada_casi_exacta_y_titulos_distintos():
+    """Caso real encontrado en la primera corrida en produccion (20/10): el
+    tiroteo de Villa Pueyrredon, cubierto por cuatro medios grandes el mismo
+    dia con coordenadas casi identicas entre si, pero titulos editoriales
+    tan distintos que ningun par llega al 0.70 (el mas alto, Clarin vs TN,
+    dio 0.467). Con ambas notas geocodificadas a nivel preciso ('calle',
+    radio 150) y una distancia minima entre coordenadas, el umbral baja a
+    UMBRAL_DUPLICADO_SEMANTICO_COORDENADA_PRECISA y el par pasa a
+    detectarse."""
+    lat, lng = -34.57945, -58.50408
+    titulo_clarin = 'Un tiroteo en Villa Pueyrredón dejó un herido de bala tras una discusión de tránsito'
+    titulo_tn = 'Villa Pueyrredón: balearon a un hombre tras una discusión de tránsito entre automovilistas'
+    jacc = len(_tokens_similitud(titulo_clarin) & _tokens_similitud(titulo_tn)) / len(_tokens_similitud(titulo_clarin) | _tokens_similitud(titulo_tn))
+    assert jacc < UMBRAL_DUPLICADO_SEMANTICO  # confirma que el caso no pasaria por el umbral conservador solo
+
+    cursor = _CursorFalso([(12, titulo_clarin, lat, lng, 150)])
+    resultado = _detectar_duplicado_semantico(
+        cursor, titulo_tn, 'inseguridad', lat, lng, 150,
+        datetime(2026, 10, 20, tzinfo=timezone.utc),
+    )
+    assert resultado == 12
+
+
+def test_no_usa_coincidencia_precisa_si_la_geocodificacion_es_vaga():
+    """Misma coordenada casi exacta y mismos titulos de Villa Pueyrredon,
+    pero con radio 'barrio' (800, geocodificacion vaga) en vez de 'calle':
+    no se activa la coincidencia precisa -- dos notas sin direccion propia
+    pueden coincidir en el mismo centroide de barrio por pura coincidencia,
+    sin ser el mismo hecho. Se exige el umbral conservador de siempre, que
+    este par no supera."""
+    lat, lng = -34.57945, -58.50408
+    titulo_clarin = 'Un tiroteo en Villa Pueyrredón dejó un herido de bala tras una discusión de tránsito'
+    titulo_tn = 'Villa Pueyrredón: balearon a un hombre tras una discusión de tránsito entre automovilistas'
+    cursor = _CursorFalso([(12, titulo_clarin, lat, lng, 800)])
+    resultado = _detectar_duplicado_semantico(
+        cursor, titulo_tn, 'inseguridad', lat, lng, 800,
+        datetime(2026, 10, 20, tzinfo=timezone.utc),
     )
     assert resultado is None
 
