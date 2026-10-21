@@ -1845,3 +1845,17 @@ Una corrección real que surgió al extraer: `NavegacionManiobra` guardaba el í
 Verificado con `npx eslint src/` (0 errores en todo el proyecto), `npx vitest run` (93/93 en verde, sin regresiones) y `npm run build` (build de producción limpio, mismo warning preexistente de tamaño de chunk). Sin verificación visual en navegador en vivo -- misma limitación de siempre (necesita backend + PostgreSQL + auth + GPS real para Modo Viaje).
 
 Lo que queda de A17, ahora sí genuinamente más complejo: el formulario de ruta (`ruta-form`, origen/destino con `sugOrigen`/`sugDestino`/`campoActivo`/`marcarEnMapa`, con más acoplamiento cruzado real), el panel de actividad reciente y los distintos banners de error de capas. Candidato para una sesión dedicada, no para seguir hoy.
+
+## SES-137 (2026-10-21) — A09: diagnóstico real de por qué Villa Pueyrredón no tiene geocodificación precisa (DEC-020)
+
+Antes de inventar una señal nueva para la dedup a nivel barrio, se probó algo más barato primero: ¿el extractor se está perdiendo una calle o intersección que el texto real de la nota sí menciona? Si así fuera, el arreglo correcto sería mejorar la geocodificación, no la deduplicación.
+
+Codex hizo fetch en vivo de las 4 URLs reales de Villa Pueyrredón (Minutouno, La Nación, Clarín, TN) y corrió `extraer_titulo_descripcion` → `extraer_ubicacion`/`zona_de_ubicacion` tal cual están en el código, sin tocar nada, contra el título y la descripción real de cada una.
+
+Resultado, no el sí/no limpio que se esperaba: 3 de las 4 notas (Minutouno, Clarín, TN) son genuinamente vagas -- "una plaza", "una plazoleta", sin ninguna calle ni intersección mencionada. Ahí no hay nada que el extractor se esté perdiendo, por más patrón que se agregue. La cuarta (La Nación) sí da una referencia puntual real: "plaza Nunca Más" y "junto a la estación del ferrocarril Mitre". Los patrones actuales (`RE_INTERSECCION`, `RE_ALTURA`) buscan calle+calle o calle+altura, no nombres propios de plaza o estación -- sería una capacidad nueva, no una extensión de lo que ya existe.
+
+La razón para no construirla todavía, documentada en DEC-020: aunque se construyera, solo mejoraría la precisión de 1 de las 4 filas. El guard de precisión de DEC-019 exige que AMBAS filas de un par estén a nivel preciso -- con una sola nota precisa entre cuatro vagas, el caso real que motivó todo este trabajo seguiría sin detectarse igual. Construir reconocimiento de nombres propios de plaza/estación (con el riesgo de ambigüedad que trae: nombres repetidos en distintos barrios) a partir de una muestra de un solo caso, para una mejora que no resuelve el problema motivador, no se justifica.
+
+Lo valioso de este diagnóstico no es lo que no se hizo, es lo que confirma: mejorar la geocodificación no es una solución general al problema de dedup a nivel barrio. La vaguedad real de buena parte de la cobertura policial ("una plaza", sin más datos) no tiene calle que extraer, con ningún patrón. El pendiente de A09 queda, en los hechos, igual de abierto que antes, pero mejor entendido -- y se unifica con el otro pendiente viejo de A09 ("validación de calles sin conjunto etiquetado"): cualquier señal futura basada en texto, sin apoyo de coordenada, necesita primero un conjunto etiquetado real para calibrarse, no una heurística inventada sobre un caso.
+
+No se tocó código esta sesión -- el diagnóstico fue deliberadamente de solo lectura, corriendo funciones ya existentes contra datos reales nuevos.

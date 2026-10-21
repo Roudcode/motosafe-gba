@@ -182,3 +182,13 @@ Los dos únicos pares de fuente distinta dentro de esas 36 filas que NO son el m
 Documentado en DEC-019 (`docs/gestion/DECISIONES.md`).
 
 **Sin verificar todavía**: si 100m y 0,0 son suficientes contra una muestra más grande (la actual son 36 filas, un solo grupo multi-fuente real); confirmar contra una corrida real posterior que José C. Paz (o un caso equivalente futuro) efectivamente queda marcado.
+
+## Diagnóstico de la geocodificación (21/10, DEC-020): por qué Villa Pueyrredón no es nivel calle
+
+Antes de diseñar una señal nueva para el caso barrio, se probó si el problema era más simple: el extractor perdiéndose una calle que el texto sí menciona. Codex hizo fetch en vivo de las 4 URLs reales y corrió `extraer_ubicacion`/`zona_de_ubicacion` contra el título y la descripción real de cada nota, sin tocar código.
+
+Resultado mixto. Minutouno, Clarín y TN son genuinamente vagas ("una plaza", "una plazoleta"), sin calle ni intersección que extraer. La Nación nombra una plaza y una estación por su nombre propio ("plaza Nunca Más", "estación del ferrocarril Mitre"), que los patrones actuales (`RE_INTERSECCION`, `RE_ALTURA`) no cubren -- buscan calle+calle o calle+altura, no landmarks con nombre propio.
+
+No se construye esa capacidad de reconocimiento de landmarks todavía: aunque existiera, solo mejoraría 1 de las 4 filas, y el guard de precisión de DEC-019 exige precisión en ambas filas de un par -- el caso real seguiría sin detectarse. El dato real confirma algo más general y más importante: mejorar la geocodificación no es una solución general al problema de dedup a nivel barrio, porque buena parte de la cobertura policial real simplemente no da ubicación precisa, con ningún patrón de extracción posible.
+
+Detalle completo en DEC-020 (`docs/gestion/DECISIONES.md`).
