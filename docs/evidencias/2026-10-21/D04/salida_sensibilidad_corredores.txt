@@ -1,0 +1,35 @@
+Total siniestros de moto con calle identificable: 19246
+
+-- base (30 / 40 / 8, la vigente en el repo) --
+   131 calles candidatas, 243 tramos totales generados
+
+-- umbral_mas_bajo (20 / 40 / 8) --
+   196 calles candidatas, 308 tramos totales generados
+   vs base: +65 calles nuevas, -0 calles que salen
+   nuevas: ['ALBERTI', 'ALMAFUERTE AV.', 'ALSINA, ADOLFO', 'ARANGUREN, JUAN F., DR.', 'ARTIGAS, JOSE GERVASIO, GRAL.', 'AUTOPISTA 1 SUR PRESIDENTE ARTURO FRONDIZI', 'BLANCO ENCALADA', 'BONIFACIO, JOSE', 'BOYACA AV.', 'BULNES']...
+
+-- umbral_mas_alto (50 / 40 / 8) --
+   63 calles candidatas, 175 tramos totales generados
+   vs base: +0 calles nuevas, -68 calles que salen
+   salen: ['ACOSTA, MARIANO', 'ACOYTE AV.', 'ALEM, LEANDRO N. AV.', 'ALVAREZ JONTE AV.', 'ALVAREZ, DONATO, TTE. GRAL.', 'ALVEAR, MARCELO T. DE', 'AMENABAR', 'ANTARTIDA ARGENTINA AV.', 'ASAMBLEA AV.', 'AUTOPISTA DELLEPIANE LUIS TTE. GRAL.']...
+
+-- tramos_mas_finos (30 / 25 / 8) --
+   131 calles candidatas, 329 tramos totales generados
+   vs base: +0 calles nuevas, -0 calles que salen
+
+-- tramos_mas_gruesos (30 / 60 / 8) --
+   131 calles candidatas, 192 tramos totales generados
+   vs base: +0 calles nuevas, -0 calles que salen
+
+Top 10 calles por cantidad de siniestros (igual en todas las configuraciones, no cambia el orden, solo el corte):
+                     calle  cantidad_siniestros  n_tramos
+            PAZ, GRAL. AV.                 1119         8
+        DEL LIBERTADOR AV.                  449         8
+        JUSTO, JUAN B. AV.                  423         8
+             RIVADAVIA AV.                  422         8
+ALBERDI, JUAN BAUTISTA AV.                  352         8
+            CORRIENTES AV.                  336         8
+               CORDOBA AV.                  318         7
+              SAN JUAN AV.                  282         7
+         INDEPENDENCIA AV.                  276         6
+            DIRECTORIO AV.                  267         6

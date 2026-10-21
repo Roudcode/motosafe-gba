@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:http": "set MOTOSAFE_SIN_HTTPS=1&&vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
