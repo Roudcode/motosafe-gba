@@ -1,6 +1,6 @@
 # MotoSafe GBA — Centro de documentación
 
-**Entrada única para Rodo, Claude y Codex. Actualizado: 2026-10-20.**
+**Entrada única para Rodo, Claude y Codex. Actualizado: 2026-10-21.**
 
 ## Para retomar el proyecto
 
@@ -35,7 +35,7 @@
 
 ## Convención para todos los cambios futuros
 
-- **Una tarea, un ID:** mantener A01–A23 para los hallazgos; V/F/D/T/G para mejoras adicionales. No crear una lista operativa paralela.
+- **Una tarea, un ID:** mantener A01–A24 para los hallazgos; V/F/D/T/G para mejoras adicionales. No crear una lista operativa paralela.
 - **No confundir propuesta con aprobación ni con implementación.** La prioridad del backlog es recomendada hasta que Rodo decida el alcance.
 - Cada cambio registra motivo, ID, archivos, pruebas, resultado, pendientes y commit si existe. Sin commit se indica explícitamente.
 - Una decisión nueva entra en DECISIONES; una sesión/cambio en BITACORA; el resumen vigente en CONTINUIDAD.
@@ -45,10 +45,15 @@
 
 Centralizar significa mantener este índice y estos registros como punto de entrada. Los datos y el código conservan sus ubicaciones de ejecución; no se duplican dentro de documentación.
 
+## Pruebas técnicas — 2026-10-21
+
+- Estado actual (G01, corrido de nuevo al cerrar esta sesión, no copiado de una entrada anterior): **96 tests frontend** (`node node_modules/vitest/vitest.mjs run`) y **140 backend aprobados (11 skipped**, de integración con PostgreSQL real no levantada en esta verificación), lint y build sin errores. Detalle de cada tanda que llevó de 93/120 a 96/140 en SES-148 (teclado del buscador) y SES-150 (`consumir_metricas.py`) en [BITACORA.md](gestion/BITACORA.md).
+- E2E real contra el stack levantado (PostgreSQL/PostGIS, backend, frontend, navegador integrado) corrido varias veces esta misma semana: confirmación visual del buscador por teclado (SES-149), T01 contra un PostGIS descartable con un rol de permisos mínimos (SES-149), T06 contra la composición real de producción con volumen persistente (SES-151), A05 con rutas reales en pantalla (SES-152). No hay todavía E2E en un dispositivo físico real ni con throttling de red/CPU (ver T03 en BACKLOG.md).
+
 ## Pruebas técnicas — 2026-10-13
 
-- Estado actual: 93 tests frontend (`node node_modules/vitest/vitest.mjs run`) y 120 backend aprobados (11 skipped, de integración con PostgreSQL real no levantada en esta verificación), lint y build sin errores. Verificado en el navegador en los dos temas (claro/oscuro) y en un viewport de celular real (375×812). Detalle de cada tanda de SES-114/SES-115 en [BITACORA.md](gestion/BITACORA.md).
-- No hay E2E contra PostgreSQL real ni dispositivo físico en esta verificación puntual; sí hubo pasadas anteriores con PostGIS descartable (ver SES-070, SES-112, SES-113 en BITACORA) y con el navegador integrado de Claude Code actuando sobre la app real corriendo en local.
+- Estado de esa fecha: 93 tests frontend (`node node_modules/vitest/vitest.mjs run`) y 120 backend aprobados (11 skipped, de integración con PostgreSQL real no levantada en esa verificación), lint y build sin errores. Verificado en el navegador en los dos temas (claro/oscuro) y en un viewport de celular real (375×812). Detalle de cada tanda de SES-114/SES-115 en [BITACORA.md](gestion/BITACORA.md). Conservado como registro histórico de esa fecha; ver la entrada de arriba para el estado vigente.
+- No hubo E2E contra PostgreSQL real ni dispositivo físico en esa verificación puntual; sí hubo pasadas anteriores con PostGIS descartable (ver SES-070, SES-112, SES-113 en BITACORA) y con el navegador integrado de Claude Code actuando sobre la app real corriendo en local.
 
 ## Pruebas técnicas — 2026-09-15
 

@@ -2237,3 +2237,59 @@ frontend en esta sesión más allá de instrumentación temporal ya revertida). 
 sin commitear en `notebooks/limpiar_siniestros_motos.py` (verificado sin efecto real) y el nuevo
 `notebooks/limpieza_geografica_comun.py`, más las cuatro carpetas de evidencia nuevas. No se commiteó ni se
 pusheó nada.
+
+## SES-152 — A05 validado con casos reales en pantalla; D05 (monitor de calidad de datos) nuevo; G01 sincroniza guías internas
+
+Nota de verificación previa, pedida explícitamente por Rodo: se confirmó que SES-151 seguía siendo el
+número de sesión más alto antes de arrancar (SES-152 es el siguiente libre) y no se reatribuyó ningún
+asiento anterior a un asistente específico sin confirmarlo.
+
+**A05 (validación geográfica independiente de "cobertura desconocida")**: P1. Evidencia en
+`docs/evidencias/2026-10-21/A05-cobertura-desconocida/RESULTADOS.md`. Con el stack real levantado y la
+sesión ya autenticada, dos casos reales en pantalla. Caso 1 (ruta íntegra en Moreno, GBA profundo, lejos de
+CABA): las 3 alternativas reales de TomTom dieron **"Cobertura: siniestros 0% · inseguridad 0%"** y
+"cobertura registrada insuficiente" en las tres -- ninguna mostró badge de "menor exposición" ni nivel de
+riesgo, confirmando que una zona genuinamente sin datos no se disfraza de "riesgo bajo". Caso 2 (ruta límite
+real, Paraguay 1854 CABA → Estación Don Torcuato, Tigre, cruzando la frontera CABA/GBA, 32-41 km según
+alternativa): cobertura real intermedia (45-57% según ruta), ni diluida hacia 0% ni hacia 100% -- confirma
+que `calcularCoberturaRegistrada` (que muestrea hasta 120 puntos a lo largo del trazado real) refleja de
+verdad el tramo sin datos en vez de promediarlo con el tramo que sí los tiene. Captura real adjunta del caso
+2. A05 pasa de "falta validación geográfica independiente" a validado con evidencia real.
+
+**D05 (monitor de cambios en calidad de datos)**: desbloqueado por A20/A22, ya cerrados. Evidencia en
+`docs/evidencias/2026-10-21/D05-monitor-calidad-datos/RESULTADOS.md`. Nuevo
+`notebooks/monitor_calidad_datos.py --vigente <carpeta> --candidato <carpeta>`: reporta esquema (columnas/
+tipos nuevos o desaparecidos en CSVs y en `columnas_modelo.pkl`), faltantes (≥5 pp de cambio) y saltos en lo
+que mide `limpieza_geografica_comun.py` de A20 (coordenada_cero/fuera_de_gba/duplicado_exacto), siempre con
+números reales. Es solo un reporte: no se invoca desde `promover_artefactos.py` ni bloquea nada, la decisión
+de `--confirmar` sigue siendo de Rodo. Verificado dos veces con datos reales: (1) pipeline regenerado de
+verdad contra los datos de hoy → "Sin cambios relevantes", como se esperaba; (2) un candidato alterado a
+propósito (columna `comuna` sacada, 10% de `tipo_delito` vaciado, 3000 coordenadas reales puestas en (0,0))
+→ las tres alteraciones detectadas con números reales. Durante el propio ensayo 2 se encontró y corrigió un
+umbral real insuficiente: el criterio geográfico solo porcentual (≥1 pp) no alcanzaba a detectar un salto de
+2985 filas reales porque el dataset tiene 1,39 millones de filas (+0,215 pp, por debajo del umbral); se
+agregó un segundo criterio (≥100 filas de diferencia absoluta) y se reconfirmaron ambos ensayos.
+
+**G01 (sincronizar guías internas con el estado real)**: evidencia con cada corrección documentada
+antes/después en `docs/evidencias/2026-10-21/G01-sincronizacion-guias/RESULTADOS.md`. Alcance acotado a
+`docs/README.md`, `docs/gestion/CONTINUIDAD.md` y otras guías internas -- el Word de la tesis queda
+explícitamente fuera. Criterio aplicado (ya discutido antes sobre un hallazgo similar): una entrada fechada
+de bitácora/traspaso describe correctamente lo que era cierto en su momento y no se toca; solo se corrige
+lo que un documento afirma como estado vigente hoy sin serlo. Correcciones reales: `docs/README.md` (fecha,
+"A01–A23"→"A01–A24", tests 93/120→96/140, con el número de backend verificado corriendo la suite de nuevo
+-- resultó **140**, no el "136" que traía el pedido, porque se sumaron pruebas entre que se escribió el
+pedido y esta verificación); `docs/gestion/BACKLOG.md` (encabezado "63 ítems: 23+40" recontado directo de
+las tablas reales -- **65 ítems: 24 hallazgos y 41 oportunidades**, cifra que ya coincidía con
+`MAPA_PENDIENTES.md`/`HANDOFF_CONTINUIDAD_OTRO_ASISTENTE.md`, confirma que el encabezado de BACKLOG era el
+que estaba atrás); `docs/gestion/CONTINUIDAD.md` (lista de "problemas vigentes" decía A07/A09/A10/A12/A15/
+A16 con correcciones parciales -- verificado fila por fila contra BACKLOG, cuatro de los seis ya estaban
+Validados; agregada una entrada nueva resumiendo SES-148 a SES-152 para que el archivo no quedara parado en
+SES-147). Identificado pero señalado sin reescribir por alcance/tiempo: `MAPA_PENDIENTES.md` y
+`HANDOFF_CONTINUIDAD_OTRO_ASISTENTE.md` tienen sus propios resúmenes numéricos desactualizados por el
+trabajo reciente, pero regenerarlos completos es una tarea en sí misma, no una corrección puntual.
+
+**Verificación**: 96/96 tests de frontend y 140 passed/11 skipped de backend confirmados corriendo las
+suites de nuevo al cierre (no copiados de una corrida anterior). `git status` final: las tres carpetas de
+evidencia nuevas (A05, D05, G01) más los cambios puntuales en `docs/README.md`/`docs/gestion/BACKLOG.md`/
+`docs/gestion/CONTINUIDAD.md` y el nuevo `notebooks/monitor_calidad_datos.py`. No se commiteó ni se pusheó
+nada.
