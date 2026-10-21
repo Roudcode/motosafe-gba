@@ -15,11 +15,23 @@ import { WifiOff } from 'lucide-react'
 
 const NOMBRE_CAPA = { corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto' }
 
+// V10 (SES-153): "sin datos" no es lo mismo que "fallo, reintentando". Las
+// tres capas de arriba (corredores, hotspots-inseguridad general/moto) tienen
+// un camino real en el backend para devolver 200 con una lista vacia --
+// /corredores incluso lo comenta explicito ("if not resultado: return []").
+// /hotspots queda afuera a proposito: hoy siempre trae las 740 filas reales,
+// una lista vacia ahi seria un bug real, no un estado vacio legitimo. Este
+// aviso es nada mas informativo: sin icono de alerta, sin boton de
+// reintento (no tiene sentido reintentar algo que no fallo).
 export function CapaErrorBanners({
   backendError, cargarHotspots,
   erroresCapas, ultimaConsultaCapas, setRecargaCapas,
   capaTrafico, traficoNoDisponible, setCapaTrafico,
+  capasVacias = {},
 }) {
+  const capasSinDatos = Object.entries(capasVacias)
+    .filter(([capa, vacia]) => vacia && !erroresCapas[capa])
+    .map(([capa]) => NOMBRE_CAPA[capa] || capa)
   return (
     <>
       {backendError && (
@@ -33,6 +45,11 @@ export function CapaErrorBanners({
           <WifiOff size={14} /> No se actualizaron: {Object.entries(erroresCapas).filter(([, fallo]) => fallo).map(([capa]) => NOMBRE_CAPA[capa] || capa).join(', ')}. Se mantiene la última información disponible.
           {ultimaConsultaCapas && <span className="backend-banner-fecha">Última consulta: {ultimaConsultaCapas}</span>}
           <button onClick={() => setRecargaCapas((v) => v + 1)}>Reintentar capas</button>
+        </div>
+      )}
+      {!backendError && capasSinDatos.length > 0 && (
+        <div className="ruta-banner panel-enter" role="status" aria-live="polite">
+          Sin datos registrados todavía en esta zona: {capasSinDatos.join(', ')}. No es un fallo -- el mapa sigue funcionando con el resto de las capas.
         </div>
       )}
       {!backendError && capaTrafico && traficoNoDisponible && (

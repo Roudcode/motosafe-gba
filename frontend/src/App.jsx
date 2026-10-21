@@ -1723,6 +1723,11 @@ function App() {
         backendError={backendError} cargarHotspots={cargarHotspots}
         erroresCapas={erroresCapas} ultimaConsultaCapas={ultimaConsultaCapas} setRecargaCapas={setRecargaCapas}
         capaTrafico={capaTrafico} traficoNoDisponible={traficoNoDisponible} setCapaTrafico={setCapaTrafico}
+        capasVacias={{
+          corredores: corredores.length === 0,
+          inseguridadGeneral: inseguridadGeneral.length === 0,
+          inseguridadMoto: inseguridadMoto.length === 0,
+        }}
       />
 
 

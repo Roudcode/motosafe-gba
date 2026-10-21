@@ -2293,3 +2293,52 @@ suites de nuevo al cierre (no copiados de una corrida anterior). `git status` fi
 evidencia nuevas (A05, D05, G01) más los cambios puntuales en `docs/README.md`/`docs/gestion/BACKLOG.md`/
 `docs/gestion/CONTINUIDAD.md` y el nuevo `notebooks/monitor_calidad_datos.py`. No se commiteó ni se pusheó
 nada.
+
+## SES-153 — regenerados MAPA_PENDIENTES.md y el handoff para otro asistente; V10 cerrado con el stack real
+
+Nota de verificación previa, pedida explícitamente por Rodo: se confirmó que SES-152 seguía siendo el
+número de sesión más alto antes de arrancar (SES-153 es el siguiente libre) y no se reatribuyó ningún
+asiento anterior a un asistente específico sin confirmarlo.
+
+**Tarea 3 primero (V10), para que las tareas 1 y 2 reflejen el estado final real**: único hueco que quedaba
+de V10 según su propia fila en BACKLOG -- una capa real que responde 200 con lista vacía no tenía mensaje
+distinto de un fallo. Evidencia en `docs/evidencias/2026-10-21/V10-mensaje-sin-datos/RESULTADOS.md`.
+Revisado el código real del backend antes de asumir nada: `/corredores` tiene un `if not resultado: return
+[]` explícito, `/hotspots-inseguridad` (general/moto) también puede responder vacío por construcción;
+`/hotspots` queda afuera a propósito porque hoy siempre trae las 740 filas reales (una lista vacía ahí sería
+un bug, no un estado legítimo). Agregado un `capasVacias` derivado en `App.jsx` (sin estado nuevo, sobre los
+arrays ya existentes) y un banner nuevo en `CapaErrorBanners.jsx` -- mismo `ruta-banner`, sin el modificador
+de error (sin borde rojo), sin ícono de alerta y sin botón de reintento, que solo aparece si la capa está
+vacía y no está al mismo tiempo marcada como fallando. 5 tests de componente nuevos
+(`CapaErrorBanners.test.jsx`, 101/101 en verde) y confirmación real en pantalla: se simuló `/api/corredores`
+→ `200 []` con un service worker temporal (`frontend/public/_test_sw_v10.js`, borrado al terminar) con el
+stack real levantado y la sesión de Rodo (tuvo que volver a loguearse, nunca se le pidió ni se vio la
+contraseña). El aviso real decía *"Sin datos registrados todavía en esta zona: corredores. No es un fallo
+-- el mapa sigue funcionando con el resto de las capas."*, sin romper el resto del mapa; al desregistrar el
+service worker desapareció solo. V10 pasa a Validado para el alcance pedido, con una salvedad encontrada en la revisión de Claude antes de commitear: el motivo dado para excluir `/hotspots` ("sería un bug, no un estado legítimo") no es exacto -- ese endpoint tiene el mismo guard que `/corredores` (`backend/main.py`:623, "Una instalación recién creada puede no tener hotspots todavía. Es un estado válido de la aplicación"). No es un caso real hoy (siempre hay 740 filas), así que no se forzó ningún cambio sin pedírselo a Rodo, pero la justificación original estaba mal fundamentada -- ver la fila de V10 en BACKLOG.md y la corrección agregada a RESULTADOS.md. No se tocó
+ningún otro ítem del catálogo V ni F, como pidió Rodo explícitamente.
+
+**Tarea 1 — `MAPA_PENDIENTES.md` regenerado**: releída entera la tabla "Ejecución actual" de BACKLOG.md
+(fuente real) más las filas con formato legado que nunca se migraron ahí (T02, G02, mezcladas con su propia
+"propuesta" original en vez de tener una fila limpia). Recontado a mano, no estimado: **65 ítems, 17
+Validado, 24 Validado parcialmente, 2 En curso (A17, G05), 22 No iniciado** -- reemplaza el "65... 17
+Validado, 22 parcial, 3 en curso, 27 no iniciado" que tenía la versión vieja (quedó parada en el trabajo
+anterior a SES-148: T02 todavía "en curso", A20/A21/A05/V10 sin cerrar, D05 sin existir). Mismo formato y
+siete categorías que ya tenía el archivo; mismo criterio de hallazgo/oportunidad (A/D/T hallazgos, V/F
+oportunidades, G mixto) que ya se venía usando, sin inventar una categorización nueva.
+
+**Tarea 2 — `HANDOFF_CONTINUIDAD_OTRO_ASISTENTE.md` regenerado**: quedó parado en SES-147 (8 commits
+atrás). Reescrito con el `git log` real de los commits desde entonces, el resumen numérico recontado igual
+que en la tarea 1, un resumen real de qué cerró cada sesión (SES-148 a SES-152, ya commiteadas, más V10 de
+esta misma sesión, todavía sin commitear) y la lista de pendientes de Rodo actualizada (A09, D03, G02/G03,
+A20/UMBRAL_CRUCE_KM, DEC-022). Se agregó a la sección de reglas de trabajo la nota de "confirmar el número
+de sesión libre antes de escribir en BITACORA" y "no reatribuir asientos" (la misma que Rodo pidió al
+principio de esta sesión), y la de "no crear cuentas en proveedores de hosting ni ingresar datos de pago"
+(regla explícita de T06). Mismo propósito y formato (8 secciones) que ya tenía el archivo.
+
+**Verificación**: 101/101 tests de frontend (96 anteriores + 5 nuevos de V10) y 140 passed/11 skipped de
+backend, corridos de nuevo al cierre. `git status` final: cambios en `frontend/src/App.jsx` y
+`frontend/src/components/CapaErrorBanners.jsx` (V10), `frontend/src/components/CapaErrorBanners.test.jsx`
+nuevo, `docs/gestion/MAPA_PENDIENTES.md` y `docs/gestion/HANDOFF_CONTINUIDAD_OTRO_ASISTENTE.md` reescritos,
+la fila de V10 actualizada en `docs/gestion/BACKLOG.md`, y la carpeta de evidencia nueva de V10. No se
+commiteó ni se pusheó nada.
