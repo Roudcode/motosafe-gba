@@ -2056,3 +2056,43 @@ levantado (Tab/flecha abajo con el dedo, no con `user-event`). El test de compon
 mecanismo real (DOM + eventos de foco de React), pero la confirmación visual en pantalla -- que
 Rodo pidió para T02 en general -- sigue pendiente. Candidato natural para pedírselo a Codex (tiene
 el stack real levantado y la sesión autenticada) en el próximo lote de trabajo.
+
+## SES-150 — Cuatro pendientes chicos resueltos sin necesitar el stack real (A06, A15, D01, T04)
+
+Mientras Codex corre la sesión larga de A19/A22/T01/T02/T05/T06 en la máquina real, estos cuatro no
+necesitaban red real ni sesión autenticada, así que se resolvieron directo:
+
+**A06**: el texto decía "D03/D04 quedan bloqueados" por falta de acceso a OSRM -- ya no es cierto desde
+SES-140 (Codex generó los 4 casos reales y la sensibilidad real desde la VM local, que sí tiene acceso).
+Corregido el texto; D03/D04 ya no dependen de esto, solo de que Rodo los revise/decida.
+
+**A15**: el "falta estados de fecha de origen desde backend" que quedaba escrito ya estaba resuelto por
+la misma SES-075 citada en la frase siguiente -- quedó un texto que se contradecía a sí mismo. Corregido
+y cerrado: pasa de "Validado parcialmente" a "Validado", no queda nada pendiente de código.
+
+**D01**: de los dos pendientes que quedaban (diccionario de datos del publicador, términos comerciales),
+se investigó con websearch/webfetch real contra las fuentes oficiales. Open-Meteo: el texto real de sus
+términos (https://open-meteo.com/en/terms) define "no comercial" por remisión a Creative Commons --
+MotoSafe GBA encaja mientras no tenga publicidad ni suscripción. TomTom: no hay una frase explícita que
+autorice o prohíba producción en el plan gratuito, solo lo enmarca como "free evaluation" -- queda
+señalado como pendiente real (confirmar con TomTom), no resuelto de pizarrón. Diccionario de datos: se
+buscó en la página oficial del dataset de siniestros y genuinamente no existe -- se documenta como
+límite real de la fuente (con el contacto del publicador para dudas puntuales), no como algo que faltara
+de nuestro lado. Actualizado `docs/datos/FICHAS_FUENTES.md` con el texto real de cada hallazgo.
+
+**T04**: agregado `backend/consumir_metricas.py` -- un script standalone (no una tarea en segundo plano
+dentro de `main.py`, deliberadamente: eso hubiera sido más riesgoso de verificar sin el servidor real
+levantado) que pide `/metrics`, guarda cada corrida como una línea con fecha en
+`backend/logs/metricas_historico.jsonl` y recorta lo más viejo que el período de retención (30 días por
+defecto). 5 pruebas nuevas (`tests/test_consumir_metricas.py`, con la respuesta HTTP mockeada: no depende
+del backend real): snapshot nuevo, recorte por retención, historial entre corridas sucesivas, una línea
+corrupta no rompe la lectura del resto, y un error de red se propaga en vez de inventar un resultado.
+136/136 del backend en verde (excluido `test_run_dev.py`, que ya fallaba en este sandbox por falta de
+`uvicorn` instalado -- un hueco previo de este entorno, no causado por este cambio). Falta programar la
+ejecución periódica real (cron/Task Scheduler) en la máquina de Rodo -- correr el script una vez no sirve
+de nada por sí solo.
+
+**V10**: no se tocó. El "falta" real (mensaje específico para una capa que responde 200 con lista vacía)
+implica una decisión de diseño -- qué mensaje mostrar y cuándo distinguirlo de "sin errores, nada que
+mostrar" -- que no se puede resolver a ciegas sin verlo en pantalla. Queda señalado para una sesión con
+verificación visual (Codex o Rodo), no forzado con una implementación especulativa.
