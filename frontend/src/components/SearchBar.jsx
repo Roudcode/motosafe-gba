@@ -15,6 +15,17 @@
 // `abierto`/`setAbierto` viven en App.jsx (no son estado propio de este
 // componente) para que el botón de la topbar y el cierre automático de
 // acá abajo controlen exactamente el mismo valor.
+//
+// T02 (SES-146/148): hallazgo real de accesibilidad -- la lista de
+// sugerencias se desmontaba con el blur del input sin importar adónde
+// se movía el foco, así que Tab/flecha abajo nunca llegaban a los
+// resultados (solo el mouse podía elegir uno). El blur de cierre ahora
+// vive en el contenedor (`onBlur` con `relatedTarget`), no en el input:
+// si el foco se mueve a otro elemento DENTRO del contenedor (un botón
+// de la lista), no se cierra nada. Los botones de resultado pasaron de
+// `onMouseDown` a `onClick` -- ya no hace falta ganarle de mano al blur
+// del input (ese era el único motivo del `onMouseDown`), y `onClick`
+// sí responde a Enter/Espacio con el botón enfocado por teclado.
 
 import { useRef, useEffect } from 'react'
 import { Search, X, MapPin, Clock, Navigation } from 'lucide-react'
@@ -30,12 +41,16 @@ export function SearchBar({
     if (abierto) inputRef.current?.focus()
   }, [abierto])
 
-  // Se cierra sola cuando el input pierde el foco sin texto cargado --
-  // mismo momento en que ya se limpiaban las sugerencias antes de este
-  // cambio, así que tocar afuera sin buscar nada, o elegir un resultado
-  // (buscarEnMapa vacía el campo al elegir un lugar), la cierra también,
-  // sin necesidad de un botón de "cerrar" aparte.
-  function cerrarSiQuedaVacio() {
+  // Se cierra sola cuando el foco sale del todo del buscador (contenedor
+  // incluido) sin texto cargado -- mismo momento en que ya se limpiaban
+  // las sugerencias antes de este cambio, así que tocar afuera sin
+  // buscar nada, o elegir un resultado (buscarEnMapa vacía el campo al
+  // elegir un lugar), la cierra también, sin necesidad de un botón de
+  // "cerrar" aparte. `relatedTarget` es el elemento que GANA el foco: si
+  // sigue dentro del contenedor (por ejemplo, un botón de la lista al
+  // tabular desde el input), no se cierra nada.
+  function alPerderFocoDelContenedor(e) {
+    if (e.currentTarget.contains(e.relatedTarget)) return
     setBuscaEnFoco(false)
     setTimeout(() => {
       sugBusqueda.limpiar()
@@ -51,16 +66,16 @@ export function SearchBar({
           capturas que mandaste) -- las dos ocupaban la misma franja
           horizontal arriba. */}
       {!vistaNavegacion && abierto && (
-        <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
+        <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }} onBlur={alPerderFocoDelContenedor}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input ref={inputRef} type="text" placeholder="Buscar lugar, calle o local..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={cerrarSiQuedaVacio} aria-label="Buscar lugar, calle o local" autoComplete="off" />
+          <input ref={inputRef} type="text" placeholder="Buscar lugar, calle o local..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} aria-label="Buscar lugar, calle o local" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (
             <ul className="ruta-form-sugerencias searchbar-sugerencias">
               {sugBusqueda.resultados.map((s, i) => (
                 <li key={i}>
-                  <button type="button" onMouseDown={() => buscarEnMapa(s)}>
+                  <button type="button" onClick={() => buscarEnMapa(s)}>
                     <MapPin size={12} /> {s.label}
                   </button>
                 </li>
@@ -74,7 +89,7 @@ export function SearchBar({
               <li className="ruta-form-sin-resultados">Recientes</li>
               {recientes.map((r, i) => (
                 <li key={`${r.label}-${i}`}>
-                  <button type="button" onMouseDown={() => buscarEnMapa(r)}>
+                  <button type="button" onClick={() => buscarEnMapa(r)}>
                     <Clock size={12} /> {r.label}
                   </button>
                 </li>

@@ -2022,3 +2022,37 @@ pusheó nada, a la espera de que Rodo lo pida explícitamente.
 - Se repitió la suite del frontend: 93/93 pruebas aprobadas. Un primer intento dentro del sandbox falló al leer un archivo temporal de Vitest antes de ejecutar una suite; la repetición fuera de ese aislamiento completó las cinco suites. Esto verifica la suite actual, no el flujo de teclado del buscador en un navegador.
 - Se detectaron discrepancias documentales sin corregirlas en esta sesión: el handoff describe Leaflet aunque `frontend/package.json` y `MapaMotoSafe.jsx` usan MapLibre; `BACKLOG.md` abre con 63 ítems, mientras el mapa dice 65; las cifras de estados 17+22+3+27 suman 69. Ninguna cifra de cierre debe citarse sin recalcularla.
 - No se cambió código productivo, modelo, umbrales ni decisiones. Se conservaron los archivos ajenos ya no rastreados (`backend/.venv_test/` y `docs/Contenido Catedra/`).
+
+## SES-148 — T02: corregido el bug de teclado del buscador (hallazgo de SES-146)
+
+Causa real confirmada al leer `SearchBar.jsx`: `cerrarSiQuedaVacio` colgaba del `onBlur` del
+`<input>` y se ejecutaba 150ms después sin mirar adónde se había movido el foco -- así que tabular
+desde el input hacia un botón de resultado también disparaba el cierre, y la lista se desmontaba
+antes de que el foco llegara. Los botones de resultado usaban `onMouseDown` en vez de `onClick`,
+que era el parche que le ganaba de mano al blur para el mouse pero no servía para teclado (Enter/
+Espacio disparan `onClick`, no `onMouseDown`).
+
+Corrección: el cierre por pérdida de foco se movió al contenedor (`onBlur` en el `div.searchbar`,
+función `alPerderFocoDelContenedor`), que chequea `e.relatedTarget` -- si el elemento que gana el
+foco sigue dentro del contenedor (cualquier botón del propio buscador), no cierra nada. Los botones
+de resultado pasaron a `onClick` sin necesidad del truco de `onMouseDown`, porque ya no hay carrera
+contra un blur que cierre todo antes de que el click/Enter llegue.
+
+Verificación real, no solo lectura de código: se instaló `@testing-library/react`,
+`@testing-library/user-event` y `jsdom` como devDependency real (`npm install -D`, versiones
+`^16.3.3`/`^14.6.8`/`^25.0.1`, reflejadas en `package.json`/`package-lock.json`) -- primer test de
+componente del proyecto, hasta ahora solo había tests de funciones puras. `SearchBar.test.jsx`
+reproduce el hallazgo real: enfoca el input, tabula dos veces (el primer Tab cae en el botón
+"Limpiar búsqueda" que aparece con texto cargado, el segundo en el primer resultado real) y
+confirma con `document.activeElement` que el foco llegó a un botón con el texto real del resultado
+(no a un elemento vacío de una lista ya desmontada); un segundo test confirma que Enter sobre ese
+botón enfocado llama a `buscarEnMapa` con el resultado correcto; un tercero (con fake timers)
+confirma que perder el foco del todo, afuera del contenedor, sigue cerrando el panel cuando no hay
+texto -- sin regresión del comportamiento que ya existía. 96/96 pruebas de frontend en verde
+(93 anteriores + 3 nuevas), `eslint src/` limpio.
+
+Lo que falta, declarado explícitamente: no se verificó todavía en un navegador real con el stack
+levantado (Tab/flecha abajo con el dedo, no con `user-event`). El test de componente prueba el
+mecanismo real (DOM + eventos de foco de React), pero la confirmación visual en pantalla -- que
+Rodo pidió para T02 en general -- sigue pendiente. Candidato natural para pedírselo a Codex (tiene
+el stack real levantado y la sesión autenticada) en el próximo lote de trabajo.
