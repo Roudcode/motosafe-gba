@@ -1955,3 +1955,7 @@ Evidencia completa (tablas, scripts, JSON de resultados) en `docs/evidencias/202
 El Capítulo 8 (recomendaciones técnicas) todavía listaba como pendiente "revisar si la anomalía de completitud detectada en el año 2024 aparece también en otros campos del dataset oficial" -- exactamente el trabajo hecho en SES-143. Se reemplazó ese párrafo por el resultado real: la anomalía es específica de los campos que describen a la víctima (no del dataset en general), el experimento causal confirma que esa variable explica la inestabilidad, y el trade-off real (mejora el promedio general, empeora las clases críticas en el año más reciente) queda planteado como decisión pendiente de Rodo, sin tocar el modelo productivo. Sin fechas, sin códigos internos, con los mismos términos ya explicados en capítulos anteriores.
 
 Verificado renderizando a PDF y revisando visualmente la página con el párrafo nuevo.
+
+## SES-145 — Verificación visual en vivo de SES-141 (leyenda colapsable + buscador en topbar): OK
+
+Rodo probó en pantalla real los dos cambios de interfaz de SES-141 (la leyenda de nivel de riesgo colapsable y el buscador movido a la topbar) y confirmó que están bien ("esto que probamos es ok"). Sin hallazgos que corregir.
