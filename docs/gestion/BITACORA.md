@@ -2014,3 +2014,11 @@ script).
 de `docs/evidencias/` fue el service worker temporal de prueba del paso 4 de G04, borrado antes de cerrar
 la sesión. `git status` confirmado limpio salvo las tres carpetas de evidencia nuevas. No se commiteó ni se
 pusheó nada, a la espera de que Rodo lo pida explícitamente.
+
+## SES-147 (2026-10-21) — Lectura de traspaso y preparación del etiquetado A09 (Codex)
+
+- Se leyeron, en el orden pedido por Rodo, `HANDOFF_CONTINUIDAD_OTRO_ASISTENTE.md`, `BACKLOG.md`, DEC-016 a DEC-022, `MAPA_PENDIENTES.md` y las entradas recientes de esta bitácora antes de proponer trabajo. Luego se contrastaron el repositorio y la muestra original.
+- Verificado directamente: `muestra_calles.csv` contiene 50 filas (21 `calle`, 15 `interseccion`, 14 `barrio`); en las filas 55 y 800 `query_extraida` está vacía. Se creó `etiquetado_rodo.csv` como copia de trabajo con cuatro columnas de juicio humano vacías y `GUIA_ETIQUETADO.md` con criterios de revisión. No se asignó ninguna etiqueta ni se calculó una precisión.
+- Se repitió la suite del frontend: 93/93 pruebas aprobadas. Un primer intento dentro del sandbox falló al leer un archivo temporal de Vitest antes de ejecutar una suite; la repetición fuera de ese aislamiento completó las cinco suites. Esto verifica la suite actual, no el flujo de teclado del buscador en un navegador.
+- Se detectaron discrepancias documentales sin corregirlas en esta sesión: el handoff describe Leaflet aunque `frontend/package.json` y `MapaMotoSafe.jsx` usan MapLibre; `BACKLOG.md` abre con 63 ítems, mientras el mapa dice 65; las cifras de estados 17+22+3+27 suman 69. Ninguna cifra de cierre debe citarse sin recalcularla.
+- No se cambió código productivo, modelo, umbrales ni decisiones. Se conservaron los archivos ajenos ya no rastreados (`backend/.venv_test/` y `docs/Contenido Catedra/`).
