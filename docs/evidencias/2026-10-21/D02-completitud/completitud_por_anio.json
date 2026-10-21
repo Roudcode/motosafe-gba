@@ -1,0 +1,72 @@
+[
+  {
+    "anio": 2019,
+    "filas": 3743,
+    "pct_faltante_comuna": 0.88,
+    "pct_faltante_tipo_de_via_siniestro": 94.9,
+    "pct_faltante_contraparte_siniestro": 0.96,
+    "pct_faltante_direccion_normalizada_siniestro": 96.63,
+    "pct_faltante_sexo_victima": 93.99,
+    "pct_faltante_edad_victima": 94.18
+  },
+  {
+    "anio": 2020,
+    "filas": 2048,
+    "pct_faltante_comuna": 1.81,
+    "pct_faltante_tipo_de_via_siniestro": 1.76,
+    "pct_faltante_contraparte_siniestro": 22.07,
+    "pct_faltante_direccion_normalizada_siniestro": 2.29,
+    "pct_faltante_sexo_victima": 9.72,
+    "pct_faltante_edad_victima": 11.62
+  },
+  {
+    "anio": 2021,
+    "filas": 2254,
+    "pct_faltante_comuna": 0.49,
+    "pct_faltante_tipo_de_via_siniestro": 0.58,
+    "pct_faltante_contraparte_siniestro": 11.14,
+    "pct_faltante_direccion_normalizada_siniestro": 1.38,
+    "pct_faltante_sexo_victima": 4.66,
+    "pct_faltante_edad_victima": 7.72
+  },
+  {
+    "anio": 2022,
+    "filas": 3600,
+    "pct_faltante_comuna": 0.92,
+    "pct_faltante_tipo_de_via_siniestro": 8.31,
+    "pct_faltante_contraparte_siniestro": 6.72,
+    "pct_faltante_direccion_normalizada_siniestro": 8.56,
+    "pct_faltante_sexo_victima": 17.08,
+    "pct_faltante_edad_victima": 37.17
+  },
+  {
+    "anio": 2023,
+    "filas": 3919,
+    "pct_faltante_comuna": 1.15,
+    "pct_faltante_tipo_de_via_siniestro": 1.05,
+    "pct_faltante_contraparte_siniestro": 11.81,
+    "pct_faltante_direccion_normalizada_siniestro": 1.17,
+    "pct_faltante_sexo_victima": 26.69,
+    "pct_faltante_edad_victima": 45.6
+  },
+  {
+    "anio": 2024,
+    "filas": 3331,
+    "pct_faltante_comuna": 4.08,
+    "pct_faltante_tipo_de_via_siniestro": 0.0,
+    "pct_faltante_contraparte_siniestro": 0.6,
+    "pct_faltante_direccion_normalizada_siniestro": 1.44,
+    "pct_faltante_sexo_victima": 16.15,
+    "pct_faltante_edad_victima": 12.13
+  },
+  {
+    "anio": 2025,
+    "filas": 4448,
+    "pct_faltante_comuna": 0.38,
+    "pct_faltante_tipo_de_via_siniestro": 0.04,
+    "pct_faltante_contraparte_siniestro": 2.41,
+    "pct_faltante_direccion_normalizada_siniestro": 0.0,
+    "pct_faltante_sexo_victima": 36.98,
+    "pct_faltante_edad_victima": 41.1
+  }
+]

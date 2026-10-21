@@ -1,0 +1,89 @@
+{
+  "con_sexo": {
+    "columnas": [
+      "hora",
+      "temperatura",
+      "humedad",
+      "dia_semana",
+      "comuna",
+      "tipo_de_via_siniestro",
+      "contraparte_siniestro",
+      "sexo_victima",
+      "lluvia"
+    ],
+    "split_2023_a_2024": {
+      "f1_macro_media": 0.2879493715408251,
+      "f1_macro_valores": [
+        0.28587404101797426,
+        0.28677935048769376,
+        0.2935194468505976,
+        0.28625192799087124,
+        0.2873220913569888
+      ],
+      "f1_por_clase_primera_corrida": {
+        "GRAVE": 0.13808219178082193,
+        "LEVE": 0.5932241417994166,
+        "MORTAL": 0.12631578947368421
+      }
+    },
+    "split_2024_a_2025": {
+      "f1_macro_media": 0.3675402471833425,
+      "f1_macro_valores": [
+        0.3689032743352121,
+        0.3677794783839286,
+        0.3664275972863786,
+        0.3653179130016487,
+        0.3692729729095446
+      ],
+      "f1_por_clase_primera_corrida": {
+        "GRAVE": 0.2091020910209102,
+        "LEVE": 0.7880976455293948,
+        "MORTAL": 0.10951008645533142
+      }
+    },
+    "brecha_f1_macro_media": 0.07959087564251738
+  },
+  "sin_sexo": {
+    "columnas": [
+      "hora",
+      "temperatura",
+      "humedad",
+      "dia_semana",
+      "comuna",
+      "tipo_de_via_siniestro",
+      "contraparte_siniestro",
+      "lluvia"
+    ],
+    "split_2023_a_2024": {
+      "f1_macro_media": 0.36452072753577214,
+      "f1_macro_valores": [
+        0.36154254845603423,
+        0.3624908984632244,
+        0.3639289579978089,
+        0.37280962540624274,
+        0.3618316073555506
+      ],
+      "f1_por_clase_primera_corrida": {
+        "GRAVE": 0.11678832116788321,
+        "LEVE": 0.8476207449652469,
+        "MORTAL": 0.12021857923497267
+      }
+    },
+    "split_2024_a_2025": {
+      "f1_macro_media": 0.35949069984669835,
+      "f1_macro_valores": [
+        0.3592868678130218,
+        0.3596141235039361,
+        0.3625973644021296,
+        0.3608919683620828,
+        0.35506317515232116
+      ],
+      "f1_por_clase_primera_corrida": {
+        "GRAVE": 0.08921933085501858,
+        "LEVE": 0.9095452273863068,
+        "MORTAL": 0.07909604519774012
+      }
+    },
+    "brecha_f1_macro_media": -0.0050300276890737905
+  }
+}
