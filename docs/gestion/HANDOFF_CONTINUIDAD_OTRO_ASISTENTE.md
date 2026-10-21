@@ -12,7 +12,7 @@ MotoSafe GBA es el Proyecto Final de Ingeniería Informática (USAL) de Rodolfo 
 
 - **Backend** en FastAPI + PostgreSQL/PostGIS, con un modelo Random Forest entrenado sobre datos reales de siniestros (dataset oficial GCBA 2019-2025) que sirve predicciones de nivel de riesgo por zona (`/hotspots`) y por ruta.
 - Capas adicionales de datos reales: delitos (GCBA), clima (Open-Meteo), prensa (scraping propio de notas de robos/choques con geocodificación), corredores de siniestralidad (clustering sobre siniestros de moto).
-- **Frontend** en React + Leaflet: mapa con heatmap/hexágonos de riesgo, comparador de rutas (TomTom con tráfico en vivo), reporte colaborativo de incidentes, modo navegación/viaje.
+- **Frontend** en React + MapLibre GL: mapa con heatmap/hexágonos de riesgo, comparador de rutas (TomTom con tráfico en vivo), reporte colaborativo de incidentes, modo navegación/viaje.
 - Toda la infraestructura corre en Docker Compose (desarrollo local de Rodo) y hay un despliegue documentado para producción (Render).
 
 El trabajo entero se rige por una regla de fondo no negociable: **nada se declara hecho sin evidencia real verificada** (corridas reales contra el backend real, datos reales, tests reales pasando). Nunca se fabrica un resultado ni se asume que algo funciona sin probarlo. Esta disciplina es la columna vertebral de todo el proyecto y de la tesis — perderla rompe la credibilidad del trabajo completo.
