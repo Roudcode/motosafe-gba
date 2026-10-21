@@ -2158,3 +2158,82 @@ mismo; queda pendiente, sin ningún intento de tocar producción.
 **Verificación**: 96/96 tests de frontend y 140 passed/11 skipped de backend en verde al cierre. `git
 status` final: solo las cuatro carpetas de evidencia nuevas más el cambio (sin commitear) en
 `test_integracion_postgres.py`. No se commiteó ni se pusheó nada.
+
+## SES-151 — T06 (volumen real en local), T03 (línea base de rendimiento móvil), A20/A21 (limpieza geográfica común y estabilidad de corredores)
+
+Nota de verificación previa, pedida explícitamente por Rodo: antes de escribir este asiento se confirmó
+cuál era el número de sesión más alto en este archivo (SES-150) y se arrancó desde el siguiente libre
+(SES-151), sin asumir de antemano. También se evitó asumir de quién es cada asiento marcado como corrido
+"en paralelo" -- esta sesión no afirma qué asistente escribió SES-147/SES-150 (ambos quedan como los
+encontró, sin reatribuirlos).
+
+**T06 (backup/restauración con el volumen persistente real, en local)**: evidencia en
+`docs/evidencias/2026-10-21/T06-backup-volumen-real/RESULTADOS.md`. Confirmado primero que no hay ningún
+despliegue público ni cuenta en ningún proveedor (`docs/operacion/DESPLIEGUE_MVP.md` lo declara explícito)
+-- no hay producción real a la que arriesgar. **No se creó ninguna cuenta en ningún proveedor de hosting ni
+se ingresó ningún dato de pago**, como exigió Rodo sin excepción. Se levantó la composición real de
+producción (`docker-compose.production.yml`) en local, con un `.env` de prueba propio (contraseña inventada
+para el ensayo, nunca secretos reales) y un volumen Docker **nombrado y persistente de verdad** (no
+contenedores sueltos como en el ensayo anterior de SES-071). Contenido real cargado vía la API (reportes,
+una confirmación, prensa). `docker compose down` sin `-v` (simula un reinicio real) seguido de `up` de
+nuevo: el volumen sobrevivió completo: 5 de 6 tablas con hash de contenido idéntico, y la sexta
+(`reportes_prensa`) con un cambio real y esperado (el `scraper` del compose siguió scrapeando notas reales
+de verdad mientras corría el ensayo, de 4 a 8 filas -- no una pérdida). Aparte, `pg_dump`/`pg_restore`
+reales sobre una instancia nueva y descartable (puerto distinto, nunca `motosafe-db`): restauración con
+código de salida 0, hashes de las seis tablas idénticos a los de antes del dump, y la API real corriendo
+sobre la copia (incluido un `/reportes/mios` que recupera el token y la confirmación, y un reporte nuevo
+que recibe el id correcto de la secuencia). Todo lo de prueba se borró al terminar; `motosafe-db` nunca se
+tocó. Queda sin ensayar contra un proveedor de hosting real porque genuinamente no existe ningún
+despliegue -- no es un pendiente de esta sesión, es una dependencia que todavía no se cumple.
+
+**T03 (línea base de rendimiento móvil)**: evidencia en `docs/evidencias/2026-10-21/T03-rendimiento-movil/
+RESULTADOS.md`. Desbloqueado porque A17 (separación de `App.jsx`) está prácticamente cerrado. Medido en
+375px con el mismo criterio de instrumentación temporal que SES-112 (contador de renders en `App`/
+`MapaMotoSafeInner`, revertido con `Edit` antes de cerrar -- confirmado con `git diff` vacío) más la
+Navigation/Paint Timing API real del navegador. Carga inicial: DOM interactivo 35,5 ms, First Contentful
+Paint 272 ms, 30/24 renders de `App`/`MapaMotoSafe` antes de cualquier interacción (incluye el doble montaje
+de `StrictMode` en desarrollo). Sesión típica (buscar, trazar ruta real, modo viaje real): en reposo sin
+modo viaje, 10 renders/min de `App`; en reposo con modo viaje activo, 16 renders/min; memoria estable en el
+mismo orden (~60-64 MB) a lo largo de ~4 minutos de sesión. Presupuesto propuesto con la medición real como
+referencia (no un número inventado): ≤15 renders/min en reposo, ≤22 renders/min en reposo durante modo
+viaje, ≤500 ms de DOM interactivo / ≤600 ms de FCP en este mismo entorno de referencia (dev local, sin
+throttling). Declarado explícito: esto es optimista respecto de un celular real con red real -- no se
+midió con throttling de red/CPU ni con un dispositivo físico, queda como el siguiente paso real.
+
+**A20 (limpieza geográfica común)**: evidencia en `docs/evidencias/2026-10-21/A20-limpieza-geografica/
+RESULTADOS.md`. Desbloqueado porque el "diccionario de datos" del que dependía ya se confirmó inexistente
+(SES-150). Revisados primero los consumidores reales de cada universo (sin tocar nada): el lado de
+siniestros de moto ya descartaba coordenadas sin dato pero no (0,0)/fuera de GBA/duplicados; el lado de
+delitos ya descartaba (0,0) pero tampoco lo otro -- confirma que los dos universos NO compartían criterio.
+Nuevo módulo `notebooks/limpieza_geografica_comun.py` con una función que aplica las cuatro exclusiones en
+orden y las cuenta siempre (nunca un filtro silencioso). Aplicado a `limpiar_siniestros_motos.py`
+(extendido, no reescrito) y verificado en una copia aislada: **0 filas adicionales excluidas, salida byte a
+byte idéntica** (mismo SHA256) al `motos_limpio.csv` vigente -- cambio seguro, sin efecto en los datos de
+hoy, deja cerrada la brecha para el futuro. Medido (sin aplicar todavía) sobre `delitos_caba.csv`: 12 filas
+con coordenadas genuinamente rotas (otra provincia, o valores imposibles como una longitud de `5840982` o
+una latitud de `-3,46·10¹⁷`) y 12.525 duplicados exactos en todo el histórico, de los cuales 4.305 caen
+dentro de la ventana real de 3 años que usa `construir_indice_inseguridad.py` -- deduplicar baja el conteo
+crudo de cada comuna entre 0,56% y 1,79%, de forma no pareja (comuna 8 es la más afectada). No se aplicó a
+`identificar_hotspots_inseguridad.py` (HDBSCAN tarda ~70 min documentados) ni a `construir_indice_inseguridad.py`
+en esta sesión porque cambiaría artefactos ya publicados -- eso es una decisión de producto, igual que
+`promover_artefactos.py --confirmar`, no algo para forzar sin que Rodo lo pida. Queda medido y cuantificado
+para que decida.
+
+**A21 (procedencia y estabilidad espacial de corredores)**: evidencia en
+`docs/evidencias/2026-10-21/A21-corredores-estabilidad/RESULTADOS.md`. Encadenado después de A20 (el
+universo de siniestros no cambió, así que corre sobre los mismos datos de siempre). Procedencia de cada
+columna de `corredores_riesgo.csv` trazada a los dos pasos reales del pipeline (agrupación/selección de
+extremos sin red, geometría con red vía OSRM). Estabilidad espacial medida separando dos preguntas
+distintas: (1) los puntos que definen cada corredor (`identificar_corredores.py`, sin red) son **100%
+deterministas** -- corrido dos veces con los mismos datos de entrada, salida byte a byte idéntica,
+confirmado con SHA256; (2) la polilínea que dibuja OSRM entre esos mismos puntos **no** es estable (el
+42,4% medido en SES-149/A19), pero es un límite conocido de un servidor externo, no del pipeline propio --
+el score de riesgo y la identidad de cada corredor no dependen de esa polilínea exacta. Separar las dos
+preguntas evita la conclusión engañosa de "los corredores son inestables" cuando en realidad solo lo es su
+dibujo visual, no su definición.
+
+**Verificación**: 140 passed/11 skipped de backend en verde tras los cambios de A20 (sin tocar nada de
+frontend en esta sesión más allá de instrumentación temporal ya revertida). `git status` final: cambios
+sin commitear en `notebooks/limpiar_siniestros_motos.py` (verificado sin efecto real) y el nuevo
+`notebooks/limpieza_geografica_comun.py`, más las cuatro carpetas de evidencia nuevas. No se commiteó ni se
+pusheó nada.

@@ -23,6 +23,16 @@ motos_limpio.csv (se vuelve a leer, limpio e independiente, en la seccion de
 ablacion demografica -- A03). Mantenerlo fuera de este script no es una
 simplificacion: es lo que el notebook historico efectivamente hace.
 
+A20 (2026-10-21): el paso de coordenadas usa ahora el criterio comun de
+limpieza_geografica_comun.py (el mismo que identificar_hotspots_inseguridad.py
+aplica al lado de delitos_caba.csv), que ademas de descartar coordenadas sin
+dato tambien descarta (0,0), fuera de un bounding box de GBA y filas
+duplicadas exactas -- el notebook historico solo descartaba coordenadas sin
+dato. Medido contra los datos reales de hoy: 0 filas adicionales excluidas
+(no hay (0,0)/fuera de GBA/duplicados exactos en siniestros_viales_hechos.csv
+hoy), asi que la salida no cambia -- ver
+docs/evidencias/2026-10-21/A20-limpieza-geografica/.
+
 Entrada: data/siniestros_viales_hechos.csv
 Salida: data/motos_limpio.csv
 
@@ -32,6 +42,8 @@ import re
 from pathlib import Path
 
 import pandas as pd
+
+from limpieza_geografica_comun import limpiar_coordenadas
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENTRADA = BASE_DIR / "data" / "siniestros_viales_hechos.csv"
@@ -58,10 +70,10 @@ def main():
 
     hechos["comuna"] = hechos["comuna_siniestro"].apply(normalizar_comuna)
 
-    hechos["latitud_siniestro"] = pd.to_numeric(hechos["latitud_siniestro"], errors="coerce")
-    hechos["longitud_siniestro"] = pd.to_numeric(hechos["longitud_siniestro"], errors="coerce")
-    hechos_geo = hechos.dropna(subset=["latitud_siniestro", "longitud_siniestro"]).copy()
-    print(f"{len(hechos_geo)} de {len(hechos)} siniestros tienen coordenadas "
+    hechos_geo, _resumen_geo = limpiar_coordenadas(
+        hechos, "latitud_siniestro", "longitud_siniestro", "siniestros_viales_hechos.csv"
+    )
+    print(f"{len(hechos_geo)} de {len(hechos)} siniestros tienen coordenadas validas "
           f"({len(hechos_geo) / len(hechos) * 100:.1f}%)")
 
     motos = hechos_geo[hechos_geo["modo_desplazamiento_victima"] == "MOTO"].copy()
