@@ -509,6 +509,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--verde); flex-shrink: 0; }
 .topbar-status.alerta .status-dot { background: var(--rojo); }
 .topbar-status.viaje .status-dot { animation: pulse-report 1.4s infinite; }
+/* V09 (SES-154): durante la navegación a pantalla completa el punto
+   pulsando de fondo (que no agrega información -- el texto de al lado ya
+   dice la ruta/ETA) compite con la tarjeta de maniobra. Se apaga solo ahí,
+   no en todo "modo viaje" (caminar con el modo activo pero sin la cámara de
+   navegación bloqueada sigue mostrándolo, ese caso no compite con nada). */
+.topbar-status.viaje.nav-activa .status-dot { animation: none; opacity: 0.6; }
 
 .backend-banner { top: var(--y1) !important; }
 

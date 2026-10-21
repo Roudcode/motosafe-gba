@@ -230,7 +230,11 @@ function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
   const halo = HALO_POR_NIVEL_PRECISION[nivelPrecision] ?? HALO_POR_NIVEL_PRECISION.barrio
   const svgIcono = ICONOS_POR_TIPO_INCIDENTE[tipoIncidente] ?? ICONOS_POR_TIPO_INCIDENTE.robo
   const wrapper = document.createElement('div')
-  wrapper.className = 'marker-prensa-wrapper'
+  // V09 (SES-154): mismo patron de atenuado que hotspots/corredores durante
+  // la navegacion (.mapa-en-navegacion .capa-fondo-nav, en App.css) -- antes
+  // las notas de prensa se quedaban a opacidad plena compitiendo con la ruta
+  // mientras el resto del fondo ya se atenuaba.
+  wrapper.className = 'marker-prensa-wrapper capa-fondo-nav'
   wrapper.style.width = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
   wrapper.style.height = `${Math.max(halo, TAMANO_ICONO_PRENSA)}px`
   if (halo > 0) {
@@ -250,7 +254,7 @@ function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
 
 function elementoGrupoPrensa(cantidad) {
   const el = document.createElement('div')
-  el.className = 'marker-prensa-grupo'
+  el.className = 'marker-prensa-grupo capa-fondo-nav'
   el.innerHTML = `<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg><strong>${cantidad}</strong>`
   el.style.cursor = 'pointer'
   return el
@@ -845,11 +849,21 @@ function MapaMotoSafeInner({
     // siempre dibuja 1px sin importar el zoom -- a un zoom alto quedaba
     // invisible contra el fill. Una línea aparte con fill-opacity controla
     // mejor el grosor real en pantalla.
+    // V11 (SES-154): blanco semitransparente da contraste real (WCAG) contra
+    // el mapa claro de OpenFreeMap -- medido sobre tres zonas representativas
+    // del estilo real, ratio 1.0-2.4:1 según el color de la celda, por debajo
+    // del mínimo de 3:1 para elementos gráficos. Un borde oscuro en tema claro
+    // (blanco se mantiene en tema oscuro, donde sí contrasta) sube el ratio a
+    // >10:1 sin tocar ningún color de la paleta de riesgo (eso es V04).
     map.addLayer({
       id: layerBordeId,
       type: 'line',
       source: sourceId,
-      paint: { 'line-color': 'rgba(255,255,255,0.35)', 'line-width': 1.2, 'line-opacity': atenuarFondo },
+      paint: {
+        'line-color': tema === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(11,22,32,0.55)',
+        'line-width': 1.2,
+        'line-opacity': atenuarFondo,
+      },
     })
     // La "influencia de las noticias" ya NO se muestra como un punto
     // ambiente sobre cada celda: probado en el celular real quedó como
@@ -906,7 +920,7 @@ function MapaMotoSafeInner({
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
 
-  }, [capaMapa, filtroHexagono, zonasFiltradas, inseguridadFiltrada, reportesPrensa, atenuarFondo, version, radioHex])
+  }, [capaMapa, filtroHexagono, zonasFiltradas, inseguridadFiltrada, reportesPrensa, atenuarFondo, version, radioHex, tema])
 
   // --- cluster de siniestros (capaMapa === 'clusters') ----------------------
   useEffect(() => {
@@ -965,8 +979,10 @@ function MapaMotoSafeInner({
     if (!map || version === 0) return
     const sourceId = 'corredores'
     const layerId = 'corredores-layer'
+    const layerCasingId = 'corredores-layer-casing'
     if (capaMapa !== 'corredores') {
       if (map.getLayer(layerId)) map.removeLayer(layerId)
+      if (map.getLayer(layerCasingId)) map.removeLayer(layerCasingId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
       return
     }
@@ -992,6 +1008,29 @@ function MapaMotoSafeInner({
       },
     }))
     map.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features } })
+    // V11 (SES-154): mismo "casing" que ya usa la ruta seleccionada (ver más
+    // abajo, línea oscura debajo de la de color) -- medido que el color de
+    // nivel solo (sin contorno) da 1.0-2.4:1 de contraste contra el mapa
+    // claro real, por debajo del mínimo de 3:1. Solo en tema claro: en tema
+    // oscuro el mismo color ya contrasta bien contra el fondo navy.
+    // Opacidad FIJA (no escalada por `opacidad` del nivel, a diferencia de la
+    // línea de color): medido que escalarla igual que el nivel 'bajo' (0.35)
+    // dejaba el contorno en ~1.8:1, por debajo del mínimo -- el contorno
+    // tiene que verse igual de bien sin importar el nivel de riesgo, es la
+    // línea de color la que ya distingue bajo/crítico.
+    if (tema !== 'dark') {
+      map.addLayer({
+        id: layerCasingId,
+        type: 'line',
+        source: sourceId,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color': '#0B1620',
+          'line-width': ['+', ['get', 'ancho'], 1.6],
+          'line-opacity': ['*', atenuarFondo, 0.7],
+        },
+      })
+    }
     map.addLayer({
       id: layerId,
       type: 'line',
@@ -1039,10 +1078,11 @@ function MapaMotoSafeInner({
       map.off('mouseenter', layerId, cursorOn)
       map.off('mouseleave', layerId, cursorOff)
       if (map.getLayer(layerId)) map.removeLayer(layerId)
+      if (map.getLayer(layerCasingId)) map.removeLayer(layerCasingId)
       if (map.getSource(sourceId)) map.removeSource(sourceId)
     }
-     
-  }, [capaMapa, corredoresFiltrados, atenuarFondo, version])
+
+  }, [capaMapa, corredoresFiltrados, atenuarFondo, version, tema])
 
   // --- cluster de inseguridad (delitos GCBA) --------------------------------
   useEffect(() => {

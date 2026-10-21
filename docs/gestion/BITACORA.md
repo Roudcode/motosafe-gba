@@ -2342,3 +2342,51 @@ backend, corridos de nuevo al cierre. `git status` final: cambios en `frontend/s
 nuevo, `docs/gestion/MAPA_PENDIENTES.md` y `docs/gestion/HANDOFF_CONTINUIDAD_OTRO_ASISTENTE.md` reescritos,
 la fila de V10 actualizada en `docs/gestion/BACKLOG.md`, y la carpeta de evidencia nueva de V10. No se
 commiteó ni se pusheó nada.
+
+## SES-154 — V09 (atenuar decoración en modo viaje) y V11 (contraste real sobre mapa claro) cerrados
+
+Nota de verificación previa, pedida explícitamente por Rodo: se confirmó que SES-153 seguía siendo el
+número de sesión más alto antes de arrancar (SES-154 es el siguiente libre) y no se reatribuyó ningún
+asiento anterior a un asistente específico. Dos tareas del catálogo V, elegidas por ser medibles/objetivas
+(mismo criterio que A23/V10) -- el resto de V y todo F quedan sin tocar, a pedido explícito de Rodo.
+
+**V09 (atenuar decoración durante el viaje)**: evidencia en `docs/evidencias/2026-10-21/
+V09-atenuar-decoracion-viaje/RESULTADOS.md`. Revisado primero qué ya estaba resuelto (topbar oculta, fondo
+del mapa atenuado a 0,1/0,15 vía `atenuarFondo`/`.capa-fondo-nav` durante `vistaNavegacion`) antes de tocar
+nada. Dos hallazgos reales: (1) los marcadores de notas de prensa no llevaban la clase `capa-fondo-nav` y
+quedaban a opacidad plena compitiendo con la ruta durante toda la navegación -- se les agregó la misma
+clase que ya atenúa hotspots/corredores; (2) el punto de estado de la topbar pulsaba continuamente
+(`pulse-report 1.4s infinite`) durante todo "modo viaje", incluida la navegación a pantalla completa, sin
+aportar información -- se agregó un modificador `nav-activa` (ligado a `vistaNavegacion`, no a todo
+`modoViaje`) que apaga el pulso solo ahí. Revisado y descartado a propósito: los reportes comunitarios
+recientes (`pulse-marker-report`) son alertas reales, no decoración -- no se tocaron. Verificado con el
+stack real, sesión real, viaje real en curso: opacidad de marcadores de prensa 1→0,15, animación del punto
+de estado "pulse-report"→"none", confirmado con `getComputedStyle` real y una captura real de la tarjeta
+de maniobra sobre el fondo atenuado. `prefers-reduced-motion` no necesitó ningún cambio (no se agregó
+ninguna animación nueva, solo se atenuó/apagó lo existente, ya cubierto por la regla global `!important`).
+
+**V11 (contraste real sobre mapas claros)**: evidencia en `docs/evidencias/2026-10-21/
+V11-contraste-mapas/RESULTADOS.md`. Confirmado que no existe un estilo satelital en la app (solo `light`/
+`dark` de OpenFreeMap) -- acotado a tema claro, como anticipaba el pedido. Medido con la fórmula real de
+contraste WCAG 2.1 contra tres fondos reales muestreados de una captura real de la app (no inventados):
+casi todos los colores de nivel de riesgo (siniestros e inseguridad) dan 1.0-3.0:1 contra el mapa claro
+real, por debajo del mínimo de 3:1 -- solo "inseguridad alto" y la ruta seleccionada pasaban, esta última
+solo gracias a un contorno oscuro que ya existía. Sin tocar ningún color de la paleta (V04), se replicó ese
+mismo contorno oscuro en los dos lugares que no lo tenían: el borde de los hexágonos (antes blanco
+semitransparente, invisible contra fondo claro -- ahora theme-aware) y un "casing" nuevo debajo de la línea
+de los corredores (no existía ninguno). Corrección real encontrada durante la propia medición: la primera
+versión del casing de corredores escalaba su opacidad por nivel de riesgo, dejando "bajo"/"medio" todavía
+por debajo de 3:1 (1.8-2.8:1) -- corregido a opacidad fija (0,7), subiendo a 5.6-6.3:1 en los tres fondos.
+Verificado de nuevo tras la corrección: hexágonos 3.6-3.9:1, corredores 5.6-6.3:1, ambos por encima del
+mínimo. Confirmado en pantalla real (capturas de hexágonos y corredores con el borde nuevo visible,
+muestreo de píxeles reales con PIL confirmando píxeles oscuros en los bordes donde antes no había
+ninguno). Nota honesta: durante la edición en vivo apareció un warning real de React sobre un array de
+dependencias -- investigado a fondo y confirmado, con una pestaña nueva y un reinicio limpio del servidor
+de desarrollo, que era un artefacto de Hot Module Replacement de la edición en vivo, no un bug del código
+final (sin warnings en una carga real limpia).
+
+**Verificación**: 101/101 tests de frontend y 140 passed/11 skipped de backend confirmados corriendo las
+suites de nuevo al cierre. `git status` final: cambios en `frontend/src/App.jsx`,
+`frontend/src/App.css` y `frontend/src/components/MapaMotoSafe.jsx` (V09/V11), más las dos carpetas de
+evidencia nuevas (V09, V11) y la fila de V09/V11 actualizada en `docs/gestion/BACKLOG.md`. No se commiteó
+ni se pusheó nada.

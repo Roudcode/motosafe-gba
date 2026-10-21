@@ -1658,7 +1658,7 @@ function App() {
             )}
           </div>
           <div
-            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${tengoReportesPropios ? 'clickeable' : ''}`}
+            className={`topbar-status ${mostrarAlerta ? 'alerta' : ''} ${modoViaje ? 'viaje' : ''} ${tengoReportesPropios ? 'clickeable' : ''} ${vistaNavegacion ? 'nav-activa' : ''}`}
             onClick={() => { if (tengoReportesPropios) { setActividadAbierta((v) => !v); setCapasAbiertas(false) } }}
           >
             <span className="status-dot" />

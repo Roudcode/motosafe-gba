@@ -1,0 +1,44 @@
+=== ANTES (sin ningun contorno nuevo) ===
+--- fondo: tan/parque (muestreado real) ---
+  ruta seleccionada #4FA8E8          ratio=1.73  FALLA
+  ruta borde #0B1620 (ya existia)    ratio=12.20  ok
+  siniestros bajo #3DDC84            ratio=1.19  FALLA
+  siniestros medio #FFD23F           ratio=1.04  FALLA
+  siniestros alto #FF8C42            ratio=1.54  FALLA
+  siniestros critico #FF3B3B         ratio=2.36  FALLA
+  inseguridad bajo #D9A6FF           ratio=1.29  FALLA
+  inseguridad medio #B266FF          ratio=2.25  FALLA
+  inseguridad alto #9B30FF           ratio=3.29  ok
+  inseguridad critico #FF2E92        ratio=2.32  FALLA
+--- fondo: crema (muestreado real) ---
+  ruta seleccionada #4FA8E8          ratio=2.17  FALLA
+  ruta borde #0B1620 (ya existia)    ratio=15.29  ok
+  siniestros bajo #3DDC84            ratio=1.49  FALLA
+  siniestros medio #FFD23F           ratio=1.21  FALLA
+  siniestros alto #FF8C42            ratio=1.94  FALLA
+  siniestros critico #FF3B3B         ratio=2.96  FALLA
+  inseguridad bajo #D9A6FF           ratio=1.62  FALLA
+  inseguridad medio #B266FF          ratio=2.82  FALLA
+  inseguridad alto #9B30FF           ratio=4.13  ok
+  inseguridad critico #FF2E92        ratio=2.90  FALLA
+--- fondo: lavanda (muestreado real) ---
+  ruta seleccionada #4FA8E8          ratio=2.10  FALLA
+  ruta borde #0B1620 (ya existia)    ratio=14.82  ok
+  siniestros bajo #3DDC84            ratio=1.45  FALLA
+  siniestros medio #FFD23F           ratio=1.17  FALLA
+  siniestros alto #FF8C42            ratio=1.88  FALLA
+  siniestros critico #FF3B3B         ratio=2.87  FALLA
+  inseguridad bajo #D9A6FF           ratio=1.57  FALLA
+  inseguridad medio #B266FF          ratio=2.73  FALLA
+  inseguridad alto #9B30FF           ratio=4.00  ok
+  inseguridad critico #FF2E92        ratio=2.81  FALLA
+
+=== DESPUES (V11): borde oscuro #0B1620 en hexagonos y corredores, tema claro ===
+Hexagonos (borde fijo 0.55 de opacidad):
+  tan/parque (muestreado real)   contraste_borde_vs_fondo=3.61
+  crema (muestreado real)        contraste_borde_vs_fondo=3.87
+  lavanda (muestreado real)      contraste_borde_vs_fondo=3.81
+Corredores (borde fijo 0.7 de opacidad, no escalado por nivel):
+  tan/parque (muestreado real)   contraste_borde_vs_fondo=5.59
+  crema (muestreado real)        contraste_borde_vs_fondo=6.29
+  lavanda (muestreado real)      contraste_borde_vs_fondo=6.20
