@@ -1959,3 +1959,58 @@ Verificado renderizando a PDF y revisando visualmente la página con el párrafo
 ## SES-145 — Verificación visual en vivo de SES-141 (leyenda colapsable + buscador en topbar): OK
 
 Rodo probó en pantalla real los dos cambios de interfaz de SES-141 (la leyenda de nivel de riesgo colapsable y el buscador movido a la topbar) y confirmó que están bien ("esto que probamos es ok"). Sin hallazgos que corregir.
+
+## SES-146 — T02/G04/A09 encadenados: E2E visual real, ensayo cronometrado de demo y muestra real de prensa para etiquetado
+
+Tres pedidos de Rodo en una sola sesión larga, con el stack real levantado (`npm run dev:http`, backend y
+PostgreSQL/PostGIS reales) y su propia sesión autenticada (cookie de sesión viva de una sesión anterior —
+no se le pidió ni se le tipeó contraseña en ningún momento de esta sesión).
+
+**T02 (E2E visual completo)**: evidencia en `docs/evidencias/2026-10-21/T02-E2E-visual/RESULTADOS.md`.
+Los cinco flujos funcionales centrales (click en zona de riesgo, buscar un lugar, trazar ruta, reportar,
+modo viaje) funcionan de punta a punta con datos reales (Nominatim, TomTom con tráfico en vivo, POST real
+de un reporte a la base de desarrollo local), en desktop y repetidos a 375px. Se corrió también por teclado
+solo, comparando `document.activeElement` real en vez de inferir del foco visual. **Hallazgo real
+confirmado dos veces**: la lista de resultados del buscador de lugares no es alcanzable por teclado — los
+`<button>` de resultado existen en el DOM apenas se muestran, pero se desmontan en cuanto el foco sale del
+campo de texto (confirmado con `querySelectorAll` antes/después de un `Tab`: pasa de tener los botones a
+0). Ni `Tab` ni `ArrowDown` entran a la lista; solo el click de mouse selecciona un resultado. Esto bloquea
+"buscar un lugar" (y por lo tanto armar una ruta desde una búsqueda) para quien solo usa teclado. No estaba
+cubierto por la matriz de A23 (centrada en el modal de bienvenida y el zoom). Nota aparte, de la
+herramienta de prueba y no del producto: emular un viewport grande de escritorio (1400x900) con tamaño
+custom rompe la captura de pantalla del navegador del panel (el DOM mide y layoutea bien, confirmado con
+`getBoundingClientRect`, pero el screenshot solo pinta una esquina chica) — se declaró y se trabajó con el
+tamaño nativo del panel y el preset `mobile`, que sí capturan bien.
+
+**G04 (ensayo real de demo)**: evidencia en `docs/evidencias/2026-10-21/G04-ensayo-demo/RESULTADOS.md`.
+Se corrieron los 6 pasos del guion existente en `docs/entrega/MATRIZ_ACADEMICA_Y_DEMO.md` tal cual están
+escritos, sin reescribirlo. Los 6 funcionaron contra servicios reales (Nominatim, TomTom con tráfico,
+clima). Para el paso 4 ("simular fallo de capa") no se tocó el backend real (ya estaba corriendo desde
+antes de esta sesión, fuera de mi control, y pararlo sin saber cómo lo levanta Rodo normalmente era un
+riesgo innecesario); en cambio se registró un *service worker* temporal
+(`frontend/public/_test_sw_g04.js`, borrado al terminar) que cortó de verdad `/api/hotspots` a nivel de
+red del navegador. Confirmado: aparece el banner real "Sin conexión con el backend. Reintentando cada 5s."
+con botón "Reintentar ahora", el mapa sigue mostrando los hexágonos desde caché de `localStorage`, y al
+levantar la capa de nuevo la app vuelve a pedir datos reales (confirmado con un cambio real de temperatura
+entre cargas, no un dato repetido). Aclaración honesta: los tiempos registrados son tiempos reales del
+sistema, no de una exposición oral — eso solo se mide con Rodo narrando en vivo, que sigue pendiente.
+
+**A09 (muestra real para etiquetado)**: evidencia en
+`docs/evidencias/2026-10-21/A09-muestra-etiquetado/muestra_calles.csv` y su README. Solo exportación, sin
+ningún análisis de precisión (eso queda para Rodo, por separado, como pidió explícitamente). 50 notas
+reales de la tabla `reportes_prensa` de la base de desarrollo local (794 filas totales: 758 barrio, 21
+calle, 15 interseccion): las 36 reales de nivel calle/interseccion completas, más 14 de barrio sorteadas al
+azar (semilla fija `20261021`, reproducible) sin curar. `descripcion_completa` y `query_extraida` no están
+persistidas en la tabla (`_evaluar_y_guardar` las calcula de paso y nunca las guarda) — se completaron
+bajando cada URL real en vivo con el mismo código del scraper (`extraer_titulo_descripcion`,
+`extraer_ubicacion`, mismos headers y pausa entre pedidos) y se agregó una columna
+`descripcion_obtenida_en_vivo` para separar lo verificado de lo no verificado en vez de mezclarlo con las
+seis columnas pedidas. 50/50 URLs respondieron en esta corrida; `query_extraida` salió vacía en 2 de 50
+(casos reales donde el extractor no encontró pista de ubicación en el texto de hoy, no un error del
+script).
+
+**Verificación**: 93/93 tests de frontend en verde tras toda la sesión
+(`node node_modules/vitest/vitest.mjs run`). No se tocó código de producción: el único archivo nuevo fuera
+de `docs/evidencias/` fue el service worker temporal de prueba del paso 4 de G04, borrado antes de cerrar
+la sesión. `git status` confirmado limpio salvo las tres carpetas de evidencia nuevas. No se commiteó ni se
+pusheó nada, a la espera de que Rodo lo pida explícitamente.
