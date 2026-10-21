@@ -47,13 +47,37 @@ def url_base():
 @pytest.fixture(scope='module')
 def migrada(url_base):
     migrar.aplicar_migraciones(url_base)
+    rol_app = os.getenv('MOTOSAFE_TEST_ROL_SIN_DUENO')
+    if rol_app:
+        # T01 (SES-149): además del dueño (admin, usado para crear/migrar la
+        # base), se prueba que el ROL que de verdad usaría el backend en
+        # producción -- sin privilegios de dueño/superusuario -- alcance con
+        # las concesiones de abajo. Si falta algo puntual, un test de este
+        # archivo lo va a mostrar como un error de permisos real.
+        grants = os.getenv('MOTOSAFE_TEST_GRANTS_SQL', '')
+        if grants:
+            admin = psycopg2.connect(url_base)
+            admin.autocommit = True
+            cur = admin.cursor()
+            for sentencia in grants.split(';'):
+                sentencia = sentencia.strip()
+                if sentencia:
+                    cur.execute(sentencia.format(rol=rol_app, db=urlsplit(url_base).path.lstrip('/')))
+            admin.close()
     return url_base
 
 
 @pytest.fixture
 def pool_real(migrada, monkeypatch):
     """Pool nuevo de main apuntando a la base de prueba, sin mocks."""
-    monkeypatch.setattr(main, 'DATABASE_URL', migrada)
+    url_pool = migrada
+    rol_app = os.getenv('MOTOSAFE_TEST_ROL_SIN_DUENO')
+    if rol_app:
+        partes = urlsplit(migrada)
+        clave = os.getenv('MOTOSAFE_TEST_ROL_SIN_DUENO_PW', '')
+        netloc = f'{rol_app}:{clave}@{partes.hostname}:{partes.port}'
+        url_pool = urlunsplit(partes._replace(netloc=netloc))
+    monkeypatch.setattr(main, 'DATABASE_URL', url_pool)
     pool = main._PoolConexiones(maxsize=2, timeout=1)
     monkeypatch.setattr(main, '_pool_conexiones', pool)
     yield pool

@@ -2096,3 +2096,65 @@ de nada por sí solo.
 implica una decisión de diseño -- qué mensaje mostrar y cuándo distinguirlo de "sin errores, nada que
 mostrar" -- que no se puede resolver a ciegas sin verlo en pantalla. Queda señalado para una sesión con
 verificación visual (Codex o Rodo), no forzado con una implementación especulativa.
+
+## SES-149 — T02/A22/T05/T01/A19 encadenados; T06 queda pendiente por decisión de Rodo
+
+Nota de coordinación (corrección 2026-10-21, misma sesión de verificación): el asiento original acá decía
+que esta sesión corrió "en paralelo con la de Codex (SES-150)". Es un error de atribución: SES-150 es un
+asiento de Claude (sesión de verificación posterior, items A06/A15/D01/T04 resueltos sin stack real), no
+de Codex. No hay evidencia de que una sesión de Codex distinta estuviera corriendo en paralelo con esta;
+lo más probable es que quien escribió este asiento haya visto aparecer SES-150 a mitad de sesión y asumiera
+que pertenecía a un proceso de Codex ya en marcha. Entorno usado por esta sesión, sin relación con SES-150:
+contenedor Docker descartable propio (`motosafe-test-postgis`, puerto 55433, distinto del `motosafe-db`
+real de 5432) y copia de trabajo propia en el scratchpad de esta sesión.
+
+**T02 (confirmación visual del arreglo de teclado, commit `63528d3`)**: evidencia en
+`docs/evidencias/2026-10-21/T02-confirmacion-teclado/RESULTADOS.md`. Confirmado en navegador real (no solo
+el test de componente): `Tab` desde el input del buscador llega a un botón de resultado real
+(`document.activeElement` verificado, anillo de foco visible) y `Enter` lo selecciona y centra el mapa.
+Repetido igual a 375px. El hallazgo de SES-146 queda cerrado y confirmado visualmente.
+
+**A22/T05 (confirmación de CI)**: evidencia en `docs/evidencias/2026-10-21/A22-T05-confirmacion-ci/
+RESULTADOS.md`. `gh` no estaba autenticado; se le preguntó explícitamente a Rodo antes de tocar nada (como
+pidió) y Rodo autorizó y completó él mismo el código de un solo uso en `github.com/login/device` en su
+navegador real -- nunca se vio ni se pidió su contraseña. `gh auth status` confirma logueado como
+`Roudcode`. Último run en GitHub ([39613631419](https://github.com/Roudcode/motosafe-gba/actions/runs/39613631419)):
+✓ success, lint/test/build del frontend en verde, `py_compile` + `pip install --require-hashes` +
+`pytest -q` del backend en verde contra un `postgis/postgis:16-3.4` real de servicio, Python 3.12, "146
+passed". El pendiente de A22/T05 ("falta la corrida confirmada en GitHub") queda cerrado.
+
+**T01 (permisos mínimos de un rol sin dueño)**: evidencia en `docs/evidencias/2026-10-21/T01-rol-sin-dueno/
+RESULTADOS.md`. Contra un PostGIS descartable propio (nunca `motosafe-db`), se agregaron dos variables de
+entorno opcionales a `tests/test_integracion_postgres.py` (sin cambiar el comportamiento por defecto) para
+que el pool de la app se conecte con un rol sin privilegios en vez del admin. Iterando de verdad (no
+adivinando de una): un rol recién creado sin ningún `GRANT` falla real y confirmado
+(`InsufficientPrivilege`); con `CONNECT`+`USAGE` en schema+`SELECT/INSERT/UPDATE/DELETE` en tablas pero sin
+tocar secuencias, fallan 2 tests reales (`permission denied for sequence ..._id_seq`, las columnas son
+`SERIAL`, no `IDENTITY`); agregando `USAGE` (no hace falta `SELECT`) en las secuencias, **11/11 pasan**.
+Conjunto mínimo real confirmado: `CONNECT` a la base, `USAGE` en el schema `public`,
+`SELECT/INSERT/UPDATE/DELETE` en todas las tablas, `USAGE` en todas las secuencias -- sin `CREATEDB`,
+`CREATEROLE` ni superusuario. El cambio al archivo de test queda sin commitear (opt-in por variable de
+entorno, transparente si no están seteadas -- confirmado con 140 passed/11 skipped del backend completo sin
+esas variables); la decisión de conservarlo o revertirlo es de Rodo.
+
+**A19 (pasos con red contra servicios reales)**: evidencia en `docs/evidencias/2026-10-21/A19-pasos-de-red/
+RESULTADOS.md`. Los tres pasos corridos en una copia de trabajo aislada del scratchpad (nunca `data/`
+real), sin promover nada. Paso 1 (delitos CABA): un `502` real y transitorio en el recurso 2020 en el
+primer intento (confirmado transitorio con un segundo pedido); la corrida completa (1.387.622 filas) salió
+**idéntica byte a byte** (mismo SHA256) al `data/delitos_caba.csv` vigente. Paso 2 (clima Open-Meteo):
+68.425 filas (1.128 más que el vigente, el rango de fechas avanzó hasta hoy, esperado) y un hallazgo real
+no documentado antes: las últimas ~13 horas del archivo vigente (2026-09-04) salieron con valores
+levemente distintos en la nueva descarga (ej. 8.9°C→9.1°C) -- el archivo histórico de Open-Meteo se afina
+después para las fechas más recientes, no es 100% inmutable apenas se publica. Paso 7 (geometría de
+corredores vía OSRM público): 243/243 calles resueltas sin fallos, pero **103 de 243 (42,4%) salieron con
+una geometría distinta** a la vigente pese a tener exactamente los mismos puntos de origen/destino
+(confirmado comparando `lat_a/lng_a/lat_b/lng_b`) -- OSRM elige caminos distintos entre corridas reales. Es
+un límite real y medido del servidor demo de OSRM, más concreto que lo que ya declaraba `FICHAS_FUENTES.md`.
+
+**T06 (backup/restauración con el volumen real)**: se le preguntó a Rodo qué significaba "el volumen real"
+antes de tocar nada, como pidió explícitamente. Rodo prefirió dejarlo para después en vez de decidir ahí
+mismo; queda pendiente, sin ningún intento de tocar producción.
+
+**Verificación**: 96/96 tests de frontend y 140 passed/11 skipped de backend en verde al cierre. `git
+status` final: solo las cuatro carpetas de evidencia nuevas más el cambio (sin commitear) en
+`test_integracion_postgres.py`. No se commiteó ni se pusheó nada.
