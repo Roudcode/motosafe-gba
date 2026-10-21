@@ -2,11 +2,24 @@
 // capa está activa), con filtro por nivel y por tipo de hexágono. A17
 // (BACKLOG): extraído de App.jsx (SES-136) -- bloque autocontenido,
 // corte-y-pegado con props, sin cambio de comportamiento.
+//
+// SES-141 (a pedido de Rodo: "esta pestaña completa ocupa mucho, que se
+// pueda esconder"): se agregó un colapso para todo el bloque. Colapsada,
+// queda solo una píldora chica ("Nivel de riesgo") que se puede volver a
+// abrir con un toque -- el desglose por nivel y el filtro de hexágonos
+// siguen ahí, solo que no ocupan pantalla todo el tiempo. El estado se
+// guarda en localStorage (misma lógica que ya usa App.jsx para otras
+// preferencias) para que la elección de Rodo persista entre visitas.
 
+import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   NIVELES, OPCIONES_FILTRO_HEXAGONO, OPCIONES_CAPA_INSEGURIDAD, NIVELES_INSEGURIDAD_COLOR,
 } from '../constants'
 import { formatearPeriodo } from '../utils/tiempo'
+import { cargarDeLocalStorage, guardarEnLocalStorage } from '../utils/storage'
+
+const CLAVE_LEYENDA_COLAPSADA = 'motosafe_leyenda_colapsada'
 
 // Línea de cobertura bajo el título de una leyenda: el período de los datos es
 // lo principal (con eso se juzga la vigencia del riesgo); la fecha en que se
@@ -28,6 +41,8 @@ export function LegendStack({
   coberturaCapas, nivelesActivos, toggleNivel, conteos, hayFiltrosApagados, restablecerFiltros,
   capaInseguridad, conteosInseguridad,
 }) {
+  const [colapsado, setColapsado] = useState(() => cargarDeLocalStorage(CLAVE_LEYENDA_COLAPSADA, false))
+
   // La leyenda se esconde mientras está abierto "Opciones de ruta": ahí
   // el riesgo ya se lee en cada tarjeta de ruta (bajo/medio/alto/
   // crítico) y en las burbujas de hotspot del mapa, así que la leyenda
@@ -35,12 +50,35 @@ export function LegendStack({
   // mismo espacio de pantalla en celular (a pedido de Rodo: que
   // "Opciones de ruta" pueda usar ese lugar en vez de compartirlo).
   if (vistaNavegacion || panelRutaMontado) return null
+
+  function alternarColapso() {
+    const siguiente = !colapsado
+    setColapsado(siguiente)
+    guardarEnLocalStorage(CLAVE_LEYENDA_COLAPSADA, siguiente)
+  }
+
+  if (colapsado) {
+    return (
+      <div className="legend-stack">
+        <button type="button" className="legend-colapsada panel-enter" onClick={alternarColapso}>
+          <ChevronDown size={14} />
+          Nivel de riesgo
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="legend-stack">
       <div className="legend panel-enter hazard-edge" style={{ animationDelay: '0.2s' }}>
         <div className="legend-header">
           <span className="legend-title">Nivel de riesgo <em>(tocá para filtrar)</em></span>
-          {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+          <div className="legend-header-acciones">
+            {hayFiltrosApagados && <button className="legend-reset" onClick={restablecerFiltros}>Restablecer</button>}
+            <button type="button" className="legend-colapsar" onClick={alternarColapso} aria-label="Ocultar nivel de riesgo">
+              <ChevronUp size={14} />
+            </button>
+          </div>
         </div>
         {capaMapa === 'hexagonos' && (
           <div className="portal-actividad-filtros-fila legend-filtro-hexagono">

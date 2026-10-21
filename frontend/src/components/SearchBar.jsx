@@ -2,27 +2,60 @@
 // tarjeta del lugar elegido una vez que se selecciona un resultado. A17
 // (BACKLOG): extraído de App.jsx (SES-136) -- dos bloques adyacentes,
 // corte-y-pegado con props, sin cambio de comportamiento.
+//
+// SES-141 (a pedido de Rodo: "el buscador tmb podria mejorar... que sea
+// una lupa que se esconda"): colapsado por defecto a un círculo con la
+// lupa, igual al de otros controles flotantes (route-fab, report-fab). Un
+// toque lo abre a la barra completa con foco en el input; se vuelve a
+// cerrar solo cuando el input pierde el foco sin texto cargado (mismo
+// momento en que ya se limpiaban las sugerencias), así que elegir un
+// resultado o tocar fuera sin buscar nada lo cierra solo, sin un botón
+// extra para "cerrar".
 
+import { useState, useRef, useEffect } from 'react'
 import { Search, X, MapPin, Clock, Navigation } from 'lucide-react'
 
 export function SearchBar({
   vistaNavegacion, busqueda, setBusqueda, sugBusqueda, buscaEnFoco, setBuscaEnFoco,
   recientes, buscarEnMapa, lugarElegido, setLugarElegido, rutaAbierta, irAlLugar,
 }) {
+  const [abierto, setAbierto] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (abierto) inputRef.current?.focus()
+  }, [abierto])
+
+  function cerrarSiQuedaVacio() {
+    setBuscaEnFoco(false)
+    setTimeout(() => {
+      sugBusqueda.limpiar()
+      if (!busqueda.trim()) setAbierto(false)
+    }, 150)
+  }
+
   return (
     <>
       {/* Se oculta durante la navegación: no solo no hace falta buscar
           mientras estás en camino, sino que en pantalla chica quedaba
           asomando detrás de la tarjeta de "doblá acá" (se veía en las
           capturas que mandaste) -- las dos ocupaban la misma franja
-          horizontal arriba.
-          Sin hazard-edge: la franja de "cinta de peligro" sobre una píldora
-          se veía mal (a pedido de Rodo) -- ese motivo queda reservado para
-          paneles de datos de riesgo, no para el buscador. */}
-      {!vistaNavegacion && (
+          horizontal arriba. */}
+      {!vistaNavegacion && !abierto && (
+        <button
+          type="button"
+          className="searchbar-colapsada panel-enter"
+          style={{ animationDelay: '0.05s' }}
+          onClick={() => setAbierto(true)}
+          aria-label="Buscar lugar, calle o local"
+        >
+          <Search size={15} />
+        </button>
+      )}
+      {!vistaNavegacion && abierto && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
-          <input type="text" placeholder="Buscar lugar, calle o local..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={() => { setBuscaEnFoco(false); setTimeout(sugBusqueda.limpiar, 150) }} aria-label="Buscar lugar, calle o local" autoComplete="off" />
+          <input ref={inputRef} type="text" placeholder="Buscar lugar, calle o local..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); sugBusqueda.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter') sugBusqueda.buscar(busqueda) }} onFocus={() => setBuscaEnFoco(true)} onBlur={cerrarSiQuedaVacio} aria-label="Buscar lugar, calle o local" autoComplete="off" />
           {sugBusqueda.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
           {busqueda && <button className="searchbar-clear" onClick={() => { setBusqueda(''); sugBusqueda.limpiar() }} aria-label="Limpiar búsqueda"><X size={12} /></button>}
           {(sugBusqueda.resultados.length > 0 || sugBusqueda.buscada || sugBusqueda.error) && (

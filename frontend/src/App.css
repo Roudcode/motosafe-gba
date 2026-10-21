@@ -598,6 +598,18 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    puntito, así que el dropdown va de punta a punta. */
 .searchbar-sugerencias { left: 0; right: 0; }
 
+/* SES-141: círculo con la lupa, mismo criterio visual que route-fab/
+   report-fab, que reemplaza a la barra completa mientras no se está
+   buscando (a pedido de Rodo: "que sea una lupa que se esconda"). */
+.searchbar-colapsada {
+  position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 50%; padding: 0; cursor: pointer;
+  background: var(--surface-float); border: 1px solid var(--border); color: var(--text);
+  backdrop-filter: blur(var(--surface-float-blur)); box-shadow: var(--shadow-float);
+}
+.searchbar-colapsada:hover, .searchbar-colapsada:focus-visible { background: var(--border); outline: none; }
+
 .ruta-form {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1001;
   width: min(320px, 85vw); background: var(--surface-float); border: 1px solid var(--border);
@@ -967,7 +979,30 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    web es 24px (WCAG 2.5.8 AA) -- los 44px de iOS/Android son una
    convención de plataforma nativa más estricta, no el mínimo exigido acá.
    24px respeta el pedido de "compacto" sin dejar de cumplir el mínimo. */
+/* SES-141: agrupa "Restablecer" y el botón de colapsar en el mismo lado
+   del header -- antes solo vivía el primero, ahora pueden convivir los
+   dos sin que el título se corra. */
+.legend-header-acciones { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .legend-reset { background: none; border: none; color: var(--azul); font-size: var(--fs-2xs); cursor: pointer; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; min-height: 24px; padding: 0 2px; display: inline-flex; align-items: center; }
+/* SES-141: botón chico para esconder toda la leyenda (a pedido de Rodo:
+   "esta pestaña completa ocupa mucho, que se pueda esconder"). Mismo
+   piso de 24px que .legend-item/.legend-reset, por el mismo motivo
+   (WCAG 2.5.8 AA, no la convención nativa de 44px -- ver comentario
+   arriba de .legend-reset). */
+.legend-colapsar { background: none; border: none; color: var(--text-dim); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; padding: 0; flex-shrink: 0; }
+.legend-colapsar:hover, .legend-colapsar:focus-visible { color: var(--text); outline: none; }
+
+/* SES-141: píldora que queda en pantalla cuando la leyenda está
+   colapsada -- mismo estilo que clima-badge/topbar-status, para que se
+   lea como "otro chip de estado" y no como un control nuevo y distinto. */
+.legend-colapsada {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  background: var(--surface-float); border: 1px solid var(--border); border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-4); backdrop-filter: blur(var(--surface-float-blur));
+  box-shadow: var(--shadow-float); font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim);
+}
+.legend-colapsada:hover, .legend-colapsada:focus-visible { color: var(--text); outline: none; }
 .legend-item { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; cursor: pointer; color: var(--text); font-family: 'Inter', sans-serif; font-size: var(--fs-base); padding: 1px 0; min-height: 24px; transition: opacity var(--motion-fast) ease; }
 .legend-item.inactive { opacity: 0.35; }
 .legend-swatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -1331,6 +1366,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .recenter-fab:active, .viaje-salir:active, .detalle-cerrar:active,
 .onboarding-cerrar:active, .onboarding-entendido:active,
 .searchbar-icon:active:not(:disabled), .searchbar-clear:active,
+.searchbar-colapsada:active, .legend-colapsar:active, .legend-colapsada:active,
 .ruta-form-swap:active, .ruta-form-pin:active, .ruta-resumen-editar:active,
 .report-sheet-cerrar:active, .portal-actividad-filtros-fila button:active,
 .portal-actividad-item-link:active {
