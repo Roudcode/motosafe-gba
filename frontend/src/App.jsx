@@ -4,7 +4,7 @@ import './App.css'
 import {
   X,
   Compass,
-  Siren, ShieldAlert, Layers, Newspaper, ArrowUpRight,
+  Siren, ShieldAlert, Layers, Newspaper, ArrowUpRight, Search,
 } from 'lucide-react'
 
 import {
@@ -232,6 +232,10 @@ function App() {
   const sesion = useSesion()
   const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
   const [capasAbiertas, setCapasAbiertas] = useState(false)
+  // SES-141: vive acá (no adentro de SearchBar) para que el botón de la
+  // topbar y el cierre automático (foco perdido sin texto / resultado
+  // elegido) controlen el mismo estado.
+  const [busquedaAbierta, setBusquedaAbierta] = useState(false)
   const [toast, setToast] = useState(null)
   // Animación de salida de paneles (SES-115): no cambia qué significa
   // "abierto" en el resto de la app, solo cuándo deja de renderizarse.
@@ -1629,6 +1633,21 @@ function App() {
                 <Newspaper size={15} />
               </button>
             )}
+            {/* SES-141: antes era un círculo con la lupa flotando solo en el
+                medio de la pantalla -- a pedido de Rodo ("queda sola ahí,
+                suelta"), se mudó a la topbar, agrupado con los demás
+                botones de exploración (tema/capas/actividad). */}
+            {!vistaNavegacion && (
+              <button
+                className="capa-toggle"
+                onClick={() => setBusquedaAbierta((v) => !v)}
+                aria-label="Buscar lugar, calle o local"
+                aria-expanded={busquedaAbierta}
+                title="Buscar"
+              >
+                <Search size={15} />
+              </button>
+            )}
             {clima && !vistaNavegacion && (
               <div
                 className="clima-badge"
@@ -1814,6 +1833,7 @@ function App() {
           se veía mal (a pedido de Rodo) -- ese motivo queda reservado para
           paneles de datos de riesgo, no para el buscador. */}
       <SearchBar
+        abierto={busquedaAbierta} setAbierto={setBusquedaAbierta}
         vistaNavegacion={vistaNavegacion} busqueda={busqueda} setBusqueda={setBusqueda} sugBusqueda={sugBusqueda}
         buscaEnFoco={buscaEnFoco} setBuscaEnFoco={setBuscaEnFoco} recientes={recientes} buscarEnMapa={buscarEnMapa}
         lugarElegido={lugarElegido} setLugarElegido={setLugarElegido} rutaAbierta={rutaAbierta} irAlLugar={irAlLugar}

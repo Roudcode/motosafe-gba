@@ -598,18 +598,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
    puntito, así que el dropdown va de punta a punta. */
 .searchbar-sugerencias { left: 0; right: 0; }
 
-/* SES-141: círculo con la lupa, mismo criterio visual que route-fab/
-   report-fab, que reemplaza a la barra completa mientras no se está
-   buscando (a pedido de Rodo: "que sea una lupa que se esconda"). */
-.searchbar-colapsada {
-  position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 50%; padding: 0; cursor: pointer;
-  background: var(--surface-float); border: 1px solid var(--border); color: var(--text);
-  backdrop-filter: blur(var(--surface-float-blur)); box-shadow: var(--shadow-float);
-}
-.searchbar-colapsada:hover, .searchbar-colapsada:focus-visible { background: var(--border); outline: none; }
-
 .ruta-form {
   position: absolute; top: var(--y1); left: 50%; transform: translateX(-50%); z-index: 1001;
   width: min(320px, 85vw); background: var(--surface-float); border: 1px solid var(--border);
@@ -1366,7 +1354,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .recenter-fab:active, .viaje-salir:active, .detalle-cerrar:active,
 .onboarding-cerrar:active, .onboarding-entendido:active,
 .searchbar-icon:active:not(:disabled), .searchbar-clear:active,
-.searchbar-colapsada:active, .legend-colapsar:active, .legend-colapsada:active,
+.legend-colapsar:active, .legend-colapsada:active,
 .ruta-form-swap:active, .ruta-form-pin:active, .ruta-resumen-editar:active,
 .report-sheet-cerrar:active, .portal-actividad-filtros-fila button:active,
 .portal-actividad-item-link:active {

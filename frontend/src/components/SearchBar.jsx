@@ -4,28 +4,37 @@
 // corte-y-pegado con props, sin cambio de comportamiento.
 //
 // SES-141 (a pedido de Rodo: "el buscador tmb podria mejorar... que sea
-// una lupa que se esconda"): colapsado por defecto a un círculo con la
-// lupa, igual al de otros controles flotantes (route-fab, report-fab). Un
-// toque lo abre a la barra completa con foco en el input; se vuelve a
-// cerrar solo cuando el input pierde el foco sin texto cargado (mismo
-// momento en que ya se limpiaban las sugerencias), así que elegir un
-// resultado o tocar fuera sin buscar nada lo cierra solo, sin un botón
-// extra para "cerrar".
+// una lupa que se esconda"): colapsada por defecto. El disparador
+// (círculo con la lupa) vive en la topbar, agrupado con los demás
+// botones de exploración (tema/capas/actividad) -- ver App.jsx. Primero
+// probamos un círculo flotando solo a mitad de pantalla, pero Rodo lo
+// vio y "quedaba sola ahí, suelta", sin nada que la conecte visualmente
+// con el resto de los controles; en la topbar se lee como "un botón más
+// del mismo grupo", no como un elemento nuevo aislado.
+//
+// `abierto`/`setAbierto` viven en App.jsx (no son estado propio de este
+// componente) para que el botón de la topbar y el cierre automático de
+// acá abajo controlen exactamente el mismo valor.
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { Search, X, MapPin, Clock, Navigation } from 'lucide-react'
 
 export function SearchBar({
+  abierto, setAbierto,
   vistaNavegacion, busqueda, setBusqueda, sugBusqueda, buscaEnFoco, setBuscaEnFoco,
   recientes, buscarEnMapa, lugarElegido, setLugarElegido, rutaAbierta, irAlLugar,
 }) {
-  const [abierto, setAbierto] = useState(false)
   const inputRef = useRef(null)
 
   useEffect(() => {
     if (abierto) inputRef.current?.focus()
   }, [abierto])
 
+  // Se cierra sola cuando el input pierde el foco sin texto cargado --
+  // mismo momento en que ya se limpiaban las sugerencias antes de este
+  // cambio, así que tocar afuera sin buscar nada, o elegir un resultado
+  // (buscarEnMapa vacía el campo al elegir un lugar), la cierra también,
+  // sin necesidad de un botón de "cerrar" aparte.
   function cerrarSiQuedaVacio() {
     setBuscaEnFoco(false)
     setTimeout(() => {
@@ -41,17 +50,6 @@ export function SearchBar({
           asomando detrás de la tarjeta de "doblá acá" (se veía en las
           capturas que mandaste) -- las dos ocupaban la misma franja
           horizontal arriba. */}
-      {!vistaNavegacion && !abierto && (
-        <button
-          type="button"
-          className="searchbar-colapsada panel-enter"
-          style={{ animationDelay: '0.05s' }}
-          onClick={() => setAbierto(true)}
-          aria-label="Buscar lugar, calle o local"
-        >
-          <Search size={15} />
-        </button>
-      )}
       {!vistaNavegacion && abierto && (
         <div className="searchbar panel-enter" style={{ animationDelay: '0.05s' }}>
           <button type="button" className="searchbar-icon" onClick={() => sugBusqueda.buscar(busqueda)} aria-label="Buscar dirección" disabled={!busqueda.trim()}><Search size={13} /></button>
