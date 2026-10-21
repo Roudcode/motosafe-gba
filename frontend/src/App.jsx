@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 import './App.css'
 
 import {
-  X, MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed,
-  Compass, WifiOff,
+  X,
+  Compass,
   Siren, ShieldAlert, Layers, Newspaper, ArrowUpRight,
 } from 'lucide-react'
 
@@ -20,7 +20,7 @@ import { siguientePaso, distanciaKm, calcularAjuste, geocodificar, calcularRumbo
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
 } from './utils/riesgoRuta'
-import { formatearAntiguedad, formatearDistancia } from './utils/tiempo'
+import { formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
 import { cargarDeLocalStorage, guardarEnLocalStorage, generarUuidV4Fallback } from './utils/storage'
 import { LoadingScreen } from './components/LoadingScreen'
@@ -34,6 +34,9 @@ import { ReportSheet } from './components/ReportSheet'
 import { NavegacionManiobra } from './components/NavegacionManiobra'
 import { NavegacionResumen } from './components/NavegacionResumen'
 import { DetalleZonaPanel } from './components/DetalleZonaPanel'
+import { CapaErrorBanners } from './components/CapaErrorBanners'
+import { ActividadReciente } from './components/ActividadReciente'
+import { RutaForm } from './components/RutaForm'
 import { LegendStack } from './components/LegendStack'
 import { SearchBar } from './components/SearchBar'
 // MapLibre pesa ~800 kB: se carga aparte para que la app abra antes (SES-086).
@@ -1697,72 +1700,19 @@ function App() {
         </div>
       )}
 
-      {backendError && (
-        <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="alert">
-          <WifiOff size={14} /> Sin conexión con el backend. Reintentando cada 5s.
-          <button onClick={cargarHotspots}>Reintentar ahora</button>
-        </div>
-      )}
-      {!backendError && Object.values(erroresCapas).some(Boolean) && (
-        <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="status" aria-live="polite">
-          <WifiOff size={14} /> No se actualizaron: {Object.entries(erroresCapas).filter(([, fallo]) => fallo).map(([capa]) => ({ corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto' }[capa] || capa)).join(', ')}. Se mantiene la última información disponible.
-          {ultimaConsultaCapas && <span className="backend-banner-fecha">Última consulta: {ultimaConsultaCapas}</span>}
-          <button onClick={() => setRecargaCapas((v) => v + 1)}>Reintentar capas</button>
-        </div>
-      )}
-      {/* SES-112: con el backend caído, activar tráfico quedaba sin ningún
-          aviso -- las fichas de calle (tiles PNG de TomTom vía backend)
-          fallan en silencio, MapLibre no dispara un error que el usuario vea,
-          y el panel de capas seguía marcando la opción como activa. El toast
-          de App.jsx solo avisaba en un SEGUNDO intento de activarla (si
-          traficoNoDisponible ya era true). Este banner cubre el primer
-          intento, con la misma fuente/reintento que el resto de las capas. */}
-      {!backendError && capaTrafico && traficoNoDisponible && (
-        <div className="ruta-banner ruta-banner-error panel-enter backend-banner" role="status" aria-live="polite">
-          <WifiOff size={14} /> Tráfico en vivo (TomTom) no disponible ahora. Se mantiene el mapa sin esa capa.
-          <button onClick={() => { setCapaTrafico(false); setTimeout(() => setCapaTrafico(true), 50) }}>Reintentar tráfico</button>
-        </div>
-      )}
+      <CapaErrorBanners
+        backendError={backendError} cargarHotspots={cargarHotspots}
+        erroresCapas={erroresCapas} ultimaConsultaCapas={ultimaConsultaCapas} setRecargaCapas={setRecargaCapas}
+        capaTrafico={capaTrafico} traficoNoDisponible={traficoNoDisponible} setCapaTrafico={setCapaTrafico}
+      />
 
 
       {panelActividad.montado && tengoReportesPropios && (
-        <div className={`actividad-panel panel-enter hazard-edge ${panelActividad.saliendo ? 'panel-exit' : ''}`}>
-          <div className="actividad-header">
-            <span className="cercanas-title">Actividad reciente</span>
-            <button className="detalle-cerrar" onClick={() => setActividadAbierta(false)} aria-label="Cerrar panel de actividad"><X size={14} /></button>
-          </div>
-          {/* F08: mientras el historial no cargó (o si falló), se ve lo
-              vigente -- que ya se tenía antes, sin esperar a la red -- para
-              no mostrar el panel vacío. Una vez que historialReportes trae
-              algo, manda eso: incluye además lo vencido y lo retirado por
-              consenso, que misReportes nunca tiene porque sale de GET
-              /reportes (solo vigente, a propósito). */}
-          {cargandoHistorial && historialReportes.length === 0 && <p className="actividad-estado-carga">Cargando historial…</p>}
-          {errorHistorial && <p className="actividad-estado-carga">No se pudo cargar el historial completo; se muestra lo vigente.</p>}
-          {(historialReportes.length > 0
-            ? historialReportes
-            : misReportes.map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, categoria: r.categoria, creadoEn: r.creadoEn, estado: 'vigente' }))
-          ).map((rep) => {
-            const cat = CATEGORIAS_REPORTE.find((c) => c.id === rep.categoria)
-            const textoEstado = rep.estado === 'vencido' ? `Venció · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
-              : rep.estado === 'desmentido' ? `Retirado por la comunidad · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
-              : `Vigente · ${formatearAntiguedad(rep.creadoEn, horaActual)}`
-            return (
-              <button
-                key={rep.id}
-                className={`actividad-item ${rep.estado !== 'vigente' ? 'actividad-item-historico' : ''}`}
-                onClick={() => { setVuelo({ lat: rep.lat, lng: rep.lng, zoom: 16 }); setActividadAbierta(false) }}
-              >
-                <span className="actividad-icon">{cat?.Icon && <cat.Icon size={15} />}</span>
-                <span className="actividad-texto">
-                  <span className="actividad-label">{cat?.label}</span>
-                  <span className="actividad-hora">{textoEstado}</span>
-                </span>
-              </button>
-            )
-          })}
-          {misReportes.length > 0 && <button className="actividad-borrar" onClick={borrarReportes}>Borrar mis reportes</button>}
-        </div>
+        <ActividadReciente
+          panelActividad={panelActividad} setActividadAbierta={setActividadAbierta}
+          cargandoHistorial={cargandoHistorial} errorHistorial={errorHistorial} historialReportes={historialReportes} misReportes={misReportes}
+          horaActual={horaActual} setVuelo={setVuelo} borrarReportes={borrarReportes}
+        />
       )}
 
       {panelStats.montado && (
@@ -1870,70 +1820,13 @@ function App() {
       />
 
       {rutaAbierta && (
-        <div className="ruta-form panel-enter">
-          <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
-            <span className="ruta-form-punto ruta-form-punto-origen" />
-            <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null); sugOrigen.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter' && !origenPunto) sugOrigen.buscar(origenTexto) }} onBlur={() => setTimeout(sugOrigen.limpiar, 150)} aria-label="Origen de la ruta" autoComplete="off" />
-            {sugOrigen.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
-            <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}><MapPin size={14} /></button>
-            {(sugOrigen.resultados.length > 0 || sugOrigen.buscada || sugOrigen.error) && (
-              <ul className="ruta-form-sugerencias">
-                {sugOrigen.resultados.map((s, i) => (
-                  <li key={i}>
-                    <button type="button" onMouseDown={() => elegirSugerencia('origen', s)}>
-                      <MapPin size={12} /> {s.label}
-                    </button>
-                  </li>
-                ))}
-                {sugOrigen.buscada && sugOrigen.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección.</li>}
-                {sugOrigen.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
-              </ul>
-            )}
-          </div>
-          <button className="ruta-form-swap" onClick={intercambiar} title="Intercambiar" aria-label="Intercambiar origen y destino"><ArrowUpDown size={13} /></button>
-          <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
-            <span className="ruta-form-punto ruta-form-punto-destino" />
-            <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null); sugDestino.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter' && !destinoPunto) sugDestino.buscar(destinoTexto) }} onBlur={() => setTimeout(sugDestino.limpiar, 150)} aria-label="Destino de la ruta" autoComplete="off" />
-            {sugDestino.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
-            <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}><MapPin size={14} /></button>
-            {(sugDestino.resultados.length > 0 || sugDestino.buscada || sugDestino.error) && (
-              <ul className="ruta-form-sugerencias">
-                {sugDestino.resultados.map((s, i) => (
-                  <li key={i}>
-                    <button type="button" onMouseDown={() => elegirSugerencia('destino', s)}>
-                      <MapPin size={12} /> {s.label}
-                    </button>
-                  </li>
-                ))}
-                {sugDestino.buscada && sugDestino.resultados.length === 0 && <li className="ruta-form-sin-resultados">No encontramos esa dirección.</li>}
-                {sugDestino.error && <li className="ruta-form-sin-resultados">No pudimos buscar. Probá de nuevo.</li>}
-              </ul>
-            )}
-          </div>
-          <div className="favoritos-fila">
-            {favoritos.casa ? (
-              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.casa)}><Home size={12} /> Casa</button>
-            ) : destinoTexto.trim() ? (
-              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('casa', 'Casa')}><Save size={12} /> Guardar como Casa</button>
-            ) : (
-              <button className="favorito-chip favorito-chip-vacio" disabled><Home size={12} /> Casa</button>
-            )}
-            {favoritos.trabajo ? (
-              <button className="favorito-chip" onClick={() => usarFavorito(favoritos.trabajo)}><Briefcase size={12} /> Trabajo</button>
-            ) : destinoTexto.trim() ? (
-              <button className="favorito-chip favorito-chip-guardar" onClick={() => guardarFavorito('trabajo', 'Trabajo')}><Save size={12} /> Guardar como Trabajo</button>
-            ) : (
-              <button className="favorito-chip favorito-chip-vacio" disabled><Briefcase size={12} /> Trabajo</button>
-            )}
-          </div>
-          {campoActivo && <p className="ruta-form-hint">Tocá el mapa para marcar el {campoActivo}.</p>}
-          <button className="ruta-form-miubicacion" onClick={usarMiUbicacionComoOrigen}><LocateFixed size={14} /> Usar mi ubicación como origen</button>
-          {rutaError && <p className="ruta-form-error">{rutaError}</p>}
-          <div className="ruta-form-acciones">
-            <button className="ruta-form-cancelar" onClick={cerrarTodoRuta}>Cancelar</button>
-            <button className="ruta-form-buscar" onClick={buscarRuta}>Buscar ruta</button>
-          </div>
-        </div>
+        <RutaForm
+          origenTexto={origenTexto} setOrigenTexto={setOrigenTexto} origenPunto={origenPunto} setOrigenPunto={setOrigenPunto} sugOrigen={sugOrigen}
+          destinoTexto={destinoTexto} setDestinoTexto={setDestinoTexto} destinoPunto={destinoPunto} setDestinoPunto={setDestinoPunto} sugDestino={sugDestino}
+          campoActivo={campoActivo} marcarEnMapa={marcarEnMapa} elegirSugerencia={elegirSugerencia} intercambiar={intercambiar}
+          favoritos={favoritos} guardarFavorito={guardarFavorito} usarFavorito={usarFavorito} usarMiUbicacionComoOrigen={usarMiUbicacionComoOrigen}
+          rutaError={rutaError} cerrarTodoRuta={cerrarTodoRuta} buscarRuta={buscarRuta}
+        />
       )}
 
       {rutaCargando && (

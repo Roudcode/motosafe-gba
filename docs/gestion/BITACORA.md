@@ -1873,3 +1873,19 @@ Eso acota el problema real a algo mucho más chico que "nivel barrio en general"
 Con ese número (1 caso real conocido contra ~500 filas reales evaluadas en total entre esta muestra y las corridas en vivo), DEC-021 declara cerrado el punto de A09 "dedup semántica a nivel barrio": el riesgo residual real medido es mucho más angosto de lo que DEC-019 decía, y queda aceptado como riesgo conocido en vez de perseguido con una heurística sin sustento (DEC-020 ya descartó reconocimiento de landmarks por la misma razón: muestra de 1 caso, no resuelve ni ese caso completo). El pendiente de "validación de calles sin conjunto etiquetado" queda explícitamente aparte, sin cerrar -- necesita un conjunto etiquetado real para avanzar, no se cierra por la misma medición.
 
 No se tocó código: la implementación ya hacía lo correcto, lo que estaba mal era mi descripción de lo que hacía. Corregido en DEC-021 (`docs/gestion/DECISIONES.md`), la fila A09 de BACKLOG.md y este README. No hay tests nuevos porque no hay comportamiento nuevo que probar -- los 7 tests existentes de este mecanismo (incluidos los de SES-133/134 contra José C. Paz y los casos de guarda) siguen describiendo correctamente el código tal cual está.
+
+## SES-139 (2026-10-21, mismo día) — A17: las tres extracciones que faltaban (banners de capas, actividad reciente, formulario de ruta)
+
+Rodo autorizó avanzar con todo lo pendiente. De los tres ítems reales que quedaban (A17, A09 conjunto etiquetado, D03/D04), A17 era el único ejecutable acá mismo sin bloqueo: no depende de red externa ni de datos que no existen todavía, a diferencia de D03/D04 (bloqueados por el proxy de salida, que vuelve a rechazar `router.project-osrm.org` con 403, confirmado de nuevo esta sesión) o de A09 (necesita un conjunto etiquetado a mano que no se puede fabricar).
+
+Al revisar el código real de los tres bloques que quedaban señalados como "más enredados" desde SES-136, el riesgo resultó menor del anunciado, con el mismo patrón que ya se repitió en esa sesión: lo que parecía acoplamiento real resultó ser, en los tres casos, el mismo patrón ya usado en las nueve extracciones anteriores (props de solo lectura + callbacks hacia arriba), no estado compartido de verdad.
+
+- `CapaErrorBanners.jsx`: los tres carteles de error de capas (backend caído, capas que no se actualizaron, tráfico no disponible). 8 props.
+- `ActividadReciente.jsx`: el panel chico de "Actividad reciente" (historial de reportes propios, distinto de `ActividadPortal` que es el feed de toda la ciudad). 9 props.
+- `RutaForm.jsx`: el formulario de origen/destino con sugerencias, favoritos (Casa/Trabajo) y las acciones de buscar/cancelar ruta. El acoplamiento real que motivó la cautela (`campoActivo` compartido con el click en el mapa y con el flujo de reportar) sigue en `App.jsx`, sin tocarse -- el formulario solo lee `campoActivo` y llama a `marcarEnMapa`, exactamente como ya leía otros callbacks. 17 props.
+
+`App.jsx` bajó de 2066 a 1959 líneas (-107). Se retiraron 7 imports de íconos que quedaron sin uso tras las extracciones (`WifiOff`, `MapPin`, `ArrowUpDown`, `Home`, `Save`, `Briefcase`, `LocateFixed`) y el import de `formatearAntiguedad`, todos detectados por lint, no a mano.
+
+Verificado con `npx eslint src/` (0 errores), `npx vitest run` (93/93 en verde, sin regresiones) y `npm run build` (build de producción limpio, mismo warning preexistente de tamaño de chunk). Sin verificación visual en navegador en vivo -- misma limitación de siempre (necesita backend + PostgreSQL + auth + GPS real para Modo Viaje).
+
+Con esto, A17 queda sin bloques pendientes de extracción conocidos. Lo que sigue abierto en `App.jsx` (~30 `useEffect` que calculan velocidad/ETA/paso activo durante la navegación, y el resto de la lógica de estado) es trabajo de otro tipo -- reorganizar cálculo, no JSX -- y no estaba dentro del alcance original de A17.
