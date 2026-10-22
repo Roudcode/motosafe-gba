@@ -2466,3 +2466,41 @@ Detalle completo de cada decisión, con el razonamiento y la evidencia que la re
 A20, V10. No se tocó ningún archivo de código ni de datos en esta sesión -- las tres ejecuciones pendientes
 (A20-delitos, /hotspots en V10, aviso del caso 2 de D03) quedan para la próxima sesión con Codex, con
 verificación independiente antes de commitear, igual que siempre.
+
+## SES-158 — incorporar a los capítulos de tesis los hallazgos ya cerrados (A05, D03, D04, DEC-026, V09, V10, V11, D06)
+
+Trabajo de Claude, directo en el chat, mientras la ejecución de DEC-024 (Codex, SES-157) corría en segundo
+plano. Varios ítems quedaron validados en sesiones recientes pero sin reflejo todavía en
+`docs/tesis/MotoSafe_GBA_Capitulos_1_a_6.docx` -- se corrigieron tres puntos reales, editando el XML del
+documento directamente (unzip → editar `word/document.xml` → rezip), validado con el script de esquema del
+skill de docx y verificado visualmente renderizando a PDF antes de guardar.
+
+- **6.2 Supuestos y restricciones**: la restricción "el resto del conurbano no cuenta con un equivalente
+  accesible" quedaba sin respaldo de que se hubiera investigado de verdad. Se agregó el resultado real de
+  D06: ni el catálogo de la Provincia de Buenos Aires ni la ANSV publican microdatos comparables; existe el
+  Sistema de Alerta Temprana de Muertes Viales (SNIC, Nación) como fuente parcial, geocodificada por partido
+  y con campo de motocicleta, pero limitada a víctimas fatales -- no reemplaza al dataset de CABA.
+- **4.5 Diseño de rutas, cobertura y comunicación de límites**: no tenía evidencia de validación
+  independiente de "cobertura desconocida" (A05: 0% real en GBA profundo, 57% real en el límite CABA/GBA,
+  ninguno disfrazado de riesgo bajo) ni los 4 casos de D03 con la sensibilidad medida en D04 (el peso del
+  riesgo no cambia el orden, el umbral de cruce sí cambia cobertura sin cambiar el orden) ni el aviso nuevo
+  de DEC-026 (cuando la fuente de menor cobertura decide la recomendación) ni la limitación documentada del
+  caso de discordancia de fuentes (el puntaje no pesa magnitud).
+- **4.7 Diseño de interfaz, accesibilidad y experiencia de uso**: corregida una afirmación desactualizada y
+  ya falsa -- decía que la matriz de accesibilidad "todavía no se ejecutó... protocolo pendiente de
+  ejecución", cuando A23 (SES-112) ya la había ejecutado y encontrado dos fallas reales (trampa de foco
+  rota en el modal de bienvenida, aviso de tráfico en vivo ausente con backend caído), las dos corregidas.
+  Se agregaron también V09 (atenuación de decoración durante el viaje), V11 (contraste WCAG de hexágonos y
+  corredores) y V10 (aviso de capa vacía sin ícono de error).
+
+No se tocó ningún otro capítulo ni ningún otro punto de estos capítulos. Validado con
+`scripts/office/validate.py` del skill de docx (881 párrafos antes y después, sin cambios estructurales) y
+renderizado a PDF para confirmar visualmente las tres secciones (sin desbordes ni cortes de formato) antes
+de escribir el archivo final. El archivo original se mantuvo en el escritorio de Rodo hasta el commit;
+commiteado junto con este asiento.
+
+Queda pendiente, no incorporado en esta pasada: D05 (monitor de calidad de datos) no tiene todavía mención
+en ningún capítulo -- es un punto metodológico menor, se suma en una próxima pasada si corresponde. También
+queda pendiente actualizar la fila R-02 de la matriz de riesgos (6.3) a la luz de D06, que ya encontró un
+dataset parcial -- se deja para que Rodo decida si corresponde actualizar esa fila o si el riesgo sigue
+vigente tal cual está redactado (D06 no cierra la restricción, solo la documenta con evidencia real).
