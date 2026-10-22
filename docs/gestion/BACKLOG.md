@@ -186,3 +186,23 @@ Usar [WCAG 2.2](https://www.w3.org/TR/WCAG22/) como referencia para contraste, t
 | Backlog del proyecto | Disponible | Este archivo (`docs/gestion/BACKLOG.md`). |
 | Actas con el tutor | Pendiente (material de Rodo) | No se generan desde el repositorio. Las carga Rodo fuera del repo; no forman parte del trabajo de Claude. |
 | Decisiones registradas | Disponible | `docs/gestion/` (decisiones DEC-NNN, citadas en BACKLOG y BITACORA). |
+
+## Revisión vigente de estados — 22/10/2026, SES-167
+
+Esta revisión prevalece sobre cierres anteriores para los IDs afectados. No crea otro backlog ni autoriza implementar las propuestas: documenta el resultado del nuevo [assessment](../assessment_2026-10-22/ASSESSMENT.md). Los hallazgos H son referencias del informe, no nuevos IDs operativos.
+
+| ID existente | Estado vigente tras auditoría | Evidencia y próximo criterio de cierre |
+|---|---|---|
+| A05 | Validado parcialmente; reabierto P1 | H01/H02: cobertura cambia con densidad de vértices y puede heredar fuente incorrecta. Exigir cobertura por distancia y gate sin sustitución de fuente. |
+| A07 / F08 | Validado parcialmente; reabierto P1 | H06: sesión única retira reporte propio mediante múltiples UUID. Decidir vínculo de identidad; token privado de borrado sigue comprobado. |
+| F11 | Validado parcialmente; P1 abierto | H04/H05/H07/H13/H15: OTP anteriores, revocación, abuso de registro, SMTP y migración. No cerrado por el happy path de mail real. |
+| A09 | Validado parcialmente; P1/P2 abiertos | H03/H12: fechas antiguas y ventana temporal de dedup. Etiquetado humano pendiente sigue siendo una tarea distinta. |
+| A10 / A11 / A15 / F09 | Validado parcialmente | H03/H13/H17: procedencia temporal, correo y refresco/degradación. Reproducir fallas por capa. |
+| A13 / A14 | Validado parcialmente | H07/H15: validar inputs/cuota de tiles y registro; migración con cuentas previas largas/unicidad. |
+| A18 | Validado parcialmente; reabierto P1 | H08: el fallback de Nominatim vuelve al camino automático de sugerencias; verificar política y límites agregados. |
+| A02 / A04 / D01 / D02 | Validado parcialmente para la afirmación de independencia final | H10: separar evaluación retrospectiva usada para elegir de evaluación final congelada; decisiones productivas DEC-012/015/022 se conservan. |
+| A22 / T01 / T05 | Validado parcialmente | H14: 157 passed/3 failed con DB desechable; nuevo árbol no tiene CI verde acreditado. H09: despliegue limpio no reproduce capas/F11. |
+| T04 / T06 | Validado parcialmente | H11/H16: PostgreSQL publicado en todas las interfaces y sonda HTTP exitosa con DB caída; backup histórico no se invalida, no se repitió restauración completa. |
+| G01 | Validado parcialmente | H18: privacidad/continuidad desactualizadas; no publicar credenciales históricas de documentos de trabajo. |
+
+Remediación propuesta: primero cuentas/abuso/exposición DB; luego integridad de cobertura y prensa; después entrega reproducible/CI/proveedores; finalmente evidencia académica y operación. DEC-027 registra las políticas pendientes de Rodo.

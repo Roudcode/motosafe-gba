@@ -189,3 +189,12 @@ Separar decisiones tomadas de recomendaciones. Una propuesta de Codex/Claude no 
 - Qué queda pendiente y cuándo revisarla:
 
 Si se revierte una decisión, conservar el registro y agregar una nueva que la sustituya.
+
+### DEC-027 — Remediación de hallazgos de cierre: políticas por resolver
+
+- Fecha / estado / origen: 2026-10-22 / **Pendiente de Rodo** / assessment solicitado por Rodo, SES-167.
+- Evidencia: `docs/assessment_2026-10-22/ASSESSMENT.md`, H01–H18, con pruebas API/SQL aisladas.
+- Decisiones necesarias: vínculo entre cuenta y voto/reporte, tratamiento de prensa sin fecha confiable en ajustes de riesgo, contrato de cobertura por longitud y política de cuentas en despliegue público. También definir protocolo final de evaluación sin reutilizar selección.
+- Alternativas: corregir estas reglas con criterios medidos y migración explícita; o restringir el MVP a demo controlada y declarar esas funciones/afirmaciones no listas. Mantener los defectos no equivale a validarlos.
+- Estado: NO se seleccionó alternativa ni se modificó comportamiento. La auditoría y sus pruebas están autorizadas; la presencia de una recomendación no es aprobación de Rodo.
+- Límites: DEC-022/023/026 siguen vigentes. No se cambió sexo, radio ni ponderación por magnitud, no se rotaron secretos ni se tocó producción.

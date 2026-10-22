@@ -1,0 +1,653 @@
+{
+  "date": "2026-10-22",
+  "head": "1c4b8ef0b55dca901274d9b8d6e6a48fec011748",
+  "scope": "codigo/configuracion propio; excluye dependencias, secretos y documentos privados",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1670,
+      "sha256": "e702d659277522f713fac71f15ba17e722578ed1b22f1e92455ec84ba7978870"
+    },
+    {
+      "path": "backend/.dockerignore",
+      "bytes": 53,
+      "sha256": "dbe0586512edf44dd6999bcb3344e01f0e49c060c8655047e7879d86b67553d4"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "bytes": 335,
+      "sha256": "c3886189f65d52d75265cced824a0734d014df9942957e271b73fbec9e237022"
+    },
+    {
+      "path": "backend/_iniciar_backend.bat",
+      "bytes": 1019,
+      "sha256": "6eb562da7745ebdfe875982fe98b40c87ce984543978de8910e810dfd675816f"
+    },
+    {
+      "path": "backend/actualizar_fechas_prensa.py",
+      "bytes": 1723,
+      "sha256": "85b2b889eafc9ebe7241149f129e58057d28cfed133908f971634c6046901512"
+    },
+    {
+      "path": "backend/auth.py",
+      "bytes": 19290,
+      "sha256": "c189b81c6b9478043bd0c7411aa6c979e6b6d783d7350a5e24621b7457d5904e"
+    },
+    {
+      "path": "backend/cargar_corredores.py",
+      "bytes": 2808,
+      "sha256": "4b19170f6a002faa2cafa5cd3a7cc71de35749b65c786b086b6bcf26a1a58b36"
+    },
+    {
+      "path": "backend/cargar_datos_iniciales.py",
+      "bytes": 3002,
+      "sha256": "f54f9fccddbbbab6d0c40af49c106c8446a01bd80b8cdb581f30fbc59d063fbe"
+    },
+    {
+      "path": "backend/cargar_hotspots.py",
+      "bytes": 3181,
+      "sha256": "a931a3a74453a8cdc149f76169d9687a818ff8a69cd5424ee92e1af9d406c867"
+    },
+    {
+      "path": "backend/cargar_hotspots_inseguridad.py",
+      "bytes": 3593,
+      "sha256": "f96c20b39ca8da13d468bceae6a959c2b434126cf13f5e42a7e79f6f1e82f08b"
+    },
+    {
+      "path": "backend/consumir_metricas.py",
+      "bytes": 4431,
+      "sha256": "0a0ec054f6a44978215570e9f075fc80cb8751324566f909c6aff0758c52f7ba"
+    },
+    {
+      "path": "backend/email_service.py",
+      "bytes": 3107,
+      "sha256": "6595c1fc856584663aa25e81f861fba96440783b4790c2bc4605cd33200e2a1d"
+    },
+    {
+      "path": "backend/entrypoint.sh",
+      "bytes": 278,
+      "sha256": "da2e4ae429a060f9edd067ef72b4f4d5f138581e5bfea4cb12672aade25c06ae"
+    },
+    {
+      "path": "backend/evaluar_extractor_prensa.py",
+      "bytes": 2036,
+      "sha256": "e1136556d0b4ebede59c1280a1cf3bf3ff68803248f0fcf634d4f3a79001e27f"
+    },
+    {
+      "path": "backend/generar_password.py",
+      "bytes": 1315,
+      "sha256": "465b3ef0c026e4184dc41b9f238946d13771cacbc608f2c802e1f92a4ee7b0f4"
+    },
+    {
+      "path": "backend/main.py",
+      "bytes": 101411,
+      "sha256": "7dbc97d96a02a0dd7d1637aed17f6deedca6cbcbf501de1cd83eacdcadc8a0da"
+    },
+    {
+      "path": "backend/metadatos_capas.json",
+      "bytes": 1018,
+      "sha256": "f5f35253b99cf3a62583f175eaba5551ac87b7161c69f281af9d5ff6bca7ec2d"
+    },
+    {
+      "path": "backend/migrar.py",
+      "bytes": 2384,
+      "sha256": "6794da27451d9043eec79864967d6c0d768048fc3cd679a0e6aa2c1da5583906"
+    },
+    {
+      "path": "backend/migrations/001_reportes_colaborativos.sql",
+      "bytes": 951,
+      "sha256": "fdb393c8eb298f146c058ecc08d4cfaa7fe10c9f6d53d6a39abd0bcd2f278be9"
+    },
+    {
+      "path": "backend/migrations/002_postgis.sql",
+      "bytes": 269,
+      "sha256": "ae5ace90e86e93d4ae8e22970d90330ceb265455f1ffd9908349b7387c448e86"
+    },
+    {
+      "path": "backend/migrations/003_reportes_prensa.sql",
+      "bytes": 1220,
+      "sha256": "45200a1a91e4f588429e1cc407ce8d71ec02c2a33312629a1c8e2ad533cd12e6"
+    },
+    {
+      "path": "backend/migrations/004_duplicados_prensa.sql",
+      "bytes": 822,
+      "sha256": "697658186094c77456f3920cfb5a931ac48e19d4b57fbd0ac75ec54857129510"
+    },
+    {
+      "path": "backend/migrations/005_usuarios.sql",
+      "bytes": 975,
+      "sha256": "f094bd52c88fc19746a22b5c072f9deee113d9d797f63c0b9686631f6d240a07"
+    },
+    {
+      "path": "backend/migrations/006_usuarios_nombre.sql",
+      "bytes": 1077,
+      "sha256": "99ef2bd2354009e4edb7ae00509e24c263656f584c85ca4aef00cdfc295321d5"
+    },
+    {
+      "path": "backend/requirements.lock",
+      "bytes": 86324,
+      "sha256": "89ec02e11826d2105ea255d12ad1daf406a5dfa092d0cbd429b4718533f7e939"
+    },
+    {
+      "path": "backend/requirements.txt",
+      "bytes": 740,
+      "sha256": "13ea45e6c1af03d56a36a9caaf67f7a76a3332924af8156435bce34e2b80f370"
+    },
+    {
+      "path": "backend/run_dev.py",
+      "bytes": 3413,
+      "sha256": "a8cba7476ccd4c587b25b38661fcf3e20c3c00a3aeaed53160ddae183fc1a200"
+    },
+    {
+      "path": "backend/scrapear_noticias_robos.py",
+      "bytes": 89307,
+      "sha256": "55330724cd914284b311dc8b0244ddfa00afc3d818360cf46256be4b1b746988"
+    },
+    {
+      "path": "backend/scraper-loop.sh",
+      "bytes": 1245,
+      "sha256": "a710f6bc8c7d794ff2fdf970b171e641cc85b5aab08152b80f05e08e6e1b1457"
+    },
+    {
+      "path": "backend/tests/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/tests/conftest.py",
+      "bytes": 994,
+      "sha256": "e3ee0198c46ca21da6af73022339aa1b562da90add884b227fb1a8d2b1e830f3"
+    },
+    {
+      "path": "backend/tests/test_auth.py",
+      "bytes": 4835,
+      "sha256": "461954114cbbf548207a2c650c60d2d5dd3ff3623bc467b646f92ce057e54408"
+    },
+    {
+      "path": "backend/tests/test_consumir_metricas.py",
+      "bytes": 3260,
+      "sha256": "950c610265a9d16a4d87b517566247a585b026ce90b41b61c8e1addcc6d44e6d"
+    },
+    {
+      "path": "backend/tests/test_entorno.py",
+      "bytes": 3269,
+      "sha256": "44e5e394ce0f0cd4f22f45cf0918303ae490536141be63beac96e786fc188cc6"
+    },
+    {
+      "path": "backend/tests/test_integracion_postgres.py",
+      "bytes": 23786,
+      "sha256": "f1986d254c557c7a8c14275b25ea2e5963c3d7d8defd2d1a935a9cbcdd01086e"
+    },
+    {
+      "path": "backend/tests/test_main.py",
+      "bytes": 67001,
+      "sha256": "d6083dccfe3afd0736f157f95313e6cb3569a441ee37c1606fcf2cd87c30d1c2"
+    },
+    {
+      "path": "backend/tests/test_run_dev.py",
+      "bytes": 2207,
+      "sha256": "14e7d48a4ebe7d11d63f99ccb59ed7fa26a3bc3ab5aff4d583b48d699e3bfd34"
+    },
+    {
+      "path": "backend/tests/test_scrapear_noticias_robos.py",
+      "bytes": 22510,
+      "sha256": "e303b4600213c964dda67462b1fa66fc9d71bcf0ebf59bc902a8b87f85953db8"
+    },
+    {
+      "path": "commitear.bat",
+      "bytes": 635,
+      "sha256": "7a7824983a1f97db979fdda069df946fe2efe2a5ac5d86d06ebced2165f77f47"
+    },
+    {
+      "path": "docker-compose.production.yml",
+      "bytes": 2288,
+      "sha256": "616a8464624a46a7e00259a00519aacbe9b41144086d7fa8dd8fe5bc0cd40857"
+    },
+    {
+      "path": "docker-compose.yml",
+      "bytes": 351,
+      "sha256": "c703338bc4ce02cfb0f3e2e2d38315375af5bc2a73c9601cc3798884f46b1892"
+    },
+    {
+      "path": "frontend/.dockerignore",
+      "bytes": 32,
+      "sha256": "1a3e7aabd0c737bec7310892af4a33e1966a4b10ae0a8f40df6921a013674d09"
+    },
+    {
+      "path": "frontend/Dockerfile",
+      "bytes": 421,
+      "sha256": "cc9d6854c18a3caf1a02a8f491e27b21a1aa1ef65f3da752b7ed28f2c80af394"
+    },
+    {
+      "path": "frontend/eslint.config.js",
+      "bytes": 578,
+      "sha256": "6592bd3ec426d9bd1b71a88c1ff91faa224a3e0ab6e89a3c9fcb6d58538736d3"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "bytes": 132860,
+      "sha256": "6b7f83dfb97ce3d5866c0c9b34b6f57431ed0aaefc2ed7f045309eaa53e3f135"
+    },
+    {
+      "path": "frontend/package.json",
+      "bytes": 918,
+      "sha256": "764c46ce898da7e0de81b651873b1990dc2027afdeb204a73a47e5e9cd22e3fa"
+    },
+    {
+      "path": "frontend/public/manifest.json",
+      "bytes": 668,
+      "sha256": "c7191e1980d6b2ce74f96ec30b8f32bc3ddbf1c01151f87dbe1e76854044eae6"
+    },
+    {
+      "path": "frontend/src/App.css",
+      "bytes": 131699,
+      "sha256": "69c9142caaf8f37f37d9514c792c754c50f4a021c19e91276a8280f62b5d250d"
+    },
+    {
+      "path": "frontend/src/App.jsx",
+      "bytes": 104862,
+      "sha256": "fc2ca5bb7c0bf2f083880b7e4b2b58febbcfb1f9530f66b0b8c0942c07aae188"
+    },
+    {
+      "path": "frontend/src/components/ActividadPortal.jsx",
+      "bytes": 10849,
+      "sha256": "83ffaf64e097bdc5cb7bdb4315b4b0d6cacb4b3ba8d11f4ffc08569685e81d7e"
+    },
+    {
+      "path": "frontend/src/components/ActividadReciente.jsx",
+      "bytes": 2952,
+      "sha256": "85b17364d5bb8d77812aaf53fc14e5e3b22cd32069102c5aa7b292c2dade26be"
+    },
+    {
+      "path": "frontend/src/components/CapaErrorBanners.jsx",
+      "bytes": 3826,
+      "sha256": "d4b3c5108d2298888738bae9820217b6401e0b548fc3123ec12c75523fcb7d01"
+    },
+    {
+      "path": "frontend/src/components/CapaErrorBanners.test.jsx",
+      "bytes": 3162,
+      "sha256": "200bb387929e638663dd262877beed2ff10aa00b5abf42613ef61f70d81c2368"
+    },
+    {
+      "path": "frontend/src/components/CapasPanel.jsx",
+      "bytes": 6738,
+      "sha256": "b5d3a5b336126d89142ee5485d3928c7a32f08f60c3d938568807b3b27b59ab3"
+    },
+    {
+      "path": "frontend/src/components/DetalleZonaPanel.jsx",
+      "bytes": 4747,
+      "sha256": "add804c7f55b700251398b482bab5dcd6a90bafa01f17e6ebd7122b300ecca4f"
+    },
+    {
+      "path": "frontend/src/components/HerramientasMenu.jsx",
+      "bytes": 2631,
+      "sha256": "0755263c8517689aa794e1f456df45f86ad321b398d78b2f0dd4765286ebe490"
+    },
+    {
+      "path": "frontend/src/components/LegendStack.jsx",
+      "bytes": 5655,
+      "sha256": "56e7ee63c9e517763673337c14b9293cc1d37472366a453b7292d412f3cef86b"
+    },
+    {
+      "path": "frontend/src/components/LoadingScreen.jsx",
+      "bytes": 908,
+      "sha256": "87447ae43b26b93b5e8d93d847ecfb5477280e5f29047e35a54a364c036e30dc"
+    },
+    {
+      "path": "frontend/src/components/LoginGate.jsx",
+      "bytes": 19319,
+      "sha256": "3a87ee04b2e317346f8248f9d77b4d1636bd87a1fff04195eb98092f753d7435"
+    },
+    {
+      "path": "frontend/src/components/MapaMotoSafe.jsx",
+      "bytes": 76000,
+      "sha256": "0c00dfc0856d859c429fbcef64bfc262c22fff3e4abe182001f87e2ba29485e4"
+    },
+    {
+      "path": "frontend/src/components/NavegacionManiobra.jsx",
+      "bytes": 1948,
+      "sha256": "33337159e8a5cec1ebbb336e4a981f5ca751b5de0ac63022e18e678f9f205465"
+    },
+    {
+      "path": "frontend/src/components/NavegacionResumen.jsx",
+      "bytes": 2888,
+      "sha256": "16ca138fbcf9aeb1832fe5e23b202cc4ebb1725e8e5a682b95c18cba2e259424"
+    },
+    {
+      "path": "frontend/src/components/Onboarding.jsx",
+      "bytes": 2886,
+      "sha256": "53f91ddc8c4d3d0d6238ef66bd940d189f47b0e2b6d5e645a23592e1f319c0a6"
+    },
+    {
+      "path": "frontend/src/components/ReportSheet.jsx",
+      "bytes": 1942,
+      "sha256": "5de4c23c7fa518c2d1bf3b812a4e42ab43f8fc7d48589aa2e12c04e63639cb80"
+    },
+    {
+      "path": "frontend/src/components/RutaForm.jsx",
+      "bytes": 8116,
+      "sha256": "abcb240cb9b62b10f40ae81de49e3409a1c74c44fe643ba60afcb580c4010df7"
+    },
+    {
+      "path": "frontend/src/components/RutaResumenPanel.jsx",
+      "bytes": 11867,
+      "sha256": "14df1eff06953f418a68227ca8ff614ed8dba950cfde763fff6116c6646095e9"
+    },
+    {
+      "path": "frontend/src/components/SearchBar.jsx",
+      "bytes": 6389,
+      "sha256": "cd694908cd4f76b3b8b764bf926b5759ca83a35cf90a4718b909dbad4a7fd708"
+    },
+    {
+      "path": "frontend/src/components/SearchBar.test.jsx",
+      "bytes": 3456,
+      "sha256": "c955877bb716d422cfd7a53aa01e6a644c8d2bee937572db7b65f869fe14822e"
+    },
+    {
+      "path": "frontend/src/components/ThemeToggle.jsx",
+      "bytes": 812,
+      "sha256": "a30bcaff7c522c6037bab73960c6e4cf85a2739eb53cbe7b8bdd2def4534848e"
+    },
+    {
+      "path": "frontend/src/constants.js",
+      "bytes": 10218,
+      "sha256": "31bb41338a73aef297598d4be5969791df67cb7a412bd35f7ecacab9c9ead1f7"
+    },
+    {
+      "path": "frontend/src/hooks/useBusquedaDireccion.js",
+      "bytes": 2859,
+      "sha256": "da2f7df81a77a16abaaa04ae9472a158c5f0a6aa77e4732796bdf89fefe82a99"
+    },
+    {
+      "path": "frontend/src/hooks/usePanelSaliente.js",
+      "bytes": 1570,
+      "sha256": "a8c1fe974fcd307d12e6289668227d10724597d66229159fa1cd796af8baaf90"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "frontend/src/main.jsx",
+      "bytes": 319,
+      "sha256": "4f4fdef7b884785c8a62ffee615d252166d75fc231866608b223dd164fc87dcf"
+    },
+    {
+      "path": "frontend/src/sesion.js",
+      "bytes": 324,
+      "sha256": "65fa4f597d42f83b9ef8eab82837e71b97f1355ff1c0986132f5246e87cae20f"
+    },
+    {
+      "path": "frontend/src/utils/barrio.js",
+      "bytes": 2274,
+      "sha256": "dd957e0aaadc086b9c794d66dd030bc69ab9ad6043b367d9d84b002f05c5258b"
+    },
+    {
+      "path": "frontend/src/utils/geoRiesgo.js",
+      "bytes": 9809,
+      "sha256": "19a85da0b58a65ca2f466286cd1fa7b40126f26118030d3c43f3924d3a52f31e"
+    },
+    {
+      "path": "frontend/src/utils/geoRiesgo.test.js",
+      "bytes": 9226,
+      "sha256": "7cafa7acbad6a778e98789873d62b8d99c892c77c14d727e6a6a4e0107d77fef"
+    },
+    {
+      "path": "frontend/src/utils/hexBin.js",
+      "bytes": 7633,
+      "sha256": "367569e970ca0d0fae5aa496bd5a53dc1a8795cca69228660d699a4ab523b7e4"
+    },
+    {
+      "path": "frontend/src/utils/hexBin.test.js",
+      "bytes": 4228,
+      "sha256": "4a2af701861fafe78a18d56b34bfa248f87e35fa4ed4cc0fb7ea0dac9d365e80"
+    },
+    {
+      "path": "frontend/src/utils/riesgoRuta.js",
+      "bytes": 11927,
+      "sha256": "e11ef3fc3b55433a0a0b5752c648ae0c23011005b70527d655763a73446209aa"
+    },
+    {
+      "path": "frontend/src/utils/riesgoRuta.test.js",
+      "bytes": 16658,
+      "sha256": "76f683c12b3c761c6ad921be20827d1d7afbdac72648c140d0e3cef9a64591dd"
+    },
+    {
+      "path": "frontend/src/utils/storage.js",
+      "bytes": 1442,
+      "sha256": "47987cd96a369550ef0d9e974048d82ba40368c0a54c12103b9efed251904131"
+    },
+    {
+      "path": "frontend/src/utils/storage.test.js",
+      "bytes": 874,
+      "sha256": "0013a9f23fd4fe34172435050e7476a6c1cff252176173a8454dfef8755e835d"
+    },
+    {
+      "path": "frontend/src/utils/tiempo.js",
+      "bytes": 2755,
+      "sha256": "106a13a33005d1c69519ff1a4a829363ab54561408e3ef0ea567ce014de739a5"
+    },
+    {
+      "path": "frontend/src/utils/tiempo.test.js",
+      "bytes": 4845,
+      "sha256": "cd4500bcbb44dc32b3b540bec48417125432e5b7dea4cfc4a4677b7fc16f8f7b"
+    },
+    {
+      "path": "frontend/src/utils/ui.js",
+      "bytes": 7682,
+      "sha256": "8af14b70c4bc9e42aaa6dc8bd449b0a5c922948d3e705d4b96da99077ab2327f"
+    },
+    {
+      "path": "frontend/vite.config.js",
+      "bytes": 2649,
+      "sha256": "d812b9e2df8ca95844b4174e9e54e005672d9a34b28cd572fd758f4aba56791c"
+    },
+    {
+      "path": "iniciar.bat",
+      "bytes": 3256,
+      "sha256": "17f3cc7aee1349c0b37fd422c99b73e8ff9d56de02c0b592bbabfa4188e2dc46"
+    },
+    {
+      "path": "iniciar_app.bat",
+      "bytes": 3118,
+      "sha256": "d521d85ab59bb9b93ea941cb538419caf911a4b5af8445a21f1d49e5d66e3c9d"
+    },
+    {
+      "path": "notebooks/calcular_confianza_zonas.py",
+      "bytes": 7915,
+      "sha256": "5116d6d6cbe17bb2af26fed1591471cfebef210cf484c54331867abe17c37c8c"
+    },
+    {
+      "path": "notebooks/calibrar_umbrales_riesgo.py",
+      "bytes": 8678,
+      "sha256": "9388b56bb998dd1ca01b6d70f490f969b785c9164c62c162f59757a296f21fc6"
+    },
+    {
+      "path": "notebooks/completitud_por_anio_d02.py",
+      "bytes": 4389,
+      "sha256": "44a3e13f1d64f886ce11e206529ad59d43387efc11258a28e867f5a935592702"
+    },
+    {
+      "path": "notebooks/confirmar_hdbscan_general_completo.py",
+      "bytes": 2621,
+      "sha256": "72b5b498329f1b33f35e6e8b606223eadc971d96261039d2fa34b03fb33d1105"
+    },
+    {
+      "path": "notebooks/construir_indice_inseguridad.py",
+      "bytes": 4098,
+      "sha256": "03c1dc950e34121a4b5ccc4f93964ba839c6e0d07e656882359c86a302e912a2"
+    },
+    {
+      "path": "notebooks/evaluar_modelo_academico.py",
+      "bytes": 9758,
+      "sha256": "186ebccd7e0818e5e0cc65c23c446bc38de22267d6f1aa324247b7b0b04107f3"
+    },
+    {
+      "path": "notebooks/experimento_sexo_d02.py",
+      "bytes": 7223,
+      "sha256": "2cf17c768a6888020b66f1a31bd926f212d5d756376cc3484aad8c2283a6dafd"
+    },
+    {
+      "path": "notebooks/fetch_clima_historico.py",
+      "bytes": 2607,
+      "sha256": "3c41d27acbc83c5662d877dec2f68a3db1bc4bd34e408e1252a58788a06e692d"
+    },
+    {
+      "path": "notebooks/fetch_corredores_geometria.py",
+      "bytes": 2817,
+      "sha256": "f4da98d3c192c023eb777b51b98a474c06dab13d6ec3a88eccf8cf113fe7dc96"
+    },
+    {
+      "path": "notebooks/fetch_delitos_caba.py",
+      "bytes": 6112,
+      "sha256": "e5b6faa8480095271c864aaf150d7992a9f48f17a7e5e2f014aac30c7485ed25"
+    },
+    {
+      "path": "notebooks/generar_metadatos_capas.py",
+      "bytes": 3340,
+      "sha256": "ba739f86555fc84da6e681af6bc611c763adba695f2ada4fc535223345426223"
+    },
+    {
+      "path": "notebooks/identificar_corredores.py",
+      "bytes": 7053,
+      "sha256": "8606e429623c0e86b8b53b3f4971e2e654aeef20ea34c4dfc68ac4cb9f4fd1ce"
+    },
+    {
+      "path": "notebooks/identificar_hotspots_inseguridad.py",
+      "bytes": 6881,
+      "sha256": "37fb6e86f5d2bdc390ede99d272fecbfd40fb59392d3fdeb2422661814ada6f5"
+    },
+    {
+      "path": "notebooks/investigar_causa_d02.py",
+      "bytes": 8510,
+      "sha256": "8d1345f5448bc0b2c53e175543b9c3dbff226df1a595c61726141305d9a6e3a6"
+    },
+    {
+      "path": "notebooks/limpiar_siniestros_motos.py",
+      "bytes": 3698,
+      "sha256": "0a2b623accc6939047a11d35f3faa1c8031407159602322bbb97eae5391081f0"
+    },
+    {
+      "path": "notebooks/limpieza_geografica_comun.py",
+      "bytes": 3463,
+      "sha256": "72d9d0332fbca0f37b92446b2e56a0993a3c1ee24ab9154156a2a561aa333046"
+    },
+    {
+      "path": "notebooks/monitor_calidad_datos.py",
+      "bytes": 8542,
+      "sha256": "e3e8c6b0e5c165973e994f6d590043764eef95c59481508b9f64288c563dc282"
+    },
+    {
+      "path": "notebooks/promover_artefactos.py",
+      "bytes": 3690,
+      "sha256": "fe9e0b8898489f3832b571d4d87ff1ed92f4a7aa1650d1b93ee4178e8f506c4b"
+    },
+    {
+      "path": "notebooks/prototipo_gi_kde_hotspots.py",
+      "bytes": 6762,
+      "sha256": "52281ed5973f010623b9f94fa3427046dd747a734e43ab7ce4e5353cb3b9ad7e"
+    },
+    {
+      "path": "notebooks/prototipo_h3_hotspots.py",
+      "bytes": 7087,
+      "sha256": "363b2b4f4b50b4e7f0290f961392d9a00d491d04a58756d76208c403c8eb7ad0"
+    },
+    {
+      "path": "notebooks/reclusterizar_hotspots.py",
+      "bytes": 4593,
+      "sha256": "da9b54a11f4526e313754bee701865edf4fae79fbfa73e1c2c8f3f34cc74e380"
+    },
+    {
+      "path": "notebooks/reentrenar_modelo.py",
+      "bytes": 14092,
+      "sha256": "c9a62e524159bbc9ef0b6a83d7c81bffcb77887c7e8a4a8ebbf566f43b46b4bf"
+    },
+    {
+      "path": "notebooks/sweep_hdbscan_inseguridad_general.py",
+      "bytes": 7018,
+      "sha256": "4fbbfbad98e36c05964bae89f873b8c92b6a61b5fd2573dac3a3f0fad09e1a9f"
+    },
+    {
+      "path": "notebooks/tuning_rf.py",
+      "bytes": 3806,
+      "sha256": "7d37b81749b05fd7ebc16c33eaff1387e8a06dad0c90f883d4cbb4b879874828"
+    },
+    {
+      "path": "notebooks/tuning_rf2.py",
+      "bytes": 3791,
+      "sha256": "cbab6d633a45bc67070d7f2f03804c5611eb87bc3ba9de86fb67be3b1e68d9e0"
+    },
+    {
+      "path": "notebooks/validar_temporal.py",
+      "bytes": 3821,
+      "sha256": "128746e449084cfcab3100b923e860452f1afb3a43722176a2ef96db47a2edfc"
+    },
+    {
+      "path": "render.yaml",
+      "bytes": 1598,
+      "sha256": "2334827f2ebaf5db807c8197889c0fc829c6a10150275a2bd1f3786a853c4038"
+    },
+    {
+      "path": "requirements.lock",
+      "bytes": 218672,
+      "sha256": "fda12b60a28c5b6e55733063ef6eb8fec63d8e7bd006d679cac473b190dfe113"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 748,
+      "sha256": "e1d60537bb9b51715b30004a4767c98e11f26fe63c00b63884b4b0607db6e505"
+    },
+    {
+      "path": "scraper_programado.bat",
+      "bytes": 2133,
+      "sha256": "515b0757115adc9ae545cf9d8fe8761dbd174dc32c06a81c757e1c700aa5c2cb"
+    },
+    {
+      "path": "tailscale/_iniciar_frontend.bat",
+      "bytes": 856,
+      "sha256": "8cc21c26732bdcdf8da908dd22d0398fbde44fd1695753606ca811cf11961a0c"
+    },
+    {
+      "path": "tailscale/detener_funnel.bat",
+      "bytes": 730,
+      "sha256": "483883ff80753be440b3d8c0606a09215b5653f54bb656e7b74ed472ea24bc46"
+    },
+    {
+      "path": "tailscale/estado.bat",
+      "bytes": 712,
+      "sha256": "9deea13dcc8e5c5a112d3d166447032bec43d8886863c28afb5878a96732a4e0"
+    },
+    {
+      "path": "tailscale/iniciar_app_tailscale.bat",
+      "bytes": 2037,
+      "sha256": "f3cd1c55446aa028d7dfcf9c5e38b4d117fae2061ee6357683c46c9589fd8ec2"
+    },
+    {
+      "path": "tailscale/iniciar_funnel.bat",
+      "bytes": 3184,
+      "sha256": "c63ce1d8b84de883aad2666827c8ac95024d6a8178056d45a5f2adfa0ee889a4"
+    },
+    {
+      "path": "tailscale/registrar_vigilancia.ps1",
+      "bytes": 1427,
+      "sha256": "6ad25d779f82a97ebc9db1182815955072824c24541ec35bf3d9865a33929bec"
+    },
+    {
+      "path": "tailscale/reiniciar_app.bat",
+      "bytes": 992,
+      "sha256": "a30db7e193ec8f6a295526dab7907c89f31d901bdc496077172d746839e8b31a"
+    },
+    {
+      "path": "tailscale/vigilancia.ps1",
+      "bytes": 6807,
+      "sha256": "f1ac11d8306f5ee1ebfaf1b0a8c14e70d8d7fd59ab9f3c2ed372412a9c7d098e"
+    },
+    {
+      "path": "tareas.bat",
+      "bytes": 1930,
+      "sha256": "6713699150aeea907aa2c1b109e25b8527bac3f63e95204696ed345005ad0481"
+    }
+  ],
+  "count": 129
+}

@@ -58,3 +58,7 @@ Centralizar significa mantener este índice y estos registros como punto de entr
 ## Pruebas técnicas — 2026-09-15
 
 - [Pruebas actuales y límites](evidencias/2026-09-15/G02-T02/PRUEBAS.md): 80 tests frontend y 65 backend aprobados; navegador bloqueado por certificado. Conservado como registro histórico de esa fecha; ver la entrada de arriba para el estado vigente.
+
+## Auditoría vigente de cierre (22/10/2026)
+
+[Assessment integral nuevo](assessment_2026-10-22/ASSESSMENT.md): revisión de HEAD 1c4b8ef más cambios locales de Claude, 11 P1 y 7 P2, con reproducciones SQL/API y cobertura. No sustituye el assessment histórico de septiembre. Frontend 108/108; backend con PostGIS aislado 157 aprobadas y 3 fallidas. Leer antes de asumir que los ítems validados históricamente siguen cerrados.

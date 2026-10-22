@@ -1,0 +1,66 @@
+{
+  "older_reset_code_after_newer_consumed": [
+    200,
+    200
+  ],
+  "session_after_password_reset": 200,
+  "copied_session_after_logout": 200,
+  "no_smtp_registration": {
+    "status": 201,
+    "body": {
+      "ok": true,
+      "mail_enviado": true
+    },
+    "console_fallback_called": true
+  },
+  "two_year_old_article_in_recent_list": 1,
+  "two_year_old_article_adjusts_risk": 1,
+  "dedup_100_days_apart": {
+    "matched": true,
+    "days": 100
+  },
+  "health_without_db": {
+    "status": 200,
+    "state": "degradado"
+  },
+  "model_runtime": {
+    "type": "RandomForestClassifier",
+    "trees": 300,
+    "max_depth": 12,
+    "min_samples_leaf": 5,
+    "class_weight": "balanced_subsample",
+    "features": 53,
+    "columns": 53,
+    "classes": [
+      "GRAVE",
+      "LEVE",
+      "MORTAL"
+    ],
+    "threshold_fingerprint_matches": true,
+    "sklearn_version_matches": true
+  },
+  "weather_stale_response_keys": [
+    "humedad",
+    "lluvia",
+    "temperatura"
+  ],
+  "invalid_traffic_tile_status": 200,
+  "invalid_traffic_tile_reaches_upstream": true,
+  "registrations_same_ip": [
+    201,
+    201,
+    201,
+    201,
+    201,
+    201,
+    201,
+    201
+  ],
+  "same_session_multiple_votes": [
+    201,
+    201,
+    201
+  ],
+  "own_report_visible_after_self_votes": false,
+  "migration_long_email": "StringDataRightTruncation"
+}

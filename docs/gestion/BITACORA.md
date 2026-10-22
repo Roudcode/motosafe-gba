@@ -2589,3 +2589,15 @@ components/CapaErrorBanners.test.jsx,components/RutaResumenPanel.jsx,utils/riesg
 utils/riesgoRuta.test.js}`, `notebooks/{identificar_hotspots_inseguridad.py,construir_indice_inseguridad.py}`,
 tres carpetas de evidencia nuevas (DEC-024/025/026) y las tres filas de A20/V10/D03 actualizadas en
 `docs/gestion/BACKLOG.md`. No se commiteó ni se pusheó nada de esta sesión.
+
+## SES-167 — 2026-10-22: assessment integral de cierre, sin modificar producción
+
+Pedido de Rodo: relevar el estado actual tras el trabajo con Claude y encontrar fallas graves. Se reserva SES-166, referida ya en comentarios de F11, sin inventar su acta.
+
+Auditoría de HEAD `1c4b8ef` más árbol local. Archivo nuevo `docs/assessment_2026-10-22/ASSESSMENT.md`: 11 P1 y 7 P2; inventario SHA256 de 129 archivos propios, scripts de reproducción y salidas sin secretos. SQL/API reales en contenedor PostGIS desechable en 127.0.0.1:55439, distinto de motosafe-db. Correo/proveedores simulados; no se ejecutó scraper real ni se escribió en la base personal.
+
+Reproducciones: misma ruta con distinta densidad de vértices cambia cobertura de 50% a 99,01% (longitud cubierta aproximada 5,4%); siniestros null puede heredar 100% de cobertura de inseguridad; noticia de hace dos años entra como reciente y ajusta riesgo; código viejo de reset funciona después del nuevo; cookie anterior sigue válida tras reset/logout; tres votos con UUID distintos desde la misma sesión retiran su propio reporte. También confirmados falso mail enviado sin SMTP, dedup de notas separadas 100 días, health HTTP 200 sin DB y migración fallida con email largo.
+
+Pruebas: frontend 108/108, ESLint exit 0, build exit 0 con advertencia de chunk de mapa grande. Backend completo con PostGIS real: 157 passed, 3 failed; dos fixtures sin nombre_usuario y un conteo antiguo 1135 vs 1121. No se maquillaron expectativas. Primer intento frontend en sandbox falló por caché ENOENT; repetición externa aprobada. Primer pytest en sandbox sin salida, interrumpido; la corrida válida es la externa aislada. Modelo cargado: 300 árboles, 53 columnas, huella y sklearn coinciden. No se recalcularon métricas académicas.
+
+Se consultó la política primaria actual de Nominatim para contrastar el fallback de autocompletado; enlace y límites en H08. No se hizo pentest público, revisión visual completa, auditoría legal ni certificación de proveedores. Se actualizaron continuidad/backlog/decisión pendiente sin reescribir resultados históricos. Se eliminó el contenedor de auditoría con su volumen y el build separado. Cambios de código, datos y documentos de Claude se preservaron sin incluirlos en el commit de este assessment.

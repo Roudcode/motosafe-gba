@@ -1,0 +1,21 @@
+{
+  "same_geometry_coverage": [
+    {
+      "siniestro": 0.5,
+      "inseguridad": null
+    },
+    {
+      "siniestro": 0.9900990099009901,
+      "inseguridad": null
+    }
+  ],
+  "eligible_at_60pct": [
+    false,
+    true
+  ],
+  "length_km": 11.11949266445603,
+  "approx_length_coverage": 0.05395929635512307
+}
+{
+  "missing_siniestro_fallback": 1
+}
