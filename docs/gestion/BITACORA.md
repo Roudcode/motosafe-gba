@@ -2436,3 +2436,33 @@ de contexto a nivel de partido, no como reemplazo del dataset geolocalizado de C
 incorporación** -- la ficha deja explícitamente para que decida Rodo si vale la pena un paso 2 de evaluación
 real de SAT-MV y/o SNIC Departamental. Fila de D06 actualizada en `docs/gestion/BACKLOG.md`. No se commiteó
 ni se pusheó nada.
+
+## SES-156 — cierre de cinco decisiones pendientes con Rodo (DEC-022 a DEC-026), sin ejecutar código todavía
+
+Sesión de decisión pura con Rodo (Claude, en el chat, sin Codex). Se le presentaron de forma compacta los
+cinco puntos que `MAPA_PENDIENTES.md` señalaba como lo que más pesa para la entrega y que dependían de su
+criterio, no de más medición:
+
+- **DEC-022 (D02/A03, sexo_victima)**: Rodo confirmó mantener la variable como está hoy en producción
+  (opción A), siguiendo la recomendación de Claude de priorizar GRAVE/MORTAL en el split más reciente por
+  sobre un promedio macro más prolijo entre años. **Resuelta, sin cambios de código.**
+- **DEC-023 (D04, UMBRAL_CRUCE_KM)**: Rodo confirmó mantener 0,6km, siguiendo la recomendación de Claude.
+  **Resuelta, sin cambios de código.**
+- **DEC-024 (A20-delitos)**: Rodo delegó el criterio en Claude y confirmó aplicar la limpieza geográfica
+  común a `delitos_caba.csv` (a diferencia de DEC-022, sin trade-off real: son datos rotos/duplicados sin
+  contrapartida). **Resuelta; queda pendiente la ejecución** (limpiar, reentrenar `identificar_hotspots_inseguridad.py`
+  y `construir_indice_inseguridad.py`, verificar con D05 antes de promover con `--confirmar`).
+- **DEC-025 (V10, /hotspots)**: Rodo confirmó extender el aviso de "capa vacía" a `/hotspots` por
+  consistencia con lo que el propio backend ya anticipaba. **Resuelta; queda pendiente la implementación**
+  (mismo patrón que `/corredores`/`/hotspots-inseguridad`, con su test de componente).
+- **DEC-026 (D03, los 4 casos)**: Rodo delegó el criterio en Claude. Casos 1 (desvío) y 3 (empate):
+  comportamiento esperado, sin acción. Caso 2 (cobertura de inseguridad al 56% en la ruta recomendada):
+  se agrega un aviso visible, pendiente de implementar. Caso 4 (discordancia de fuentes, score sin pesar
+  magnitud): queda documentado como limitación conocida, no se toca el algoritmo de scoring sin una
+  decisión de diseño aparte (mismo criterio de no tocar comportamiento productivo sin pedido explícito).
+
+Detalle completo de cada decisión, con el razonamiento y la evidencia que la respalda, en
+`docs/gestion/DECISIONES.md` (DEC-022 a DEC-026). Filas actualizadas en `docs/gestion/BACKLOG.md`: D03, D04,
+A20, V10. No se tocó ningún archivo de código ni de datos en esta sesión -- las tres ejecuciones pendientes
+(A20-delitos, /hotspots en V10, aviso del caso 2 de D03) quedan para la próxima sesión con Codex, con
+verificación independiente antes de commitear, igual que siempre.

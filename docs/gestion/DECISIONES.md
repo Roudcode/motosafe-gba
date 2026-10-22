@@ -125,9 +125,9 @@ Separar decisiones tomadas de recomendaciones. Una propuesta de Codex/Claude no 
 - Efectos, límites y costo de mantenimiento: la cifra "1 caso real sobre ~500 filas evaluadas" es la mejor estimación disponible con los datos que hay, no una medición exhaustiva -- no se midió la ventana temporal de 5 días contra fechas reales (el CSV no tiene fecha de publicación), así que se asume razonablemente que pares con título casi idéntico del mismo hecho se publican en simultáneo, sin confirmarlo fila por fila. Si en el futuro aparece un volumen mayor de casos del tipo Villa Pueyrredón, esta decisión debe revisarse con esa evidencia nueva, no antes.
 - Qué queda pendiente y cuándo revisarla: el ítem de deduplicación semántica de A09 se cierra. Queda sin cerrar, por separado, "validación de calles del extractor sin conjunto etiquetado" (pendiente histórico de A09, no resuelto por este trabajo). Revisar esta decisión solo si una corrida real futura muestra un volumen de casos tipo Villa Pueyrredón que cambie la proporción medida acá.
 
-### DEC-022 — D02: sexo_victima causa la inestabilidad temporal, pero sacarla no mejora parejo las clases críticas -- decisión pendiente
+### DEC-022 — D02: sexo_victima causa la inestabilidad temporal, pero sacarla no mejora parejo las clases críticas -- RESUELTA: se mantiene como está
 
-- Fecha / estado / autor de la decisión: 2026-10-21 / Pendiente de decisión de Rodo / Claude.
+- Fecha / estado / autor de la decisión: 2026-10-21 (planteada) / **2026-10-22 Resuelta por Rodo** / Claude.
 - Problema e IDs relacionados: D02, continuación de la pista de completitud por año abierta en la actualización anterior (sin cerrar). La inestabilidad temporal entre splits (F1 macro 0,2859 entrenando hasta 2023 y evaluando 2024, contra 0,3689 entrenando hasta 2024 y evaluando 2025) tenía un hallazgo de correlación sin probar causalidad: la tasa de `sexo_victima` sin dato varía fuerte y de forma no monótona entre años (4,66% en 2021, 93,99% en 2019, 16,15% en 2024, 36,98% en 2025), y esa variable es feature activa en la variante sin edad del modelo productivo.
 - Opciones consideradas: (A) dejar `sexo_victima` como está hoy en producción. (B) sacarla de las features del modelo. Se midió el efecto real de (B) con el mismo protocolo de evaluación temporal ya usado en todo D02 (cinco semillas por split, sin tocar el modelo de producción).
 - Decisión y motivo: no se decide todavía -- se mide y se deja planteada la disyuntiva con números reales para que Rodo resuelva. Sacar `sexo_victima` prácticamente cierra la brecha entre splits (de 0,080 a -0,005 de diferencia media) y sube el F1 macro del split más débil (2023→2024: de 0,288 a 0,365), con la mejora concentrada en la clase LEVE (0,593→0,848 en ese split). Pero en el split más reciente (2024→2025, el que usa más datos de entrenamiento) empeora las dos clases que más importan para una alerta preventiva: GRAVE cae de F1 0,209 a 0,089 y MORTAL de 0,110 a 0,079. El promedio macro sube porque LEVE es la clase mayoritaria y pesa igual que las demás en ese promedio, pero el beneficio para el caso de uso real del sistema (priorizar zonas de riesgo grave, no acertar la clase mayoritaria) no es evidente. Es un trade-off real entre estabilidad del promedio general entre años y desempeño en las clases críticas del año más reciente, no una mejora sin costo.
@@ -135,6 +135,46 @@ Separar decisiones tomadas de recomendaciones. Una propuesta de Codex/Claude no 
 - Efectos, límites y costo de mantenimiento: el experimento usa el mismo protocolo de evaluación temporal de todo D02 (entrenamiento con datos anteriores, evaluación contra un año completo nunca visto), pero no explora variantes intermedias (por ejemplo, agrupar "sexo sin dato" en una categoría explícita distinta de M/F en vez de sacarlo, que podría conservar la señal real de sexo sin el ruido de la tasa de faltantes variable). Tampoco se corrió el experimento equivalente con más semillas o contra un tercer año de evaluación, así que la magnitud exacta del trade-off podría variar con más repeticiones.
 - Qué queda pendiente y cuándo revisarla: Rodo decide entre (A) mantener `sexo_victima` como está hoy o (B) sacarla. Hasta que eso se resuelva, el modelo productivo no cambia.
 - **Aclaración 2026-10-21 (misma sesión)**: la variante intermedia que se planteaba explorar -- agrupar "sexo sin dato" en una categoría explícita distinta de M/F, en vez de sacar la variable entera -- ya es lo que hace la variante (A) tal como está hoy. `notebooks/experimento_sexo_d02.py` (línea 59) ya completa los valores faltantes de `sexo_victima` con la categoría `"SD"` antes de codificar, y `pd.get_dummies` la trata como una tercera categoría propia (junto a M y F), no como un valor imputado ni descartado. No existe una opción C distinta de A que valga la pena medir por separado -- correr ese experimento hubiera reproducido el mismo resultado ya medido para (A). La decisión real sigue siendo binaria: A (con la inestabilidad entre años, documentada arriba) o B (sin la inestabilidad, pero con GRAVE/MORTAL peor en el split más reciente).
+
+### DEC-023 — D04: UMBRAL_CRUCE_KM se mantiene en 0,6km
+
+- Fecha / estado / autor de la decisión: 2026-10-22 / Resuelta por Rodo / Claude.
+- Problema e IDs relacionados: D04. Medida la sensibilidad real de `UMBRAL_CRUCE_KM` (0,6km hoy) contra los 4 casos de D03: con 0,3km la cobertura cae fuerte (hasta 0,30 en algunos casos), con 1,0km casi todo llega a cobertura 1,00; en ambos extremos el ranking relativo entre rutas casi no cambia, solo cambia cuánto "ve" el sistema.
+- Opciones consideradas: (A) mantener 0,6km. (B) ajustar a otro valor.
+- Decisión y motivo: (A). 0,6km es un punto medio razonable entre ver poco (0,3km) y diluir la señal (1,0km); no hay evidencia de que otro valor mejore el comportamiento real medido en D04. Rodo siguió la recomendación de Claude.
+- Evidencia o instrucción de Rodo que la respalda: `docs/evidencias/2026-10-21/D04/` (scripts y salidas de sensibilidad); confirmación explícita de Rodo en el chat el 2026-10-22 ("sigo la recomendacion").
+- Efectos, límites y costo de mantenimiento: ninguno, no se modifica código de producción.
+- Qué queda pendiente y cuándo revisarla: nada; cerrado.
+
+### DEC-024 — A20: aplicar la limpieza geográfica común también a delitos_caba.csv
+
+- Fecha / estado / autor de la decisión: 2026-10-22 / Resuelta por Rodo / Claude.
+- Problema e IDs relacionados: A20. Medido (sin aplicar) sobre `delitos_caba.csv`: 12 coordenadas genuinamente rotas (otra provincia o valores imposibles) y 12.525 duplicados exactos en el histórico, 4.305 dentro de la ventana real de 3 años que usa `construir_indice_inseguridad.py` (bajaría el conteo crudo de cada comuna entre 0,56% y 1,79%, no parejo).
+- Opciones consideradas: (A) aplicar la misma limpieza que ya tiene `limpiar_siniestros_motos.py`, reentrenando `identificar_hotspots_inseguridad.py` (HDBSCAN ~70 min) y `construir_indice_inseguridad.py`. (B) dejarlo como está.
+- Decisión y motivo: (A). A diferencia de DEC-022, no hay trade-off real: son datos objetivamente rotos o duplicados, sin ninguna contrapartida negativa conocida de excluirlos. Rodo confirmó explícitamente seguir la recomendación de Claude.
+- Evidencia o instrucción de Rodo que la respalda: `docs/evidencias/2026-10-21/A20-limpieza-geografica/`; confirmación explícita de Rodo en el chat el 2026-10-22 ("Sí, aplicarlo").
+- Efectos, límites y costo de mantenimiento: cambia artefactos ya publicados (hotspots de inseguridad, índice de inseguridad) -- requiere reentrenar y volver a verificar antes de promover con `promover_artefactos.py --confirmar`. Ejecutar y verificar en un próximo turno con Codex/Claude, sin promover hasta confirmar que el efecto medido es el esperado.
+- Qué queda pendiente y cuándo revisarla: ejecutar el cambio real (limpiar, reentrenar, verificar con D05 antes de promover).
+
+### DEC-025 — V10: extender el aviso de "capa vacía" a /hotspots por consistencia
+
+- Fecha / estado / autor de la decisión: 2026-10-22 / Resuelta por Rodo / Claude.
+- Problema e IDs relacionados: V10. `backend/main.py` línea 623 ya anticipa con un `if not resultado: return []` que `/hotspots` podría responder vacío ("una instalación recién creada puede no tener hotspots todavía... es un estado válido"), pero hoy esa capa no tiene el mismo aviso que ya tienen `/corredores` y `/hotspots-inseguridad`. En la práctica nunca se dispara (siempre hay 740 filas), así que no corrige ningún bug visible hoy.
+- Opciones consideradas: (A) agregar `/hotspots` a `capasVacias` en `App.jsx`/`CapaErrorBanners.jsx`, mismo patrón que las otras dos capas. (B) dejarlo como está.
+- Decisión y motivo: (A). Cambio chico y de bajo riesgo (mismo patrón ya probado con tests), deja el código consistente con lo que el propio backend ya previó. Rodo confirmó explícitamente seguir la recomendación de Claude.
+- Evidencia o instrucción de Rodo que la respalda: confirmación explícita de Rodo en el chat el 2026-10-22 ("Sí, agregarlo").
+- Efectos, límites y costo de mantenimiento: ninguno más allá del cambio en sí; no cambia comportamiento visible hoy, solo cubre el caso hipotético.
+- Qué queda pendiente y cuándo revisarla: implementar y verificar con un test de componente nuevo, mismo patrón que los existentes en `CapaErrorBanners.test.jsx`.
+
+### DEC-026 — D03: caso 2 (cobertura de inseguridad baja en la ruta recomendada) se corrige; caso 4 (score no pesa magnitud) queda documentado, no se cambia el algoritmo
+
+- Fecha / estado / autor de la decisión: 2026-10-22 / Resuelta por Claude, con delegación explícita de criterio de Rodo / Claude.
+- Problema e IDs relacionados: D03. De los 4 casos reales generados: caso 1 (desvío) y caso 3 (empate) muestran comportamiento esperado, sin acción. Caso 2: la cobertura de inseguridad baja a 56% justo en la ruta que el sistema recomienda como de "menor exposición" -- la fuente con menor cobertura es la que termina decidiendo la recomendación, sin un aviso más visible que lo señale. Caso 4: la ruta de "menor riesgo" tiene una zona de inseguridad de 2151 delitos a 10m, contra apenas 12 siniestros históricos en el mismo tramo -- el score combinado no pesa la magnitud (cantidad de hechos), solo la cercanía/nivel.
+- Opciones consideradas: para el caso 2, (A) agregar un aviso visible cuando la fuente de menor cobertura es la que decide la recomendación, (B) no hacer nada. Para el caso 4, (A) ajustar el score combinado para pesar magnitud además de cercanía, (B) documentar como limitación conocida sin tocar el algoritmo.
+- Decisión y motivo: caso 2 → (A), es una corrección de UI acotada y objetiva (avisar cuando corresponde, no cambia el score). Caso 4 → (B): cambiar cómo se pondera el score combinado es una decisión de diseño del algoritmo que afecta a todos los usuarios, no una corrección de UI -- queda documentada como limitación conocida, no se toca sin que Rodo lo pida explícitamente (mismo criterio que DEC-022/A20 para cambios de comportamiento productivo).
+- Evidencia o instrucción de Rodo que la respalda: `docs/evidencias/2026-09-13/D03/rutas_referencia.csv`; Rodo delegó el criterio explícitamente en el chat el 2026-10-22 ("usa tu criterio").
+- Efectos, límites y costo de mantenimiento: el aviso del caso 2 es un cambio chico de UI. La limitación del caso 4 queda sin resolver -- si en el futuro se quiere pesar magnitud, es una revisión de scoring más grande, posiblemente ligada a V04 (paleta/semántica de riesgo).
+- Qué queda pendiente y cuándo revisarla: implementar el aviso del caso 2; revisar la limitación del caso 4 si Rodo decide en el futuro que vale la pena rediseñar el score combinado.
 
 ## Plantilla
 
