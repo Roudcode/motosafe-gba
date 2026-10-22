@@ -23,9 +23,13 @@ actualice ese archivo (una vez por anio, cuando el GCBA publique el siguiente):
 
     python notebooks/construir_indice_inseguridad.py
 """
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from limpieza_geografica_comun import limpiar_coordenadas  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENTRADA = BASE_DIR / "data" / "delitos_caba.csv"
@@ -42,7 +46,14 @@ def normalizar_0_1(serie):
 
 
 def main():
-    delitos = pd.read_csv(ENTRADA, low_memory=False)
+    delitos_crudo = pd.read_csv(ENTRADA, low_memory=False)
+    # DEC-024 (SES-157): mismo criterio comun de A20 (sin coordenadas, (0,0),
+    # fuera de GBA, duplicado exacto) que ya aplica identificar_hotspots_inseguridad.py
+    # para el mismo archivo -- antes este script no filtraba ni deduplicaba
+    # nada (agregaba directo por comuna). El duplicado exacto es el que mas
+    # pesa aca: ~1% de la ventana de 3 anios, no parejo entre comunas (medido
+    # en A20: -0,56% a -1,79% segun la comuna).
+    delitos, _resumen_geo_delitos = limpiar_coordenadas(delitos_crudo, "latitud", "longitud", "delitos_caba.csv")
     delitos = delitos.dropna(subset=["comuna"]).copy()
     delitos["comuna"] = delitos["comuna"].astype(int).astype(str)
 

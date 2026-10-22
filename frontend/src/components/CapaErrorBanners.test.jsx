@@ -63,4 +63,11 @@ describe('CapaErrorBanners -- aviso de capa sin datos (V10)', () => {
     render(<CapaErrorBanners {...propsBase()} />)
     expect(screen.queryByText(/sin datos registrados todavía/i)).toBeNull()
   })
+
+  it('DEC-025: muestra el aviso de vacía para hotspots, igual que corredores/inseguridad', () => {
+    render(<CapaErrorBanners {...propsBase({ capasVacias: { hotspots: true } })} />)
+    const aviso = screen.getByText(/sin datos registrados todavía/i)
+    expect(aviso.textContent).toMatch(/hotspots de siniestros/i)
+    expect(screen.queryByRole('button', { name: /reintentar/i })).toBeNull()
+  })
 })

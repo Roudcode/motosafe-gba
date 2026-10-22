@@ -16,10 +16,13 @@ import { Pencil, Zap, Scale, ShieldCheck, TriangleAlert, CircleCheck, Siren, Shi
 import { NIVELES } from '../constants'
 import { formatearDistancia } from '../utils/tiempo'
 
+const NOMBRE_FUENTE = { siniestro: 'siniestros', inseguridad: 'inseguridad' }
+
 export function RutaResumenPanel({
   panelRuta, editarRuta,
   rutasConScore, rutaSeleccionada, setRutaSeleccionada,
   idxMasRapida, idxEquilibrada, idxMasSegura,
+  brechaCoberturaRecomendada,
   detalleRutaAbierto, setDetalleRutaAbierto,
   zonasCruzadasOrdenadas,
   iniciarNavegacionRuta, cerrarTodoRuta,
@@ -93,6 +96,17 @@ export function RutaResumenPanel({
         <p className="ruta-cobertura-aviso">
           La exposición compara zonas históricas registradas; no estima la probabilidad de un siniestro ni confirma cobertura completa fuera de las áreas con datos.
         </p>
+        {/* DEC-026 (D03, caso 2): la recomendación de "menor exposición" puede
+            depender de una fuente con mucha menos cobertura registrada que la
+            otra en ese mismo trazado -- eso puede hacerla parecer más segura
+            sin serlo, solo porque falta dato. */}
+        {brechaCoberturaRecomendada && (
+          <p className="ruta-cobertura-aviso ruta-cobertura-aviso-brecha">
+            <TriangleAlert size={12} /> La recomendación de menor exposición se apoya en datos de cobertura parcial
+            de {NOMBRE_FUENTE[brechaCoberturaRecomendada.fuenteMenor]} ({Math.round(brechaCoberturaRecomendada.coberturaMenor * 100)}%,
+            contra {Math.round(brechaCoberturaRecomendada.coberturaMayor * 100)}% de la otra fuente) -- puede haber zonas sin ese dato que no se están viendo.
+          </p>
+        )}
         {/* R-04/R-05 (Capitulo 6): toggle de detalle + ejemplo visual fijo
             en vez de un tooltip que solo aparece con hover (inutil en
             celular, que es como la mayoria usa esto en la calle). La

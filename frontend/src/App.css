@@ -833,6 +833,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .desglose-pts { font-size: var(--fs-2xs); color: var(--text-dimmer); margin-left: 2px; opacity: 0.7; }
 .ruta-sin-alternativa { font-size: var(--fs-sm); color: var(--text-dimmer); margin-top: 4px; font-style: italic; }
 .ruta-cobertura-aviso { font-size: var(--fs-sm); color: var(--text-dimmer); margin: 8px 0 0; line-height: 1.35; }
+/* DEC-026 (D03, caso 2): a diferencia de la nota informativa de arriba (color
+   apagado, siempre visible), esta sí es una advertencia real y condicional --
+   mismo color que ya usa el resto de la app para avisos de este nivel
+   (ver --amarillo-text, badge-equilibrada/.ruta-opcion-riesgo). */
+.ruta-cobertura-aviso-brecha { display: flex; align-items: flex-start; gap: 5px; color: var(--amarillo-text); }
+.ruta-cobertura-aviso-brecha svg { flex-shrink: 0; margin-top: 2px; }
 .ruta-detalle-toggle {
   display: flex; align-items: center; gap: 4px; margin: 8px 0 0; padding: 4px 2px;
   background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif;

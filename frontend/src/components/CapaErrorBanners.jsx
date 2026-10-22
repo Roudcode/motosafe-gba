@@ -13,16 +13,18 @@
 
 import { WifiOff } from 'lucide-react'
 
-const NOMBRE_CAPA = { corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto' }
+const NOMBRE_CAPA = { corredores: 'corredores', inseguridadGeneral: 'inseguridad general', inseguridadMoto: 'inseguridad con moto', hotspots: 'hotspots de siniestros' }
 
 // V10 (SES-153): "sin datos" no es lo mismo que "fallo, reintentando". Las
-// tres capas de arriba (corredores, hotspots-inseguridad general/moto) tienen
-// un camino real en el backend para devolver 200 con una lista vacia --
-// /corredores incluso lo comenta explicito ("if not resultado: return []").
-// /hotspots queda afuera a proposito: hoy siempre trae las 740 filas reales,
-// una lista vacia ahi seria un bug real, no un estado vacio legitimo. Este
-// aviso es nada mas informativo: sin icono de alerta, sin boton de
-// reintento (no tiene sentido reintentar algo que no fallo).
+// cuatro capas de arriba tienen un camino real en el backend para devolver
+// 200 con una lista vacia -- /corredores y /hotspots lo comentan explicito
+// ("if not resultado: return []"), /hotspots-inseguridad lo mismo. DEC-025
+// (SES-157): /hotspots se agrego a esta lista por consistencia -- no es un
+// caso real hoy (la base siempre trae las 740 filas), pero el propio backend
+// ya lo anticipa como estado valido ("una instalacion recien creada puede no
+// tener hotspots todavia"), asi que no hay motivo para tratarlo distinto de
+// las otras tres. Este aviso es nada mas informativo: sin icono de alerta,
+// sin boton de reintento (no tiene sentido reintentar algo que no fallo).
 export function CapaErrorBanners({
   backendError, cargarHotspots,
   erroresCapas, ultimaConsultaCapas, setRecargaCapas,

@@ -19,6 +19,7 @@ import {
 import { siguientePaso, distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
+  brechaCoberturaEnRecomendada,
 } from './utils/riesgoRuta'
 import { formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
@@ -1427,6 +1428,15 @@ function App() {
     return comparables.reduce((best, actual) => (actual.ruta.riesgo < best.ruta.riesgo ? actual : best)).indice
   }, [rutasConScore, idxMasRapida])
 
+  // DEC-026 (D03, caso 2): si la ruta de "menor exposición" depende de una
+  // fuente con mucha menos cobertura registrada que la otra, avisar -- la
+  // ausencia de dato no es ausencia de riesgo (ver comentario largo en
+  // brechaCoberturaEnRecomendada, riesgoRuta.js).
+  const brechaCoberturaRecomendada = useMemo(
+    () => brechaCoberturaEnRecomendada(rutasConScore, idxMasSegura),
+    [rutasConScore, idxMasSegura]
+  )
+
   const idxEquilibrada = useMemo(() => {
     if (rutasConScore.length < 3) return idxMasRapida
     const tiempos = rutasConScore.map((r) => r.min)
@@ -1727,6 +1737,7 @@ function App() {
           corredores: corredores.length === 0,
           inseguridadGeneral: inseguridadGeneral.length === 0,
           inseguridadMoto: inseguridadMoto.length === 0,
+          hotspots: ZONAS_RIESGO.length === 0,
         }}
       />
 
@@ -1928,6 +1939,7 @@ function App() {
         idxMasRapida={idxMasRapida}
         idxEquilibrada={idxEquilibrada}
         idxMasSegura={idxMasSegura}
+        brechaCoberturaRecomendada={brechaCoberturaRecomendada}
         detalleRutaAbierto={detalleRutaAbierto}
         setDetalleRutaAbierto={setDetalleRutaAbierto}
         zonasCruzadasOrdenadas={zonasCruzadasOrdenadas}

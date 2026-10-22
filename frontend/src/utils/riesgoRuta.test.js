@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
+  brechaCoberturaEnRecomendada,
 } from './riesgoRuta'
 
 describe('unificarZonasInseguridad', () => {
@@ -328,5 +329,44 @@ describe('calcularRutasConScore — nivelRelativo (comparativo entre alternativa
       [[{ id: 'a', nivel: 'alto', tipoRiesgo: 'siniestro' }], [{ id: 'b', nivel: 'alto', tipoRiesgo: 'siniestro' }]]
     )
     expect(rutas.map((r) => r.nivelRelativo)).toEqual(['medio', 'medio'])
+  })
+})
+
+describe('brechaCoberturaEnRecomendada (DEC-026, D03 caso 2)', () => {
+  // Reproduce las coberturas reales medidas en los 4 casos de
+  // docs/evidencias/2026-09-13/D03/rutas_referencia.csv para la ruta que el
+  // sistema marca como "menor exposición" en cada uno -- solo el caso 2 (la
+  // única con brecha real >= 20pp entre fuentes) tiene que disparar el aviso.
+  const rutasCalculadas = [{ min: 1, coords: [] }]
+
+  function rutaRecomendada(siniestro, inseguridad) {
+    const [ruta] = calcularRutasConScore(rutasCalculadas, [[]], [1], [{ siniestro, inseguridad }])
+    return [ruta]
+  }
+
+  it('caso 1 (desvío, sin89%/inseg89% en la Ruta1 recomendada): sin aviso, brecha de 11pp', () => {
+    expect(brechaCoberturaEnRecomendada(rutaRecomendada(1.0, 0.89), 0)).toBeNull()
+  })
+
+  it('caso 2 real (Ruta3 recomendada, siniestros 86% / inseguridad 56%): dispara el aviso', () => {
+    const resultado = brechaCoberturaEnRecomendada(rutaRecomendada(0.86, 0.56), 0)
+    expect(resultado).toEqual({ fuenteMenor: 'inseguridad', coberturaMenor: 0.56, coberturaMayor: 0.86 })
+  })
+
+  it('caso 3 (empate, 100%/100%): sin aviso, brecha cero', () => {
+    expect(brechaCoberturaEnRecomendada(rutaRecomendada(1.0, 1.0), 0)).toBeNull()
+  })
+
+  it('caso 4 (discordancia de fuentes, Ruta2 recomendada: sin100%/inseg99%): sin aviso, brecha de 1pp', () => {
+    expect(brechaCoberturaEnRecomendada(rutaRecomendada(1.0, 0.99), 0)).toBeNull()
+  })
+
+  it('no dispara si falta el dato de alguna fuente (null, no es lo mismo que cobertura baja)', () => {
+    expect(brechaCoberturaEnRecomendada(rutaRecomendada(0.86, null), 0)).toBeNull()
+  })
+
+  it('identifica cuál de las dos fuentes es la de menor cobertura cuando es siniestros', () => {
+    const resultado = brechaCoberturaEnRecomendada(rutaRecomendada(0.5, 0.9), 0)
+    expect(resultado).toEqual({ fuenteMenor: 'siniestro', coberturaMenor: 0.5, coberturaMayor: 0.9 })
   })
 })

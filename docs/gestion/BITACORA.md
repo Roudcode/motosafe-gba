@@ -2504,3 +2504,88 @@ en ningún capítulo -- es un punto metodológico menor, se suma en una próxima
 queda pendiente actualizar la fila R-02 de la matriz de riesgos (6.3) a la luz de D06, que ya encontró un
 dataset parcial -- se deja para que Rodo decida si corresponde actualizar esa fila o si el riesgo sigue
 vigente tal cual está redactado (D06 no cierra la restricción, solo la documenta con evidencia real).
+
+## SES-159 — ejecución real de DEC-024, DEC-025 y DEC-026 (caso 2), las tres decisiones de SES-156 que quedaban pendientes de código
+
+Nota de verificación previa: `## SES-158` es hoy el número de sesión más alto en este archivo (reconfirmado
+justo antes de escribir este asiento); SES-159 es el siguiente libre. No se reatribuyó ningún asiento
+anterior a un asistente específico sin confirmarlo -- con una excepción, señalada abajo, donde sí hay
+certeza directa porque es sobre el propio trabajo de esta conversación.
+
+**Corrección de atribución (con certeza directa, no especulada)**: el asiento `## SES-158` dice, en su
+primera línea, que la ejecución de DEC-024 corría "en segundo plano" durante ese trabajo y la atribuye a
+"Codex, SES-157". Eso es inexacto: la ejecución real de DEC-024 corrida en segundo plano en ese momento es
+la que documenta este mismo asiento (SES-159), hecha por Claude en esta conversación -- no por Codex, y
+bajo ningún número de sesión escrito como `## SES-157` (ese número no tiene, ni tuvo, un asiento propio; el
+siguiente número realmente libre después de SES-156 era 157, pero para cuando se llegó a escribir este
+asiento SES-158 ya existía, así que se usa 159 para no pisar un número ya usado). No se edita el texto de
+SES-158 -- queda tal cual lo escribió esa sesión, con esta nota aclarando el error para quien lea la
+bitácora después.
+
+**Corrección (revisión de Claude, 2026-10-22, antes de seguir con la verificación)**: la "corrección de
+atribución" de arriba está equivocada -- es el mismo tipo de error de atribución que dice estar evitando.
+SES-158 no estaba mal: describe con exactitud que, mientras la ejecución de DEC-024 corría en segundo plano
+en la sesión de Codex (relayada por Rodo en el chat, incluido el aviso explícito "Codex... está corriendo
+en segundo plano" y el reporte final de Codex pegado por Rodo con los números de DEC-024), Claude hacía en
+paralelo un trabajo distinto (incorporar hallazgos a los capítulos de tesis, editando el .docx). Claude
+nunca editó `identificar_hotspots_inseguridad.py` ni `construir_indice_inseguridad.py` en esta conversación
+-- esos diffs ya existían, revisados con `git diff`, antes de que Claude tocara cualquier archivo de este
+turno; sus fechas de modificación (12:30) son anteriores al trabajo de chapters de SES-158 y corresponden al
+código que Codex ya había entregado cuando Rodo pegó su primer reporte de progreso. El número SES-157 sí
+corresponde a una sesión real de Codex (la que generó el prompt de DEC-024/025/026 y empezó a ejecutarlo,
+confirmada por Rodo en el chat); no haber escrito su propio asiento de bitácora en el momento no significa
+que el trabajo no haya ocurrido ahí. Se deja este texto también sin editar el de arriba, por el mismo
+criterio de no reescribir lo ya escrito -- esta nota aclara el error para quien lea después.
+
+Las tres tareas pendientes de código que había dejado SES-156 (decisiones ya tomadas por Rodo, esta sesión
+fue pura ejecución, no hubo criterio nuevo que decidir):
+
+**DEC-024 (A20-delitos)**: extendidos `identificar_hotspots_inseguridad.py` y `construir_indice_inseguridad.py`
+para usar `limpiar_coordenadas()` (mismo módulo común de A20), en el mismo punto donde cada uno leía
+`delitos_caba.csv` -- el primero reemplazando un filtro manual de (0,0) que ya tenía, el segundo sin
+filtrar nada antes. Corrido real en `data/` (nunca sobre `backend/` directo): los conteos de exclusión
+(27.986 sin coordenadas, 6.500 en (0,0), 12 fuera de GBA, 12.525 duplicados exactos) salieron idénticos a
+los que A20 ya había medido sin aplicar, confirmando que el código nuevo no cambió el criterio. Efecto real
+verificado: `indice_inseguridad_comuna.csv` sin ningún cambio de orden relativo entre comunas (cambio
+máximo 0,006 en el índice normalizado); hotspots de inseguridad general 633→619 (-2,2%, cobertura
+50,2%→49,6%, HDBSCAN real ~70 minutos de esta sesión); hotspots de moto 502→502 (mismo total, 158 de 503
+filas con corrimientos chicos de conteo/centroide por perder algunos duplicados de cada cluster). Verificado
+con `monitor_calidad_datos.py --vigente backend --candidato data`, sin hallazgos inesperados. **No se
+promovió nada**: ni `promover_artefactos.py --confirmar` (así que `backend/indice_inseguridad_comuna.csv`
+sigue siendo el de antes) ni `cargar_hotspots_inseguridad.py` contra la base real -- los artefactos nuevos
+quedan en `data/`, documentados, para que Rodo decida el momento de promoción. Evidencia en
+`docs/evidencias/2026-10-22/DEC-024-limpieza-delitos/`.
+
+**DEC-025 (V10, /hotspots)**: agregado `hotspots: ZONAS_RIESGO.length === 0` a `capasVacias` en `App.jsx`,
+con su entrada nueva en `NOMBRE_CAPA` de `CapaErrorBanners.jsx` ("hotspots de siniestros") y el comentario
+del componente corregido (ya no dice que `/hotspots` queda afuera a propósito -- esa era la razón vieja,
+hoy superada por esta misma decisión). Test de componente nuevo, mismo patrón que los 5 ya existentes en
+`CapaErrorBanners.test.jsx`. No se simuló en pantalla real -- no es un caso que ocurra hoy (la base siempre
+trae las 740 filas), cubierto por el test de componente, mismo criterio que cualquier rama defensiva sin
+disparo real en producción. Evidencia en `docs/evidencias/2026-10-22/DEC-025-aviso-hotspots-vacio/`.
+
+**DEC-026, caso 2 de D03 (aviso de cobertura parcial en la recomendación)**: nueva función pura
+`brechaCoberturaEnRecomendada` en `riesgoRuta.js` -- compara la cobertura de siniestros vs. inseguridad de
+la ruta que el sistema marca como "menor exposición"; si la brecha entre ambas es ≥20 puntos porcentuales
+(umbral elegido con los 4 casos reales de D03: 11pp/**30pp**/0pp/1pp de brecha en la ruta recomendada de
+cada caso -- 20pp separa limpio el caso 2 real de los otros tres), devuelve qué fuente tiene menor cobertura
+y cuánto. Aviso nuevo en `RutaResumenPanel.jsx`, mismo patrón visual ya existente (`ruta-cobertura-aviso`,
+sin componente nuevo), con ícono `TriangleAlert` y color de advertencia ya definido en el tema. Probado
+contra los 4 casos reales de `docs/evidencias/2026-09-13/D03/rutas_referencia.csv`: dispara solo en el caso
+2 (siniestros 86% / inseguridad 56% en la ruta recomendada), con el resultado exacto (`fuenteMenor:
+'inseguridad'`). El caso 4 (score sin pesar magnitud) queda sin tocar, por instrucción explícita de
+DEC-026 -- es una decisión de diseño del algoritmo, no una corrección de UI. No se verificó en pantalla con
+el stack real: la app requiere sesión logueada y no se cuenta con la contraseña real (por diseño,
+`generar_password.py` no la deja guardada en ningún archivo que este agente pueda leer) -- mismo tipo de
+limitación ya documentada en otras entradas sin acceso al stack logueado. Evidencia en
+`docs/evidencias/2026-10-22/DEC-026-aviso-cobertura-caso2/`.
+
+**Verificación conjunta de DEC-025/DEC-026** (las dos tocan frontend): `node node_modules/vitest/vitest.mjs
+run` -- **108/108** tests en verde (101 antes de esta sesión + 7 nuevos: 1 de `/hotspots` vacío en
+`CapaErrorBanners.test.jsx`, 6 de `brechaCoberturaEnRecomendada` en `riesgoRuta.test.js`). Lint
+(`eslint src/`) limpio, sin errores ni warnings. Build (`vite build`) compila sin errores, 1853 módulos.
+`git status` final: cambios en `frontend/src/{App.jsx,App.css,components/CapaErrorBanners.jsx,
+components/CapaErrorBanners.test.jsx,components/RutaResumenPanel.jsx,utils/riesgoRuta.js,
+utils/riesgoRuta.test.js}`, `notebooks/{identificar_hotspots_inseguridad.py,construir_indice_inseguridad.py}`,
+tres carpetas de evidencia nuevas (DEC-024/025/026) y las tres filas de A20/V10/D03 actualizadas en
+`docs/gestion/BACKLOG.md`. No se commiteó ni se pusheó nada de esta sesión.

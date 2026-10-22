@@ -194,3 +194,31 @@ export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, cob
   const scores = conScore.map((r) => r.riesgo)
   return conScore.map((r, i) => ({ ...r, nivelRelativo: nivelRelativoEnLote(r.riesgo, i, scores) }))
 }
+
+// DEC-026 (D03, caso 2): la ruta recomendada como "menor exposición" puede
+// parecer más segura simplemente porque una de las dos fuentes (siniestros o
+// inseguridad) tiene mucha menos cobertura registrada ahí, no porque el
+// trazado sea de verdad más seguro -- la ausencia de dato no es ausencia de
+// riesgo. Caso real medido (docs/evidencias/2026-09-13/D03/rutas_referencia.csv,
+// id=2): la ruta recomendada tenía cobertura siniestros 86% / inseguridad
+// 56%, una brecha de 30 puntos que no aparecía en ningún aviso. Umbral de
+// brecha fijado en 20pp: separa ese caso real (30pp) de los otros tres casos
+// medidos en la misma sesión (11pp, 0pp y 1pp de brecha), que no amerita el
+// mismo aviso.
+export const UMBRAL_BRECHA_COBERTURA_FUENTES = 0.2
+
+export function brechaCoberturaEnRecomendada(rutasConScore, idxRecomendada) {
+  const ruta = rutasConScore[idxRecomendada]
+  const { siniestro, inseguridad } = ruta?.coberturaPorFuente || {}
+  if (siniestro == null || inseguridad == null) return null
+
+  const brecha = Math.abs(siniestro - inseguridad)
+  if (brecha < UMBRAL_BRECHA_COBERTURA_FUENTES) return null
+
+  const fuenteMenor = siniestro < inseguridad ? 'siniestro' : 'inseguridad'
+  return {
+    fuenteMenor,
+    coberturaMenor: Math.min(siniestro, inseguridad),
+    coberturaMayor: Math.max(siniestro, inseguridad),
+  }
+}

@@ -45,11 +45,15 @@ cantidad_delitos, comuna_moda, tipo_delito_moda).
 Uso:
     python notebooks/identificar_hotspots_inseguridad.py
 """
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN, HDBSCAN
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from limpieza_geografica_comun import limpiar_coordenadas  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA = BASE_DIR / "data"
@@ -108,13 +112,15 @@ def clusterizar_hdbscan(df, min_cluster_size, min_samples, etiqueta):
 
 
 def main():
-    delitos = pd.read_csv(DATA / "delitos_caba.csv", low_memory=False)
-    delitos = delitos.dropna(subset=["latitud", "longitud"]).copy()
-    # (0,0) es un valor centinela de GPS invalido, no un null real -- dropna no lo
-    # agarra. Sin este filtro, un cluster entero de casos con coordenada rota
-    # (~3463 en el dataset actual, tipo "Lesiones") se cuela como un "hotspot" en
-    # el medio del Golfo de Guinea. Encontrado en la validacion cualitativa.
-    delitos = delitos[(delitos["latitud"] != 0) | (delitos["longitud"] != 0)].copy()
+    delitos_crudo = pd.read_csv(DATA / "delitos_caba.csv", low_memory=False)
+    # DEC-024 (SES-157): mismo criterio comun de A20 que ya usa
+    # limpiar_siniestros_motos.py -- sin coordenadas, (0,0), fuera del bounding
+    # box de GBA y duplicado exacto, cada motivo contado, nunca un filtro
+    # silencioso. Reemplaza el filtro manual de (0,0) que tenia este script
+    # (ver docs/evidencias/2026-10-21/A20-limpieza-geografica/RESULTADOS.md).
+    delitos, _resumen_geo_delitos = limpiar_coordenadas(
+        delitos_crudo, "latitud", "longitud", "delitos_caba.csv"
+    )
 
     anio_max = delitos["anio_dataset"].max()
     anios_incluidos = list(range(anio_max - ANIOS_VENTANA + 1, anio_max + 1))
