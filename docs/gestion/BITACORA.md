@@ -2390,3 +2390,49 @@ suites de nuevo al cierre. `git status` final: cambios en `frontend/src/App.jsx`
 `frontend/src/App.css` y `frontend/src/components/MapaMotoSafe.jsx` (V09/V11), más las dos carpetas de
 evidencia nuevas (V09, V11) y la fila de V09/V11 actualizada en `docs/gestion/BACKLOG.md`. No se commiteó
 ni se pusheó nada.
+
+## SES-155 — D06: investigación real de cobertura GBA (siniestros/delitos) más allá de CABA, sin tocar código
+
+Nota de verificación previa: se confirmó que SES-154 seguía siendo el número de sesión más alto antes de
+arrancar (SES-155 es el siguiente libre, reconfirmado otra vez justo antes de escribir este asiento) y no
+se reatribuyó ningún asiento anterior a un asistente específico. Una sola tarea de investigación (sin
+código ni diseño), la última pieza del área "Core — modelo y datos" de `MAPA_PENDIENTES.md` sin una decisión
+de producto de por medio: ¿existe una fuente pública real de siniestros/delitos para los partidos de GBA
+(Provincia de Buenos Aires), estructuralmente comparable a la de CABA que ya usa el modelo?
+
+Evidencia completa en `docs/evidencias/2026-10-21/D06-cobertura-gba/RESULTADOS.md`. Resumen real:
+
+- **Catálogo de datos abiertos de la Provincia de Buenos Aires** (`catalogo.datos.gba.gob.ar`): revisados
+  los datasets reales de Ministerio de Seguridad (3) y Ministerio de Transporte (1) de PBA -- ninguno es de
+  siniestros o delitos a nivel de hecho. **Confirmado: cero microdatos en el catálogo provincial.**
+- **ANSV**: sin presencia como publicador en `datos.gob.ar` (0 resultados para "ansv"; "seguridad vial" no
+  trae ningún dataset de la ANSV con siniestros a nivel de hecho); la ruta esperada de su observatorio vial
+  en `argentina.gob.ar` da 404 hoy.
+- **Portales municipales de partidos de GBA** (La Matanza, Lomas de Zamora, Quilmes, San Isidro, Vicente
+  López, Morón, entre otros): no se encontró ninguno con un dataset propio de siniestros/delitos a nivel de
+  hecho, por búsqueda general -- no se revisó dominio por dominio los ~40 partidos (límite real de esfuerzo,
+  documentado como tal, no como "confirmado que no existe en ninguno").
+- **Ministerio de Seguridad de PBA**: cubierto en el punto del catálogo provincial; su Subsecretaría de
+  Política y Seguridad Vial solo publica informes PDF/PPTX con conteos agregados por municipio, sin dataset
+  descargable.
+
+**Hallazgo real más importante, no anticipado**: sí existe una fuente nacional real y utilizable --
+**SAT-MV (Sistema de Alerta Temprana de Muertes Viales)** del SNIC, publicada por el Ministerio de
+Seguridad de la Nación en `datos.gob.ar` (CC BY 4.0, microdatos XLSX/CSV/DTA/SAV, actualización anual). Se
+verificó su diccionario de variables real leyendo el manual de usuario oficial (PDF público, traído solo a
+una carpeta temporal fuera del repo para extraer el texto con `pdftotext`, nunca guardado en el proyecto):
+tiene hecho individual con `latitud`/`longitud` geocodificadas, `departamento_id` (que el propio manual
+aclara que **corresponde a Partidos en Provincia de Buenos Aires**), y un campo `victima_vehiculo` con
+valor `6 = Motocicleta`, comparable al modo de desplazamiento que ya usa la fuente de CABA. Limitación real
+importante: **solo cubre víctimas fatales**, no todas las severidades como la fuente de CABA -- no es un
+reemplazo directo, sería subrepresentar el riesgo si se tratara como equivalente sin ese ajuste. También se
+relevó **SAT-HD** (homicidios dolosos/femicidios, misma estructura, mismo publicador) como análogo parcial
+para delitos -- mucho más angosto que el dataset de "Delitos (GCBA)" actual. Y **SNIC - Departamental**
+(delitos por partido y mes desde 2014, categorías comparables a las de CABA -- robos, hurtos, lesiones,
+violaciones) pero **solo agregado, sin coordenadas ni hecho individual** -- útil como mucho como variable
+de contexto a nivel de partido, no como reemplazo del dataset geolocalizado de CABA.
+
+**No se descargó ningún dato al repo, no se tocó ningún script del pipeline, no se tomó ninguna decisión de
+incorporación** -- la ficha deja explícitamente para que decida Rodo si vale la pena un paso 2 de evaluación
+real de SAT-MV y/o SNIC Departamental. Fila de D06 actualizada en `docs/gestion/BACKLOG.md`. No se commiteó
+ni se pusheó nada.
