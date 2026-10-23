@@ -3090,3 +3090,87 @@ email de la cuenta cuando se loguea sin verificar usando el nombre de usuario. N
 Rodo ni se intentó su contraseña real (nunca estuvo disponible ni se pidió) -- la cuenta descartable se borró
 de la base real al terminar; solo queda `barrionuevors0204@gmail.com` en la tabla `usuarios`. No se
 commiteó ni se pusheó nada.
+
+## SES-170 — despliegue público completo (DB + API + frontend + scraper), 100% gratis sin tarjeta en ningún paso
+
+Pedido de Rodo: sacar **todo** el sistema de su máquina ("no quiero que corra nada más en local"), con capacidad de
+escalar, evitando pagar desde el principio. Un amigo le había mencionado Supabase; también probó antes y le pidió
+tarjeta -- quería entender por qué y encontrar una alternativa 100% verificada, no asumida.
+
+**Investigación real, no solo teoría**: se probó en vivo (no solo se leyó documentación) el registro de Render,
+Supabase y Google Cloud paso a paso, mirando en qué momento exacto -- si alguno -- pedía tarjeta. Hallazgos reales:
+- Render: el registro y los servicios web gratis no piden tarjeta; **los cron jobs son pagos** ($0.00016+/minuto,
+  sin plan free para ese tipo de servicio) -- eso fue lo que generó la confusión original de "pedía pagar".
+- Render Postgres gratis: la pide a veces (verificación antifraude, hold reembolsable de USD 1) y además vence a
+  los 30 días -- no es una base permanente.
+- Supabase: el registro, crear organización y crear un proyecto Free completo **no pidieron tarjeta** en esta
+  prueba puntual (lo que Rodo vio antes pudo ser en otro paso, como subir el plan de compute).
+- Google Cloud: crear un proyecto y habilitar la Gmail API tampoco pidieron tarjeta (distinto del "free trial" de
+  USD 300 con crédito, que sí la exige).
+
+**Arquitectura final, sin ningún proveedor pago**:
+- **Base de datos** → Supabase (Postgres + PostGIS, plan Free, sin vencimiento). Las 7 migraciones existentes se
+  aplicaron tal cual contra el pooler de sesión de Supabase (el host "Direct connection" es IPv6-only y no
+  resolvía desde la red de Rodo -- hubo que usar el Session Pooler, compatible con IPv4). Las tres capas
+  (hotspots_riesgo, corredores_riesgo, hotspots_inseguridad) se cargaron con `cargar_datos_iniciales.py` contra
+  los CSV locales: 740 + 243 + 1121 filas reales.
+- **Backend** → Render (Web Service Docker gratis, `motosafe-api.onrender.com`), usando el `Dockerfile` ya
+  existente del proyecto. Se corrigió en el camino el hallazgo H09 del assessment de SES-167: el plan nunca
+  desplegado tenía `AUTH_HABILITADO=false` (el login real de F11 hubiera quedado apagado en producción) y no
+  empaquetaba las capas -- ninguno de los dos problemas sigue vigente en este despliegue real.
+- **Frontend** → Render (Web Service Docker gratis, `motosafe-web.onrender.com`). `frontend/nginx.conf` se
+  generalizó: antes asumía red privada interna (Private Service + Postgres propio de Render, como planeaba el
+  `render.yaml` original); ahora habla con la API pública por HTTPS con SNI (`API_UPSTREAM_SCHEME` nuevo,
+  default `http` para no romper el Compose de producción self-hosted, que sigue hablando por red interna).
+- **Scraper de noticias** (cada 3hs) → GitHub Actions (`.github/workflows/scraper.yml`), con `workflow_dispatch`
+  además del cron, reemplaza el cron job pago de Render. `DATABASE_URL` vive en el secret del repo
+  `MOTOSAFE_DATABASE_URL`, nunca en un archivo.
+
+**Bug real encontrado y corregido en el camino**: todo el trabajo de esta sesión larga (F11 completo, SES-165 a
+SES-169, y sesiones anteriores con el catálogo V) estaba sin commitear -- el primer deploy de Render bajó una
+versión vieja de `auth.py` (pre-F11, pedía el usuario único fijo) porque GitHub nunca tuvo el código nuevo.
+Corregido commiteando y pusheando todo lo pendiente (autorizado por Rodo) antes de continuar.
+
+**SMTP real resultó bloqueado por la plataforma, no por una contraseña mal puesta**: el primer intento de mandar
+mail real desde Render falló con `OSError: [Errno 101] Network is unreachable` al conectar a
+`smtp.gmail.com:587`. Confirmado con la documentación propia de Render: desde sep/2025 los Web Services del plan
+gratis **bloquean todo el tráfico saliente a los puertos SMTP** (25/465/587), sin excepción por credenciales.
+Se evaluaron tres salidas con Rodo (comprar un dominio + Resend, Gmail API, o dejarlo pausado); eligió probar
+primero la gratuita. `email_service.py` se reescribió para mandar por la **API HTTP de Gmail** (OAuth2, scope
+`gmail.send`, refresh token de larga duración) en vez de SMTP -- usa HTTPS normal, no bloqueado. Proyecto nuevo
+en Google Cloud (`motosafe-mail`), Gmail API habilitada, pantalla de consentimiento OAuth con la cuenta dedicada
+`motosafe.noreply@gmail.com` agregada como usuario de prueba (necesario: la app en modo "Prueba" rechaza a
+cualquiera que no esté en esa lista con un 403), credencial tipo "App de escritorio", autorizada una sola vez
+con un script local de un solo uso (`_obtener_refresh_token_gmail.py`, borrado después de usarlo junto con el
+JSON de credenciales descargado) que guardó `GMAIL_CLIENT_ID`/`GMAIL_CLIENT_SECRET`/`GMAIL_REFRESH_TOKEN`
+directo en `.env`, sin imprimirlos nunca en consola ni en este chat. Implementado con `httpx` (ya en el
+proyecto), no `requests` (hubiera roto el build en Render por dependencia faltante). Primer intento en Render
+con las 3 variables nuevas también falló (`400 Bad Request` de Google al pedir el token -- un valor se cortó o
+se pegó mal a mano); se resolvió subiendo las 3 variables con "Add from .env" de Render en vez de copiarlas
+campo por campo, generando un archivito temporal con solo esas 3 líneas (borrado del escritorio apenas se
+confirmó que funcionaba).
+
+**Cuenta real de Rodo migrada, no recreada**: en vez de pedirle que se registrara de cero (su cuenta vieja vivía
+solo en el Postgres local, nunca se migró automáticamente a Supabase), se copió directamente la fila real
+(email, nombre de usuario, hash bcrypt de la contraseña, estado de verificación) de la base local a Supabase --
+el hash de bcrypt es portable, así que entra con la misma contraseña de siempre sin resetear nada. Confirmado
+por Rodo en la app real de producción ("entro ok").
+
+**Verificación real en cada paso, no solo "debería andar"**: `/health` de la API real contra Supabase,
+`/auth/registro` + `/auth/login` reales contra producción con cuentas descartables (creadas y borradas de la
+base real cada vez), proxy del frontend a la API confirmado con `curl`, pantalla de login real cargada en el
+navegador real (`motosafe-web.onrender.com`), mail real confirmado llegando al inbox real por IMAP después del
+cambio a Gmail API, y el workflow del scraper disparado a mano y mirado hasta el final: 167 noticias candidatas
+reales, 79 guardadas de verdad en `reportes_prensa` de Supabase (confirmado con un `SELECT` directo contra la
+base real, no solo el log del workflow).
+
+**Pendiente, no bloqueante**: algunos feeds de prensa (infocielo, quepasaweb, informenorte) devolvieron 403 al
+scraper corriendo desde la IP de GitHub Actions -- no es un problema de la migración, es un bloqueo específico
+de esos sitios a ese origen; no se investigó más porque el resto de las fuentes (0221, Clarín, Infobae,
+Inforbano, La Nación, TN, etc.) sí funcionan bien desde ahí. La base real de Supabase sigue teniendo solo las
+cuentas reales (Rodo) y ninguna de prueba -- se borraron todas (`prodtest1` a `5`, `tempusertest`,
+`tempsinverif`, `uilogintest`, `codigoviejo`, etc.) apenas cumplieron su función.
+
+Última parte de la sesión (scraper + verificación + esta acta) hecha con autorización explícita de Rodo para
+trabajar sin supervisión mientras él estaba ausente ("te puedo autorizar y que hagas todo vos"), acotada a
+terminar el scraper -- sin crear cuentas nuevas ni gastar nada, como ya veníamos haciendo.
