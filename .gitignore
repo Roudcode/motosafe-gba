@@ -22,6 +22,7 @@ __pycache__/
 *.pyc
 .env
 .env.production
+backend/google_oauth_client.json
 .ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 
