@@ -1,5 +1,9 @@
 # Continuidad del proyecto — leer primero
 
+## Cierre más reciente: SES-173, 23/10/2026 — segunda lectura del Word corregido
+
+Rodo pidió revisar el DOCX después de los cambios de SES-172. El informe está en [REVISION_WORD_POST_SES172.md](../tesis/auditoria_2026-10-23/REVISION_WORD_POST_SES172.md), referido al SHA-256 `2010e8ee73d22f8a06ed40e17a1f1a3c89edd2632e953199bcb9ebe6ad577e51`. Reconoce las correcciones realizadas y enumera discrepancias todavía vigentes. La nueva aritmética económica se reproduce; la validación comercial es otra cuestión. No se editó la tesis. G01 continúa parcialmente validado y falta revisión visual completa del PDF final.
+
 ## Cierre más reciente: SES-172, 23/10/2026 — tesis corregida (revisión propia + auditoría de Codex), OAuth de Gmail publicado, Capítulo 5 rediseñado
 
 Sesión con Claude. Revisión propia del Word completo (8 capítulos, 24 tablas) antes de tocar la auditoría de Codex: 5 inconsistencias encontradas y corregidas (suma mal hecha en Tabla 5.1, fila de despliegue desactualizada en Tabla 4.5, conteo de tests de 7.4, alcance de autenticación en 1.4, declaración de uso de IA en 2.7/Tabla 2.1). A pedido de Rodo, sacadas las 29 fechas puntuales del cuerpo del documento.
