@@ -1,5 +1,9 @@
 # Continuidad del proyecto — leer primero
 
+## SES-176, 23/10/2026 — evaluación UX móvil vertical
+
+Informe heurístico en [AUDITORIA_UX_MOVIL_VERTICAL_2026-10-23.md](../experiencia/AUDITORIA_UX_MOVIL_VERTICAL_2026-10-23.md). Prioriza búsqueda con teclado virtual, simplificación visual del mapa, comparación de rutas y lectura de navegación en 360–390 px; también prensa, reportes y errores. Se revisaron código, CSS, capturas y evidencias V existentes. No hubo prueba nueva en teléfono físico ni cambio de interfaz. Los criterios corresponden a IDs ya existentes V01/V03/V05/V06/V08/V09/V10/V13/V14, A23 y T02.
+
 ## SES-175, 23/10/2026 — bugs silenciosos verificados, pendientes de decisión
 
 Informe de código: [BUGS_REALES_2026-10-23.md](../tesis/auditoria_2026-10-23/BUGS_REALES_2026-10-23.md), sobre `ce941c1`. Tres hallazgos nuevos: posible llegada falsa a más de 2 km (A16), índice de «mapa visible» calculado con zonas ocultas (A23), y falta de centrado al cargarse un único resultado tras una búsqueda (T02). Además se reprodujeron H03/H12 ya abiertos en A09; no se cuentan como nuevos. Frontend 109 pruebas aprobadas; backend 118 pruebas de main/scraper aprobadas. Probes y SQL efímero adjuntos. No se modificó comportamiento ni se tomó decisión de producción.
