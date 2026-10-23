@@ -92,6 +92,15 @@ const DESVIOS_SEGUIDOS_PARA_RECALCULAR = 3
 // de +-15-30m) no alcanza a filtrarlos. Se descartan fixes con accuracy
 // peor a este umbral antes de que lleguen a miUbicacion.
 const ACCURACY_MAXIMA_GPS_M = 100
+// Reporte de usuario: el filtro de accuracy de arriba no alcanzó a resolverlo
+// del todo ("sigue pasando"). No todos los navegadores/dispositivos reportan
+// coords.accuracy de forma confiable (puede venir null, o un valor optimista
+// que no refleja el error real del primer fix en frío) -- depender solo de
+// ese dato no alcanza. Capa extra, independiente del accuracy reportado: se
+// ignora la detección de desvío (no la de llegada) durante los primeros
+// segundos de cada viaje, dándole tiempo al GPS a asentarse sin importar qué
+// diga accuracy.
+const GRACIA_INICIO_VIAJE_MS = 8000
 // Si la ruta recalculada sigue sin "pegarse" a la posición real (calle
 // dividida, sentido único, snapping del backend a la calle paralela), sin
 // este freno el ciclo detección-de-desvío -> reroute -> sigue desviado se
@@ -1398,8 +1407,11 @@ function App() {
   const desviosSeguidosRef = useRef(0)
   const rerouteEnCursoRef = useRef(false)
   const ultimoRerouteTsRef = useRef(0)
+  const inicioViajeTsRef = useRef(0)
   useEffect(() => {
-    if (!modoViaje) { desviosSeguidosRef.current = 0; ultimoRerouteTsRef.current = 0; return }
+    if (!modoViaje) { desviosSeguidosRef.current = 0; ultimoRerouteTsRef.current = 0; inicioViajeTsRef.current = 0; return }
+    if (!inicioViajeTsRef.current) inicioViajeTsRef.current = Date.now()
+    if (Date.now() - inicioViajeTsRef.current < GRACIA_INICIO_VIAJE_MS) return
     if (!miUbicacion || !destinoPunto || rutasCalculadas.length === 0 || rerouteEnCursoRef.current) return
     const ruta = rutasCalculadas[rutaSeleccionada]
     if (!ruta?.coords) return

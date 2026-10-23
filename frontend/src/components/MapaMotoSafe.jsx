@@ -756,8 +756,15 @@ function MapaMotoSafeInner({
         // radio e intensidad a zooms bajos, cada punto ocupa menos píxeles y
         // la mancha deja de saturarse; a zoom alto (16, uso real en moto)
         // queda el mismo radio/intensidad de antes.
-        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.3, 11, 0.6, 16, 1.1],
-        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 3, 11, 10, 14, 22, 16, 32],
+        // Primer ajuste (8/11/16 -> 0.3/0.6/1.1, radio 3/10/22/32) pasó para
+        // el otro lado: "ahora son muchos puntos verdes, sin mucho sentido"
+        // -- con radio tan chico, los puntos dejan de fundirse en una mancha
+        // continua y se ven como puntitos sueltos sin blend real. Curva más
+        // moderada: radio/intensidad más altos en los extremos bajos para
+        // que a zoom medio/bajo siga leyéndose como heatmap, no como
+        // scatter plot, sin volver a saturar todo a rojo.
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 11, 0.8, 16, 1.1],
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 8, 11, 16, 14, 24, 16, 32],
         'heatmap-opacity': atenuarFondo,
         'heatmap-color': [
           'interpolate', ['linear'], ['heatmap-density'],
@@ -869,7 +876,12 @@ function MapaMotoSafeInner({
       type: 'line',
       source: sourceId,
       paint: {
-        'line-color': tema === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(11,22,32,0.55)',
+        // Opacidad bajada de 0.55 a 0.4 a pedido de usuario ("no los quiero
+        // negros"): el oscuro partió con mucho margen sobre el mínimo WCAG
+        // medido en V11/SES-154 (>10:1 contra el 3:1 requerido), así que hay
+        // margen para aflojar sin volver a caer por debajo -- no se remidió
+        // el contraste exacto en esta pasada.
+        'line-color': tema === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(11,22,32,0.4)',
         'line-width': 1.2,
         'line-opacity': atenuarFondo,
       },

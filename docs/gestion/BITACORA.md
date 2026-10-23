@@ -3293,3 +3293,23 @@ Rodo probó la app en su iPhone (Safari) y reportó 9 observaciones sueltas. De 
 - Leyenda/caja del spinner "mal acomodados": reporte demasiado vago para actuar sin una captura o descripción más específica.
 
 Verificado: 111/111 tests de frontend (sin cambios de cantidad, estos fixes no tenían tests propios que actualizar salvo los ya cubiertos), lint limpio, build de producción sin errores. **Cambios locales, sin commitear ni deployar todavía** -- misma consideración que sesiones anteriores: Render redeploya automático al pushear a `main`, queda a decisión de Rodo.
+
+## SES-180 — 2026-10-23 — segunda vuelta de feedback de Rodo: 3 fixes más y 2 hallazgos reclasificados como "no es bug"
+
+Rodo volvió a probar después de SES-179 y confirmó que algunos de los fixes no alcanzaban del todo, más feedback nuevo sobre el heatmap y los hexágonos.
+
+**Corregido:**
+- **"Te desviaste" seguía pasando** pese al filtro de accuracy de SES-179: agregado un período de gracia de 8 segundos (`GRACIA_INICIO_VIAJE_MS`) que ignora la detección de desvío al arrancar cada viaje, sin depender de que el navegador/dispositivo reporte `accuracy` de forma confiable (no todos lo hacen bien) -- capa extra sobre el filtro anterior, no un reemplazo.
+- **Heatmap sobrecorregido**: el ajuste de SES-179 (radio 3-32px según zoom) pasó para el otro lado -- "ahora son muchos puntos verdes, sin mucho sentido": con radio tan chico a zoom bajo, los puntos no llegan a fundirse en una mancha continua. Curva recalibrada más moderada (radio 8-32px, intensidad 0,5-1,1).
+- **Hexágonos "muy negros"**: el borde oscuro en modo claro es deliberado por accesibilidad (V11/SES-154, contraste WCAG medido: blanco daba 1,0-2,4:1, por debajo del mínimo 3:1; oscuro lo sube a >10:1). Se avisó esto a Rodo antes de tocarlo. A pedido suyo, opacidad bajada de 0,55 a 0,4 -- el oscuro partía con mucho margen sobre el mínimo, así que hay lugar para aflojar sin volver a caer debajo, aunque no se remidió el contraste exacto resultante.
+
+**Investigado y reclasificado, no es bug:**
+- **"464 de 464" en Capas vs. "69" en la burbuja al alejar zoom del todo**: verificado en el código (`MapaMotoSafe.jsx`, capa de prensa) que son dos conteos distintos y ambos correctos. Antes de clusterizar por zoom, el código agrupa noticias en la misma coordenada EXACTA (`toFixed(6)`, ~11cm) en un solo punto -- como muchas noticias tienen precisión "barrio" o "calle" (geocodificación aproximada), terminan compartiendo la coordenada de referencia de ese lugar. 464 artículos reales caen en 69 ubicaciones únicas; el panel cuenta artículos, la burbuja cuenta ubicaciones. Ningún artículo se pierde -- se accede haciendo clic en el punto/cluster. Confuso, pero no es pérdida de datos.
+- **Spinner "mal centrado"**: mismo fix que "irregular" de SES-179 (`flex-shrink:0`) debería cubrir esto -- una forma comprimida se ve descentrada durante la animación. No se pudo confirmar visualmente (sin login para probar en el entorno de trabajo); si sigue viéndose mal después de este deploy, necesita una captura.
+
+**Pendiente, sin tocar todavía:**
+- Parpadeos del mapa: no investigado, sin tiempo en esta sesión.
+- Notch en iPhone: sigue sin poder reproducirse sin el dispositivo real.
+- Barrios de Actividad: Rodo pidió más alternativas de mejora más allá del pacing/precarga de SES-179. Se le presentaron tres opciones sin implementar (placeholder de carga inmediato; geocodificar al guardar la noticia/reporte en el backend, que resuelve el cuello de botella de raíz; polígonos de barrio locales para resolver sin red ni límite de TomTom) -- quedan para que Rodo decida cuál, ninguna implementada todavía.
+
+Verificado: 111/111 tests, lint limpio, build de producción sin errores. **Cambios locales, sin commitear ni deployar todavía.**
