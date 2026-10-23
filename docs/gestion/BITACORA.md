@@ -3174,3 +3174,15 @@ cuentas reales (Rodo) y ninguna de prueba -- se borraron todas (`prodtest1` a `5
 Última parte de la sesión (scraper + verificación + esta acta) hecha con autorización explícita de Rodo para
 trabajar sin supervisión mientras él estaba ausente ("te puedo autorizar y que hagas todo vos"), acotada a
 terminar el scraper -- sin crear cuentas nuevas ni gastar nada, como ya veníamos haciendo.
+
+## SES-171 — 2026-10-23 — auditoría de correspondencia de tesis final y proyecto
+
+Pedido de Rodo: revisar el Word de capítulos 1 a 8 y entregar discrepancias/inconsistencias; luego solicitó finalizar. Alcance G01, sin corregir el Word ni alterar comportamiento productivo.
+
+Entregado `docs/tesis/auditoria_2026-10-23/AUDITORIA_DISCREPANCIAS.md`: 27 observaciones con ubicación, evidencia, alcance y corrección recomendada. Adjuntos: verificación del modelo y economía, probe de rutas y resultado de sensibilidad. Código de referencia `c45ea283b3f36b09c0757e88d572bb26040d4f08`; SHA del Word `a16357c0d449fe77f971a9e8297081c81f509be47ce668188e7dbc17d6166253`. El Word cambió externamente durante la revisión: se volvió a extraer al cierre y se retiraron hallazgos ya corregidos. No se atribuyen esos cambios a esta sesión.
+
+Verificación propia: backend 135 aprobadas y 33 omitidas en ejecución normal; 33 adicionales aprobadas contra PostgreSQL/PostGIS efímero aislado, luego eliminado. Total complementario 168 backend. Frontend 108 aprobadas en 7 archivos. Se repararon dependencias locales para ejecutar Vitest tras un bloqueo EPERM; package.json y lockfile sin cambios. No se repitieron lint/build ni se certificó carga productiva. Web pública HTTP 200 y /health con base OK y flags de umbrales/sklearn verdaderos; no se accedió a usuarios ni escribió en producción. CI remoto y estado de consola OAuth no verificados.
+
+Resultados relevantes: cifras de modelo del Word no reproducen exactamente el pickle y protocolos actuales; evaluación cronológica no equivale a holdout independiente tras selección y uso de índices posteriores; cobertura/ranking de rutas necesitan descripción fiel; arquitectura, privacidad y esquema quedaron parcialmente atrás de cuentas/nube. La economía se recalculó correctamente (VAN USD 1.368,78; TIR 22,9864%), pero faltan condiciones/costos para escenario comercial. Se distinguen errores, evidencia no localizada y riesgos condicionados; no se acusa invención de entrevistas ni se da por validada toda bibliografía.
+
+Se actualizaron G01 y CONTINUIDAD. El informe es una fotografía histórica y no una segunda lista operativa. No hubo decisiones nuevas de producción, promoción de modelo, cambios de código o modificaciones del Word. Próximo trabajo: correcciones documentales priorizadas con Rodo y validación de la nueva versión.

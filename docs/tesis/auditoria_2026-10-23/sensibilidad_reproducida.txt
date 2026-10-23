@@ -1,0 +1,88 @@
+
+=== caso1_desvio ===
+  -- base (PESO_RIESGO actual, UMBRAL_CRUCE_KM=0.6) --  (mas_rapida=Ruta2, menor_riesgo=Ruta1)
+     Ruta1: km=16.2 min=22 riesgo=235 n_cruces=116 nivel_relativo=bajo cob_sin=1.00 cob_inseg=0.91
+     Ruta2: km=16.5 min=21 riesgo=243 n_cruces=124 nivel_relativo=medio cob_sin=0.97 cob_inseg=0.91
+     Ruta3: km=12.3 min=29 riesgo=351 n_cruces=172 nivel_relativo=critico cob_sin=1.00 cob_inseg=0.98
+  -- peso_lineal (bajo=1,medio=2,alto=3,critico=4) --  (mas_rapida=Ruta2, menor_riesgo=Ruta1)
+     Ruta1: km=16.2 min=22 riesgo=234 n_cruces=116 nivel_relativo=bajo cob_sin=1.00 cob_inseg=0.91
+     Ruta2: km=16.5 min=21 riesgo=241 n_cruces=124 nivel_relativo=medio cob_sin=0.97 cob_inseg=0.91
+     Ruta3: km=12.3 min=29 riesgo=348 n_cruces=172 nivel_relativo=critico cob_sin=1.00 cob_inseg=0.98
+  -- peso_agresivo (critico=8) --  (mas_rapida=Ruta2, menor_riesgo=Ruta1)
+     Ruta1: km=16.2 min=22 riesgo=238 n_cruces=116 nivel_relativo=bajo cob_sin=1.00 cob_inseg=0.91
+     Ruta2: km=16.5 min=21 riesgo=249 n_cruces=124 nivel_relativo=medio cob_sin=0.97 cob_inseg=0.91
+     Ruta3: km=12.3 min=29 riesgo=360 n_cruces=172 nivel_relativo=critico cob_sin=1.00 cob_inseg=0.98
+  -- umbral_mas_estricto (0.3 km) --  (mas_rapida=Ruta2, menor_riesgo=Ruta1)
+     Ruta1: km=16.2 min=22 riesgo=122 n_cruces=59 nivel_relativo=bajo cob_sin=0.88 cob_inseg=0.30
+     Ruta2: km=16.5 min=21 riesgo=135 n_cruces=68 nivel_relativo=medio cob_sin=0.75 cob_inseg=0.37
+     Ruta3: km=12.3 min=29 riesgo=205 n_cruces=97 nivel_relativo=critico cob_sin=0.91 cob_inseg=0.77
+  -- umbral_mas_laxo (1.0 km) --  (mas_rapida=Ruta2, menor_riesgo=Ruta1)
+     Ruta1: km=16.2 min=22 riesgo=423 n_cruces=216 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+     Ruta2: km=16.5 min=21 riesgo=468 n_cruces=241 nivel_relativo=medio cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=12.3 min=29 riesgo=630 n_cruces=318 nivel_relativo=critico cob_sin=1.00 cob_inseg=1.00
+
+=== caso2_cobertura_parcial ===
+  -- base (PESO_RIESGO actual, UMBRAL_CRUCE_KM=0.6) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=16 min=23 riesgo=196 n_cruces=98 nivel_relativo=alto cob_sin=0.86 cob_inseg=0.77
+     Ruta2: km=16.2 min=23 riesgo=194 n_cruces=100 nivel_relativo=medio cob_sin=0.79 cob_inseg=0.68
+     Ruta3: km=15.3 min=28 riesgo=182 n_cruces=90 nivel_relativo=bajo cob_sin=0.85 cob_inseg=0.56
+  -- peso_lineal (bajo=1,medio=2,alto=3,critico=4) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=16 min=23 riesgo=195 n_cruces=98 nivel_relativo=alto cob_sin=0.86 cob_inseg=0.77
+     Ruta2: km=16.2 min=23 riesgo=192 n_cruces=100 nivel_relativo=medio cob_sin=0.79 cob_inseg=0.68
+     Ruta3: km=15.3 min=28 riesgo=181 n_cruces=90 nivel_relativo=bajo cob_sin=0.85 cob_inseg=0.56
+  -- peso_agresivo (critico=8) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=16 min=23 riesgo=199 n_cruces=98 nivel_relativo=medio cob_sin=0.86 cob_inseg=0.77
+     Ruta2: km=16.2 min=23 riesgo=200 n_cruces=100 nivel_relativo=alto cob_sin=0.79 cob_inseg=0.68
+     Ruta3: km=15.3 min=28 riesgo=185 n_cruces=90 nivel_relativo=bajo cob_sin=0.85 cob_inseg=0.56
+  -- umbral_mas_estricto (0.3 km) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=16 min=23 riesgo=102 n_cruces=49 nivel_relativo=medio cob_sin=0.74 cob_inseg=0.32
+     Ruta2: km=16.2 min=23 riesgo=106 n_cruces=54 nivel_relativo=alto cob_sin=0.53 cob_inseg=0.30
+     Ruta3: km=15.3 min=28 riesgo=96 n_cruces=46 nivel_relativo=bajo cob_sin=0.53 cob_inseg=0.18
+  -- umbral_mas_laxo (1.0 km) --  (mas_rapida=Ruta1, menor_riesgo=Ruta1)
+     Ruta1: km=16 min=23 riesgo=365 n_cruces=188 nivel_relativo=bajo cob_sin=0.89 cob_inseg=0.89
+     Ruta2: km=16.2 min=23 riesgo=403 n_cruces=208 nivel_relativo=alto cob_sin=0.85 cob_inseg=0.82
+     Ruta3: km=15.3 min=28 riesgo=366 n_cruces=187 nivel_relativo=medio cob_sin=0.89 cob_inseg=0.86
+
+=== caso3_empate ===
+  -- base (PESO_RIESGO actual, UMBRAL_CRUCE_KM=0.6) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=1.5 min=5 riesgo=122 n_cruces=57 nivel_relativo=medio cob_sin=1.00 cob_inseg=1.00
+     Ruta2: km=1.6 min=5 riesgo=130 n_cruces=63 nivel_relativo=alto cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=1.6 min=5 riesgo=99 n_cruces=46 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+  -- peso_lineal (bajo=1,medio=2,alto=3,critico=4) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=1.5 min=5 riesgo=119 n_cruces=57 nivel_relativo=medio cob_sin=1.00 cob_inseg=1.00
+     Ruta2: km=1.6 min=5 riesgo=127 n_cruces=63 nivel_relativo=alto cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=1.6 min=5 riesgo=97 n_cruces=46 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+  -- peso_agresivo (critico=8) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=1.5 min=5 riesgo=131 n_cruces=57 nivel_relativo=medio cob_sin=1.00 cob_inseg=1.00
+     Ruta2: km=1.6 min=5 riesgo=139 n_cruces=63 nivel_relativo=alto cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=1.6 min=5 riesgo=105 n_cruces=46 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+  -- umbral_mas_estricto (0.3 km) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=1.5 min=5 riesgo=55 n_cruces=26 nivel_relativo=medio cob_sin=0.86 cob_inseg=1.00
+     Ruta2: km=1.6 min=5 riesgo=60 n_cruces=29 nivel_relativo=alto cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=1.6 min=5 riesgo=52 n_cruces=22 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+  -- umbral_mas_laxo (1.0 km) --  (mas_rapida=Ruta1, menor_riesgo=Ruta3)
+     Ruta1: km=1.5 min=5 riesgo=254 n_cruces=123 nivel_relativo=medio cob_sin=1.00 cob_inseg=1.00
+     Ruta2: km=1.6 min=5 riesgo=259 n_cruces=127 nivel_relativo=alto cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=1.6 min=5 riesgo=231 n_cruces=111 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+
+=== caso4_discordancia ===
+  -- base (PESO_RIESGO actual, UMBRAL_CRUCE_KM=0.6) --  (mas_rapida=Ruta1, menor_riesgo=Ruta2)
+     Ruta1: km=11.9 min=15 riesgo=251 n_cruces=114 nivel_relativo=alto cob_sin=1.00 cob_inseg=0.88
+     Ruta2: km=7.6 min=18 riesgo=221 n_cruces=106 nivel_relativo=bajo cob_sin=1.00 cob_inseg=0.96
+     Ruta3: km=8.4 min=18 riesgo=225 n_cruces=107 nivel_relativo=medio cob_sin=1.00 cob_inseg=0.97
+  -- peso_lineal (bajo=1,medio=2,alto=3,critico=4) --  (mas_rapida=Ruta1, menor_riesgo=Ruta2)
+     Ruta1: km=11.9 min=15 riesgo=244 n_cruces=114 nivel_relativo=alto cob_sin=1.00 cob_inseg=0.88
+     Ruta2: km=7.6 min=18 riesgo=218 n_cruces=106 nivel_relativo=bajo cob_sin=1.00 cob_inseg=0.96
+     Ruta3: km=8.4 min=18 riesgo=221 n_cruces=107 nivel_relativo=medio cob_sin=1.00 cob_inseg=0.97
+  -- peso_agresivo (critico=8) --  (mas_rapida=Ruta1, menor_riesgo=Ruta2)
+     Ruta1: km=11.9 min=15 riesgo=272 n_cruces=114 nivel_relativo=alto cob_sin=1.00 cob_inseg=0.88
+     Ruta2: km=7.6 min=18 riesgo=230 n_cruces=106 nivel_relativo=bajo cob_sin=1.00 cob_inseg=0.96
+     Ruta3: km=8.4 min=18 riesgo=237 n_cruces=107 nivel_relativo=medio cob_sin=1.00 cob_inseg=0.97
+  -- umbral_mas_estricto (0.3 km) --  (mas_rapida=Ruta1, menor_riesgo=Ruta2)
+     Ruta1: km=11.9 min=15 riesgo=131 n_cruces=63 nivel_relativo=alto cob_sin=0.95 cob_inseg=0.52
+     Ruta2: km=7.6 min=18 riesgo=113 n_cruces=52 nivel_relativo=bajo cob_sin=0.88 cob_inseg=0.88
+     Ruta3: km=8.4 min=18 riesgo=113 n_cruces=54 nivel_relativo=bajo cob_sin=0.80 cob_inseg=0.67
+  -- umbral_mas_laxo (1.0 km) --  (mas_rapida=Ruta1, menor_riesgo=Ruta2)
+     Ruta1: km=11.9 min=15 riesgo=389 n_cruces=182 nivel_relativo=alto cob_sin=1.00 cob_inseg=1.00
+     Ruta2: km=7.6 min=18 riesgo=324 n_cruces=161 nivel_relativo=bajo cob_sin=1.00 cob_inseg=1.00
+     Ruta3: km=8.4 min=18 riesgo=340 n_cruces=167 nivel_relativo=medio cob_sin=1.00 cob_inseg=1.00
