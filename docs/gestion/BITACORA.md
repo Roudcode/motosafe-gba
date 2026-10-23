@@ -3331,3 +3331,11 @@ Rodo pidió, mientras se explicaba el plan del parpadeo: "el filtro de actividad
 Corregido: `ActividadPortal` ahora acepta `onCambiarFiltro`, disparado por un `useEffect` sobre `filtroCategoria` (cubre cualquier forma de cambiarlo, no solo el click de cada botón). `App.jsx` renombró `cerrarActividadConFiltro` a `sincronizarFiltroActividadConMapa` y la sacó del cierre del panel -- el botón de cerrar volvió a ser simple (`onCerrar={() => setPortalActividadAbierto(false)}`), la sincronización ya pasa en vivo apenas se toca un filtro. Mismo mapeo de categorías que antes (moto/robo/choque/todas tienen equivalente real en el filtro de prensa del mapa; las categorías de reportes colaborativos no).
 
 Verificado: 111/111 tests, lint limpio, build de producción sin errores.
+
+## SES-183 — 2026-10-23 — insignia de "esto es una noticia" en los marcadores de prensa sin agrupar
+
+Rodo: "cada categoría tengo su logo diferenciado en el mapa pero se entienda que es noticia". Confirmado el motivo: `elementoMarcadorPrensa` (marcadores de prensa SIN agrupar, la mayoría) solo mostraba el ícono de categoría (documento para robo, triángulo de alerta naranja para choque) sin ninguna pista de que representa una noticia -- el triángulo de choque en particular se puede leer como un aviso de incidente en vivo. Los marcadores agrupados (`elementoGrupoPrensa`) y el cluster ya traían el glyph de diario, porque muestran un contador encima.
+
+Corregido: se agregó una insignia chica (círculo con el mismo glyph de diario, 14px, esquina inferior derecha) a `elementoMarcadorPrensa`, superpuesta sin tapar el ícono de categoría principal. Verificado visualmente inyectando el marcador real (mismo HTML/CSS que usa la app) en una página de prueba aislada, con zoom sobre la región -- se ve claro en ambos casos (robo y choque) antes de tocar la capa real del mapa.
+
+Verificado: lint limpio, 111/111 tests, build de producción sin errores.

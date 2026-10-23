@@ -226,6 +226,11 @@ const ICONOS_POR_TIPO_INCIDENTE = {
   `,
 }
 
+// Mismo glyph de diario que ya usan el cluster y el grupo de prensa (ver
+// elementoGrupoPrensa y el renderBubble de la capa de prensa) -- reusado acá
+// como insignia chica, no como ícono principal.
+const SVG_INSIGNIA_PRENSA = '<svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>'
+
 function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
   const halo = HALO_POR_NIVEL_PRECISION[nivelPrecision] ?? HALO_POR_NIVEL_PRECISION.barrio
   const svgIcono = ICONOS_POR_TIPO_INCIDENTE[tipoIncidente] ?? ICONOS_POR_TIPO_INCIDENTE.robo
@@ -248,6 +253,17 @@ function elementoMarcadorPrensa(nivelPrecision, tipoIncidente) {
   icono.className = 'marker-prensa-icono'
   icono.innerHTML = svgIcono
   wrapper.appendChild(icono)
+  // Reporte de usuario: "cada categoría tiene su ícono diferenciado pero no
+  // se entiende que es noticia" -- el ícono de choque (triángulo de alerta)
+  // en particular se puede confundir con un aviso de incidente en vivo. Los
+  // marcadores agrupados (elementoGrupoPrensa) ya traían el glyph de diario
+  // porque muestran un contador; acá se agrega la misma insignia, chica, en
+  // la esquina, para que un punto sin agrupar también se lea como prensa de
+  // un vistazo, sin competir visualmente con el ícono de categoría.
+  const insignia = document.createElement('div')
+  insignia.className = 'marker-prensa-insignia'
+  insignia.innerHTML = SVG_INSIGNIA_PRENSA
+  wrapper.appendChild(insignia)
   wrapper.style.cursor = 'pointer'
   return wrapper
 }

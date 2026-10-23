@@ -1300,6 +1300,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   position: relative; display: flex; align-items: center; justify-content: center;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
 }
+/* Insignia de "esto es una noticia" en la esquina del ícono de categoría
+   (reporte de usuario: el ícono de choque en particular se leía como aviso
+   de incidente en vivo, no como prensa). Mismo glyph de diario que ya usan
+   los marcadores agrupados y el cluster, solo que acá es un círculo chico
+   superpuesto, no el ícono principal -- no compite con el de categoría. */
+.marker-prensa-insignia {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-solid); color: var(--text-dim);
+  border: 1.3px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
 
 /* Antes apuntaban a "path" (así dibuja Leaflet un CircleMarker en SVG); los
    marcadores de MapaMotoSafe.jsx son divs de MapLibre, así que la animación
