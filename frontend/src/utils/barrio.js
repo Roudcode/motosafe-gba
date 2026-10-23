@@ -12,10 +12,13 @@
 import { API_URL } from '../constants'
 
 const REDONDEO = 3 // ~100 m -- mismo redondeo que usa la cache del backend
-// 300ms, no menos: el backend limita este endpoint a 300/min (ver
-// main.py) -- a 300ms por pedido el cliente nunca se acerca a ese techo
-// aunque el feed completo tenga cientos de puntos distintos sin cachear.
-const PAUSA_ENTRE_PEDIDOS_MS = 300
+// 220ms, no menos: el backend limita este endpoint a 300/min (ver main.py,
+// 5/seg) -- a 220ms por pedido el cliente hace como mucho ~270/min, todavía
+// con margen bajo ese techo aunque el feed completo tenga cientos de puntos
+// distintos sin cachear. (Reporte de usuario: 300ms se sentía "muy lento"
+// viendo los barrios aparecer de a uno; el margen que dejaba antes era más
+// del necesario.)
+const PAUSA_ENTRE_PEDIDOS_MS = 220
 
 const cache = new Map() // clave -> { estado: 'cargando' | 'listo', barrio, esperando: [] }
 let colaPendiente = Promise.resolve()

@@ -747,8 +747,17 @@ function MapaMotoSafeInner({
       source: sourceId,
       paint: {
         'heatmap-weight': ['get', 'intensidad'],
-        'heatmap-intensity': 1.1,
-        'heatmap-radius': 32,
+        // Reporte de usuario (prueba real en celular): "al alejar el zoom se
+        // ve un punto rojo gigante". Con radio e intensidad fijos, los ~740
+        // puntos se superponen en pocos píxeles de pantalla al alejar y la
+        // densidad se satura toda a rojo -- clásico problema de heatmaps sin
+        // curva de zoom (mismo patrón que los ejemplos oficiales de
+        // Mapbox/MapLibre resuelven con interpolate sobre ['zoom']). Acotando
+        // radio e intensidad a zooms bajos, cada punto ocupa menos píxeles y
+        // la mancha deja de saturarse; a zoom alto (16, uso real en moto)
+        // queda el mismo radio/intensidad de antes.
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.3, 11, 0.6, 16, 1.1],
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 3, 11, 10, 14, 22, 16, 32],
         'heatmap-opacity': atenuarFondo,
         'heatmap-color': [
           'interpolate', ['linear'], ['heatmap-density'],

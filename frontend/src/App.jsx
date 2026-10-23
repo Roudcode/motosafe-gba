@@ -24,6 +24,7 @@ import {
 import { formatearDistancia } from './utils/tiempo'
 import { iconoClima, reproducirBeep, textoManiobra, iconoManiobra } from './utils/ui'
 import { cargarDeLocalStorage, guardarEnLocalStorage, generarUuidV4Fallback } from './utils/storage'
+import { resolverBarrio } from './utils/barrio'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Onboarding } from './components/Onboarding'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -82,6 +83,15 @@ const CLAVE_BUSQUEDAS_RECIENTES = 'motosafe_busquedas_recientes'
 // (ver DESVIOS_SEGUIDOS_PARA_RECALCULAR) antes de recalcular.
 const UMBRAL_DESVIO_RUTA_KM = 0.06
 const DESVIOS_SEGUIDOS_PARA_RECALCULAR = 3
+// Reporte de usuario (prueba real en celular): "apenas inicio el viaje avisa
+// 'te desviaste' un instante y se estabiliza". El GPS recién adquirido
+// (watchPosition arrancando en frío) suele dar sus primeros fixes con
+// accuracy de cientos de metros antes de bloquear una posición precisa --
+// esos fixes pueden caer, los tres seguidos, del mismo lado equivocado de la
+// ruta, así que el freno de "3 fixes seguidos" (pensado para ruido disperso
+// de +-15-30m) no alcanza a filtrarlos. Se descartan fixes con accuracy
+// peor a este umbral antes de que lleguen a miUbicacion.
+const ACCURACY_MAXIMA_GPS_M = 100
 // Si la ruta recalculada sigue sin "pegarse" a la posición real (calle
 // dividida, sentido único, snapping del backend a la calle paralela), sin
 // este freno el ciclo detección-de-desvío -> reroute -> sigue desviado se
@@ -628,6 +638,25 @@ function App() {
     return () => clearInterval(id)
   }, [])
 
+  // Precarga de barrios (reporte de usuario: "los barrios van cargando muy
+  // lento uno por uno" al abrir Actividad). resolverBarrio ya pacea sus
+  // pedidos y cachea por clave de módulo (ver utils/barrio.js), así que
+  // arrancar la cola acá, apenas llegan los datos, en vez de recién cuando
+  // se abre el portal, hace que gran parte ya esté resuelta (o en camino)
+  // para cuando el usuario lo abre. Resultado descartado a propósito: esto
+  // solo calienta la cache compartida, ActividadPortal vuelve a pedir las
+  // mismas claves y las recibe ya resueltas. Acotado a los últimos 7 días
+  // (mismo filtro por defecto de ActividadPortal) para no gastar pedidos en
+  // ítems viejos que probablemente no se lleguen a mirar.
+  useEffect(() => {
+    const haceSieteDias = Date.now() - 7 * 24 * 3600000
+    const puntos = [
+      ...reportesPrensa.filter((r) => new Date(r.fechaReferencia).getTime() >= haceSieteDias),
+      ...reportes.filter((r) => new Date(r.creadoEn).getTime() >= haceSieteDias),
+    ]
+    for (const p of puntos) resolverBarrio(p.lat, p.lng, () => {})
+  }, [reportesPrensa, reportes])
+
   useEffect(() => {
     if (!backendError) return
     const id = setInterval(cargarHotspots, 5000)
@@ -712,6 +741,24 @@ function App() {
   }
   const restablecerFiltros = () => setNivelesActivos(new Set(Object.keys(NIVELES)))
 
+  // Reporte de usuario (prueba real en celular): filtrar categoría dentro del
+  // portal de Actividad no cambiaba nada en el mapa -- dos filtros sueltos
+  // sin relación. Al cerrar, si la categoría elegida tiene equivalente real
+  // en el filtro de prensa del mapa (moto/robo/choque/todas), se aplica ahí
+  // y se prende la capa de prensa para que se note. Las categorías que solo
+  // existen para reportes colaborativos (inseguro, pavimento, corte,
+  // iluminación) no tienen hoy un filtro propio en el mapa -- no se inventa
+  // uno, se deja el filtro de prensa como estaba.
+  const FILTRO_ACTIVIDAD_A_PRENSA = { todas: 'todos', moto: 'moto', robo: 'robo', choque: 'choque' }
+  const cerrarActividadConFiltro = (filtroCategoria) => {
+    const equivalente = FILTRO_ACTIVIDAD_A_PRENSA[filtroCategoria]
+    if (equivalente) {
+      setFiltroPrensa(equivalente)
+      setCapaPrensa(true)
+    }
+    setPortalActividadAbierto(false)
+  }
+
   const pedirUbicacion = () => {
     setBuscandoUbicacion(true)
     if (!navigator.geolocation) { setBuscandoUbicacion(false); return }
@@ -783,6 +830,10 @@ function App() {
     activarBrujula()
     const id = navigator.geolocation.watchPosition(
       (pos) => {
+        // Fix de baja precisión (típico del arranque en frío del GPS): se
+        // descarta antes de tocar posición, rumbo o velocidad, en vez de
+        // dejar que alimente la detección de desvío/llegada con ruido grande.
+        if (pos.coords.accuracy != null && pos.coords.accuracy > ACCURACY_MAXIMA_GPS_M) return
         const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         const heading = pos.coords.heading
         const velocidadGps = pos.coords.speed
@@ -1825,7 +1876,7 @@ function App() {
           reportesPrensa={reportesPrensa}
           reportes={reportes}
           horaActual={horaActual}
-          onCerrar={() => setPortalActividadAbierto(false)}
+          onCerrar={cerrarActividadConFiltro}
           onVerEnMapa={(punto) => { setVuelo({ ...punto, zoom: 16 }); setPortalActividadAbierto(false) }}
           onAbrirLector={setLectorNota}
         />

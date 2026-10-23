@@ -150,7 +150,10 @@ export function ActividadPortal({ reportesPrensa, reportes, horaActual, onCerrar
     <div className={`portal-actividad panel-enter ${saliendo ? 'panel-exit' : ''}`} role="dialog" aria-label="Actividad">
       <div className="portal-actividad-header">
         <span className="portal-actividad-titulo"><Newspaper size={18} /> Actividad</span>
-        <button className="detalle-cerrar" onClick={onCerrar} aria-label="Cerrar actividad"><X size={16} /></button>
+        {/* Pedido de usuario (prueba real): lo que filtrás acá adentro, al
+            cerrar, se refleja en el filtro de prensa del mapa -- antes eran
+            dos filtros sueltos sin relación entre sí. */}
+        <button className="detalle-cerrar" onClick={() => onCerrar(filtroCategoria)} aria-label="Cerrar actividad"><X size={16} /></button>
       </div>
 
       <div className="portal-actividad-filtros">

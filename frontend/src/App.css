@@ -1117,7 +1117,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .report-fab:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 24px rgba(255,201,51,0.5); }
 .report-fab.active { background: var(--border); color: var(--text); box-shadow: none; }
 
-.spinner { width: 14px; height: 14px; border: 2px solid rgba(20,23,26,0.3); border-top-color: #14171A; border-radius: 50%; animation: spin 0.7s linear infinite; }
+/* flex-shrink:0 (reporte de usuario: "el círculo de carga es irregular"):
+   dentro de una fila flex angosta (ej. .ruta-banner con texto largo en
+   celular chico) un span de tamaño fijo sin esto se puede comprimir y
+   perder la forma circular -- un spinner ovalado en vez de redondo. */
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(20,23,26,0.3); border-top-color: #14171A; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* SES-119: 18px suelto -- el resto de la familia de paneles flotantes
