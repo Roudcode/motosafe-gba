@@ -1,0 +1,31 @@
+name: Scraper de noticias
+
+# SES-169: reemplaza el servicio de cron "motosafe-scraper" de render.yaml.
+# Render cobra los cron jobs por minuto (no hay plan gratis para ese tipo de
+# servicio); GitHub Actions da minutos gratis de sobra para una corrida corta
+# cada 3hs. Mismo comando que corría en Docker (scraper-loop.sh), una sola
+# vez por disparo en vez de en loop -- el cron de abajo reemplaza al sleep.
+on:
+  schedule:
+    - cron: "15 */3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  scraper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --require-hashes -r requirements.lock
+      - run: python migrar.py
+        env:
+          DATABASE_URL: ${{ secrets.MOTOSAFE_DATABASE_URL }}
+      - run: python scrapear_noticias_robos.py --guardar
+        env:
+          DATABASE_URL: ${{ secrets.MOTOSAFE_DATABASE_URL }}
