@@ -3323,3 +3323,11 @@ Rodo mandó capturas mostrando que los números de las burbujas de prensa no cer
 **Corregido**: `MapaMotoSafe.jsx`, capa de prensa. Cada feature ahora lleva `cantidad: grupo.noticias.length` (artículos reales en esa ubicación); `montarCapaClusterizada` acepta un `clusterProperties` adicional (antes fijo a bajo/medio/alto/crítico, ahora combinable) y la capa de prensa suma `cantidadTotal: ['+', ['get', 'cantidad']]` vía esa opción; `crearMarkerCluster` usa `props.cantidadTotal ?? props.point_count` (las otras capas, sin esa propiedad, siguen igual que antes). Reproducido el fix en vivo: los mismos clusters que antes mostraban "2" ahora muestran 18, 15, 5, etc., sumando artículos reales.
 
 Cuenta de prueba borrada de la base real al cerrar. Verificado: 111/111 tests, lint limpio, build de producción sin errores. **Cambio local, sin commitear ni deployar todavía.**
+
+## SES-182 — 2026-10-23 — el filtro de categoría de Actividad ahora sincroniza con el mapa en vivo, no solo al cerrar
+
+Rodo pidió, mientras se explicaba el plan del parpadeo: "el filtro de actividades de TODOS, Motos, robos etc también debe filtrar en el mapa" -- la sincronización de SES-179 solo aplicaba el filtro al cerrar el panel con la X, no al tocar cada botón.
+
+Corregido: `ActividadPortal` ahora acepta `onCambiarFiltro`, disparado por un `useEffect` sobre `filtroCategoria` (cubre cualquier forma de cambiarlo, no solo el click de cada botón). `App.jsx` renombró `cerrarActividadConFiltro` a `sincronizarFiltroActividadConMapa` y la sacó del cierre del panel -- el botón de cerrar volvió a ser simple (`onCerrar={() => setPortalActividadAbierto(false)}`), la sincronización ya pasa en vivo apenas se toca un filtro. Mismo mapeo de categorías que antes (moto/robo/choque/todas tienen equivalente real en el filtro de prensa del mapa; las categorías de reportes colaborativos no).
+
+Verificado: 111/111 tests, lint limpio, build de producción sin errores.

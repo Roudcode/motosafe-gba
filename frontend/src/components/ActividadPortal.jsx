@@ -64,7 +64,7 @@ function claveBarrio(lat, lng) {
   return `${lat.toFixed(3)},${lng.toFixed(3)}`
 }
 
-export function ActividadPortal({ reportesPrensa, reportes, horaActual, onCerrar, onVerEnMapa, onAbrirLector, saliendo }) {
+export function ActividadPortal({ reportesPrensa, reportes, horaActual, onCerrar, onVerEnMapa, onAbrirLector, onCambiarFiltro, saliendo }) {
   const [filtroCategoria, setFiltroCategoria] = useState('todas')
   const [filtroFecha, setFiltroFecha] = useState('7d')
   const [filtroBarrio, setFiltroBarrio] = useState('todas')
@@ -72,6 +72,17 @@ export function ActividadPortal({ reportesPrensa, reportes, horaActual, onCerrar
   // no se pidió, null = se pidió y TomTom no devolvió nada, string = listo.
   const [barrios, setBarrios] = useState({})
   const barriosPedidosRef = useRef(new Set())
+
+  // Pedido de usuario: el filtro de categoría de Actividad (Todas/Motos/
+  // Robos/Choques/...) tiene que reflejarse en el mapa AL TOQUE, no recién
+  // al cerrar el panel (eso ya pasaba, ver onCerrar más abajo, pero no
+  // alcanzaba). useEffect en vez de hacerlo en el onClick de cada botón de
+  // filtro: así cubre también el valor inicial ('todas') si hiciera falta
+  // sincronizar apenas se abre el portal, sin duplicar la llamada en cada
+  // botón.
+  useEffect(() => {
+    onCambiarFiltro?.(filtroCategoria)
+  }, [filtroCategoria, onCambiarFiltro])
 
   const items = useMemo(() => {
     const dePrensa = reportesPrensa.map((r) => {
@@ -150,10 +161,10 @@ export function ActividadPortal({ reportesPrensa, reportes, horaActual, onCerrar
     <div className={`portal-actividad panel-enter ${saliendo ? 'panel-exit' : ''}`} role="dialog" aria-label="Actividad">
       <div className="portal-actividad-header">
         <span className="portal-actividad-titulo"><Newspaper size={18} /> Actividad</span>
-        {/* Pedido de usuario (prueba real): lo que filtrás acá adentro, al
-            cerrar, se refleja en el filtro de prensa del mapa -- antes eran
-            dos filtros sueltos sin relación entre sí. */}
-        <button className="detalle-cerrar" onClick={() => onCerrar(filtroCategoria)} aria-label="Cerrar actividad"><X size={16} /></button>
+        {/* El filtro de categoría ya se sincroniza con el mapa en vivo (ver
+            useEffect de onCambiarFiltro más arriba) -- cerrar no necesita
+            pasarlo de nuevo. */}
+        <button className="detalle-cerrar" onClick={onCerrar} aria-label="Cerrar actividad"><X size={16} /></button>
       </div>
 
       <div className="portal-actividad-filtros">

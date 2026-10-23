@@ -752,20 +752,22 @@ function App() {
 
   // Reporte de usuario (prueba real en celular): filtrar categoría dentro del
   // portal de Actividad no cambiaba nada en el mapa -- dos filtros sueltos
-  // sin relación. Al cerrar, si la categoría elegida tiene equivalente real
-  // en el filtro de prensa del mapa (moto/robo/choque/todas), se aplica ahí
-  // y se prende la capa de prensa para que se note. Las categorías que solo
-  // existen para reportes colaborativos (inseguro, pavimento, corte,
+  // sin relación. Primero se sincronizó solo al cerrar el panel; a pedido de
+  // Rodo ("tmb debe filtrar en el mapa", sin esperar a cerrar) pasa a
+  // aplicarse apenas se toca un botón de categoría (ver onCambiarFiltro en
+  // <ActividadPortal>, más abajo). Si la categoría elegida tiene equivalente
+  // real en el filtro de prensa del mapa (moto/robo/choque/todas), se aplica
+  // ahí y se prende la capa de prensa para que se note. Las categorías que
+  // solo existen para reportes colaborativos (inseguro, pavimento, corte,
   // iluminación) no tienen hoy un filtro propio en el mapa -- no se inventa
   // uno, se deja el filtro de prensa como estaba.
   const FILTRO_ACTIVIDAD_A_PRENSA = { todas: 'todos', moto: 'moto', robo: 'robo', choque: 'choque' }
-  const cerrarActividadConFiltro = (filtroCategoria) => {
+  const sincronizarFiltroActividadConMapa = (filtroCategoria) => {
     const equivalente = FILTRO_ACTIVIDAD_A_PRENSA[filtroCategoria]
     if (equivalente) {
       setFiltroPrensa(equivalente)
       setCapaPrensa(true)
     }
-    setPortalActividadAbierto(false)
   }
 
   const pedirUbicacion = () => {
@@ -1888,9 +1890,10 @@ function App() {
           reportesPrensa={reportesPrensa}
           reportes={reportes}
           horaActual={horaActual}
-          onCerrar={cerrarActividadConFiltro}
+          onCerrar={() => setPortalActividadAbierto(false)}
           onVerEnMapa={(punto) => { setVuelo({ ...punto, zoom: 16 }); setPortalActividadAbierto(false) }}
           onAbrirLector={setLectorNota}
+          onCambiarFiltro={sincronizarFiltroActividadConMapa}
         />
       )}
 
