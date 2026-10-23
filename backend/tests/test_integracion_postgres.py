@@ -257,22 +257,28 @@ def test_carga_inicial_solo_llena_tablas_vacias(url_base, tmp_path):
         if not all((datos / a).is_file() for _, _, archivos in carga.CAPAS for a in archivos):
             pytest.skip('faltan los CSV de data/ (no versionados); se probó solo «sin CSV»')
         primera = carga.cargar_si_vacias(url, datos)
+        # H14/territorio A-D (assessment 2026-10-22, corregido SES-170): el
+        # conteo esperado estaba desactualizado (1135) contra el real de los
+        # CSV versionados (1121 = 619 generales + 502 de moto), reflejo de la
+        # limpieza geográfica de DEC-024 (sesión anterior) que nunca se
+        # propagó a este número hardcodeado. No es parte de F11/despliegue;
+        # se corrige acá solo porque rompía el job de CI en cada push.
         assert primera == {'hotspots_riesgo': 'cargada 740', 'corredores_riesgo': 'cargada 243',
-                           'hotspots_inseguridad': 'cargada 1135'}
+                           'hotspots_inseguridad': 'cargada 1121'}
 
         # Idempotente: con datos no recarga (aunque una fila se haya editado).
         with psycopg2.connect(url) as conn, conn.cursor() as cur:
             cur.execute("UPDATE corredores_riesgo SET calle = 'EDITADA' WHERE id = (SELECT min(id) FROM corredores_riesgo)")
         segunda = carga.cargar_si_vacias(url, datos)
         assert segunda == {'hotspots_riesgo': 'ya tenía 740', 'corredores_riesgo': 'ya tenía 243',
-                           'hotspots_inseguridad': 'ya tenía 1135'}
+                           'hotspots_inseguridad': 'ya tenía 1121'}
         assert _contar(url, "SELECT count(*) FROM corredores_riesgo WHERE calle = 'EDITADA'") == 1
 
         # Solo la capa vacía se vuelve a cargar.
         with psycopg2.connect(url) as conn, conn.cursor() as cur:
             cur.execute('DELETE FROM hotspots_inseguridad')
         tercera = carga.cargar_si_vacias(url, datos)
-        assert tercera['hotspots_inseguridad'] == 'cargada 1135'
+        assert tercera['hotspots_inseguridad'] == 'cargada 1121'
         assert tercera['corredores_riesgo'] == 'ya tenía 243'
     finally:
         cur = admin.cursor()
