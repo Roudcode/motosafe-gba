@@ -1,4 +1,16 @@
-"""Pruebas del circuito real de login/logout (auth.py).
+"""Pruebas de auth.py que NO necesitan una base de datos real.
+
+F11 (SES-165): el login ahora busca el usuario en la tabla `usuarios` real
+(ver auth.py) -- a diferencia del mecanismo viejo (un usuario fijo por
+variable de entorno), hasta un login con credenciales inventadas necesita
+que esa tabla exista de verdad (si no, psycopg2 tira "relation does not
+exist", no un 401 limpio). Por eso TODO lo que llama a /auth/login,
+/auth/registro o cualquier otro endpoint que toque la tabla usuarios vive en
+test_integracion_postgres.py (gateado por MOTOSAFE_TEST_DATABASE_URL, con
+una base desechable ya migrada) -- nunca acá. Lo que queda en este archivo es
+justamente lo que no depende de eso: login deshabilitado (AUTH_HABILITADO=
+false, ni siquiera llega a tocar la base) y el middleware de sesión sobre
+endpoints que no son de auth.
 
 A diferencia del resto de la suite, estos tests NO quieren el bypass
 global de conftest.py (sesion_valida siempre True) -- es justamente el
@@ -9,10 +21,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-import auth
 import main
-
-CONTRASENA_TEST = "clave-de-test-no-usar-en-produccion"
 
 
 @pytest.fixture(autouse=True)
@@ -22,18 +31,13 @@ def _sesion_siempre_valida():
 
 
 @pytest.fixture(autouse=True)
-def _limpiar_intentos_fallidos():
-    auth._intentos_fallidos.clear()
-    yield
-    auth._intentos_fallidos.clear()
-
-
-@pytest.fixture(autouse=True)
 def _sin_base_real(monkeypatch):
     """/health y /metrics tocan la base. Sin esto, si Postgres esta levantado,
     dejan conexiones reales en main._pool_conexiones y los tests de
     test_main.py que mockean psycopg2.connect reciben esa conexion real del
-    pool. Aca solo importa si el middleware deja pasar o no el pedido."""
+    pool. Aca solo importa si el middleware deja pasar o no el pedido -- los
+    tests de este archivo no llaman a ningun endpoint de auth.py que toque
+    la base (esos viven en test_integracion_postgres.py)."""
     def _sin_base(*args, **kwargs):
         raise main.psycopg2.OperationalError("base deshabilitada en test_auth")
 
@@ -59,53 +63,6 @@ def test_health_no_requiere_sesion(client):
     assert respuesta.status_code != 401
 
 
-def test_login_con_contrasena_incorrecta_falla(client):
-    respuesta = client.post(
-        "/auth/login",
-        json={"username": os.environ["AUTH_USERNAME"], "password": "incorrecta"},
-    )
-    assert respuesta.status_code == 401
-
-
-def test_login_correcto_habilita_endpoints_protegidos(client):
-    respuesta = client.post(
-        "/auth/login",
-        json={"username": os.environ["AUTH_USERNAME"], "password": CONTRASENA_TEST},
-    )
-    assert respuesta.status_code == 200
-    assert "motosafe_session" in respuesta.cookies
-
-    me = client.get("/auth/me")
-    assert me.status_code == 200
-    assert me.json()["usuario"] == os.environ["AUTH_USERNAME"]
-
-    metricas = client.get("/metrics")
-    assert metricas.status_code != 401
-
-
-def test_logout_invalida_la_sesion(client):
-    client.post(
-        "/auth/login",
-        json={"username": os.environ["AUTH_USERNAME"], "password": CONTRASENA_TEST},
-    )
-    client.post("/auth/logout")
-    respuesta = client.get("/auth/me")
-    assert respuesta.status_code == 401
-
-
-def test_bloqueo_tras_varios_intentos_fallidos(client):
-    for _ in range(5):
-        client.post(
-            "/auth/login",
-            json={"username": os.environ["AUTH_USERNAME"], "password": "mal"},
-        )
-    respuesta = client.post(
-        "/auth/login",
-        json={"username": os.environ["AUTH_USERNAME"], "password": CONTRASENA_TEST},
-    )
-    assert respuesta.status_code == 429
-
-
 def _correr_sin_auth(codigo):
     """Importa main en un proceso nuevo, sin AUTH_*/SESSION_SECRET: auth.py
     lee las variables al importarse y en este proceso ya quedo importado con
@@ -118,7 +75,7 @@ def _correr_sin_auth(codigo):
     # ausentes con un backend/.env local; dotenv no pisa variables existentes.
     entorno.update(AUTH_USERNAME="", AUTH_PASSWORD_HASH="", SESSION_SECRET="")
     entorno["AUTH_HABILITADO"] = "false"
-    # Sin base: los endpoints probados no la necesitan para decidir el 401.
+    # Sin base: los endpoints probados no la necesitan para decidir el 401/404.
     entorno["DATABASE_URL"] = "postgresql://nadie:nada@127.0.0.1:1/ninguna"
     return subprocess.run(
         [sys.executable, "-W", "ignore", "-c", codigo],
@@ -134,24 +91,21 @@ def test_sin_login_la_app_arranca_sin_variables_de_auth_y_no_exige_sesion():
         "c = TestClient(main.app)\n"
         "print(c.get('/auth/me').json())\n"
         "print(c.get('/').status_code)\n"
-        "print(c.post('/auth/login', json={'username': 'x', 'password': 'y'}).status_code)\n"
+        "print(c.post('/auth/login', json={'email': 'x@x.com', 'password': 'y'}).status_code)\n"
+        "print(c.post('/auth/registro', json={'email': 'x@x.com', 'nombre_usuario': 'x', 'password': 'y'}).status_code)\n"
     )
     assert resultado.returncode == 0, resultado.stderr
-    me, raiz, login = resultado.stdout.strip().splitlines()[-3:]
+    me, raiz, login, registro = resultado.stdout.strip().splitlines()[-4:]
     assert me == "{'usuario': None, 'auth_habilitado': False}"
     assert raiz == "200"
     assert login == "404"
+    assert registro == "404"
 
 
 def test_con_login_activado_por_defecto_faltan_variables_y_no_arranca():
+    # F11 (SES-165): ya no hace falta AUTH_USERNAME/AUTH_PASSWORD_HASH (el
+    # login ahora busca en la tabla usuarios) -- lo que sigue siendo
+    # obligatorio con AUTH_HABILITADO por defecto es SESSION_SECRET.
     resultado = _correr_sin_auth("import os; os.environ.pop('AUTH_HABILITADO'); import main")
     assert resultado.returncode != 0
-    assert "AUTH_USERNAME" in resultado.stderr
-
-
-def test_me_informa_que_el_login_esta_habilitado(client):
-    client.post(
-        "/auth/login",
-        json={"username": os.environ["AUTH_USERNAME"], "password": CONTRASENA_TEST},
-    )
-    assert client.get("/auth/me").json()["auth_habilitado"] is True
+    assert "SESSION_SECRET" in resultado.stderr

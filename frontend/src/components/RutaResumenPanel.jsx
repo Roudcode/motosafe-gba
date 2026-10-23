@@ -12,7 +12,7 @@
 // adentro de App.jsx: esto es un corte-y-pegue con props, no un rediseño.
 
 import { Pencil, Zap, Scale, ShieldCheck, TriangleAlert, CircleCheck, Siren, ShieldAlert,
-  ChevronDown, ChevronUp, Navigation, X, Clock, Newspaper } from 'lucide-react'
+  ChevronDown, ChevronUp, Navigation, X, Clock, Newspaper, Route } from 'lucide-react'
 import { NIVELES } from '../constants'
 import { formatearDistancia } from '../utils/tiempo'
 
@@ -60,11 +60,17 @@ export function RutaResumenPanel({
               {i === idxMasSegura && i !== idxMasRapida && r.coberturaRegistrada >= 0.6 && <span className="ruta-opcion-badge badge-segura"><ShieldCheck size={10} /> menor exposición</span>}
               {i === idxEquilibrada && i !== idxMasRapida && i !== idxMasSegura && <span className="ruta-opcion-badge badge-equilibrada"><Scale size={10} /> equilibrada</span>}
             </span>
+            {/* V06 (SES-161): tiempo y distancia eran un solo texto corrido
+                ("X km · Y min") -- mismo peso visual, sin separación real
+                entre los dos ejes. Un ícono distinto por eje (no solo texto)
+                los separa de un vistazo, mismo patrón ya usado en el resto
+                del panel (badges, desglose). */}
             <span className="ruta-opcion-datos">
-              {r.km} km · {r.min} min
+              <span className="ruta-opcion-stat"><Route size={11} /> {r.km} km</span>
+              <span className="ruta-opcion-stat"><Clock size={11} /> {r.min} min</span>
               {r.etaTrafico && (
                 <span className="ruta-opcion-trafico" title="Tiempo estimado con tráfico en vivo (TomTom) -- puede variar del trazado exacto de esta ruta">
-                  {' '}· <Zap size={10} /> {r.etaTrafico.con_trafico_min} min con tráfico
+                  <Zap size={10} /> {r.etaTrafico.con_trafico_min} min con tráfico
                 </span>
               )}
             </span>

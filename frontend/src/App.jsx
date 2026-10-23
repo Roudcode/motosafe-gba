@@ -986,6 +986,11 @@ function App() {
     setActividadAbierta(false)
     setStatsAbierto(false)
     setCapasAbiertas(false)
+    // V01 (SES-161): faltaba acá -- si el buscador estaba abierto (su
+    // desplegable de sugerencias no se ocultaba con ningún otro booleano de
+    // los de arriba), quedaba flotando encima de RutaForm, dos paneles
+    // compitiendo por el mismo rincón superior de la pantalla.
+    setBusquedaAbierta(false)
     setRutasCalculadas([])
     setRutaError(null)
   }
@@ -1542,6 +1547,14 @@ function App() {
   // booleano para esconder la leyenda mientras se muestra, así los dos no
   // compiten por el mismo rincón de la pantalla en celular.
   const mostrandoOpcionesRuta = rutasCalculadas.length > 0 && !modoViaje
+  // V01 (SES-161): el comportamiento de "modo" ya existía (explorar vs.
+  // comparar vs. navegar se infería de modoViaje/rutasCalculadas.length,
+  // y ya eran excluyentes entre sí -- RutaForm cierra al calcular rutas,
+  // modoViaje oculta el resto). Lo que faltaba era hacerlo explícito en vez
+  // de inferirlo cada vez; esta derivación no cambia ningún comportamiento,
+  // solo le pone nombre a lo que ya pasaba, para poder engancharle CSS/tests
+  // por modo sin repetir la misma combinación de booleanos en cada lugar.
+  const modoActual = modoViaje ? 'navegar' : mostrandoOpcionesRuta ? 'comparar' : 'explorar'
   // Animación de salida del panel de ruta (SES-115): la leyenda y el FAB de
   // reportar esperan a que panelRuta.montado baje a false (recién ahí
   // "mostrandoOpcionesRuta" realmente liberó el rincón de la pantalla) en
@@ -1594,7 +1607,7 @@ function App() {
   const atenuarFondo = (capaInseguridad !== 'apagado' ? 0.4 : 1) * (vistaNavegacion ? 0.1 : 1)
 
   return (
-    <div className="app">
+    <div className="app" data-modo={modoActual}>
       <LoadingScreen visible={!primeraVezListo} />
       {mostrarOnboarding && primeraVezListo && <Onboarding onCerrar={cerrarOnboarding} />}
 
@@ -1954,7 +1967,7 @@ function App() {
         recentrarUbicacion={recentrarUbicacion} vistaNavegacion={vistaNavegacion}
       />
 
-      <DetalleZonaPanel panelDetalle={panelDetalle} zonaMostrada={zonaMostrada} setZonaSeleccionada={setZonaSeleccionada} />
+      <DetalleZonaPanel panelDetalle={panelDetalle} zonaMostrada={zonaMostrada} setZonaSeleccionada={setZonaSeleccionada} coberturaCapas={coberturaCapas} />
 
       {/* La leyenda se esconde mientras está abierto "Opciones de ruta": ahí
           el riesgo ya se lee en cada tarjeta de ruta (bajo/medio/alto/
@@ -1981,6 +1994,7 @@ function App() {
         vistaNavegacion={vistaNavegacion} setVistaNavegacion={setVistaNavegacion}
         setStatsAbierto={setStatsAbierto} setActividadAbierta={setActividadAbierta} setCapasAbiertas={setCapasAbiertas}
         sesion={sesion}
+        onAbrirAyuda={() => { setMostrarOnboarding(true); setHerramientasAbiertas(false) }}
       />
 
       <ReportSheet

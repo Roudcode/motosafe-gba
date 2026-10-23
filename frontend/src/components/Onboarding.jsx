@@ -46,10 +46,16 @@ export function Onboarding({ onCerrar }) {
         </button>
         <Bike size={28} strokeWidth={1.6} />
         <h2>Así funciona MotoSafe</h2>
+        {/* V12 (SES-162): "23.343 casos" era una cifra fija del tamaño de
+            entrenamiento de un momento dado -- ya estaba desactualizada
+            (el dato real de hoy, citado en la tesis, es 23.338) y se iba a
+            volver a desactualizar en el próximo reentrenamiento. El
+            criterio de cierre pide explícitamente evitar cifras rígidas acá
+            -- se describe el método sin un número que haya que mantener. */}
         <p>
           Cada punto del mapa es una zona con historial real de siniestros de motociclistas en CABA.
           El color no es fijo: se recalcula ahora mismo con un modelo de Machine Learning entrenado
-          con 23.343 casos reales, según la hora y el perfil histórico de cada zona.
+          con miles de casos reales, según la hora y el perfil histórico de cada zona.
         </p>
         <button className="onboarding-entendido" onClick={onCerrar} ref={entendidoRef}>Entendido</button>
       </div>

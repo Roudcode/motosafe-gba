@@ -17,6 +17,7 @@ import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 
+import auth
 import main
 import migrar
 
@@ -305,3 +306,327 @@ def test_prensa_excluye_google_y_usa_fecha_de_ingesta_si_la_publicada_no_sirve(p
     # La fecha 2013 no se muestra: se reemplaza por la de ingesta (hace 3 días).
     fecha_2013 = datetime.fromisoformat(filas['https://i.test/2013']['publicado_en'])
     assert fecha_2013.year >= datetime.now(timezone.utc).year
+
+
+# --- F11 (SES-165): sistema de usuarios real (registro, verificación, login, reseteo) ---
+# auth.py hace sus propias conexiones (auth._conn(), no pasa por main._pool_conexiones),
+# así que acá apuntamos auth.DATABASE_URL a la misma base de prueba desechable que ya
+# arma `migrada`, en vez de reusar el fixture `pool_real` (que es específico de main).
+
+@pytest.fixture
+def auth_db(migrada, monkeypatch):
+    monkeypatch.setattr(auth, 'DATABASE_URL', migrada)
+    yield migrada
+
+
+@pytest.fixture(autouse=True)
+def _limite_de_intentos_limpio(monkeypatch):
+    """H07 (assessment 2026-10-22, SES-168) sumó rate limiting a /auth/registro
+    -- sin esto, los ~10 tests de este archivo que llaman a registro (todos
+    desde el mismo "IP" del TestClient) se pisan entre sí y algunos empiezan a
+    dar 429 según el orden en que corran, en vez del código que cada test
+    quiere probar."""
+    monkeypatch.setattr(auth, '_intentos_fallidos', {})
+
+
+@pytest.fixture
+def sin_mail_real(monkeypatch):
+    """Los tests automáticos no mandan mail real -- eso se verificó aparte, a
+    mano, con una casilla real (ver docs/evidencias de F11). Acá solo se
+    registra qué se habría mandado, para poder leer el código real del test.
+    Devuelve True (igual que un envío real por SMTP) para que mail_enviado
+    en las respuestas siga comportándose como en producción."""
+    enviados = []
+
+    def _fake_enviar(destinatario, tipo, codigo):
+        enviados.append({'destinatario': destinatario, 'tipo': tipo, 'codigo': codigo})
+        return True
+
+    monkeypatch.setattr(auth.email_service, 'enviar_codigo', _fake_enviar)
+    return enviados
+
+
+@pytest.fixture
+def cliente_auth(auth_db, sin_mail_real):
+    return TestClient(main.app, base_url='https://testserver'), sin_mail_real
+
+
+def _codigo_real(url, email, tipo):
+    with psycopg2.connect(url) as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT c.codigo FROM codigos_auth c JOIN usuarios u ON u.id = c.usuario_id
+               WHERE u.email = %s AND c.tipo = %s ORDER BY c.creado_en DESC LIMIT 1""",
+            (email, tipo),
+        )
+        fila = cur.fetchone()
+        return fila[0] if fila else None
+
+
+def test_registro_crea_fila_real_y_manda_codigo_de_verificacion(cliente_auth, auth_db):
+    cliente, enviados = cliente_auth
+    respuesta = cliente.post('/auth/registro', json={'email': 'Prueba@Ejemplo.com', 'nombre_usuario': 'Prueba', 'password': 'una-clave-larga-1'})
+    assert respuesta.status_code == 201
+    assert respuesta.json() == {'ok': True, 'mail_enviado': True}
+
+    # Email normalizado a minúsculas en la fila real.
+    assert _contar(auth_db, "SELECT count(*) FROM usuarios WHERE email = 'prueba@ejemplo.com'") == 1
+    assert _contar(auth_db, "SELECT count(*) FROM usuarios WHERE email_verificado = false AND email = 'prueba@ejemplo.com'") == 1
+    assert len(enviados) == 1 and enviados[0]['tipo'] == 'verificacion'
+    assert len(enviados[0]['codigo']) == 6 and enviados[0]['codigo'].isdigit()
+
+
+def test_registro_rechaza_email_duplicado(cliente_auth):
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'dup@ejemplo.com', 'nombre_usuario': 'Dup1', 'password': 'una-clave-larga-1'})
+    respuesta = cliente.post('/auth/registro', json={'email': 'dup@ejemplo.com', 'nombre_usuario': 'Dup2', 'password': 'otra-clave-larga-2'})
+    assert respuesta.status_code == 409
+
+
+def test_registro_rechaza_nombre_usuario_duplicado(cliente_auth):
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'nombre1@ejemplo.com', 'nombre_usuario': 'MismoNombre', 'password': 'una-clave-larga-1'})
+    respuesta = cliente.post('/auth/registro', json={'email': 'nombre2@ejemplo.com', 'nombre_usuario': 'MismoNombre', 'password': 'otra-clave-larga-2'})
+    assert respuesta.status_code == 409
+    assert 'nombre de usuario' in respuesta.json()['detail'].lower()
+
+
+def test_registro_rechaza_contrasena_corta(cliente_auth):
+    cliente, _ = cliente_auth
+    respuesta = cliente.post('/auth/registro', json={'email': 'corta@ejemplo.com', 'nombre_usuario': 'Corta', 'password': 'corta1'})
+    assert respuesta.status_code == 400
+
+
+def test_registro_rechaza_nombre_usuario_vacio(cliente_auth):
+    cliente, _ = cliente_auth
+    respuesta = cliente.post('/auth/registro', json={'email': 'sinnombre@ejemplo.com', 'nombre_usuario': '  ', 'password': 'una-clave-larga-1'})
+    assert respuesta.status_code == 400
+
+
+def test_login_falla_sin_verificar_el_mail(cliente_auth):
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'sinverificar@ejemplo.com', 'nombre_usuario': 'SinVerificar', 'password': 'una-clave-larga-1'})
+    respuesta = cliente.post('/auth/login', json={'email': 'sinverificar@ejemplo.com', 'password': 'una-clave-larga-1'})
+    assert respuesta.status_code == 403
+    assert 'código' in respuesta.json()['detail'].lower()
+
+
+def test_flujo_completo_registro_verificar_login(cliente_auth, auth_db):
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'completo@ejemplo.com', 'nombre_usuario': 'Completo', 'password': 'una-clave-larga-1'})
+    codigo = _codigo_real(auth_db, 'completo@ejemplo.com', 'verificacion')
+    assert codigo is not None
+
+    mal = cliente.post('/auth/verificar-codigo', json={'email': 'completo@ejemplo.com', 'codigo': '000000'})
+    assert mal.status_code == 400
+
+    bien = cliente.post('/auth/verificar-codigo', json={'email': 'completo@ejemplo.com', 'codigo': codigo})
+    assert bien.status_code == 200
+    assert _contar(auth_db, "SELECT count(*) FROM usuarios WHERE email = 'completo@ejemplo.com' AND email_verificado = true") == 1
+
+    login = cliente.post('/auth/login', json={'email': 'completo@ejemplo.com', 'password': 'una-clave-larga-1'})
+    assert login.status_code == 200
+    assert 'motosafe_session' in login.cookies
+
+
+def test_login_con_nombre_de_usuario_funciona_igual_que_con_email(cliente_auth, auth_db):
+    """SES-169: el mismo campo de login acepta email o nombre de usuario."""
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'conusuario@ejemplo.com', 'nombre_usuario': 'ConUsuario', 'password': 'una-clave-larga-1'})
+    codigo = _codigo_real(auth_db, 'conusuario@ejemplo.com', 'verificacion')
+    cliente.post('/auth/verificar-codigo', json={'email': 'conusuario@ejemplo.com', 'codigo': codigo})
+
+    con_email = cliente.post('/auth/login', json={'email': 'conusuario@ejemplo.com', 'password': 'una-clave-larga-1'})
+    assert con_email.status_code == 200
+    cliente.post('/auth/logout')
+
+    con_nombre = cliente.post('/auth/login', json={'email': 'ConUsuario', 'password': 'una-clave-larga-1'})
+    assert con_nombre.status_code == 200
+    assert 'motosafe_session' in con_nombre.cookies
+
+    me = cliente.get('/auth/me')
+    assert me.json()['usuario'] == 'conusuario@ejemplo.com'
+
+
+def test_login_con_nombre_de_usuario_distinto_mayusculas_falla(cliente_auth, auth_db):
+    """El nombre de usuario es case-sensitive, igual que al registrarse."""
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'caseusuario@ejemplo.com', 'nombre_usuario': 'CaseUsuario', 'password': 'una-clave-larga-1'})
+    codigo = _codigo_real(auth_db, 'caseusuario@ejemplo.com', 'verificacion')
+    cliente.post('/auth/verificar-codigo', json={'email': 'caseusuario@ejemplo.com', 'codigo': codigo})
+
+    respuesta = cliente.post('/auth/login', json={'email': 'caseusuario', 'password': 'una-clave-larga-1'})
+    assert respuesta.status_code == 401
+
+
+def test_login_sin_verificar_con_nombre_de_usuario_devuelve_el_email_real(cliente_auth):
+    """SES-169: si se loguea con nombre de usuario y falta verificar, el
+    frontend necesita el email real (no el nombre de usuario) para reenviar
+    o verificar el código -- lo manda el header X-Email."""
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'sinverificarconusuario@ejemplo.com', 'nombre_usuario': 'SinVerificarConUsuario', 'password': 'una-clave-larga-1'})
+    respuesta = cliente.post('/auth/login', json={'email': 'SinVerificarConUsuario', 'password': 'una-clave-larga-1'})
+    assert respuesta.status_code == 403
+    assert respuesta.headers['X-Email'] == 'sinverificarconusuario@ejemplo.com'
+
+
+def test_codigo_de_verificacion_se_invalida_tras_varios_intentos_fallidos(cliente_auth):
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'fuerza-bruta@ejemplo.com', 'nombre_usuario': 'FuerzaBruta', 'password': 'una-clave-larga-1'})
+    for _ in range(5):
+        r = cliente.post('/auth/verificar-codigo', json={'email': 'fuerza-bruta@ejemplo.com', 'codigo': '111111'})
+        assert r.status_code == 400
+    # El sexto intento, aunque el código real esté bien ingresado a mano, ya está bloqueado.
+    bloqueado = cliente.post('/auth/verificar-codigo', json={'email': 'fuerza-bruta@ejemplo.com', 'codigo': '111111'})
+    assert 'intentos' in bloqueado.json()['detail'].lower()
+
+
+def test_reenviar_codigo_no_filtra_si_el_email_existe(cliente_auth):
+    cliente, enviados = cliente_auth
+    existe = cliente.post('/auth/reenviar-codigo', json={'email': 'no-existe-nunca@ejemplo.com'})
+    no_existe_resp = cliente.post('/auth/reenviar-codigo', json={'email': 'tampoco-existe@ejemplo.com'})
+    assert existe.status_code == 200 and no_existe_resp.status_code == 200
+    assert existe.json() == no_existe_resp.json()
+    assert enviados == []  # ninguno de los dos emails está registrado, no se manda nada
+
+
+def test_olvide_password_no_filtra_si_el_email_existe(cliente_auth, auth_db):
+    cliente, enviados = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'existente@ejemplo.com', 'nombre_usuario': 'Existente', 'password': 'una-clave-larga-1'})
+    enviados.clear()
+
+    con_cuenta = cliente.post('/auth/olvide-password', json={'email': 'existente@ejemplo.com'})
+    sin_cuenta = cliente.post('/auth/olvide-password', json={'email': 'inventado-total@ejemplo.com'})
+    assert con_cuenta.status_code == 200 and sin_cuenta.status_code == 200
+    assert con_cuenta.json() == sin_cuenta.json(), 'la respuesta tiene que ser idéntica exista o no la cuenta'
+    assert len(enviados) == 1 and enviados[0]['tipo'] == 'reset_password'
+
+
+def test_flujo_completo_reset_password(cliente_auth, auth_db):
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'reset@ejemplo.com', 'nombre_usuario': 'Reset', 'password': 'clave-original-1'})
+    codigo_verif = _codigo_real(auth_db, 'reset@ejemplo.com', 'verificacion')
+    cliente.post('/auth/verificar-codigo', json={'email': 'reset@ejemplo.com', 'codigo': codigo_verif})
+
+    cliente.post('/auth/olvide-password', json={'email': 'reset@ejemplo.com'})
+    codigo_reset = _codigo_real(auth_db, 'reset@ejemplo.com', 'reset_password')
+    assert codigo_reset is not None
+
+    reset = cliente.post('/auth/resetear-password', json={
+        'email': 'reset@ejemplo.com', 'codigo': codigo_reset, 'password_nueva': 'clave-nueva-2',
+    })
+    assert reset.status_code == 200
+
+    falla_con_vieja = cliente.post('/auth/login', json={'email': 'reset@ejemplo.com', 'password': 'clave-original-1'})
+    assert falla_con_vieja.status_code == 401
+
+    funciona_con_nueva = cliente.post('/auth/login', json={'email': 'reset@ejemplo.com', 'password': 'clave-nueva-2'})
+    assert funciona_con_nueva.status_code == 200
+
+
+def test_auth_me_sin_sesion_da_401(cliente_auth):
+    cliente, _ = cliente_auth
+    assert cliente.get('/auth/me').status_code == 401
+
+
+def test_login_con_email_inexistente_falla(cliente_auth):
+    cliente, _ = cliente_auth
+    respuesta = cliente.post('/auth/login', json={'email': 'no-existe@ejemplo.com', 'password': 'cualquiera'})
+    assert respuesta.status_code == 401
+
+
+def test_bloqueo_tras_varios_intentos_fallidos_de_login(cliente_auth, monkeypatch):
+    import auth as auth_module
+    monkeypatch.setattr(auth_module, '_intentos_fallidos', {})
+    cliente, _ = cliente_auth
+    email = 'bloqueo@ejemplo.com'
+    for _ in range(5):
+        cliente.post('/auth/login', json={'email': email, 'password': 'mal'})
+    respuesta = cliente.post('/auth/login', json={'email': email, 'password': 'sigue-mal'})
+    assert respuesta.status_code == 429
+
+
+# --- H04/H05/H07/H13 (assessment 2026-10-22, corregidos SES-168) -----------
+
+def test_codigo_anterior_se_invalida_al_pedir_uno_nuevo(cliente_auth, auth_db):
+    """H04: antes, pedir un código nuevo (reenviar-codigo) no invalidaba el
+    anterior -- quien tuviera el primer mail podía seguir usándolo."""
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'codigoviejo@ejemplo.com', 'nombre_usuario': 'CodigoViejo', 'password': 'una-clave-larga-1'})
+    codigo_viejo = _codigo_real(auth_db, 'codigoviejo@ejemplo.com', 'verificacion')
+    assert codigo_viejo is not None
+
+    cliente.post('/auth/reenviar-codigo', json={'email': 'codigoviejo@ejemplo.com'})
+    codigo_nuevo = _codigo_real(auth_db, 'codigoviejo@ejemplo.com', 'verificacion')
+    assert codigo_nuevo is not None and codigo_nuevo != codigo_viejo
+
+    con_el_viejo = cliente.post('/auth/verificar-codigo', json={'email': 'codigoviejo@ejemplo.com', 'codigo': codigo_viejo})
+    assert con_el_viejo.status_code == 400
+
+    con_el_nuevo = cliente.post('/auth/verificar-codigo', json={'email': 'codigoviejo@ejemplo.com', 'codigo': codigo_nuevo})
+    assert con_el_nuevo.status_code == 200
+
+
+def test_codigo_usa_secrets_no_random():
+    """H04: _generar_codigo tiene que usar secrets (CSPRNG), no random."""
+    import inspect
+
+    lineas_de_codigo = [
+        linea for linea in inspect.getsource(auth._generar_codigo).splitlines()
+        if not linea.strip().startswith('#')
+    ]
+    assert any('secrets.randbelow' in linea for linea in lineas_de_codigo)
+    assert not any('random.randint' in linea for linea in lineas_de_codigo)
+
+
+def test_cookie_emitida_antes_del_reset_deja_de_validar_despues(cliente_auth, auth_db):
+    """H05: antes, una cookie de sesión ya firmada seguía funcionando incluso
+    después de restablecer la contraseña -- la sesión era puramente un token
+    firmado sin ninguna verificación contra la base."""
+    cliente, _ = cliente_auth
+    cliente.post('/auth/registro', json={'email': 'revocar@ejemplo.com', 'nombre_usuario': 'Revocar', 'password': 'clave-original-1'})
+    codigo_verif = _codigo_real(auth_db, 'revocar@ejemplo.com', 'verificacion')
+    cliente.post('/auth/verificar-codigo', json={'email': 'revocar@ejemplo.com', 'codigo': codigo_verif})
+
+    login = cliente.post('/auth/login', json={'email': 'revocar@ejemplo.com', 'password': 'clave-original-1'})
+    assert login.status_code == 200
+    assert cliente.get('/auth/me').status_code == 200, 'la cookie recién emitida sigue siendo válida'
+
+    cliente.post('/auth/olvide-password', json={'email': 'revocar@ejemplo.com'})
+    codigo_reset = _codigo_real(auth_db, 'revocar@ejemplo.com', 'reset_password')
+    reset = cliente.post('/auth/resetear-password', json={
+        'email': 'revocar@ejemplo.com', 'codigo': codigo_reset, 'password_nueva': 'clave-nueva-2',
+    })
+    assert reset.status_code == 200
+
+    # La misma cookie (el cliente la sigue mandando) ya no debería validar.
+    sesion_vieja = cliente.get('/auth/me')
+    assert sesion_vieja.status_code == 401
+
+    nuevo_login = cliente.post('/auth/login', json={'email': 'revocar@ejemplo.com', 'password': 'clave-nueva-2'})
+    assert nuevo_login.status_code == 200
+    assert cliente.get('/auth/me').status_code == 200, 'la cookie nueva, emitida después del reset, sí vale'
+
+
+def test_registro_se_bloquea_tras_varios_intentos_desde_la_misma_ip(cliente_auth):
+    """H07: /auth/registro no tenía ningún límite de intentos por IP."""
+    cliente, _ = cliente_auth
+    for i in range(5):
+        cliente.post('/auth/registro', json={
+            'email': f'rl{i}@ejemplo.com', 'nombre_usuario': f'RL{i}', 'password': 'una-clave-larga-1',
+        })
+    respuesta = cliente.post('/auth/registro', json={
+        'email': 'rl-de-mas@ejemplo.com', 'nombre_usuario': 'RLDeMas', 'password': 'una-clave-larga-1',
+    })
+    assert respuesta.status_code == 429
+
+
+def test_registro_informa_mail_enviado_false_si_no_hay_smtp_configurado(auth_db, monkeypatch):
+    """H13: antes, si SMTP no estaba configurado, enviar_codigo caía al
+    fallback de consola pero el endpoint igual respondía mail_enviado: true."""
+    monkeypatch.setattr(auth.email_service, 'enviar_codigo', lambda destinatario, tipo, codigo: False)
+    cliente = TestClient(main.app, base_url='https://testserver')
+    respuesta = cliente.post('/auth/registro', json={
+        'email': 'sinsmtp@ejemplo.com', 'nombre_usuario': 'SinSmtp', 'password': 'una-clave-larga-1',
+    })
+    assert respuesta.status_code == 201
+    assert respuesta.json() == {'ok': True, 'mail_enviado': False}

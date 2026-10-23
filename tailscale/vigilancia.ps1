@@ -32,10 +32,10 @@ function Get-CodigoHttp([string]$url) {
 
 function Test-Base { docker exec motosafe-db pg_isready -U motosafe -d motosafe_gba *> $null; return ($LASTEXITCODE -eq 0) }
 function Test-Backend { return ((Get-CodigoHttp 'http://127.0.0.1:8000/health') -eq 200) }
-function Test-Preview { return ((Get-CodigoHttp "https://127.0.0.1:$puerto/") -eq 200) }
+function Test-Preview { return ((Get-CodigoHttp "http://127.0.0.1:$puerto/") -eq 200) }
 function Test-Funnel {
     $estado = (tailscale funnel status 2>&1 | Out-String)
-    return ($estado -match 'Funnel on' -and $estado -match "proxy https\+insecure://127\.0\.0\.1:$puerto")
+    return ($estado -match 'Funnel on' -and $estado -match "proxy http://127\.0\.0\.1:$puerto")
 }
 function Test-Publica { if (-not $urlPublica) { return $false }; return ((Get-CodigoHttp $urlPublica) -eq 200) }
 
@@ -94,6 +94,13 @@ if (-not $previewOk -and -not $SoloEstado) {
         Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "cd /d `"$frontend`" && npm run build" -WindowStyle Hidden -Wait
         $acciones += 'preview: build'
     }
+    # MOTOSAFE_SIN_HTTPS seteado en el entorno de ESTE proceso (no dentro de
+    # la linea de cmd.exe): un "set X=1 && comando" en una sola linea de
+    # cmd.exe no propaga de forma confiable la variable al comando siguiente
+    # (confirmado a mano, repetible -- ver SES-164 en BITACORA.md). Start-Process
+    # hereda el entorno de este proceso de PowerShell, asi que seteandola aca
+    # alcanza, sin tocar la linea de cmd.exe.
+    $env:MOTOSAFE_SIN_HTTPS = '1'
     Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "cd /d `"$frontend`" && npx vite preview --host --port $puerto --strictPort" -WindowStyle Hidden
     $acciones += 'preview: iniciado'
     $previewOk = Esperar { Test-Preview } 60
@@ -102,7 +109,7 @@ if (-not $previewOk -and -not $SoloEstado) {
 # 4. Tailscale Funnel: el 443 tiene que apuntar al preview. El 8443 no se toca.
 $funnelOk = Test-Funnel
 if (-not $funnelOk -and -not $SoloEstado) {
-    tailscale funnel --bg --https=443 "https+insecure://127.0.0.1:$puerto" *> $null
+    tailscale funnel --bg --https=443 "http://127.0.0.1:$puerto" *> $null
     $acciones += 'funnel: reaplicado a 443'
     $funnelOk = Test-Funnel
 }

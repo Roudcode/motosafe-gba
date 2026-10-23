@@ -5,7 +5,7 @@ Esquema real de este proyecto (no el genérico de cualquier app):
 ```
 Internet
   -> https://<nombre-pc>.<tailnet>.ts.net   (Tailscale Funnel, TLS real)
-  -> https://127.0.0.1:5175                  (vite preview del build de produccion, TLS autofirmado)
+  -> http://127.0.0.1:5175                   (vite preview del build de produccion, HTTP plano desde SES-164 -- Funnel pone el unico TLS real)
        -> /api/*  proxeado internamente a  http://127.0.0.1:8000  (FastAPI)
        -> todo lo demas servido por Vite (la SPA de React)
 ```
@@ -120,7 +120,7 @@ Para ver el estado en 10 segundos: `tailscale\estado.bat` (no reinicia nada).
 ## Comandos sueltos, por si los necesitás directo
 
 ```
-tailscale funnel --bg https+insecure://127.0.0.1:5175    equivale a iniciar_funnel.bat
+tailscale funnel --bg http://127.0.0.1:5175              equivale a iniciar_funnel.bat (desde SES-164)
 tailscale funnel status                                    equivale a estado.bat (parte Tailscale)
 tailscale funnel 443 off                                   equivale a detener_funnel.bat
 ```
@@ -138,7 +138,7 @@ público -- ni vos necesitás usuario/contraseña en ese caso, porque
 Tailscale ya autenticó el dispositivo:
 
 ```
-tailscale serve --bg https+insecure://127.0.0.1:5175
+tailscale serve --bg http://127.0.0.1:5175
 ```
 
 Esto NO reemplaza el login que ya quedó armado (es una capa aparte) pero

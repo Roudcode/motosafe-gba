@@ -76,7 +76,7 @@ function elementoDivIcono(html, size, claseExtra) {
   return wrapper
 }
 
-function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExtra }) {
+function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExtra, estiloBorde }) {
   const el = document.createElement('div')
   el.className = claseExtra || ''
   el.style.width = `${size}px`
@@ -84,7 +84,7 @@ function elementoCirculo({ size, color, fillColor, fillOpacity, weight, claseExt
   el.style.borderRadius = '50%'
   el.style.background = fillColor || color
   el.style.opacity = fillOpacity != null ? fillOpacity : 1
-  el.style.border = `${weight || 2}px solid ${color}`
+  el.style.border = `${weight || 2}px ${estiloBorde || 'solid'} ${color}`
   el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.35)'
   el.style.cursor = 'pointer'
   return el
@@ -1150,7 +1150,13 @@ function MapaMotoSafeInner({
       const vigenciaHoras = VIGENCIA_HORAS_POR_CATEGORIA[rep.categoria] || VIGENCIA_HORAS_DEFAULT
       const opacidad = opacidadPorAntiguedad(rep.creadoEn, vigenciaHoras, horaActual)
       const reciente = esReciente(rep.creadoEn, horaActual)
-      const el = elementoCirculo({ size: 16, color, fillOpacity: 0.7 * opacidad, weight: 2 })
+      // V13 (SES-162): antes era el mismo círculo liso que ya usan los
+      // hotspots históricos (misma forma, solo distinto color/tamaño) --
+      // borde punteado para que un reporte de la comunidad se reconozca
+      // como una categoría distinta de un vistazo, mismo recurso (borde
+      // discontinuo) que ya usa .cluster-bubble-inseguridad para separar
+      // clusters de inseguridad de los de siniestros.
+      const el = elementoCirculo({ size: 16, color, fillOpacity: 0.7 * opacidad, weight: 2, estiloBorde: 'dashed' })
       el.className = reciente ? 'pulse-marker-report' : ''
       el.addEventListener('click', (e) => {
         e.stopPropagation()

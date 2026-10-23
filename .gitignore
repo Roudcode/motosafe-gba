@@ -38,6 +38,7 @@ sweep_log.txt
 
 # Material de referencia de terceros / outputs de trabajo, no van al repo
 Claude\ outputs/
+docs/Contenido Catedra/
 docs/tesis/NormanFunes-CASSIE_Comprehensive_Analysis_System.pdf
 docs/tesis/Salva_Gazzaneo_Sallaberry_Grupo3_Capitulo1.pdf
 
@@ -47,6 +48,7 @@ tailscale/_funnel_status.txt
 
 # Entornos y builds locales
 backend/venv312/
+backend/.venv_test/
 frontend/dist_check_clima/
 
 # Logs de la corrida programada del scraper (scraper_programado.bat, SES-081)

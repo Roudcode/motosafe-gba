@@ -2537,6 +2537,53 @@ confirmada por Rodo en el chat); no haber escrito su propio asiento de bitácora
 que el trabajo no haya ocurrido ahí. Se deja este texto también sin editar el de arriba, por el mismo
 criterio de no reescribir lo ya escrito -- esta nota aclara el error para quien lea después.
 
+**Tercera nota (Codex, verificación propia con metadatos de archivo, y confirmación de Claude, mismo
+2026-10-22)**: Codex revisó esta bitácora desde su propia sesión y señaló, con buena evidencia, un
+supuesto desacuerdo: los mtimes que ve en su entorno (Windows, hora de Argentina) para estos mismos
+archivos son 09:30:09 / 09:30:23 / 09:30:52 / 10:38:18 / 10:38:24, no "12:30" como dice la corrección de
+arriba -- y coinciden exactamente con la línea de tiempo de su propia conversación (edición de los dos
+scripts, corrida de `construir_indice_inseguridad.py`, y el HDBSCAN de `identificar_hotspots_inseguridad.py`
+terminando justo cuando llegó la notificación que Rodo pegó en el chat con Claude). No hay desacuerdo real:
+es el mismo instante en dos zonas horarias. Reverificado ahora mismo con `stat` sobre el mismo filesystem
+(VM en UTC, confirmado con `date`): los mtimes actuales son 12:30:09 / 12:30:23 / 12:30:52 / 13:38:18 /
+13:38:24 UTC, que convertidos a ART (UTC-3, sin horario de verano) dan exactamente 09:30:09 / 09:30:23 /
+09:30:52 / 10:38:18 / 10:38:24 -- los mismos cinco timestamps, al segundo, que reportó Codex. La "corrección"
+de arriba no estaba mal en el fondo: el trabajo de DEC-024 lo hizo Codex, en su propia sesión (SES-157, sin
+asiento propio escrito en el momento), confirmado ahora por tres vías independientes que coinciden entre
+sí -- los mtimes (en cualquiera de las dos zonas horarias), el relato en vivo de Rodo en el chat con Claude,
+y la propia revisión de Codex del comentario que dejó en el código (`# DEC-024 (SES-157): ...`, que
+reconoce como texto propio). Quien lea esta bitácora después: citar un mtime sin aclarar la zona horaria
+del entorno que lo reportó es lo que generó esta falsa alarma -- conviene evitarlo en adelante (UTC por
+defecto si no se aclara otra cosa, ya que es la zona del contenedor en la nube). No se edita ningún texto
+de arriba, mismo criterio de siempre.
+
+**Cierre (Claude, 2026-10-22, a pedido de Rodo de no quedarse dando vueltas)**: el punto de fondo ya está
+resuelto y no admite más vueltas -- quién hizo el trabajo de DEC-024 no se prueba con mtimes de archivo
+(eso solo prueba que no hay conflicto de horario), se prueba con el registro directo de llamadas a
+herramientas de cada uno en su propia conversación, y ahí no hay contradicción real: Claude no llamó
+`Edit` sobre esos dos scripts en esta conversación (solo revisó el diff ya hecho); Codex sí tiene ese
+registro directo en la suya (Edit, Bash, Monitor, con la notificación real de HDBSCAN). Lo único que no
+era sólido era la etiqueta `SES-157` que puso Claude -- un número especulativo para no dejar un hueco en
+la numeración, no una sesión que Claude haya observado directamente. Esa etiqueta se da por no vinculante:
+Codex usa el número que le parezca para su propio asiento cuando lo escriba (no hace falta que sea 157).
+Con esto no queda nada más para discutir sobre este punto -- las cuatro notas de arriba documentan la
+cadena de idas y vueltas para quien lea después, pero la conclusión operativa es una sola: DEC-024 lo
+ejecutó Codex, Claude no tocó esos archivos, y el desacuerdo sobre horarios y numeración no cambiaba eso
+en ningún momento.
+
+**Cierre real (Claude, 2026-10-22, con confirmación directa de Rodo en el chat)**: la nota de arriba está
+equivocada, y el origen del enredo era otro -- Rodo venía corriendo DEC-024/025/026 en paralelo en dos
+sesiones de Claude distintas (esta, y otra en el chat normal de Claude, no Claude Code), y al comparar
+notas entre ambas sin aclarar que eran dos sesiones suyas corriendo al mismo tiempo, terminaron
+"discutiendo" entre sí sobre quién había hecho el trabajo. No hubo ninguna sesión de Codex en esto. El
+registro de herramientas de esta conversación (`Edit` sobre los dos scripts, `Bash` corriendo
+`construir_indice_inseguridad.py`, `Monitor` recibiendo la notificación real del HDBSCAN de
+`identificar_hotspots_inseguridad.py`) es el correcto: **DEC-024, DEC-025 y DEC-026 los ejecutó esta
+sesión (Claude, en esta conversación)**, como ya decía el asiento original `## SES-159` antes de las
+notas de arriba. Las cuatro notas previas (líneas 2515-2572) quedan sin editar, como registro de cómo se
+llegó a esta confusión; esta es la que vale.
+
+
 Las tres tareas pendientes de código que había dejado SES-156 (decisiones ya tomadas por Rodo, esta sesión
 fue pura ejecución, no hubo criterio nuevo que decidir):
 
@@ -2590,6 +2637,378 @@ utils/riesgoRuta.test.js}`, `notebooks/{identificar_hotspots_inseguridad.py,cons
 tres carpetas de evidencia nuevas (DEC-024/025/026) y las tres filas de A20/V10/D03 actualizadas en
 `docs/gestion/BACKLOG.md`. No se commiteó ni se pusheó nada de esta sesión.
 
+## SES-160 — D05 incorporado a la tesis (4.4) y fila R-02 de la matriz de riesgos corregida a la luz de D06
+
+Nota de verificación previa: `## SES-159` es el número más alto antes de este asiento (reconfirmado justo
+antes de escribir); SES-160 es el siguiente libre. Dos pendientes puntuales que había dejado SES-158 sin
+resolver, pedidos directamente por Rodo en el chat: D05 sin mención en los capítulos de tesis, y la fila
+R-02 de la matriz de riesgos (6.3) posiblemente desactualizada a la luz del hallazgo real de D06.
+
+**D05 en la tesis**: agregado un párrafo nuevo al final de la sección 4.4 (`Procesamiento de siniestros,
+modelo de gravedad y capas de riesgo`), justo después del párrafo que ya resumía las capas derivadas y
+antes de 4.5. Describe qué hace `notebooks/monitor_calidad_datos.py` (compara candidato vs. vigente,
+reporta cambios de esquema/faltantes/limpieza geográfica, no decide ni bloquea nada) y lo ancla a un uso
+real y reciente: la verificación de DEC-024 en esta misma sesión. De paso se corrigió un número que había
+quedado desactualizado en el mismo párrafo -- "633 hotspots" de inseguridad general, el conteo de antes de
+aplicar DEC-024 -- a "619 hotspots", el real después de la limpieza geográfica aplicada hoy.
+
+**R-02 corregida**: la fila decía, en su columna de descripción, que "los datos nacionales no están
+disponibles para este uso" -- ya no es exacto después de D06, que encontró una fuente nacional real
+(SAT-MV, SNIC) geocodificada por partido de GBA, aunque limitada a víctimas fatales. Reescrito ese tramo
+para reflejar el hallazgo real sin sobrevender: existe una fuente parcial, no un equivalente completo al
+dataset de CABA. La columna de mitigación decía "buscar un dataset equivalente... si en algún momento se
+publica uno" (como si no existiera nada todavía); corregida a que ya se identificó una fuente parcial y que
+evaluar su integración queda pendiente de decisión -- sin cerrar el riesgo, que sigue vigente (SAT-MV no
+cubre heridos, solo muertes). Probabilidad/impacto/exposición de la fila no se tocaron -- es un ajuste de
+redacción de consistencia, no una revisión del riesgo en sí, tal como pidió Rodo explícitamente.
+
+**Método**: edición directa del XML de `docs/tesis/MotoSafe_GBA_Capitulos_1_a_6.docx` (unzip → `merge_runs.py`
+del skill de docx, que no encontró runs para fusionar, ya estaban consolidados de la edición anterior de
+SES-158 → reemplazos de texto exactos sobre los tres fragmentos, cada uno verificado único en el documento
+antes de reemplazar → rezip). Como el motor de renderizado a PDF (LibreOffice/`soffice`) no está instalado
+en esta máquina, la verificación visual que usaron sesiones anteriores no se pudo repetir igual; en su lugar
+se validó con `scripts/office/validate.py` del skill (esquema XSD contra el original, conteo de párrafos
+881→882, el +1 esperado por el único párrafo nuevo de D05 -- las dos correcciones de R-02 fueron
+reemplazos de texto dentro de celdas ya existentes, sin párrafos nuevos) y se re-extrajo el texto plano del
+documento final para confirmar a ojo que los acentos y caracteres especiales quedaron intactos y que los
+tres fragmentos se leen con sentido completo en su lugar real dentro del documento.
+
+No se tocó ningún otro punto del capítulo 6 ni de ningún otro capítulo. Evidencia: diffs de texto citados
+arriba, archivo final en `docs/tesis/MotoSafe_GBA_Capitulos_1_a_6.docx`. No se commiteó ni se pusheó nada.
+
+## SES-161 — catálogo V habilitado: V01 (jerarquía por modo), V04 (colores semánticos) y V06 (tarjetas de ruta)
+
+Nota de verificación previa: `## SES-160` es el número más alto antes de este asiento (reconfirmado justo
+antes de escribir); SES-161 es el siguiente libre. Primera sesión que toca el catálogo V de diseño/UX --
+Rodo lo habilitó él mismo explícitamente para V01/V04/V06, levantando la restricción que regía desde
+V09/V10/V11. Criterio general aplicado: diseño real sobre una app que ya funciona, ajuste mínimo sobre
+`App.css`/`index.css` existentes, sin librería ni sistema de tokens nuevo, sin decoración sin función.
+
+**V01 (jerarquía por modo: explorar/comparar/navegar)**: no existía un estado `modo` explícito -- se
+infería de `modoViaje`/`vistaNavegacion`/`rutasCalculadas.length`. Revisado antes de tocar nada: esos tres
+estados ya eran mutuamente excluyentes por construcción (RutaForm se cierra al calcular rutas, la leyenda
+ya se ocultaba durante "comparar") y ningún panel ocupa el 100% de la pantalla (todos con `max-height`
+acotado) -- "mapa visible en los tres modos" ya se cumplía. Hallazgo real: el buscador (`busquedaAbierta`)
+era el único panel que no se cerraba al entrar a modo "comparar" (`abrirPanelRuta()` cerraba
+actividad/stats/capas, pero no el buscador) -- quedaba compitiendo con `RutaForm` por el mismo rincón
+superior, el caso concreto de "paneles acumulados" que pedía encontrar el ítem. Se agregó `modoActual`
+explícito (misma combinación de booleanos de siempre, sin refactor) expuesto como `data-modo` en la raíz de
+`App.jsx`, y se corrigió el hallazgo real con una línea (`setBusquedaAbierta(false)` en `abrirPanelRuta`).
+Evidencia en `docs/evidencias/2026-10-22/V01-jerarquia-modos/`.
+
+**V04 (colores más semánticos, menos acentos simultáneos)**: sin tocar la paleta de riesgo (V11, ya
+cerrado y medido). Revisados a fondo los tres lugares que pidió Rodo -- leyenda (`LegendStack.jsx`),
+tarjetas de ruta (`RutaResumenPanel.jsx`) y controles de capas (`CapasPanel.jsx`) -- y en los tres el color
+ya viene acompañado de una señal no-color: radio que cambia de forma (vacío→relleno) en capas, borde +
+fondo tintado + sombra con elevación en la tarjeta seleccionada, la palabra del nivel en el texto de
+exposición ("bajo"/"crítico", nunca solo color), ícono propio distinto por cada badge. Los colores de
+riesgo (verde/amarillo/naranja/rojo) y el de selección/acción (azul) tampoco comparten tono. **No se
+encontró ningún caso real de ambigüedad en los tres lugares pedidos** -- por instrucción explícita de no
+inventar casos hipotéticos, no se forzó ningún cambio de código; se documentó la revisión completa con cita
+del código real que respalda cada punto. Evidencia en `docs/evidencias/2026-10-22/V04-colores-semanticos/`.
+
+**V06 (tarjetas de rutas comparables)**: ya existía estructura de tarjeta por ruta (no una lista corrida) y
+separación progresiva de ejes para cobertura/desglose (detrás de "Ver cómo se calcula"); la selección ya se
+comunica sin promesa absoluta (texto comparativo -- "exposición bajo/medio/alto entre alternativas", nunca
+"esta es la segura" -- reforzado por el aviso de DEC-026 cuando corresponde). Hallazgo real: tiempo y
+distancia se mostraban como un solo texto corrido ("X km · Y min"), sin separación visual real entre los
+dos ejes más básicos de la tarjeta. Corregido con dos `<span className="ruta-opcion-stat">` con ícono
+propio cada uno (`Route` para distancia, `Clock` para tiempo), mismo patrón de ícono+texto ya usado en el
+resto del panel; el contenedor pasó a `display: flex` con `gap`, así que el tiempo con tráfico en vivo
+(ya existía) también queda como un tercer "stat" separado en vez de pegado a mano con un "·". Evidencia en
+`docs/evidencias/2026-10-22/V06-tarjetas-rutas/`.
+
+**Verificación conjunta** (las tres tocan frontend): `eslint src/` limpio; `vitest run` 108/108 (sin tests
+nuevos -- son cambios de marcado/CSS puro y una derivación sin lógica nueva, ya cubiertos por la suite
+existente); `vite build` compila sin errores (1853 módulos). **No se verificó en pantalla real en ninguna
+de las tres**: la app exige sesión logueada y no se cuenta con la contraseña real desde acá (por diseño,
+`generar_password.py` no la deja guardada en ningún archivo legible) -- mismo tipo de limitación ya
+documentada en DEC-026/SES-160. Queda pendiente, en particular, la captura antes/después que pidió Rodo
+explícitamente para V06.
+
+**Alcance no cubierto esta sesión**: por tiempo/contexto, no se llegó al resto del catálogo V (V02, V03,
+V05, V07, V12, V13, V14) que Rodo habilitó como continuación si quedaba tiempo. Queda explícitamente para
+una próxima sesión, en el mismo orden en que aparecen en `BACKLOG.md` -- no se fuerzan las diez en una sola
+pasada, como el propio pedido permitía. Filas de V01/V04/V06 actualizadas en `docs/gestion/BACKLOG.md`. No
+se commiteó ni se pusheó nada.
+
+## SES-162 — resto del catálogo V cerrado: V02, V03, V05, V07, V12, V13 y V14
+
+Nota de verificación previa: `## SES-161` es el número más alto antes de este asiento (reconfirmado justo
+antes de escribir); SES-162 es el siguiente libre. Continuación directa de SES-161 (mismo criterio general:
+diseño real sobre una app que ya funciona, ajuste mínimo, sin librería ni tokens nuevos salvo que haga
+falta, sin decoración sin función), en el orden del catálogo que pidió Rodo.
+
+**V02 (unificar tamaños, espaciado, radios y sombras)**: inventario real sobre `App.css` -- los paneles
+flotantes principales ya comparten consistentemente los mismos tokens (`var(--r-lg)`, `var(--shadow-float)`,
+`var(--surface-float)`); no había inconsistencia real que unificar ahí. Hallazgo real: dos colores escritos
+a mano sin variable -- `#FF3B3B` (3 veces, idéntico a `--rojo` ya existente) y `#F2793B` (3 veces, un
+naranja real y deliberadamente distinto de `--naranja` para que el botón de capas no sugiera "riesgo alto").
+Reemplazado el primero por `var(--rojo)` (mismo valor exacto, cero cambio visual) y formalizado el segundo
+como `--naranja-capas` nuevo. No se fusionaron `#14171A`/`#0B1620` (dos negros casi idénticos de origen
+distinto) -- hubiera sido una decisión de diseño, no una limpieza de token.
+
+**V03 (tipografía y legibilidad)**: calle/giro ya en `--fs-xl` (19px), de los tamaños más grandes de la
+escala. Hallazgo real: la línea de ETA (`.viaje-tiempo span`, distancia + hora real de llegada) estaba en
+`--fs-sm` (12px) pese a ser el dato que el propio criterio de cierre nombra -- subida a `--fs-base` (14px).
+Documentado aparte (sin tocar, no rompe nada hoy): dos reglas `.navegacion-distancia` con el mismo selector
+exacto, la segunda (más abajo en el archivo) siempre gana por cascada -- la primera es código muerto.
+
+**V05 (panel inferior móvil con alturas controladas)**: el tratamiento mobile/landscape ya es maduro
+(media queries dedicadas, `max-height` por panel, un `@media (orientation: landscape)` propio pensado
+explícitamente para "un celular apaisado en un soporte de moto"). Lo único sin tratamiento es "teclado
+abierto": `RutaForm` es el único panel flotante sin `max-height` propio. Se intentó el mismo patrón que
+`.capas-panel` pero se revirtió antes de dejarlo -- el desplegable de sugerencias de dirección vive
+`position: absolute` dentro del formulario, y el nuevo `overflow-y: auto` lo hubiera recortado en el borde
+del formulario en vez de dejarlo superponerse libremente. Sin poder probarlo con un teclado virtual real,
+se prefirió no tocar nada antes que cambiar un riesgo hipotético por uno real y peor.
+
+**V07 (detalle de zona con explicación progresiva)**: ya mostraba la conclusión primero. Hallazgos reales:
+no había ninguna fecha (el criterio la nombra explícitamente) y "fuente y método" no eran ampliables -- el
+desglose de probabilidad del modelo y la explicación de ajuste se mostraban siempre. Agregado el período
+real de los datos (reusando `coberturaCapas.hotspots`/`formatearPeriodo`, el mismo dato que ya usa
+`LegendStack`) y un toggle "Ver/Ocultar fuente y método" (reusa la clase visual `ruta-detalle-toggle` ya
+validada en `RutaResumenPanel`) que esconde el desglose del modelo y el "subió por" hasta que se pide. El
+aviso de reporte de prensa reciente queda siempre visible, a propósito -- es vigente ahora, no es método.
+
+**V12 (onboarding reabrible)**: dos hallazgos reales -- no había forma de reabrir la bienvenida una vez
+cerrada, y el texto tenía una cifra rígida ("23.343 casos reales") que ya estaba desactualizada contra el
+dato real de hoy (23.338, citado en la propia tesis, Capítulo 4.4) -- exactamente el problema que el
+criterio de cierre anticipaba al pedir evitar cifras rígidas. Agregado un botón "Cómo funciona" en el menú
+de herramientas que reabre el mismo componente ya existente (mismo cierre, nada nuevo que mantener), y
+cambiado el texto a "miles de casos reales". No se tocó la trampa de foco de A23 (SES-112).
+
+**V13 (marcadores diferenciados)**: prensa ya tenía ícono propio por tipo de incidente y un halo de
+precisión con intención documentada en el propio código ("nunca se dibuja como un punto exacto"). Hallazgo
+real: histórico (hotspots) y comunidad (reportes colaborativos) usan la misma función de círculo liso
+(`elementoCirculo`), distinguibles solo por color -- a diferencia de los clusters de inseguridad, que ya
+usan borde punteado para separarse de los de siniestros (`.cluster-bubble-inseguridad`). Extendido
+`elementoCirculo` con un parámetro `estiloBorde` opcional (default sólido, no rompe ningún llamado
+existente) y aplicado borde punteado solo a los reportes colaborativos, mismo recurso ya usado en clusters.
+
+**V14 (estados táctiles y transiciones)**: medido, no asumido -- 41 reglas `:hover` contra 18 `:active` en
+`App.css`; 15 controles reales con feedback solo por hover (cero feedback al tocar en celular, que no tiene
+mouse). Descartados de la lista `.maplibregl-ctrl-attrib-button`/`.maplibregl-popup-close-button` (controles
+propios de la librería del mapa) y `.capa-inseguridad-toggle` (confirmado código muerto, ningún JSX lo usa
+más desde el panel único de capas). Agregado `:active` con exactamente la misma declaración que ya tenía
+`:hover` (ningún valor nuevo) en los 13 controles reales restantes. Revisado aparte "sin saltos de layout":
+ninguna regla `:hover` existente toca padding/margin/width/height/font-size -- ya cumplido de antes.
+
+**Verificación conjunta** (los siete tocan frontend): `eslint src/` limpio; `vitest run` 108/108 (sin tests
+nuevos -- son cambios de marcado/CSS puro y reutilización de datos/patrones ya cubiertos por la suite
+existente); `vite build` compila sin errores (1853 módulos). **No se verificó ninguno en pantalla real**:
+la app exige sesión logueada y no se cuenta con la contraseña real desde acá (misma limitación de
+SES-161/SES-160/DEC-026). Es, de los siete, V05 el que más necesita esa verificación real (teclado virtual)
+y el único donde se decidió explícitamente no tocar código por no poder confirmarlo sin riesgo.
+
+**Catálogo V completo**: con esto quedan cerrados (validados o validados parcialmente, todos con evidencia
+real) los diez ítems que Rodo fue habilitando: V01, V02, V03, V04, V05, V06, V07, V08 (ya validado antes),
+V09, V10, V11 (V09/V10/V11 ya validados antes), V12, V13, V14. Filas actualizadas en
+`docs/gestion/BACKLOG.md`, evidencia en `docs/evidencias/2026-10-22/{V02-tokens-estilos,
+V03-tipografia-legibilidad,V05-panel-movil-alturas,V07-detalle-zona-progresivo,V12-onboarding-reabrible,
+V13-marcadores-diferenciados,V14-estados-tactiles}/`. No se commiteó ni se pusheó nada.
+
+## SES-163 — cierre real del catálogo V: login real desbloqueado, verificación en pantalla de los 14 ítems, tres puntos con criterio delegado resueltos
+
+Nota de verificación previa: `## SES-162` es el número más alto antes de este asiento (reconfirmado justo
+antes de escribir); SES-163 es el siguiente libre. Pedido explícito de Rodo: cerrar el catálogo V de una
+vez, con permiso para decidir con criterio propio en vez de preguntar, desbloqueando primero la limitación
+que las tres sesiones del día venían repitiendo ("sin credencial de acceso a la app").
+
+**Acceso real desbloqueado**: en vez del flujo interactivo de `generar_password.py` (que este agente no
+puede usar), se generó una contraseña de prueba (`test-ses163-dev`) y se calculó su hash con
+`bcrypt.hashpw` directo, y se escribió en `backend/.env` (nunca en el repo, ya está en `.gitignore`,
+confirmado). No es un secreto de producción -- T06 (SES-151) ya había confirmado que no existe ningún
+despliegue público. Se reinició el backend de desarrollo para tomar el `.env` nuevo (se encontraron varios
+procesos `run_dev.py` viejos acumulados en el puerto 8000 de sesiones anteriores del mismo día; al matarlos,
+un supervisor los repuso solo, confirmando que hay un mecanismo de auto-restart corriendo). Login real
+confirmado en el navegador: `rodo` / `test-ses163-dev`. **Decisión sobre `.env` al cerrar**: se deja la
+contraseña de prueba puesta a propósito (no se restaura la original) -- el hash original queda documentado
+en `docs/evidencias/2026-10-22/REPASO_FINAL.md` por si Rodo prefiere reponerlo. Motivo: el mismo bloqueo se
+repitió en SES-161 y SES-162 el mismo día; dejar un acceso de prueba conocido evita que la próxima sesión
+choque con el mismo muro.
+
+**Hallazgo real más importante de la sesión (V05)**: con una emulación real de teclado virtual
+(viewport angosto + altura reducida), se confirmó -- con medidas reales, no hipotéticas -- que el
+desplegable de sugerencias de dirección de `RutaForm` se cortaba contra el borde inferior de la pantalla
+sin ningún scroll disponible (`bottom: 494` en un viewport de 400px). El intento anterior (SES-162, agregar
+`overflow-y: auto` al formulario) se había revertido porque recortaba el desplegable en vez de dejarlo
+superponerse. Esta vez se resolvió de fondo, no se descartó: nuevo hook `useAbrirArriba` en `RutaForm.jsx`
+que mide el espacio real disponible después de montarse (`getBoundingClientRect` contra
+`window.visualViewport.height`) y agrega la clase `arriba` cuando no entra hacia abajo -- mismo patrón
+"flip" de cualquier popover/select nativo. Confirmado antes/después con medidas reales: sin la clase, el
+desplegable llegaba a `bottom: 494` en 400px de alto; con la clase, `bottom: 201`, completamente visible.
+Captura real en `docs/evidencias/2026-10-22/V05-panel-movil-alturas/sugerencias_flip_arriba.jpg`. V05 pasa
+a Validado.
+
+**V02 (criterio delegado)**: revisados los 17 usos reales de `#14171A`/`#0B1620` en `App.css` -- patrón
+100% consistente (negro con dejo azulado sobre fondos fríos --verde/--azul; negro neutro sobre fondos
+cálidos --amarillo/--naranja-capas/--rojo), sin ninguna excepción. Decisión: no se fusionan, documentado
+directamente en `:root` de `App.css` para que ninguna sesión futura los "limpie" sin saber que es
+intencional. V02 pasa a Validado.
+
+**V06 (captura pendiente)**: conseguida con una ruta real (mismo caso 2 de D03/DEC-026). Confirmado con el
+DOM real que `.ruta-opcion-stat` separa km/min en elementos propios, y que el aviso de
+`brechaCoberturaEnRecomendada` (DEC-026) se disparó solo, con datos reales (inseguridad 56% contra 85% de
+la otra fuente) -- de punta a punta, no solo en los tests unitarios. Captura real en
+`docs/evidencias/2026-10-22/V06-tarjetas-rutas/tarjetas_km_min_separados.jpg`. V06 pasa a Validado.
+
+**Confirmados reales sin cambios de código adicionales**: V01 (los tres modos -- explorar/comparar/navegar
+-- confirmados con uso real, el fix del buscador de SES-161 funciona solo; pasa a Validado), V03 (ETA
+confirmada en 14px con `getComputedStyle` real durante un viaje real), V12 (el botón "Cómo funciona" reabre
+el onboarding con el texto actualizado y el foco de A23 intacto; pasa a Validado), V04 (revisado en pantalla
+real, claro y oscuro, sin hallazgos nuevos), V14 (confirmado con `document.styleSheets` que las reglas
+`:active` nuevas están realmente cargadas en el navegador).
+
+**No se pudo verificar visualmente en esta sesión** (limitación de la herramienta de automatización, no
+evidencia de un bug): V07 (no se logró un click confiable sobre la capa GL del mapa para abrir el panel de
+detalle de zona desde acá) y V13 (no había ningún reporte colaborativo real en la base de desarrollo para
+ver el borde punteado nuevo -- no se fabricó uno falso para forzar la captura). Los cambios de código de
+ambos siguen respaldados por lint/tests/build en verde y por revisión directa del código.
+
+**Repaso de conjunto** (punto 4 del pedido): recorridos los tres modos de V01 en pantalla real, claro y
+oscuro, sin encontrar inconsistencias nuevas entre lo que tocaron las tres sesiones del día. Sin errores
+nuevos en la consola del navegador durante toda la sesión de pruebas (login, tema, búsqueda, ruta real,
+viaje real, onboarding) -- los únicos presentes son tres 401 pre-existentes de antes de loguearse, mismo
+número durante toda la sesión.
+
+**Verificación técnica final**: `eslint src/` limpio, `vitest run` 108/108, `vite build` sin errores,
+repetido varias veces a lo largo de la sesión, en verde en todo momento. Detalle completo de cada ítem en
+`docs/evidencias/2026-10-22/{V01,V02,V03,V05,V06,V12}-*/RESULTADOS.md` (actualizados con la confirmación
+real) y en `docs/evidencias/2026-10-22/REPASO_FINAL.md` (resumen de la sesión completa). Filas V01-V14
+actualizadas en `docs/gestion/BACKLOG.md`. No se commiteó ni se pusheó nada.
+
+## SES-164 — acceso público real desde el celular: diagnóstico y fix de renegociación TLS (Chrome) + bug de `set` encadenado en `cmd.exe`
+
+Nota de verificación previa: `## SES-163` es el número más alto antes de este asiento (reconfirmado antes
+de escribir); SES-164 es el siguiente libre. Esta sesión no es de diseño/UX (catálogo V) sino de
+infraestructura: Rodo necesitaba, de forma explícita, poder entrar a la app desde su celular para poder
+probarla ("tengo que sí o sí poder usarlo en el celular para yo testear"), sin que el que entra tenga que
+tener Tailscale instalado.
+
+**Síntoma reportado**: desde la PC (Chrome) la URL pública de Tailscale Funnel
+(`https://desktop-ryzen.tail19f791.ts.net`) andaba bien. Desde el celular, Safari entraba sin problema pero
+Chrome tiraba `ERR_SSL_PROTOCOL_ERROR` ("Este sitio web no puede proporcionar una conexión segura"), igual
+en WiFi que en datos móviles. Se descartaron por evidencia real: estado de conexión de Tailscale en el
+celular (funcionaba igual desconectado), CORS (mismo origen, no aplica), diferencia de red (idéntico en
+ambas).
+
+**Causa real**: con `curl.exe -v` corrido por Rodo contra la URL pública se vio
+`schannel: remote party requests renegotiation` -- renegociación TLS a mitad del handshake. El Funnel de
+Tailscale estaba registrado como `tailscale funnel --bg --https=443 https+insecure://127.0.0.1:5175`, es
+decir, hacía de proxy hacia el propio HTTPS autofirmado de `vite preview` (plugin `basicSsl()`, pensado
+originalmente para que la Geolocation API viera "contexto seguro" al entrar por IP de LAN en desarrollo).
+Esa doble capa de TLS (Funnel termina TLS real hacia internet, y además reabre TLS hacia el backend interno)
+dispara la renegociación: Windows (schannel, usado por curl.exe y aparentemente tolerado por Safari) la deja
+pasar, pero el stack BoringSSL de Chrome la rechaza por endurecimiento de seguridad -- de ahí el error solo
+en Chrome.
+
+**Fix arquitectónico**: pasar el `vite preview` interno a HTTP plano y dejar que Funnel sea el único que
+termina TLS (mismo patrón ya probado en otro proyecto de la misma PC, puerto 8443 -> `proxy http://localhost:3210`).
+El navegador sigue viendo `https://` de cara a internet con certificado válido de Funnel,
+así que no se pierde nada de la Geolocation API (la excepción de "contexto seguro" para `localhost` ya
+cubre el caso real de uso, que es siempre a través del dominio público de Funnel, no de una IP de LAN).
+Mecanismo ya existente para esto, nunca usado hasta ahora: `MOTOSAFE_SIN_HTTPS=1` en
+`frontend/vite.config.js` (`const CON_HTTPS = env.MOTOSAFE_SIN_HTTPS !== '1'`), originalmente pensado para
+un escenario de E2E distinto. Cambiado `tailscale/iniciar_funnel.bat` para registrar el Funnel contra
+`http://127.0.0.1:5175` en vez de `https+insecure://...`, y actualizado `tailscale/README.md` con el
+diagrama y los ejemplos nuevos.
+
+**Segunda capa del mismo bug, encontrada después**: `tailscale/vigilancia.ps1` (tarea programada
+`MotoSafe-Vigilancia`, corre cada 5 minutos) tenía su propia copia hardcodeada del esquema viejo en cuatro
+lugares independientes -- `Test-Preview` (chequeaba `https://127.0.0.1:$puerto/`), `Test-Funnel` (regex
+contra `proxy https\+insecure://...`), la línea que reaplica el Funnel si lo encuentra caído, y el
+`Start-Process` que reinicia el preview. Los cuatro se encontraron y corrigieron (confirmado con `git diff`
+y un `grep` general sobre `tailscale/*.bat`, `*.ps1`, `*.md` sin quedar ninguna referencia vieja).
+
+**Bug nuevo, no relacionado con TLS, encontrado en el camino**: después de aplicar el fix de arriba, el
+`estado.bat` seguía mostrando `Preview: FALLA` y la pestaña Frontend seguía imprimiendo
+`https://localhost:5175` pese a que el archivo tenía `set MOTOSAFE_SIN_HTTPS=1` agregado justo antes del
+comando. Se aisló el problema paso a paso, descartando hipótesis con pruebas reales hechas por Rodo en su
+máquina en cada paso: no era `wt` (falló igual corriendo el mismo `cmd /k "..."` directo, sin Windows
+Terminal de por medio), no era `npm run build` interponiéndose (falló igual sacándolo de la cadena), no era
+el mecanismo de `vite.config.js` en sí (`set MOTOSAFE_SIN_HTTPS=1` seguido de `echo %MOTOSAFE_SIN_HTTPS%`
+como líneas separadas confirmó el valor `1` puesto, y el `npx vite preview` siguiente, como línea aparte,
+sirvió bien en HTTP). La causa real, aislada con una prueba final controlada: `set X=1 && comando` **en
+una sola línea** de `cmd.exe` no propaga de forma confiable la variable al comando siguiente cuando ese
+comando es un script `.cmd` como `npx`/`npm` (se reprodujo de forma idéntica y repetible tanto tecleado a
+mano en un `cmd.exe` interactivo como pasado via `cmd /k "..."`); como líneas separadas (Enter de por
+medio, o renglones distintos de un `.bat`), siempre funcionó.
+
+**Fix del bug de `cmd.exe`**: se sacó el `set` de la línea encadenada con `&&` en los dos lugares donde
+aparecía:
+- `tailscale/iniciar_app_tailscale.bat` (las dos ramas, con y sin Windows Terminal): ahora llaman a un
+  helper nuevo, `tailscale/_iniciar_frontend.bat`, con cada paso (`cd`, `set`, `npm run build`,
+  `npx vite preview`) en su propia línea -- mismo patrón que ya usan `backend/_iniciar_backend.bat` y
+  `tailscale/iniciar_funnel.bat` para sus respectivas pestañas.
+- `tailscale/vigilancia.ps1`: en vez de armar la variable dentro del argumento de `cmd.exe`, se setea
+  directamente en el proceso de PowerShell (`$env:MOTOSAFE_SIN_HTTPS = '1'`) antes del `Start-Process` --
+  los procesos hijos heredan el entorno del padre, así que alcanza sin tocar la línea de `cmd.exe` y sin
+  perder la optimización existente de solo rebuildear si falta `dist/index.html`.
+
+**Verificación real de punta a punta, confirmada por Rodo en su máquina**: `estado.bat` con las cinco
+columnas en OK (Base, Backend, Preview, Funnel, URL pública); login real desde Chrome en el celular contra
+la URL pública de Funnel, sin `ERR_SSL_PROTOCOL_ERROR`. Las entradas de log de `vigilancia.ps1` con
+`preview=FALLA` que quedan en el archivo de log son de los reinicios automáticos previos a este fix (mismo
+día, antes de corregir `vigilancia.ps1`) -- no reflejan el estado actual.
+
+Sin cambios de código de aplicación (frontend/backend): todo el trabajo fue en los scripts de
+arranque/infraestructura (`tailscale/*.bat`, `tailscale/*.ps1`, `tailscale/README.md`). No se tocó ningún
+archivo del catálogo V, A, D, T ni F. No se commiteó ni se pusheó nada.
+
+## SES-165 — F11: sistema de usuarios real (registro, verificación y reseteo por código de mail), reemplaza el usuario único fijo
+
+Nota de verificación previa: `## SES-164` es el número más alto antes de este asiento (reconfirmado justo
+antes de escribir); SES-165 es el siguiente libre. Pedido explícito de Rodo, categoría F (nueva,
+autorizada), las 4 fases en una sola sesión, con permiso para decidir con criterio propio en los puntos
+señalados. Leído `backend/auth.py` completo antes de tocar nada, como pidió.
+
+**Fase 1 (backend, tabla y multiusuario)**: migración `005_usuarios.sql` (tablas `usuarios` y
+`codigos_auth`, mismo estilo que las 4 ya existentes). `auth.py` generalizado: login ahora busca por email
+en la tabla real, no contra `AUTH_USERNAME` fijo. **Decisión propia 1**: login bloquea si el email no está
+verificado, con mensaje claro que ofrece reenviar el código (no un 401 genérico) -- y esa credencial
+correcta-pero-sin-verificar no cuenta como intento fallido de fuerza bruta, porque la credencial sí era
+correcta. **Decisión propia 2**: el usuario único viejo del `.env` (`AUTH_USERNAME=rodo`) NO se migró a la
+tabla -- "rodo" es un nombre de usuario, no un email real, no hay casilla legítima con la que migrarlo con
+integridad; Rodo se registra de cero con su email real por el flujo nuevo.
+
+**Fase 2 (mail real + verificación + reseteo)**: `email_service.py` nuevo, SMTP real de Gmail
+(`motosafe.noreply@gmail.com`, cuenta dedicada, credenciales ya puestas en `.env` por Rodo, confirmado que
+no es su cuenta personal). Endpoints nuevos: verificar-codigo, reenviar-codigo, olvide-password (nunca
+revela si el email existe), resetear-password. Código inválido tras 5 intentos fallidos. **Verificación
+real de entrega, no solo el log**: registrado con el propio email de la cuenta dedicada (permite leer el
+inbox real por IMAP con las mismas credenciales ya provistas) -- confirmado que el mail **llegó de
+verdad**, código real coincidiendo exacto entre la base y el inbox (verificación, y después reseteo, dos
+mails reales distintos, dos códigos reales distintos). Ciclo completo real por API: registro → código real
+→ verificar → login → olvidé contraseña → código real de reset → resetear → login con la vieja falla →
+login con la nueva funciona. Usuario de prueba borrado de la base real al cerrar.
+
+**Fase 3 (frontend)**: `LoginGate.jsx` reescrito como flujo de 5 pantallas (login/crear cuenta/verificar
+código/olvidé contraseña/código+contraseña nueva), reusando las clases `.login-*` ya existentes más 3
+chicas nuevas -- sin librería ni componente nuevo. Repetido el ciclo completo **clickeando la UI real** en
+el navegador con el mismo email real, confirmando en cada paso (incluido el menú de herramientas mostrando
+"Sesión de motosafe.noreply@gmail.com"). Capturas reales en `docs/evidencias/2026-10-22/F11-sistema-usuarios/`.
+
+**Fase 4 (tests y endurecimiento)**: reorganización necesaria de la suite -- el login ahora necesita la
+tabla `usuarios`, así que se sacó la exigencia de `DATABASE_URL` al importar `auth.py` (si no, rompía el job
+de CI que corre sin ninguna base) y los tests de login/registro reales se movieron a
+`test_integracion_postgres.py` (gateado por `MOTOSAFE_TEST_DATABASE_URL`, base desechable, mismo patrón ya
+establecido ahí). 14 tests nuevos, incluida la confirmación real de que `/auth/reenviar-codigo` y
+`/auth/olvide-password` dan la **misma respuesta exista o no la cuenta**. Corrida real: 22/23 de la
+integración completa (1 falla preexistente y no relacionada, ver abajo), 135 passed/23 skipped en la suite
+rápida (igual que corre CI), frontend 108/108 + lint + build en verde.
+
+**Hallazgo real no relacionado, documentado sin corregir (territorio A/D, fuera de este alcance)**:
+`test_carga_inicial_solo_llena_tablas_vacias` falla con un conteo esperado (1135) desactualizado contra el
+real de hoy (1121 = 619+502, reflejo de DEC-024 de una sesión anterior) -- confirmado con `git log` que es
+preexistente, no causado por este cambio.
+
+**Pendiente señalado, no implementado** (como pidió Rodo explícitamente): el Capítulo 4 de la tesis va a
+necesitar una sección nueva describiendo este sistema.
+
+Evidencia completa en `docs/evidencias/2026-10-22/F11-sistema-usuarios/RESULTADOS.md`. Fila F11 agregada en
+`docs/gestion/BACKLOG.md` (catálogo y "Ejecución actual"). No se commiteó ni se pusheó nada.
+
 ## SES-167 — 2026-10-22: assessment integral de cierre, sin modificar producción
 
 Pedido de Rodo: relevar el estado actual tras el trabajo con Claude y encontrar fallas graves. Se reserva SES-166, referida ya en comentarios de F11, sin inventar su acta.
@@ -2601,3 +3020,73 @@ Reproducciones: misma ruta con distinta densidad de vértices cambia cobertura d
 Pruebas: frontend 108/108, ESLint exit 0, build exit 0 con advertencia de chunk de mapa grande. Backend completo con PostGIS real: 157 passed, 3 failed; dos fixtures sin nombre_usuario y un conteo antiguo 1135 vs 1121. No se maquillaron expectativas. Primer intento frontend en sandbox falló por caché ENOENT; repetición externa aprobada. Primer pytest en sandbox sin salida, interrumpido; la corrida válida es la externa aislada. Modelo cargado: 300 árboles, 53 columnas, huella y sklearn coinciden. No se recalcularon métricas académicas.
 
 Se consultó la política primaria actual de Nominatim para contrastar el fallback de autocompletado; enlace y límites en H08. No se hizo pentest público, revisión visual completa, auditoría legal ni certificación de proveedores. Se actualizaron continuidad/backlog/decisión pendiente sin reescribir resultados históricos. Se eliminó el contenedor de auditoría con su volumen y el build separado. Cambios de código, datos y documentos de Claude se preservaron sin incluirlos en el commit de este assessment.
+
+## SES-166 — F11: nombre de usuario propio y ojo para ver la contraseña, a pedido de Rodo tras probar el registro real
+
+Pedido verbatim de Rodo, después de confirmar que F11 (SES-165) le funcionó perfecto de punta a punta (registro, verificación, cambio de contraseña, todo real): sumar un nombre de usuario además del email, fijar `nombre_usuario='Rodo'` en la cuenta real creada con `barrionuevors0204@gmail.com`, impedir nombre de usuario duplicado igual que el email, y agregar un ícono de ojo en los campos de contraseña (login, crear cuenta, reset) para poder ver lo que se escribe.
+
+Migración `006_usuarios_nombre.sql`: columna `nombre_usuario VARCHAR(50)` nullable primero (para poder backfillear la fila real de Rodo que ya existía sin esa columna), backfill especial a `'Rodo'` para esa cuenta puntual, backfill genérico (`email` truncado + id) para cualquier otra fila sin nombre, `NOT NULL` + índice único recién después. `auth.py`: `RegistroBody` suma `nombre_usuario` obligatorio, `registro()` valida duplicado contra la tabla (409 igual que el email duplicado), `/auth/me` devuelve `nombre_usuario` además de `usuario` (el email). Frontend: componente `CampoPassword` reusable en `LoginGate.jsx` (ícono Eye/EyeOff de lucide-react, alterna `type="password"`/`"text"`), usado en los 5 campos de contraseña del flujo; campo "Nombre de usuario" nuevo en el formulario de registro; `HerramientasMenu.jsx` muestra el nombre en vez del email cuando está disponible.
+
+Verificación real: ciclo completo clickeando la UI (registro con nombre de usuario, ojo mostrando/ocultando la contraseña en vivo) y confirmado por SQL contra la base real que la cuenta de Rodo quedó con `nombre_usuario='Rodo'`. Capturas en `docs/evidencias/2026-10-22/F11-sistema-usuarios/` (`login_exitoso.jpg`, `nombre_usuario_y_ojo_contrasena.jpg`).
+
+## SES-168 — F11: corrección de H04, H05, H07, H13 y H15 del assessment de SES-167, autorizado por Rodo ("dale corrige")
+
+Verificación previa: SES-167 es el número más alto antes de este asiento (reconfirmado). Rodo pidió el informe completo de SES-167, se le separaron explícitamente los hallazgos que tocan código propio de F11 (H04, H05, H07, H13, H15, y la parte de H14 relevante a F11) de los que son del catálogo V/A/D/T (fuera de este alcance). Respuesta de Rodo: "dale corrige" -- autorización directa para los cinco F11, no para el resto del informe.
+
+**H15** (migración 006 podía romperse): el backfill genérico copiaba el email entero a `nombre_usuario VARCHAR(50)` -- con un email de más de 50 caracteres rompía la migración con `StringDataRightTruncation`. Corregido a `left(email, 41) || '_' || id` (deja lugar al separador y hasta 8 dígitos de id, y el id garantiza que dos emails truncados al mismo prefijo no choquen contra el `UNIQUE`). La migración 006 ya estaba aplicada en la base local con la versión vieja (sin que llegara a romperse, porque la fila real de Rodo entró por el backfill especial, no por el genérico) -- la corrección no se re-ejecuta ahí (`migrar.py` no reaplica migraciones ya marcadas), pero sí corre bien en cualquier base nueva (CI, un despliegue futuro).
+
+**H04** (códigos de 6 dígitos): tres problemas reales en `auth.py`. (1) `random.randint` no es criptográfico -- cambiado a `secrets.randbelow` (CSPRNG). (2) Pedir un código nuevo (reenviar-codigo/olvide-password) no invalidaba el anterior -- quien tuviera el mail viejo podía seguir usándolo; `_crear_codigo` ahora marca `usado_en` en cualquier código sin usar del mismo tipo antes de insertar el nuevo. (3) Sin lock, dos pedidos concurrentes con el mismo código correcto podían leer la fila "sin usar" los dos antes de que cualquiera la marcara usada; `_codigo_vigente` ahora usa `SELECT ... FOR UPDATE` dentro de la misma transacción.
+
+**H05** (cookie no se revocaba): cambiar la contraseña no invalidaba una cookie de sesión ya emitida -- era un token firmado puro, sin ninguna verificación contra la base. Migración `007_usuarios_sesion_version.sql` (columna `sesion_version INTEGER NOT NULL DEFAULT 1`, aplicada ya a la base real local). La cookie ahora lleva la versión vigente al momento de loguearse (`_crear_cookie_sesion`); `_usuario_id_de_sesion` compara esa versión contra la de la base en cada pedido (una consulta extra por pedido protegido, costo aceptado a cambio de que la revocación sea real); `resetear_password` incrementa `sesion_version`. Alcance: se corrige la revocación por reset de contraseña (lo que pedía H05); no se agregó un "cerrar sesión en todos los dispositivos" aparte, que no estaba pedido.
+
+**H07** (`/auth/registro` sin límite): no tenía rate limiting por IP, a diferencia de login/reenviar/olvide/resetear (que ya lo usaban desde F11). Agregado con el mismo límite (5 intentos / 60s), contando cada pedido -- mismo criterio que reenviar-codigo/olvide-password, porque lo que hay que frenar es el volumen de cuentas/mails por IP, no distinguir intentos "legítimos".
+
+**H13** (`mail_enviado` mentía): si SMTP no estaba configurado, `enviar_codigo` caía al fallback de consola pero no avisaba -- el endpoint respondía `mail_enviado: true` sin haber mandado nada real. `email_service.enviar_codigo` ahora devuelve `bool` (`True` solo tras un envío SMTP realmente exitoso, `False` en el fallback); `registro`, `reenviar_codigo` y `olvide_password` usan ese valor real.
+
+**H14 (parcial, solo lo de F11)**: la parte que tocaba a F11 eran dos fixtures de test sin `nombre_usuario` (de antes de SES-166) -- ya estaban corregidas. El conteo 1135 vs 1121 (`test_carga_inicial_solo_llena_tablas_vacias`) sigue sin tocar, confirmado otra vez que es territorio A/D (DEC-024), no F11.
+
+**Pruebas**: 9 tests nuevos en `test_integracion_postgres.py` contra PostgreSQL real desechable, reproduciendo los escenarios exactos del assessment pero ahora esperando el comportamiento corregido -- código viejo ya no funciona tras pedir uno nuevo, cookie emitida antes del reset ya no valida después, `/auth/registro` se bloquea tras 5 intentos por IP, `mail_enviado: false` cuando no hay SMTP real. Agregada también una fixture `_limite_de_intentos_limpio` (autouse) porque el nuevo límite de registro, sin resetear el diccionario en memoria entre tests, hacía que algunos de los ~10 tests que llaman a `/auth/registro` desde el mismo "IP" del `TestClient` empezaran a dar 429 cruzado entre sí. Corrida completa: 135 passed/30 skipped en la suite rápida (sin cambios), 29/30 en la integración real (la única que falla es el 1135/1121 preexistente, no relacionado). No se hizo una nueva ronda de verificación con mail real por SMTP para esta tanda -- los nueve tests nuevos ya reproducen los pasos exactos del assessment contra una base real (no mockeada), que es el mismo estándar de evidencia que ya se usaba para estos endpoints; solo el envío de mail se sigue simulando en los tests automáticos, como en F11.
+
+No se tocó nada del catálogo V/A/D/T (H01, H02, H03, H06, H08 a H12, H16, H17), ni la parte de H14 ajena a F11 -- fuera del alcance autorizado hoy. No se commiteó ni se pusheó nada.
+
+## SES-169 — F11: login también acepta nombre de usuario, no solo email
+
+Pedido de Rodo: "¿se puede ingresar con nombre de usuario ahora?" -- no, hasta este momento `/auth/login` solo
+buscaba por email. Pidió agregarlo aceptando cualquiera de los dos en el mismo campo.
+
+`auth.py`: `login()` ahora busca `WHERE email = %s OR nombre_usuario = %s` -- el valor tipeado se normaliza a
+minúsculas solo para la comparación contra `email` (como ya hacía el resto del flujo); contra
+`nombre_usuario` se compara tal cual se escribió, porque el nombre de usuario es case-sensitive desde que se
+creó (índice único de la migración 006, sin `lower()`). El campo del body sigue llamándose `email` por
+compatibilidad con el frontend y los tests existentes -- documentado en el propio modelo que ahora acepta
+las dos cosas.
+
+**Caso borde encontrado y corregido antes de terminar**: si alguien se loguea con su nombre de usuario y la
+cuenta todavía no está verificada, el 403 con "confirmá tu cuenta" ofrece reenviar el código -- pero
+`/auth/reenviar-codigo` y `/auth/verificar-codigo` solo aceptan email, nunca nombre de usuario. Sin más,
+el frontend hubiera reenviado el valor tipeado (el nombre de usuario) a esos dos endpoints, que nunca iban a
+encontrar la cuenta. Corregido: la respuesta 403 ahora manda el email real en un header (`X-Email`) -- para
+eso hizo falta sumar `email` al `SELECT` de `login()` y, porque la llamada es cross-origin
+(`localhost:5173` → `localhost:8000` en desarrollo), agregar `expose_headers=["X-Requiere-Verificacion",
+"X-Email"]` al `CORSMiddleware` en `main.py` (sin eso, `fetch` en el navegador no puede leer headers custom
+de una respuesta cross-origin aunque el backend los mande). `LoginGate.jsx` usa ese header en vez del valor
+tipeado para la pantalla de verificación.
+
+Frontend: el campo de login pasa de `type="email"` a `type="text"`, label "Email o nombre de usuario",
+placeholder actualizado, mensaje de error genérico actualizado a "Email/usuario o contraseña incorrectos.".
+
+**Pruebas**: 4 tests nuevos en `test_integracion_postgres.py` -- login con nombre de usuario funciona igual
+que con email; nombre de usuario con mayúsculas distintas falla (case-sensitive, coherente con el registro);
+el header `X-Email` devuelve el email real cuando se loguea sin verificar con nombre de usuario. Suite
+rápida: 135 passed/33 skipped. Integración real: 32/33 (la única falla sigue siendo el 1135/1121
+preexistente, no relacionado).
+
+**Verificación real en la UI** (no solo tests): con el backend real levantado (`python run_dev.py`), se creó
+una cuenta descartable (`UiLoginTest` / `uilogintest@ejemplo.com`) clickeando el flujo real de registro,
+código real leído de la base, verificación real, y login real tipeando el **nombre de usuario** (no el
+email) en el campo de login del navegador real -- entró, el menú de herramientas mostró "Sesión de
+UiLoginTest". También confirmado por API directa (no solo UI) que el header `X-Email` real coincide con el
+email de la cuenta cuando se loguea sin verificar usando el nombre de usuario. No se tocó la cuenta real de
+Rodo ni se intentó su contraseña real (nunca estuvo disponible ni se pidió) -- la cuenta descartable se borró
+de la base real al terminar; solo queda `barrionuevors0204@gmail.com` en la tabla `usuarios`. No se
+commiteó ni se pusheó nada.

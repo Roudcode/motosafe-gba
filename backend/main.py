@@ -155,6 +155,10 @@ app.add_middleware(
     allow_origins=CORS_ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
+    # X-Email (SES-169): login con nombre de usuario devuelve el email real en
+    # un header para la pantalla de verificación -- sin expose_headers, fetch
+    # en el navegador no puede leer headers custom de una respuesta cross-origin.
+    expose_headers=["X-Requiere-Verificacion", "X-Email"],
 )
 
 # --- Autenticacion de sesion -------------------------------------------------
@@ -165,7 +169,13 @@ import auth  # noqa: E402  (va aca para no reordenar los imports de arriba)
 
 app.include_router(auth.router)
 
-_RUTAS_PUBLICAS = {"/health", "/auth/login", "/auth/logout", "/auth/me"}
+_RUTAS_PUBLICAS = {
+    "/health", "/auth/login", "/auth/logout", "/auth/me",
+    # F11 (SES-165): estas tienen que funcionar SIN cookie de sesion -- son
+    # justamente el flujo para conseguir una.
+    "/auth/registro", "/auth/verificar-codigo", "/auth/reenviar-codigo",
+    "/auth/olvide-password", "/auth/resetear-password",
+}
 
 
 @app.middleware("http")

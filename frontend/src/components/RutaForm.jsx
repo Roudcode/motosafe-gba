@@ -11,7 +11,41 @@
 // el botón activo y se llama a marcarEnMapa, igual que con cualquier otro
 // callback de los que ya recibía este bloque dentro de App.jsx.
 
+import { useLayoutEffect, useRef, useState } from 'react'
 import { MapPin, ArrowUpDown, Home, Save, Briefcase, LocateFixed } from 'lucide-react'
+
+// V05 (SES-163, confirmado en pantalla real con el navegador emulando
+// teclado virtual, Chrome DevTools): con el viewport achicado por el
+// teclado, el desplegable de sugerencias (que siempre se abría HACIA ABAJO
+// del campo) podía quedar cortado contra el borde inferior de la pantalla,
+// sin ninguna forma de scrollear para verlo -- confirmado con una medida
+// real (`getBoundingClientRect`): el desplegable llegaba a `bottom: 494`
+// con un viewport de 400px de alto. El intento anterior (agregarle scroll
+// al formulario entero) se había descartado porque recortaba el
+// desplegable contra el borde del formulario en vez de dejarlo superponerse
+// -- acá se resuelve distinto: el propio desplegable mide, después de
+// montarse, si le entra hacia abajo; si no, se abre hacia arriba del campo
+// en su lugar (mismo patrón "flip" que cualquier popover/select nativo).
+function useAbrirArriba(activo) {
+  const ref = useRef(null)
+  const [arriba, setArriba] = useState(false)
+  useLayoutEffect(() => {
+    if (!activo || !ref.current) { setArriba(false); return }
+    const medir = () => {
+      const rect = ref.current.getBoundingClientRect()
+      const alturaVisible = window.visualViewport?.height ?? window.innerHeight
+      setArriba(rect.bottom > alturaVisible && rect.top > rect.height)
+    }
+    medir()
+    window.addEventListener('resize', medir)
+    window.visualViewport?.addEventListener('resize', medir)
+    return () => {
+      window.removeEventListener('resize', medir)
+      window.visualViewport?.removeEventListener('resize', medir)
+    }
+  }, [activo])
+  return [ref, arriba]
+}
 
 export function RutaForm({
   origenTexto, setOrigenTexto, origenPunto, setOrigenPunto, sugOrigen,
@@ -20,6 +54,10 @@ export function RutaForm({
   favoritos, guardarFavorito, usarFavorito, usarMiUbicacionComoOrigen,
   rutaError, cerrarTodoRuta, buscarRuta,
 }) {
+  const hayListaOrigen = sugOrigen.resultados.length > 0 || sugOrigen.buscada || sugOrigen.error
+  const hayListaDestino = sugDestino.resultados.length > 0 || sugDestino.buscada || sugDestino.error
+  const [refOrigen, arribaOrigen] = useAbrirArriba(hayListaOrigen)
+  const [refDestino, arribaDestino] = useAbrirArriba(hayListaDestino)
   return (
     <div className="ruta-form panel-enter">
       <div className="ruta-form-fila ruta-form-fila-con-sugerencias">
@@ -27,8 +65,8 @@ export function RutaForm({
         <input placeholder="Origen" value={origenTexto} onChange={(e) => { setOrigenTexto(e.target.value); setOrigenPunto(null); sugOrigen.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter' && !origenPunto) sugOrigen.buscar(origenTexto) }} onBlur={() => setTimeout(sugOrigen.limpiar, 150)} aria-label="Origen de la ruta" autoComplete="off" />
         {sugOrigen.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
         <button className={`ruta-form-pin ${campoActivo === 'origen' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar origen en el mapa" onClick={() => marcarEnMapa('origen')}><MapPin size={14} /></button>
-        {(sugOrigen.resultados.length > 0 || sugOrigen.buscada || sugOrigen.error) && (
-          <ul className="ruta-form-sugerencias">
+        {hayListaOrigen && (
+          <ul ref={refOrigen} className={`ruta-form-sugerencias ${arribaOrigen ? 'arriba' : ''}`}>
             {sugOrigen.resultados.map((s, i) => (
               <li key={i}>
                 <button type="button" onMouseDown={() => elegirSugerencia('origen', s)}>
@@ -47,8 +85,8 @@ export function RutaForm({
         <input placeholder="Destino" value={destinoTexto} onChange={(e) => { setDestinoTexto(e.target.value); setDestinoPunto(null); sugDestino.limpiar() }} onKeyDown={(e) => { if (e.key === 'Enter' && !destinoPunto) sugDestino.buscar(destinoTexto) }} onBlur={() => setTimeout(sugDestino.limpiar, 150)} aria-label="Destino de la ruta" autoComplete="off" />
         {sugDestino.buscando && <span className="ruta-form-sug-spinner spinner spinner-dark" />}
         <button className={`ruta-form-pin ${campoActivo === 'destino' ? 'activo' : ''}`} title="Marcar en el mapa" aria-label="Marcar destino en el mapa" onClick={() => marcarEnMapa('destino')}><MapPin size={14} /></button>
-        {(sugDestino.resultados.length > 0 || sugDestino.buscada || sugDestino.error) && (
-          <ul className="ruta-form-sugerencias">
+        {hayListaDestino && (
+          <ul ref={refDestino} className={`ruta-form-sugerencias ${arribaDestino ? 'arriba' : ''}`}>
             {sugDestino.resultados.map((s, i) => (
               <li key={i}>
                 <button type="button" onMouseDown={() => elegirSugerencia('destino', s)}>

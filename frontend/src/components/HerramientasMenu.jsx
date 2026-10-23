@@ -3,7 +3,7 @@
 // App.jsx (SES-131) -- bloque autocontenido con una interfaz de props
 // chica. Corte-y-pegue con props, sin cambio de comportamiento.
 
-import { LocateFixed, Bike, Box, BarChart3, LogOut, Wrench, X } from 'lucide-react'
+import { LocateFixed, Bike, Box, BarChart3, LogOut, Wrench, X, HelpCircle } from 'lucide-react'
 
 export function HerramientasMenu({
   herramientasAbiertas, setHerramientasAbiertas,
@@ -11,7 +11,7 @@ export function HerramientasMenu({
   modoViaje, toggleModoViaje,
   vistaNavegacion, setVistaNavegacion,
   setStatsAbierto, setActividadAbierta, setCapasAbiertas,
-  sesion,
+  sesion, onAbrirAyuda,
 }) {
   return (
     <div className="herramientas-stack">
@@ -31,8 +31,14 @@ export function HerramientasMenu({
           <button onClick={() => { setStatsAbierto(true); setHerramientasAbiertas(false); setActividadAbierta(false); setCapasAbiertas(false) }}>
             <BarChart3 size={15} /> Estadísticas
           </button>
+          {/* V12 (SES-162): la bienvenida ("Así funciona MotoSafe") solo se
+              mostraba una vez, sin forma de volver a verla -- acá queda
+              reabrible, mismo contenido, nada nuevo que mantener. */}
+          <button onClick={onAbrirAyuda}>
+            <HelpCircle size={15} /> Cómo funciona
+          </button>
           {sesion && (
-            <button onClick={() => { setHerramientasAbiertas(false); sesion.cerrarSesion() }} title={`Sesión de ${sesion.usuario}`}>
+            <button onClick={() => { setHerramientasAbiertas(false); sesion.cerrarSesion() }} title={`Sesión de ${sesion.nombreUsuario || sesion.usuario}`}>
               <LogOut size={15} /> Cerrar sesión
             </button>
           )}
