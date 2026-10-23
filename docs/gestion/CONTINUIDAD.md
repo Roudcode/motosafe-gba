@@ -1,5 +1,9 @@
 # Continuidad del proyecto — leer primero
 
+## SES-175, 23/10/2026 — bugs silenciosos verificados, pendientes de decisión
+
+Informe de código: [BUGS_REALES_2026-10-23.md](../tesis/auditoria_2026-10-23/BUGS_REALES_2026-10-23.md), sobre `ce941c1`. Tres hallazgos nuevos: posible llegada falsa a más de 2 km (A16), índice de «mapa visible» calculado con zonas ocultas (A23), y falta de centrado al cargarse un único resultado tras una búsqueda (T02). Además se reprodujeron H03/H12 ya abiertos en A09; no se cuentan como nuevos. Frontend 109 pruebas aprobadas; backend 118 pruebas de main/scraper aprobadas. Probes y SQL efímero adjuntos. No se modificó comportamiento ni se tomó decisión de producción.
+
 ## Cierre más reciente: SES-173, 23/10/2026 — segunda lectura del Word corregido
 
 Rodo pidió revisar el DOCX después de los cambios de SES-172. El informe está en [REVISION_WORD_POST_SES172.md](../tesis/auditoria_2026-10-23/REVISION_WORD_POST_SES172.md), referido al SHA-256 `2010e8ee73d22f8a06ed40e17a1f1a3c89edd2632e953199bcb9ebe6ad577e51`. Reconoce las correcciones realizadas y enumera discrepancias todavía vigentes. La nueva aritmética económica se reproduce; la validación comercial es otra cuestión. No se editó la tesis. G01 continúa parcialmente validado y falta revisión visual completa del PDF final.

@@ -199,6 +199,10 @@ Usar [WCAG 2.2](https://www.w3.org/TR/WCAG22/) como referencia para contraste, t
 | Actas con el tutor | Pendiente (material de Rodo) | No se generan desde el repositorio. Las carga Rodo fuera del repo; no forman parte del trabajo de Claude. |
 | Decisiones registradas | Disponible | `docs/gestion/` (decisiones DEC-NNN, citadas en BACKLOG y BITACORA). |
 
+## Revisión de código — 23/10/2026, SES-175
+
+Informe: `docs/tesis/auditoria_2026-10-23/BUGS_REALES_2026-10-23.md`. B02 reabre A16 (llegada falsa por proyección al extremo), B04 afecta A23 (estadística rotulada como mapa visible sin filtrar zonas), B05 afecta T02 (vuelo de búsqueda omitido tras carga asincrónica). B01/B03 son pruebas nuevas de H03/H12 **ya abiertos** en A09, no ítems adicionales. Estados: validación parcial hasta decisión y pruebas de los casos. Esta nota no autoriza cambiar comportamiento de producción.
+
 ## Revisión vigente de estados — 22/10/2026, SES-167
 
 Esta revisión prevalece sobre cierres anteriores para los IDs afectados. No crea otro backlog ni autoriza implementar las propuestas: documenta el resultado del nuevo [assessment](../assessment_2026-10-22/ASSESSMENT.md). Los hallazgos H son referencias del informe, no nuevos IDs operativos.
