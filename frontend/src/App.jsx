@@ -18,7 +18,7 @@ import {
 } from './constants'
 import { siguientePaso, distanciaKm, calcularAjuste, geocodificar, calcularRumbo, calcularProgresoRuta, distanciaAPolilinea } from './utils/geoRiesgo'
 import {
-  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaRegistrada, calcularCoberturaPorFuente, calcularRutasConScore,
+  unificarZonasInseguridad, unificarZonasRiesgo, calcularZonasCruzadasPorRuta, calcularCoberturaPorFuente, calcularRutasConScore,
   brechaCoberturaEnRecomendada,
 } from './utils/riesgoRuta'
 import { formatearDistancia } from './utils/tiempo'
@@ -1389,10 +1389,6 @@ function App() {
     [rutasCalculadas, zonasRiesgoTodas]
   )
 
-  const coberturaPorRuta = useMemo(
-    () => calcularCoberturaRegistrada(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
-    [rutasCalculadas, zonasRiesgoTodas]
-  )
   const coberturaPorFuente = useMemo(
     () => calcularCoberturaPorFuente(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
     [rutasCalculadas, zonasRiesgoTodas]
@@ -1415,8 +1411,8 @@ function App() {
   }, [zonasCruzadasActual])
 
   const rutasConScore = useMemo(
-    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta, coberturaPorFuente),
-    [rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta, coberturaPorFuente]
+    () => calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorFuente),
+    [rutasCalculadas, zonasCruzadasPorRuta, coberturaPorFuente]
   )
 
   const idxMasRapida = useMemo(() => {

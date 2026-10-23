@@ -266,11 +266,18 @@ describe('calcularRutasConScore', () => {
   })
 
   it('usa cobertura de siniestros como cobertura registrada para recomendar', () => {
-    const [ruta] = calcularRutasConScore(rutasCalculadas, [[], []], [1, 1], [
+    const [ruta] = calcularRutasConScore(rutasCalculadas, [[], []], [
       { siniestro: 0.4, inseguridad: 1 }, { siniestro: 1, inseguridad: 0.1 },
     ])
     expect(ruta.coberturaRegistrada).toBe(0.4)
     expect(ruta.coberturaPorFuente.inseguridad).toBe(1)
+  })
+
+  it('sin dato de siniestros, la cobertura registrada queda null -- nunca toma el valor de otra fuente', () => {
+    const [ruta] = calcularRutasConScore(rutasCalculadas, [[], []], [
+      { siniestro: null, inseguridad: 0.9 }, { siniestro: 1, inseguridad: 0.1 },
+    ])
+    expect(ruta.coberturaRegistrada).toBeNull()
   })
 })
 
@@ -340,7 +347,7 @@ describe('brechaCoberturaEnRecomendada (DEC-026, D03 caso 2)', () => {
   const rutasCalculadas = [{ min: 1, coords: [] }]
 
   function rutaRecomendada(siniestro, inseguridad) {
-    const [ruta] = calcularRutasConScore(rutasCalculadas, [[]], [1], [{ siniestro, inseguridad }])
+    const [ruta] = calcularRutasConScore(rutasCalculadas, [[]], [{ siniestro, inseguridad }])
     return [ruta]
   }
 

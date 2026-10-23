@@ -166,7 +166,7 @@ function nivelRelativoEnLote(score, indice, scoresDelLote) {
   return 'bajo'
 }
 
-export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorRuta = [], coberturaPorFuente = []) {
+export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, coberturaPorFuente = []) {
   const conScore = rutasCalculadas.map((r, i) => {
     const cruces = zonasCruzadasPorRuta[i] || []
     const crucesSiniestro = cruces.filter((z) => z.tipoRiesgo === 'siniestro')
@@ -184,8 +184,11 @@ export function calcularRutasConScore(rutasCalculadas, zonasCruzadasPorRuta, cob
       cantInseguridad: crucesInseguridad.length,
       // La recomendación de menor exposición exige cobertura del eje histórico
       // de siniestros. La capa de inseguridad se informa aparte y no puede
-      // reemplazarla, porque responde otra pregunta.
-      coberturaRegistrada: coberturaPorFuente[i]?.siniestro ?? coberturaPorRuta[i] ?? 0,
+      // reemplazarla, porque responde otra pregunta -- por eso, a diferencia
+      // de una versión anterior, acá no hay fallback a una cobertura mezclada
+      // cuando no hay dato de siniestros: queda null (sin datos), nunca el
+      // valor de otra fuente.
+      coberturaRegistrada: coberturaPorFuente[i]?.siniestro ?? null,
       coberturaPorFuente: coberturaPorFuente[i] || { siniestro: null, inseguridad: null },
       nivelMaximo,
     }
