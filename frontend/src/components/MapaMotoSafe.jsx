@@ -273,7 +273,7 @@ const ETIQUETA_NIVEL_PRECISION = {
 // reutiliza el mismo diseño de "burbuja con conteo" que ya existía. Sigue el
 // patrón oficial de MapLibre para clusters con marcadores custom
 // (querySourceFeatures + maplibregl.Marker administrados a mano, ver import).
-function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, renderBubble, renderPunto, onClickPunto }) {
+function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, renderBubble, renderPunto, onClickPunto, clusterProperties }) {
   map.addSource(sourceId, {
     type: 'geojson',
     data: { type: 'FeatureCollection', features },
@@ -285,6 +285,7 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
       medio: ['+', ['case', ['==', ['get', 'nivel'], 'medio'], 1, 0]],
       alto: ['+', ['case', ['==', ['get', 'nivel'], 'alto'], 1, 0]],
       critico: ['+', ['case', ['==', ['get', 'nivel'], 'critico'], 1, 0]],
+      ...clusterProperties,
     },
   })
 
@@ -342,9 +343,14 @@ function montarCapaClusterizada(map, { sourceId, features, radius, maxZoom, rend
   }
 
   function crearMarkerCluster(coords, props) {
+    // props.cantidadTotal (si existe: suma real vía clusterProperties, ver
+    // montarCapaClusterizada) en vez de props.point_count (cuántos puntos del
+    // source agrupó MapLibre, no cuántos "elementos reales" representan --
+    // en la capa de prensa un punto ya es de por sí un grupo de varios
+    // artículos en la misma coordenada, así que point_count subestimaba).
     const { html, size } = renderBubble(
       { bajo: props.bajo, medio: props.medio, alto: props.alto, critico: props.critico },
-      props.point_count
+      props.cantidadTotal ?? props.point_count
     )
     // 'capa-fondo-nav': clase que engancha con el atenuado global de
     // navegación (ver .mapa-en-navegacion en App.css) -- así siniestros e
@@ -876,12 +882,13 @@ function MapaMotoSafeInner({
       type: 'line',
       source: sourceId,
       paint: {
-        // Opacidad bajada de 0.55 a 0.4 a pedido de usuario ("no los quiero
-        // negros"): el oscuro partió con mucho margen sobre el mínimo WCAG
-        // medido en V11/SES-154 (>10:1 contra el 3:1 requerido), así que hay
-        // margen para aflojar sin volver a caer por debajo -- no se remidió
-        // el contraste exacto en esta pasada.
-        'line-color': tema === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(11,22,32,0.4)',
+        // Opacidad bajada de 0.55 a 0.4 y después a 0.28 a pedido de usuario
+        // ("no los quiero negros" / "siguen bastante marcados"): el oscuro
+        // partió con mucho margen sobre el mínimo WCAG medido en V11/SES-154
+        // (>10:1 contra el 3:1 requerido), así que hay margen para aflojar
+        // bastante sin volver a caer por debajo -- no se remidió el
+        // contraste exacto resultante en esta pasada.
+        'line-color': tema === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(11,22,32,0.28)',
         'line-width': 1.2,
         'line-opacity': atenuarFondo,
       },
@@ -1243,7 +1250,16 @@ function MapaMotoSafeInner({
     const features = [...grupos.values()].map((grupo) => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: grupo.coords },
-      properties: { id: grupo.clave },
+      // cantidad: reporte de usuario ("los números no son lógicos" entre
+      // niveles de zoom) -- la burbuja de cluster mostraba point_count de
+      // MapLibre (cuántas UBICACIONES agrupó, no cuántos artículos hay en
+      // ellas), mientras que un punto sin clusterizar mostraba
+      // grupo.noticias.length (artículos reales). Dos unidades distintas en
+      // el mismo tipo de burbuja: un cluster que agrupa pocas ubicaciones
+      // con muchos artículos cada una mostraba un número chico y engañoso.
+      // Con esta propiedad, clusterProperties suma los artículos reales de
+      // cada ubicación agrupada (ver cantidadTotal más abajo).
+      properties: { id: grupo.clave, cantidad: grupo.noticias.length },
     }))
     const abrirNoticia = (rep, coords = [rep.lng, rep.lat]) => {
       if (!rep) return
@@ -1269,6 +1285,7 @@ function MapaMotoSafeInner({
       features,
       radius: 48,
       maxZoom: 14,
+      clusterProperties: { cantidadTotal: ['+', ['get', 'cantidad']] },
       renderBubble: (_niveles, cantidad) => ({
         size: 38,
         html: `<div class="marker-prensa-cluster"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18h-5"/><path d="M18 14h-8"/><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg><strong>${cantidad}</strong></div>`,

@@ -3313,3 +3313,13 @@ Rodo volvió a probar después de SES-179 y confirmó que algunos de los fixes n
 - Barrios de Actividad: Rodo pidió más alternativas de mejora más allá del pacing/precarga de SES-179. Se le presentaron tres opciones sin implementar (placeholder de carga inmediato; geocodificar al guardar la noticia/reporte en el backend, que resuelve el cuello de botella de raíz; polígonos de barrio locales para resolver sin red ni límite de TomTom) -- quedan para que Rodo decida cuál, ninguna implementada todavía.
 
 Verificado: 111/111 tests, lint limpio, build de producción sin errores. **Cambios locales, sin commitear ni deployar todavía.**
+
+## SES-181 — 2026-10-23 — bug real confirmado en vivo: las burbujas de cluster de prensa mostraban conteo de ubicaciones, no de artículos
+
+Rodo mandó capturas mostrando que los números de las burbujas de prensa no cerraban entre niveles de zoom ("464 de 464" en Capas vs. sumas que no coincidían al acercar/alejar). Autorizó crear una cuenta de prueba desde el backend para investigar en vivo.
+
+**Diagnóstico**: creada una cuenta descartable directo en la base real (bcrypt + email_verificado=true, sin pasar por el flujo de verificación por mail), usada para loguear contra la app real (`motosafe-web.onrender.com` primero, después un servidor dev local apuntando al backend real vía `MOTOSAFE_API_TARGET` para poder iterar con cambios de código). Confirmado con un log temporal en `crearMarkerCluster`: las burbujas de cluster mostraban `props.point_count` de MapLibre -- cuántas *ubicaciones* agrupó la supercluster -- no cuántos *artículos* había en total. Ejemplo real capturado: varios clusters con `point_count: 2` (dos ubicaciones agrupadas) mostraban en pantalla "2" cuando el conteo real de artículos en esas dos ubicaciones era 18, 15 o 5 -- indistinguible de un cluster que de verdad solo tenía 2 artículos.
+
+**Corregido**: `MapaMotoSafe.jsx`, capa de prensa. Cada feature ahora lleva `cantidad: grupo.noticias.length` (artículos reales en esa ubicación); `montarCapaClusterizada` acepta un `clusterProperties` adicional (antes fijo a bajo/medio/alto/crítico, ahora combinable) y la capa de prensa suma `cantidadTotal: ['+', ['get', 'cantidad']]` vía esa opción; `crearMarkerCluster` usa `props.cantidadTotal ?? props.point_count` (las otras capas, sin esa propiedad, siguen igual que antes). Reproducido el fix en vivo: los mismos clusters que antes mostraban "2" ahora muestran 18, 15, 5, etc., sumando artículos reales.
+
+Cuenta de prueba borrada de la base real al cerrar. Verificado: 111/111 tests, lint limpio, build de producción sin errores. **Cambio local, sin commitear ni deployar todavía.**
