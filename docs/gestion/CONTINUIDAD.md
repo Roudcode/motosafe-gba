@@ -1,6 +1,18 @@
 # Continuidad del proyecto — leer primero
 
-## Cierre más reciente: SES-171, 23/10/2026 — auditoría del Word final
+## Cierre más reciente: SES-172, 23/10/2026 — tesis corregida (revisión propia + auditoría de Codex), OAuth de Gmail publicado, Capítulo 5 rediseñado
+
+Sesión con Claude. Revisión propia del Word completo (8 capítulos, 24 tablas) antes de tocar la auditoría de Codex: 5 inconsistencias encontradas y corregidas (suma mal hecha en Tabla 5.1, fila de despliegue desactualizada en Tabla 4.5, conteo de tests de 7.4, alcance de autenticación en 1.4, declaración de uso de IA en 2.7/Tabla 2.1). A pedido de Rodo, sacadas las 29 fechas puntuales del cuerpo del documento.
+
+Auditoría de Codex (SES-171, `docs/tesis/auditoria_2026-10-23/AUDITORIA_DISCREPANCIAS.md`) aplicada completa: Grupo A (hechos verificables — error aritmético de 8.1, fecha de cita en bibliografía, hotspots de inseguridad 619→633 porque DEC-024 nunca se promovió a producción, conteo real de tests verificado por conteo propio en 168/108, comportamiento real de filas de Google Noticias contra el código) y Grupo B (Figuras 4.1/4.2/4.3 rehechas con la arquitectura real, privacidad extendida a datos de cuenta, Referencias/Apéndices reordenados al final, hipótesis unificada entre capítulos, 11 correcciones de precisión de lenguaje). Detalle completo con cada ítem AT-NN en BITACORA.md SES-172.
+
+OAuth de Gmail (`motosafe-mail`) pasado de "Prueba" a "Producción" en vivo con Rodo — resuelve que el refresh token venciera cada 7 días. No requirió la verificación de marca completa de Google (innecesaria para un único usuario autorizándose a sí mismo).
+
+Capítulo 5 recalculado tres veces: (1) sumado el costo comercial real de Open-Meteo, VAN pasó a negativo; (2) Premium subida de USD 8 a USD 10/año, VAN volvió a positivo; (3) Premium rediseñada con viaje compartido en vivo como diferencial y agregada publicidad conservadora en el plan gratuito. Resultado final: **VAN +USD 2.061, TIR 25,3%**. Ninguno de los supuestos de ingreso nuevos (Premium, viaje compartido, publicidad) está construido en el código ni validado con el mercado — queda declarado así en el propio Capítulo 5.
+
+Todas las ediciones del Word validadas contra el esquema OOXML (`--original MotoSafe_GBA_Capitulos_1_a_6.docx`) después de cada tanda, sin errores nuevos. G01 sigue "validado parcialmente" en BACKLOG.md: lo que resta es una revisión visual completa en Word/PDF (no se renderizó esta sesión, sin LibreOffice disponible en el entorno) y eventual verificación por Rodo de los cambios.
+
+## Cierre anterior: SES-171, 23/10/2026 — auditoría del Word final
 
 Rodo pidió contrastar `MotoSafe_GBA_Capitulos_1_a_8_FINAL.docx` contra el proyecto. Informe histórico: [auditoría de discrepancias](../tesis/auditoria_2026-10-23/AUDITORIA_DISCREPANCIAS.md), con 27 observaciones y evidencias reproducibles. El SHA del Word auditado está en el informe; hubo ediciones externas concurrentes y se volvió a contrastar al cierre. No se modificaron tesis, modelo, código ni datos productivos. G01 continúa parcialmente validado: ahora incluye corregir la coherencia de la tesis, sin crear un backlog paralelo.
 
