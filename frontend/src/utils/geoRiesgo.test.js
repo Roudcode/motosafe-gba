@@ -102,6 +102,27 @@ describe('calcularProgresoRuta', () => {
     expect(calcularProgresoRuta(null, RUTA_RECTA).distanciaTotalKm).toBe(0)
     expect(calcularProgresoRuta({ lat: -34.6, lng: -58.4 }, [[-34.6, -58.4]]).distanciaTotalKm).toBe(0)
   })
+
+  it('en el extremo del trazado, distanciaAlTrazadoKm es ~0 (el punto está sobre la ruta)', () => {
+    const p = calcularProgresoRuta({ lat: -34.57, lng: -58.40 }, RUTA_RECTA)
+    expect(p.distanciaAlTrazadoKm).toBeCloseTo(0, 2)
+  })
+
+  it('B02 (auditoría Codex 2026-10-23): un punto bien más allá del último vértice proyecta igual que el destino en distanciaRecorridaKm, pero distanciaAlTrazadoKm sí refleja que está lejos', () => {
+    // Reproduce el probe_llegada.mjs: tramo recto norte-sur de ~1.1 km, GPS
+    // alineado con el tramo pero ~2.2 km más allá del último vértice.
+    const tramo = [[-34.60, -58.40], [-34.59, -58.40]]
+    const ultimo = { lat: -34.59, lng: -58.40 }
+    const gpsLejos = { lat: -34.57, lng: -58.40 }
+    const pUltimo = calcularProgresoRuta(ultimo, tramo)
+    const pGps = calcularProgresoRuta(gpsLejos, tramo)
+    // Antes del fix, esto solo, usado como único criterio de "llegada", daba
+    // 0 -- la proyección clampeada hace que ambos puntos midan lo mismo.
+    expect(pUltimo.distanciaRecorridaKm - pGps.distanciaRecorridaKm).toBeCloseTo(0, 2)
+    // La distancia real al trazado sí lo delata: ~2.22 km, muy por encima de
+    // cualquier radio de llegada razonable.
+    expect(pGps.distanciaAlTrazadoKm).toBeGreaterThan(2)
+  })
 })
 
 describe('distanciaAPolilinea', () => {

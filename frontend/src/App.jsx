@@ -1305,16 +1305,32 @@ function App() {
   // recta nunca iba a cortar en ese caso aunque la ruta ya estuviera recorrida
   // entera. Con el mismo criterio que ve el usuario en pantalla, los dos
   // coinciden siempre.
+  //
+  // Llegada falsa lejos del destino (hallazgo B02, auditoría de Codex
+  // 2026-10-23): la proyección sobre cada tramo se clampea a [0,1] (A11), así
+  // que un GPS alineado con el último tramo pero bastante más allá del
+  // destino proyecta igual que el propio destino -- faltanKm da 0 aunque el
+  // GPS esté a kilómetros de verdad. Se exige además que el GPS esté cerca
+  // del trazado (distanciaAlTrazadoKm), no solo que su progreso proyectado
+  // coincida con el del destino.
   useEffect(() => {
     if (!modoViaje || !miUbicacion || rutasCalculadas.length === 0) return
     const ruta = rutasCalculadas[rutaSeleccionada]
     const pasos = ruta?.pasos || []
     const ultimoPaso = pasos[pasos.length - 1]
     if (!ultimoPaso || ultimoPaso.tipo !== 'arrive' || pasoActual < pasos.length - 1) return
-    const faltanKm = ruta?.coords
-      ? Math.max(0, calcularProgresoRuta(ultimoPaso, ruta.coords).distanciaRecorridaKm
-                     - calcularProgresoRuta(miUbicacion, ruta.coords).distanciaRecorridaKm)
-      : distanciaKm(miUbicacion, ultimoPaso)
+    let faltanKm
+    if (ruta?.coords) {
+      const progresoGps = calcularProgresoRuta(miUbicacion, ruta.coords)
+      const progresoUltimo = calcularProgresoRuta(ultimoPaso, ruta.coords)
+      faltanKm = Math.max(
+        progresoUltimo.distanciaRecorridaKm - progresoGps.distanciaRecorridaKm,
+        progresoGps.distanciaAlTrazadoKm,
+        0
+      )
+    } else {
+      faltanKm = distanciaKm(miUbicacion, ultimoPaso)
+    }
     if (faltanKm > RADIO_LLEGADA_KM) return
     // Reaccion a un cambio de posicion GPS (sistema externo), no estado derivado.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1381,8 +1397,13 @@ function App() {
       const t = setTimeout(() => setZonaResaltada(null), 3000)
       return () => clearTimeout(t)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busqueda])
+    // B05 (auditoría Codex 2026-10-23): antes dependía solo de [busqueda], pero
+    // también lee zonasFiltradas -- si las zonas todavía no habían cargado
+    // cuando se tipeó la búsqueda, el efecto veía cero coincidencias y nunca
+    // se volvía a correr cuando los datos llegaban y pasaban a dar exactamente
+    // una. zonasFiltradas ya está memoizada con sus propias dependencias, así
+    // que agregarla acá no dispara renders de más.
+  }, [busqueda, zonasFiltradas])
 
   const zonasCruzadasPorRuta = useMemo(
     () => calcularZonasCruzadasPorRuta(rutasCalculadas, zonasRiesgoTodas, UMBRAL_CRUCE_KM),
@@ -1525,12 +1546,18 @@ function App() {
     return acc
   }, {})
 
+  // B04 (auditoría Codex 2026-10-23): usaba zonasAjustadas (todas las zonas
+  // de siniestros cargadas) pese a etiquetarse "del mapa visible" -- apagar
+  // un nivel o buscar por nombre no lo movía un punto, porque esos filtros
+  // viven en zonasFiltradas, no acá. Usa zonasFiltradas para que sí refleje
+  // niveles activos y búsqueda; sigue sin contemplar zoom/paneo del mapa en
+  // sí (eso necesitaría leer los bounds del mapa, no solo los filtros).
   const indiceRiesgo = useMemo(() => {
-    if (zonasAjustadas.length === 0) return 0
-    const total = zonasAjustadas.reduce((acc, z) => acc + PESO_RIESGO[z.ajuste.nivel], 0)
-    const maximoPosible = zonasAjustadas.length * PESO_RIESGO.critico
+    if (zonasFiltradas.length === 0) return 0
+    const total = zonasFiltradas.reduce((acc, z) => acc + PESO_RIESGO[z.ajuste.nivel], 0)
+    const maximoPosible = zonasFiltradas.length * PESO_RIESGO.critico
     return Math.round((total / maximoPosible) * 100)
-  }, [zonasAjustadas])
+  }, [zonasFiltradas])
 
   const totalSiniestros = useMemo(() => zonasAjustadas.reduce((acc, z) => acc + (z.cantidad || 0), 0), [zonasAjustadas])
 

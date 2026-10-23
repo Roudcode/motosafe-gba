@@ -42,7 +42,7 @@ export function calcularRumbo(a, b) {
 // alcanza para una barra de progreso (no para recalcular giros).
 export function calcularProgresoRuta(punto, coords) {
   if (!punto || !coords || coords.length < 2) {
-    return { indiceCercano: 0, distanciaTotalKm: 0, distanciaRecorridaKm: 0, distanciaRestanteKm: 0, fraccionRecorrida: 0 }
+    return { indiceCercano: 0, distanciaTotalKm: 0, distanciaRecorridaKm: 0, distanciaRestanteKm: 0, fraccionRecorrida: 0, distanciaAlTrazadoKm: 0 }
   }
   const acumulado = [0]
   for (let i = 0; i < coords.length - 1; i++) {
@@ -80,6 +80,15 @@ export function calcularProgresoRuta(punto, coords) {
     distanciaRecorridaKm,
     distanciaRestanteKm,
     fraccionRecorrida: distanciaTotalKm > 0 ? distanciaRecorridaKm / distanciaTotalKm : 0,
+    // Distancia real del punto al tramo más cercano de la polilínea (mejorDist
+    // de arriba). La proyección se clampea a [0,1] por tramo (A11), así que un
+    // punto más allá del último vértice sigue dando distanciaRecorridaKm igual
+    // a la del extremo -- sin esto, comparar solo distanciaRecorridaKm entre
+    // dos puntos que proyectan ambos al mismo extremo (ej. un GPS lejos pero
+    // alineado con el último tramo) da faltanKm=0 aunque el punto esté lejos
+    // de verdad. Quien compare progreso entre dos puntos (ver detección de
+    // llegada en App.jsx) tiene que exigir también esta distancia chica.
+    distanciaAlTrazadoKm: mejorDist,
   }
 }
 
