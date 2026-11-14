@@ -1,0 +1,718 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 5 — JUSTIFICACIÓN ECONÓMICA (Entrega 5 · 15 % · 15/9)
+% =============================================================
+
+\chapter{Justificación económica}\label{cap:economica}
+
+\begin{guia}[Guía de la cátedra: qué se evalúa en este capítulo]
+Es el capítulo de mayor peso individual (15\,\%). Se evalúa como una
+evaluación de proyectos de inversión:
+\begin{enumerate}
+    \item \textbf{Análisis de mercado y competidores}: tamaño, segmentos,
+          precios de referencia.
+    \item \textbf{Modelo de negocio}: B2B, B2C, B2G o interno; niveles de
+          precio y fuentes de ingreso.
+    \item \textbf{Inversión inicial} desglosada por rol y tiempo, más
+          infraestructura.
+    \item \textbf{Costos operativos} recurrentes.
+    \item \textbf{Escenarios} pesimista, base y optimista, con flujo de caja
+          proyectado a 3 a 5 años.
+    \item \textbf{Indicadores}: \gls{van}, \gls{tir} y período de repago,
+          con una tasa de descuento construida y justificada con fuentes.
+    \item \textbf{Supuestos y restricciones} explícitos.
+\end{enumerate}
+Todo número con su origen: cotización, tarifa pública, estadística
+citada o estimación propia declarada como tal.
+\end{guia}
+
+\section{Alcance económico, escenarios y advertencia metodológica}
+
+Este capítulo evalúa la factibilidad económica de MotoSafe GBA bajo tres
+etapas de despliegue: demo académica (la situación actual, sin
+desembolso adicional relevante), piloto público (una operación acotada
+en usuarios y tiempo, orientada a validar adopción real) y operación
+sostenida (un servicio disponible de forma continua, con un modelo de
+ingresos que le permita cubrir sus costos). Los indicadores financieros
+de este capítulo, Valor Actual Neto, Tasa Interna de Retorno y período
+de recupero, solo tienen sentido para la tercera etapa: la demo
+académica no requiere inversión que evaluar, y el piloto público es, por
+definición, una fase de validación sin pretensión de rentabilidad
+propia.
+
+El proyecto no cuenta, a la fecha de esta entrega, con datos de mercado
+reales (no se contactó a municipios ni aseguradoras para validar
+disposición de pago). Siguiendo el criterio expuesto en la Clase 9 de la
+cátedra para casos sin datos de mercado disponibles, este capítulo
+construye un ejemplo numérico completo sobre supuestos explícitos,
+declarados uno por uno y diferenciados con claridad de los hechos
+verificables del proyecto (costos de infraestructura ya cotizados,
+conteos de código verificados en el repositorio). Cada supuesto se marca
+como tal. El objetivo no es afirmar que el proyecto generará esos
+ingresos, sino demostrar el método de evaluación y su sensibilidad ante
+cambios razonables en esos supuestos.
+
+La siguiente tabla reúne, en un único lugar, todos los supuestos que
+atraviesan el capítulo, para que el horizonte, la moneda y la tasa
+usados en 5.2 a 5.6 se lean como un mismo conjunto coherente y no como
+cifras sueltas por sección.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2766}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2553}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4681}}@{}}
+\caption{Supuestos de modelado y hechos verificables que atraviesan el Capítulo 5.}\label{tab:5-1}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Supuesto}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Valor adoptado}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Naturaleza y justificación}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Supuesto}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Valor adoptado}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Naturaleza y justificación}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Horizonte de evaluación & 5 años (Año 0 a Año 5) & Supuesto: horizonte
+típico para un proyecto de servicio digital sin activos físicos,
+suficiente para observar si los ingresos proyectados alcanzan a cubrir
+los costos operativos. \\
+Moneda de todo el flujo & Dólares estadounidenses (USD) & Supuesto de
+modelado: evita proyectar una tasa de inflación local y es consistente
+con la cotización en USD de los servicios de infraestructura (Render,
+TomTom). \\
+Depreciación de activos & No se cargan cargos por depreciación & Hecho
+conceptual: el proyecto es un servicio digital sin inventario físico
+relevante que amortizar. \\
+Tasa de descuento & 17\% anual (16,65\% calculado, redondeado) &
+Supuesto compuesto: costo de oportunidad (bono EE. UU. a 10 años, hecho
+verificado, \citealp{cnbc2026}) + riesgo país (EMBI+ Argentina, hecho
+verificado, \citealp{rava2026}) + prima de riesgo propia del proyecto
+de 7 puntos (supuesto). \\
+Crecimiento anual de costos operativos & 10\% anual sobre el año
+anterior & Supuesto: refleja el crecimiento esperado de tráfico, volumen
+de prensa almacenada y consumo de TomTom a medida que crece la base de
+usuarios. \\
+Escenario de ingresos (licencia B2B) & USD 0 / 400 / 1.200 / 2.200 /
+3.500 (años 1 a 5) & Supuesto de modelado, sin contacto comercial
+iniciado con municipios ni aseguradoras a la fecha de esta entrega. \\
+Suscripción Premium (usuarios finales) & USD 10/año; 0 / 100 / 250 / 400
+/ 550 usuarios pagos (años 1 a 5) & Supuesto de modelado, segunda fuente
+de ingresos sin base de usuarios validada a la fecha de esta entrega. \\
+Publicidad (plan gratuito) & CPM USD 0,50; 1 ruta iniciada/semana por
+usuario; conversión a Premium del 2\% sobre la base total & Supuesto de
+modelado, tercera fuente de ingresos, sin anunciante contactado a la
+fecha de esta entrega. \\
+Inversión inicial (Año 0) & USD 5.740 & Supuesto: incluye el desarrollo
+ya realizado del MVP y las tareas adicionales para escalarlo a operación
+sostenida (ver 5.2). \\
+Costo de infraestructura verificado & USD 0/mes (demo/piloto actual:
+planes Free de Render y Supabase); USD 67,65/mes (Render Starter +
+Supabase Pro + Open-Meteo en su tier comercial, con el frontend movido a
+hosting estático gratuito) para operación sostenida & Hecho verificable
+en ambos extremos: el gratuito corre hoy en producción; el pago está
+cotizado directamente en cada proveedor (Render y Supabase). \\
+\end{longtable}
+
+\section{Inversión inicial (etapa de operación sostenida)}
+
+La inversión inicial reúne, en un único total, el desarrollo ya
+realizado del MVP (backend, frontend, modelo y pipeline de datos) y las
+tareas adicionales necesarias para pasar de ese MVP de demostración a un
+servicio público sostenido. El desarrollo ya realizado incluye tanto las
+horas propias como el trabajo de los asistentes de inteligencia
+artificial usados bajo esa supervisión, valorizado a la misma tarifa de
+referencia usada en todo este capítulo (USD 12/hora, desarrollador
+junior en Argentina, supuesto propio). Las tareas adicionales
+corresponden a: endurecimiento de seguridad antes de exponer el sistema
+(migración de tokens de borrado existentes y revisión de dependencias;
+la cuota de envío de reportes ya está implementada), puesta en marcha de
+infraestructura productiva (base de datos persistente, dominio propio,
+TLS, backups automatizados) y una campaña mínima de difusión inicial en
+comunidades de motociclistas del AMBA.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.3696}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.1739}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.1957}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2609}}@{}}
+\caption{Desglose de la inversión inicial por concepto, horas y naturaleza (supuesto o hecho).}\label{tab:5-2}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Concepto}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Horas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Costo (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Naturaleza}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Concepto}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Horas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Costo (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Naturaleza}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Investigación y definición del proyecto & 80 & 960 & Supuesto: horas
+estimadas según el alcance real del trabajo ya hecho, sin registro
+cronometrado \\
+Desarrollo e integraciones (backend, modelo, frontend, scraper de
+prensa) & 220 & 2.640 & Supuesto: horas estimadas según el alcance real
+del trabajo ya hecho, sin registro cronometrado \\
+Auditoría técnica, documentación y redacción académica & 40 & 480 &
+Supuesto: horas estimadas según el alcance real del trabajo ya hecho,
+sin registro cronometrado \\
+Suscripciones de las herramientas de inteligencia artificial utilizadas
+(Claude y ChatGPT/Codex) & --- & 160 & Hecho verificable en el precio
+(USD 20/mes cada suscripción) y en la duración real de uso hasta la
+fecha de esta entrega: primer mes (mayo de 2026) con Claude y
+ChatGPT/Codex a la vez (USD 40), de junio a noviembre de 2026 (seis
+meses) solo Claude (USD 20/mes); total USD 160 sobre siete meses de
+uso \\
+Endurecimiento de seguridad y auditoría previa a escalar & --- & 800 &
+Supuesto: horas de desarrollo valorizadas \\
+Infraestructura productiva inicial (BD persistente, dominio, TLS,
+backups) & --- & 300 & Supuesto: cotización estimada sobre tarifas de
+Render, Supabase y servicios de dominio/TLS \\
+Difusión inicial en comunidades de motociclistas & --- & 400 & Supuesto:
+presupuesto de lanzamiento \\
+\textbf{Inversión inicial total (Año 0)} & \textbf{340} & \textbf{5.740}
+& \textbf{Supuesto} \\
+\end{longtable}
+
+Las horas del desarrollo ya realizado se estiman por analogía con
+proyectos de alcance e integración comparable (backend propio, modelo de
+aprendizaje automático, frontend geoespacial y proceso de ingesta
+programado). El costo de las suscripciones de inteligencia artificial
+usa el precio real de cada plan individual (USD 20/mes Claude, USD
+20/mes ChatGPT/Codex) y la duración real de uso hasta la fecha de esta
+entrega, no un supuesto: USD 40 en mayo de 2026, el único mes en que se
+usaron ambas herramientas, y USD 20/mes desde junio hasta noviembre de
+2026 (seis meses), en que solo se mantuvo Claude; total USD 160 sobre
+siete meses. Todas las horas y esta tarifa son un supuesto propio,
+declarado como tal, y no una cotización ni un registro de horas
+cronometradas.
+
+\section{Costos operativos}
+
+La arquitectura real, verificada en producción al cierre de esta
+entrega, corre en su totalidad en planes gratuitos: Render (API y sitio
+web, Web Services sin costo), Supabase (PostgreSQL con PostGIS, plan
+Free sin vencimiento) y GitHub Actions (scraper de prensa por cron). Ese
+hecho sostiene las etapas de demo académica y piloto público a costo
+cero de infraestructura. La etapa de operación sostenida, en cambio,
+necesita planes pagos para evitar las limitaciones de los niveles
+gratuitos (el servicio web gratuito de Render se duerme sin tráfico; el
+proyecto gratuito de Supabase se pausa tras una semana sin actividad).
+Esta sección proyecta esa etapa con un ajuste que reduce el costo sin
+cambiar de proveedor de base de datos: el frontend es una aplicación de
+una sola página sin lógica de servidor, así que para esa etapa se
+proyecta publicarlo en un hosting estático gratuito (p. ej. Cloudflare
+Pages), dejando en Render pago solo la API (Starter, USD 7/mes);
+Supabase se mantiene como base de datos, en su plan Pro (USD 25/mes)
+para esa misma etapa. Ese cambio no es solo una migración de hosting:
+hoy el frontend y la API conviven detrás del mismo proxy nginx, y mover
+el frontend a un dominio estático separado exige reconfigurar CORS y
+pasar la cookie de sesión a un esquema entre dominios (SameSite=None,
+Secure), trabajo de implementación todavía no hecho, no un simple cambio
+de proveedor. El clima en vivo cambia de categoría en esta misma etapa:
+hoy consulta la API gratuita y no comercial de Open-Meteo, pero su
+política reserva ese nivel gratuito a uso no comercial, así que una
+operación que cobra por licencias de datos o suscripciones necesita su
+tier comercial (aproximadamente USD 35,65/mes). La siguiente tabla
+identifica los rubros de costo variable y el factor que más los impacta;
+los montos anuales de la etapa de operación sostenida (columna derecha)
+son un supuesto de dimensionamiento sobre esas tarifas, no una
+cotización cerrada por volumen.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.3171}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.3171}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2195}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.1463}}@{}}
+\caption{Costos operativos proyectados por rubro y variable de mayor impacto.}\label{tab:5-3}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Rubro}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Variable que más impacta el costo}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Base (hecho)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Año 1 estimado (supuesto)}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Rubro}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Variable que más impacta el costo}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Base (hecho)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Año 1 estimado (supuesto)}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Render (solo API) & Requests, RAM/CPU activa & USD 0/mes verificado
+(Free, demo actual); USD 7/mes (Starter, sin sleep) & USD 84 \\
+Frontend (Cloudflare Pages) & Visitas, ancho de banda & USD 0/mes
+verificado en demo (hoy en Render Free); se proyecta mover a hosting
+estático gratuito para operación sostenida, sin costo dentro de los
+límites gratuitos del proveedor (sujeto a sus topes de uso) & USD 0 \\
+Supabase (PostgreSQL/PostGIS) & Tamaño de datos, cómputo, usuarios
+activos & USD 0/mes verificado (Free, sin vencimiento, demo actual); USD
+25/mes (Pro) & USD 300 \\
+Mapas y ruteo (TomTom) & Búsquedas, rutas, consulta de tráfico & Cuota
+gratuita limitada & USD 180 \\
+Scraper de prensa (GitHub Actions) & Minutos de cómputo por corrida (hoy
+cada 3 h) & USD 0/mes verificado, incluso a esta escala (cuota de
+minutos muy por encima del uso real) & USD 0 \\
+Envío de mail (API de Gmail) & Volumen de envíos & USD 0/mes verificado,
+cuota muy por encima del uso necesario & USD 0 \\
+Clima en vivo (Open-Meteo) & Llamadas por request, uso comercial & USD
+0/mes verificado en demo (tier no comercial); requiere su tier comercial
+(\textasciitilde USD 35,65/mes) para operación sostenida con licencias
+pagas & USD 428 \\
+Dominio, TLS y observabilidad & Proveedor y retención de logs & Costo
+anual estándar (pendiente de contratar) & USD 56 \\
+Costo operativo total Año 1 (demo verificado: USD 0; operación
+sostenida, estimado) & & & USD 1.048 \\
+\end{longtable}
+
+El costo operativo total se proyecta con un crecimiento del 10\% anual
+sobre el año anterior (supuesto), reflejando el aumento esperado de
+tráfico, volumen de prensa almacenada y consumo de TomTom y Open-Meteo a
+medida que crece la base de usuarios: USD 1.048 (año 1), USD 1.153 (año
+2), USD 1.268 (año 3), USD 1.395 (año 4) y USD 1.534 (año 5).
+
+\section{Escenario de ingresos}
+
+SUPUESTO (no validado con el mercado): el escenario de operación
+sostenida financia sus costos mediante tres fuentes combinadas, ninguna
+con contacto comercial iniciado a la fecha de esta entrega. La primera
+es una licencia de datos agregados y anonimizados de riesgo vial (capas
+de hotspots, no datos personales) ofrecida a municipios o aseguradoras
+como servicio de suscripción a partir del tercer año, una vez que el
+volumen de datos históricos lo justifique. La segunda es una suscripción
+Premium opcional para usuarios finales, a USD 10 por año, con un
+diferencial central: viaje compartido en vivo, donde el usuario comparte
+su ubicación y ruta en tiempo real con un contacto de confianza mientras
+maneja. Sobre eso se suman, como extras menores, pantalla sin
+publicidad, guardado ilimitado de rutas favoritas, alertas
+personalizadas por zona y acceso sin conexión a las capas de riesgo. El
+plan gratuito conserva todo lo que el sistema ya tiene implementado hoy
+(mapa con las cuatro capas de riesgo, comparador de rutas, reportes
+comunitarios, panel de prensa, hasta 3 rutas favoritas guardadas), pero
+no incluye el viaje compartido en vivo ni los extras mencionados. La
+tercera fuente es publicidad mostrada solo a usuarios del plan gratuito,
+en la pantalla de carga antes de iniciar una ruta, momento en el que se
+proyecta que el usuario todavía esté detenido, sin garantía de que lo
+esté siempre; esa suposición de seguridad queda sujeta a evaluación
+antes de implementarse, no es un hecho verificado. El plan Premium no
+muestra publicidad. Ninguna de las tres fuentes es una funcionalidad ya
+construida en el sistema, ni hay una negociación comercial en curso con
+un anunciante, con municipios o con aseguradoras: las tres son supuestos
+de modelado, no un producto ya ofrecido.
+
+Para la licencia de datos se proyecta: USD 0 (año 1, etapa de
+construcción de base de usuarios sin monetizar), USD 400 (año 2, un
+auspicio puntual de una organización interesada, distinto de una
+licencia de datos formal pero agrupado en esta misma fuente por
+simplicidad), USD 1.200 (año 3, primera licencia piloto de datos ya
+formal), USD 2.200 (año 4) y USD 3.500 (año 5). Para la suscripción
+Premium, a partir del año 2 se supone una conversión del 2\% (supuesto,
+conversión freemium típica de una app de consumo) sobre una base de
+usuarios activos totales estimada en 5.000 (año 2), 12.500 (año 3),
+20.000 (año 4) y 27.500 (año 5); el año 1 se proyecta directamente en 0
+usuarios pagos, no por la fórmula del 2\% (que daría 40 sobre sus 2.000
+usuarios activos estimados), sino porque esa primera etapa se supone
+dedicada a construir base de usuarios antes de ofrecer el plan pago. Eso
+da 0 usuarios pagos en el año 1, 100 en el año 2, 250 en el año 3, 400
+en el año 4 y 550 en el año 5. Para la publicidad, mostrada a los
+usuarios gratuitos de esa misma base (la base total menos los usuarios
+Premium), se adoptó el extremo conservador de dos variables sin validar:
+una ruta iniciada por semana por usuario activo, y un CPM (costo por
+cada 1.000 vistas) de USD 0,50, en la parte baja del rango típico de
+publicidad móvil en Latinoamérica. Eso proyecta USD 52 (año 1), USD 127
+(año 2), USD 319 (año 3), USD 510 (año 4) y USD 701 (año 5).
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1513}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2089}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2129}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2194}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2076}}@{}}
+\caption{Proyección de ingresos por licencia B2B, suscripción Premium y publicidad, años 1 a 5.}\label{tab:5-4}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Año}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Licencia B2B (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Premium (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Publicidad (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Total ingresos (USD)}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Año}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Licencia B2B (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Premium (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Publicidad (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Total ingresos (USD)}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 0 & 0 & 52 & 52 \\
+2 & 400 & 1.000 & 127 & 1.527 \\
+3 & 1.200 & 2.500 & 319 & 4.019 \\
+4 & 2.200 & 4.000 & 510 & 6.710 \\
+5 & 3.500 & 5.500 & 701 & 9.701 \\
+\end{longtable}
+
+\section{Flujo de fondos, tasa de descuento, VAN, TIR y período de recupero}
+
+El flujo de fondos neto de cada año surge de restar el costo operativo
+(5.3) al ingreso proyectado (5.4), sin cargos por depreciación de
+activos fijos por tratarse de un servicio digital sin inventario físico
+relevante.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2051}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1923}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1923}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2051}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2051}}@{}}
+\caption{Flujo de fondos neto y acumulado, años 0 a 5.}\label{tab:5-5}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Año}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ingreso (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Costo (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Flujo neto (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Flujo acumulado (USD)}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Año}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ingreso (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Costo (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Flujo neto (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Flujo acumulado (USD)}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+0 & --- & 5.740 (inversión) & -5.740 & -5.740 \\
+1 & 52 & 1.048 & -996 & -6.736 \\
+2 & 1.527 & 1.153 & 374 & -6.362 \\
+3 & 4.019 & 1.268 & 2.751 & -3.611 \\
+4 & 6.710 & 1.395 & 5.315 & 1.704 \\
+5 & 9.701 & 1.534 & 8.167 & 9.871 \\
+\end{longtable}
+
+Tasa de descuento (supuesto, construido en dólares estadounidenses según
+el método de tres componentes de la Clase 9): costo de oportunidad,
+aproximado por el rendimiento del bono del Tesoro de Estados Unidos a 10
+años, que cotizó en torno a 4,8\% \citep{cnbc2026}; protección contra
+inflación, incorporada de forma implícita al modelar el flujo
+íntegramente en dólares en lugar de en pesos argentinos, evitando así
+proyectar una tasa de inflación local; y compensación de riesgo,
+compuesta por el riesgo país argentino (EMBI+ Argentina, 485 puntos
+básicos según Rava Bursátil) más una prima adicional de riesgo
+específico del proyecto de 7 puntos porcentuales (supuesto, que refleja
+la ausencia de historial de ingresos y la dependencia de fuentes de
+ingreso todavía no contactadas comercialmente). La suma de los tres
+componentes (4,8\% + 4,85\% + 7\%) da una tasa de descuento de 16,65\%,
+redondeada a 17\% para el cálculo.
+
+VAN al 17\%: -5.740 + (-996/1,17) + (374/1,17²) + (2.751/1,17³) +
+(5.315/1,17⁴) + (8.167/1,17⁵) = -5.740 + (-851,28) + 273,21 + 1.717,64 +
+2.836,35 + 3.725,06 ≈ +USD 1.961. TIR: por bisección, la tasa que lleva
+el VAN a cero es aproximadamente 24,8\%, con un margen de 7,8 puntos
+sobre la tasa de corte del 17\%: sumar publicidad al plan gratuito
+(conservadora: una ruta iniciada por semana, CPM de USD 0,50) sobre la
+suscripción Premium de USD 10 por año casi duplica el margen que dejaba
+la sola suba de precio de Premium. Período de recupero simple: el flujo
+acumulado pasa de negativo a positivo entre el año 3 (-3.611) y el año 4
+(+5.315 de flujo neto ese año), a los 3.611/5.315 = 0,68 del año, es
+decir, 3 años y aproximadamente 8 meses. Período de recupero descontado:
+sobre los flujos descontados acumulados (-5.740, -6.591,28, -6.318,07,
+-4.600,43, -1.764,08, +1.960,98), el cruce ocurre entre el año 4 y el
+año 5, a 1.764,08/3.725,06 = 0,47 del año, es decir, 4 años y
+aproximadamente 6 meses.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2020}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2525}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2525}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2929}}@{}}
+\caption{Resultado de los indicadores financieros frente a su criterio de aceptación.}\label{tab:5-6}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Indicador}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Resultado}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Criterio}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Conclusión}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Indicador}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Resultado}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Criterio}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Conclusión}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+VAN (17\%) & ≈ +USD 1.961 & Aceptar si VAN ≥ 0 & Se acepta, margen
+sensible a la adopción de ingresos (ver 5.6) \\
+TIR & ≈ 24,8\% & Aceptar si tasa de corte ≤ TIR & Se acepta, margen de
+7,8 puntos \\
+Recupero simple & ≈ 3 años y 8 meses & Cuanto menor, mejor liquidez &
+Recupero dentro del horizonte evaluado \\
+Recupero descontado & ≈ 4 años y 6 meses & Cuanto menor, mejor liquidez
+real & Recupero dentro del horizonte evaluado \\
+\end{longtable}
+
+Bajo los supuestos declarados, incluyendo el costo completo del
+desarrollo ya realizado, la cotización real de infraestructura pagada
+(Render Starter para la API, frontend en hosting estático gratuito,
+Supabase Pro y el tier comercial de Open-Meteo), la suscripción Premium
+de USD 10 por año y la publicidad en el plan gratuito propuestas en 5.4,
+el escenario de operación sostenida resulta económicamente viable, con
+un margen mayor al estimado en una cotización anterior de este mismo
+capítulo: un VAN de USD 1.961 y una TIR que supera la tasa de corte por
+7,8 puntos porcentuales. La tercera fuente de ingresos (publicidad) suma
+un margen de seguridad frente al costo del clima comercial, que las
+primeras dos fuentes por sí solas cubrían de forma más ajustada; esa
+dependencia de tres fuentes de ingresos combinadas, ninguna validada
+todavía con el mercado, se pone a prueba en el punto 5.6.
+
+\section{Análisis de sensibilidad}
+
+Se recalculó el VAN ante dos escenarios de desvío de una sola variable a
+la vez respecto del caso base, manteniendo la tasa de descuento en 17\%.
+Un sobrecosto operativo uniforme del 20\% sobre los valores de 5.3 en
+todos los años lleva el VAN a aproximadamente +USD 1.166: el proyecto se
+mantiene viable, con margen todavía razonable. Una adopción de ingresos
+(licencia B2B, Premium y publicidad combinadas) un 20\% más lenta que la
+proyectada en 5.4 lleva el VAN a aproximadamente -USD 374: el proyecto
+deja de ser viable, aunque por un margen mucho más chico que antes de
+sumar la publicidad. El resultado resiste mejor un sobrecosto operativo
+que una demora en la adopción de ingresos, que sigue siendo la variable
+más sensible del capítulo.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\caption{Sensibilidad del VAN ante el desvío de una variable a la vez.}\label{tab:5-7}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Desvío de una variable}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{VAN resultante (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Lectura}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Desvío de una variable}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{VAN resultante (USD)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Lectura}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Caso base (5.5) & ≈ +1.961 & Viable \\
+Costos operativos +20\% & ≈ +1.166 & Viable, margen amplio \\
+Ingresos 20\% más lentos & ≈ -374 & No viable, pero por un margen
+chico \\
+\end{longtable}
+
+Además del desvío de una variable a la vez, se construyeron tres
+escenarios combinados (pesimista, base y optimista) para leer el rango
+completo de resultados posibles bajo los mismos supuestos de horizonte,
+moneda y tasa de descuento de la tabla de 5.1. El escenario optimista
+supone una adopción de ingresos un 20\% más rápida que la proyectada en
+5.4, con los costos operativos de 5.3 sin cambios. El escenario
+pesimista combina, en simultáneo, el sobrecosto operativo del 20\% y la
+adopción de ingresos un 20\% más lenta ya calculados por separado en la
+tabla anterior; no es un tercer supuesto nuevo, sino la superposición de
+los dos desvíos individuales sobre el mismo horizonte de 5 años.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2525}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2525}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2525}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2424}}@{}}
+\caption{Sensibilidad del VAN ante escenarios combinados (optimista, base y pesimista).}\label{tab:5-8}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Escenario}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ingresos vs. base}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Costos vs. base}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{VAN resultante (USD)}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Escenario}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ingresos vs. base}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Costos vs. base}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{VAN resultante (USD)}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Optimista & +20\% (adopción más rápida) & Sin cambios & ≈ +4.296 \\
+Base (5.5) & Proyección de 5.4 & Proyección de 5.3 & ≈ +1.961 \\
+Pesimista & -20\% (adopción más lenta) & +20\% (sobrecosto combinado) &
+≈ -1.169 \\
+\end{longtable}
+
+El rango entre el escenario optimista (+USD 4.296) y el pesimista (-USD
+1.169) muestra que, con las tres fuentes de ingreso combinadas, el caso
+base queda más lejos de revertirse que en la versión anterior del
+capítulo: el resultado sigue dependiendo de que la adopción de ingresos
+no se retrase de forma simultánea y considerable, pero la publicidad le
+da un colchón adicional que las otras dos fuentes por sí solas no
+tenían.
+
+Bajo los supuestos declarados en este capítulo, incluyendo la
+suscripción Premium de USD 10 por año y la publicidad en el plan
+gratuito propuestas en 5.4, la operación sostenida de MotoSafe GBA
+resulta económicamente viable, con un margen razonable pero condicionado
+a que las tres fuentes de ingresos proyectadas (licencia de datos,
+suscripción Premium y publicidad), combinadas, se validen con evidencia
+real de mercado antes de escalar: el análisis de sensibilidad solo probó
+una adopción de ingresos combinados hasta un 20\% más lenta que la
+proyectada, no la pérdida completa de alguna de las tres fuentes, un
+escenario que este capítulo no cuantifica. La decisión de migrar de la
+etapa de piloto público a la de operación sostenida no debería tomarse
+únicamente con este ejemplo numérico: debe estar precedida por una
+validación real de la disposición a pagar (ya sea de motociclistas por
+el plan Premium o de municipios y aseguradoras por la licencia de datos)
+y por el interés real de un anunciante en pautar dentro de la app.
+Mientras esa validación no exista, la recomendación es sostener el
+proyecto en la etapa de piloto público, con límites de gasto activos en
+todos los servicios externos, y recién evaluar la migración a operación
+sostenida cuando exista evidencia real de al menos un trimestre de uso,
+de conversión a la suscripción Premium y de interés publicitario
+efectivo.
+
+\section{Riesgos económicos operativos}
+
+Además de la sensibilidad financiera del punto 5.6, quedan identificados
+tres riesgos operativos con impacto económico directo, ya señalados en
+el Capítulo 4.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3232}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2222}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4545}}@{}}
+\caption{Riesgos operativos con impacto económico directo y su mitigación.}\label{tab:5-9}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Riesgo}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Probabilidad / impacto}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Mitigación}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Riesgo}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Probabilidad / impacto}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Mitigación}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Pausado del proyecto gratuito de Supabase tras una semana sin actividad
+& Alta / medio & Reactivar antes de cada demostración, o migrar a un
+plan pago (Supabase Pro) antes de sostener una operación continua \\
+Consumo de la API de TomTom sin límites de gasto configurados & Media /
+alto & Configurar límites de gasto y monitorear el consumo real antes de
+escalar el tráfico \\
+Crecimiento del volumen de prensa almacenada al ampliar fuentes & Media
+/ bajo a mediano plazo & Revisar la política de retención y el esquema
+de backups a medida que crece el volumen \\
+\end{longtable}
+
+Los tres riesgos están reflejados en el supuesto de crecimiento del 10\%
+anual de costos operativos usado en 5.3 y 5.5.

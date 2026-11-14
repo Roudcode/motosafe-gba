@@ -1,0 +1,168 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 1 — INTRODUCCIÓN            (Entrega 1 · 5 % · 9/6)
+% =============================================================
+
+\chapter{Introducción}\label{cap:introduccion}
+
+\begin{guia}[Guía de la cátedra: qué se evalúa en este capítulo]
+\begin{enumerate}
+    \item \textbf{Descripción del problema}: concreto, anclado en evidencia
+          (datos duros con fuente, casos reales, competidores nombrados).
+    \item \textbf{Objetivo general}: uno solo, medible, en un párrafo.
+          Los \textbf{objetivos específicos} se desprenden de él y
+          \emph{no} son los pasos del plan de trabajo.
+    \item \textbf{Hipótesis}: explícita, formulada como pregunta o
+          afirmación de investigación que pueda responderse en el
+          capítulo~\ref{cap:conclusiones}.
+    \item \textbf{Relevancia}: por qué importa, a quién beneficia, qué les
+          falta a las soluciones existentes.
+    \item \textbf{Alcance y recursos}: qué entra y qué no; stack y fuentes
+          de datos previstos. El ``alcance que nunca cierra'' es el riesgo
+          número uno de la materia.
+\end{enumerate}
+Extensión orientativa: 4 a 6 páginas. Redacción impersonal, sin ``yo
+creo'', oraciones de 15 a 22 palabras, sin palabras vacías
+(``claramente'', ``obviamente''). Toda cifra con su fuente citada, por
+ejemplo \citep{breiman2001}.
+\end{guia}
+
+\section{Problema y contexto}
+
+En Argentina, los motociclistas concentran una porción desproporcionada
+de las víctimas fatales de tránsito. Datos oficiales de 2025 de la
+Agencia Nacional de Seguridad Vial (ANSV) ubicaron a los motociclistas
+en el 46\% de las víctimas fatales de siniestros viales del país
+\citep{infoecos2026}, cifra consistente con la reportada
+por coberturas periodísticas independientes para el mismo período, en un
+rango de 46-47\% \citep{lanacion2025,datoposta2025}. El informe Global
+status report on road safety 2023 de la Organización Mundial de la Salud
+confirma el patrón a escala global: los motociclistas, junto con
+peatones y ciclistas, concentran una fracción desproporcionada de las
+muertes de tránsito, sobre todo en países de ingresos medios como
+Argentina \citep{who2023}.
+
+Ese riesgo conocido convive con una segunda dificultad, menos discutida:
+la información pública que podría orientar una decisión de circulación
+está fragmentada. Los registros históricos de siniestros, los reportes
+de inseguridad, el clima, el estado de una vía y las noticias locales
+recientes se producen y publican de manera independiente, cada uno con
+su propia cobertura geográfica, su propia vigencia y su propio nivel de
+verificación. Un motociclista que quiere saber qué antecedentes existen
+en una zona antes de iniciar un recorrido no tiene, hoy, un punto único
+que se lo muestre sin mezclar esas procedencias entre sí.
+
+MotoSafe GBA no se conformará con dejar expuesta esa fragmentación: la
+reducirá de forma activa incorporando reportes colaborativos de
+motociclistas y noticias verificadas a medida que se sumen usuarios, y
+hará explícito qué zonas siguen con cobertura baja mientras esa
+incorporación avanza. El sistema buscará acercarse a una estimación útil
+de la gravedad esperada de un siniestro, sin convertirla en una promesa
+de seguridad para un trayecto puntual: cada capa mostrará su
+procedencia, antigüedad y cobertura junto con la información misma, en
+lugar de resumir todo en una única cifra que oculte esas diferencias.
+
+\section{Objetivo general y objetivos específicos}
+
+Objetivo general: diseñar e implementar un MVP web que permita
+consultar, visualizar y comparar información de riesgo vial y contexto
+reciente para motociclistas del AMBA, con trazabilidad de fuentes,
+cobertura declarada y límites de interpretación explícitos.
+
+Objetivos específicos:
+
+\begin{itemize}
+\item
+  Integrar datos históricos de siniestralidad de motociclistas en CABA y
+  representarlos como zonas de referencia sobre un mapa interactivo.
+\item
+  Implementar un modelo de clasificación de gravedad condicionado a la
+  ocurrencia de un siniestro, documentando de forma explícita qué estima
+  y qué no estima.
+\item
+  Incorporar capas de inseguridad general, noticias de prensa, clima y
+  reportes colaborativos sin equiparar su procedencia ni su cobertura
+  con la de los datos históricos de siniestros.
+\item
+  Diseñar una interfaz cartográfica accesible, operable en escritorio y
+  en dispositivos móviles.
+\item
+  Construir una arquitectura reproducible, con API propia, base
+  PostgreSQL/PostGIS, proceso de ingesta de prensa programado y una vía
+  de despliegue en la nube documentada.
+\end{itemize}
+
+\section{Relevancia y beneficiarios}
+
+El aporte de MotoSafe GBA estará en organizar información pública
+dispersa y reciente en una interfaz orientada a un usuario concreto,
+haciendo visibles la procedencia, la antigüedad y la cobertura de cada
+fuente antes de que esa información se use para interpretar una zona o
+comparar una ruta.
+
+Los beneficiarios directos serán los motociclistas del AMBA que hoy
+deben cruzar manualmente registros oficiales, prensa y reportes de
+terceros para formarse una idea de una zona. De forma indirecta, la
+arquitectura documentada del proyecto (contrato del modelo, ficha de
+datos, protocolo de cobertura) también servirá como antecedente
+metodológico para trabajos posteriores que integren fuentes heterogéneas
+de riesgo vial sin diluir sus diferencias de procedencia.
+
+\section{Delimitación, alcance y barreras}
+
+El trabajo se concentrará en un MVP web. La evidencia histórica que
+sostenga el modelo de gravedad se validará sobre la Ciudad Autónoma de
+Buenos Aires; el resto del Gran Buenos Aires se incorporará como capa
+exploratoria, sin la misma validación. El proyecto no incluirá
+aplicación móvil nativa, gestión de flotas ni garantía de seguridad para
+un trayecto. El alcance incluye autenticación de identidad de usuarios,
+con registro, verificación por código y recuperación de contraseña.
+
+El proyecto enfrentará barreras de distinto tipo. La naturaleza temporal
+del fenómeno exigirá validar el modelo contra datos de un período no
+visto durante el entrenamiento, un protocolo más exigente que una
+partición aleatoria y sujeto a la disponibilidad de datos históricos
+completos. Integrar prensa, reportes colaborativos y datos oficiales sin
+equiparar su procedencia ni su cobertura tampoco se resolverá de una
+vez: va a exigir un trabajo de curación con medición continua. El
+seguimiento de estas barreras se centralizará en el registro de gestión
+del proyecto.
+
+\section{Pregunta de investigación e hipótesis de trabajo}
+
+Pregunta de investigación: ¿puede una plataforma que integre
+siniestralidad histórica, inseguridad, prensa y clima en una interfaz
+cartográfica mejorar la información disponible para un motociclista sin
+sobreestimar su capacidad predictiva?
+
+Hipótesis de trabajo: una interfaz que declare qué sabe, desde cuándo lo
+sabe y con qué cobertura lo sabe es más útil y más defendible, para un
+motociclista, que un único indicador de riesgo que mezcle fuentes
+heterogéneas sin distinguirlas. La utilidad de MotoSafe GBA está en esa
+trazabilidad, no en predecir con precisión la ocurrencia de un siniestro
+individual.
+
+\section{Enfoque y recursos}
+
+El enfoque avanzará por etapas de relevamiento, diseño, implementación y
+evaluación, priorizando en cada una que la procedencia y la cobertura de
+los datos queden explícitas antes de integrarse a una consulta única.
+
+Los recursos del proyecto se agruparán en cuatro tipos. Humanos: un
+único desarrollador a cargo de todo el proyecto. Tecnológicos: el
+repositorio de control de versiones Git como fuente única de verdad, un
+entorno de contenedores Docker para reproducibilidad, y dos asistentes
+de inteligencia artificial usados como apoyo, uno para auditoría de
+código, implementación técnica y documentación operativa, y otro para
+redacción académica, auditoría cruzada de la documentación y
+verificación de coherencia con los requisitos de la cátedra. De
+información: los datasets públicos de siniestralidad e inseguridad, y
+las fuentes de prensa que alimentan el sistema, sin costo de
+adquisición. Económicos: el desarrollo se sostendrá con recursos propios
+y servicios gratuitos o de bajo costo.
+
+El cronograma de entregas seguirá el esquema de diez entregas
+establecido por la cátedra para el Proyecto Final de Ingeniería en
+Informática, desde la idea y el abstract iniciales hasta la presentación
+final con el proyecto funcionando, pasando por los capítulos, el MVP y
+el prototipo intermedios.

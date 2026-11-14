@@ -1,0 +1,29 @@
+%!TEX root = ../main.tex
+% ANEXO I — Repositorios de código y material externo
+
+\chapter{Repositorios de código fuente}\label{anx:repositorios}
+
+\begin{guia}
+Los anexos contienen material que no fue producido por el autor o que
+es externo al documento: repositorios, datasets de terceros, normativa,
+manuales del proveedor. Para cada repositorio: enlace, tecnología,
+contenido y estado (activo, archivado).
+\end{guia}
+
+El código fuente completo de MotoSafe GBA, con su historial real de
+desarrollo, está en el siguiente repositorio.
+
+\section{MotoSafe GBA}
+
+\prettygitlink{Roudcode/motosafe-gba}
+
+Repositorio único con los tres componentes del sistema: frontend
+(React/Vite con MapLibre GL JS), backend (FastAPI, modelo de gravedad
+en scikit-learn) y la configuración de base de datos (PostgreSQL con
+PostGIS). Incluye el \texttt{README.md} con instrucciones de
+instalación y ejecución, la carpeta \texttt{docs/gestion/} con el
+backlog, las decisiones de arquitectura y la bitácora de desarrollo que
+respalda este informe, y la carpeta \texttt{docs/evidencias/} con la
+evidencia técnica citada a lo largo de los capítulos. Licencia MIT. El
+commit etiquetado \texttt{entrega-final} corresponde a la versión
+defendida ante el jurado.

@@ -1,0 +1,430 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 8 — IMPLICANCIAS, CONCLUSIONES Y RECOMENDACIONES
+%                                       (Entrega 8 · 5 % · 20/10)
+% =============================================================
+
+\chapter{Implicancias, conclusiones y recomendaciones}\label{cap:conclusiones}
+
+\begin{guia}[Guía de la cátedra: qué se evalúa en este capítulo]
+\begin{enumerate}
+    \item \textbf{Respuesta explícita a la hipótesis} del
+          capítulo~\ref{cap:introduccion}, con matices y contraejemplos
+          si corresponde (``afirmativa, con matices'' es una respuesta
+          válida; ``se cumplieron todos los objetivos'' sin evidencia no).
+    \item \textbf{Implicancias}: técnicas, sociales y económicas.
+    \item \textbf{Limitaciones honestas}, por categoría (técnicas, de datos,
+          de validación, de mercado), sin maquillaje. Declarar como
+          preliminar lo que es preliminar.
+    \item \textbf{Recomendaciones} accionables y \textbf{trabajo futuro}.
+    \item \textbf{Contribución al conocimiento}: qué sabe ahora la disciplina
+          que antes no sabía.
+\end{enumerate}
+Cierra el arco narrativo: cada objetivo específico se retoma y se
+indica en qué medida se alcanzó, con referencia a la sección que lo
+demuestra.
+\end{guia}
+
+\section{Implicancias de los resultados}
+
+La implicancia central del Capítulo 7 es metodológica antes que técnica:
+la diferencia entre 0,368 y 0,3032 en F1 macro -\/- la medida que resume
+en un solo número qué tan bien el modelo distingue los niveles de
+gravedad de un siniestro, sin inflarse por acertar solo en el más
+frecuente -\/- no es un detalle de medición: cambia según cómo se
+separan los datos para medirla. La primera cifra sale de repartirlos al
+azar entre entrenamiento y prueba; la segunda, de entrenar con años
+pasados y probar contra un año posterior, como pasaría en el uso real.
+Esa diferencia es la demostración de que el protocolo de evaluación
+cambia la conclusión que se puede sacar de un mismo modelo. Un informe
+que solo hubiera reportado la primera cifra habría sobrestimado en unos
+6,5 puntos la capacidad real del sistema de generalizar a datos nuevos.
+Esa brecha, medida y declarada en vez de ocultada, es en sí misma un
+resultado del proyecto, no un defecto a disculpar.
+
+Sobre esa base, una segunda medición agrega una capa más a la misma
+implicancia. Evaluar el modelo contra dos años distintos, 2023→2024 y
+2024→2025, dio F1 macro de 0,2859 y 0,3689 respectivamente, con
+intervalos de confianza al 95\% que no se superponen. La diferencia
+entre evaluar contra un año u otro es real, no ruido de muestreo. Esto
+no invalida el modelo, pero sí invalida la idea de que exista un único
+número de desempeño que describa al sistema de forma estable en el
+tiempo: el desempeño del modelo depende de qué año se use para medirlo.
+Una segunda corrida descartó una de las tres hipótesis abiertas sobre
+esa dependencia: someter el entrenamiento más grande (15.559 filas de
+\textless2024) al mismo tamaño que el más chico (11.644 filas de
+\textless2023) no empeora el resultado sobre 2025, así que el tamaño del
+conjunto de entrenamiento no explica la brecha. Esa misma corrida mostró
+además que la brecha no golpea parejo entre clases: el desempeño en los
+casos mortales es prácticamente estable entre ambas evaluaciones (0,126
+contra 0,110), y el salto de F1 macro lo explica sobre todo un mejor
+reconocimiento de los casos leves, no un cambio en las clases que más
+importan para una alerta preventiva. Queda una pista nueva sin seguir
+todavía: la proporción de edad sin registrar en el año evaluado pasa de
+12\% en 2024 a 41\% en 2025, con 2024 marcadamente más completo que el
+resto de la serie histórica, lo que sugiere que parte de la diferencia
+podría deberse a una variación en la calidad del dato oficial año a año,
+no solo a un cambio real en el patrón vial.
+
+La tabla que compara, para cada nivel de gravedad, lo que el modelo
+predijo contra lo que pasó en la realidad arroja una precisión de 0,084
+en los siniestros graves y 0,072 en los mortales -\/- de cada 100 casos
+que el modelo marca en esa clase, esa es la proporción que realmente lo
+es -\/- contra una capacidad de detección de 0,600 y 0,512 -\/- de cada
+100 casos reales de esa clase, esa proporción el modelo efectivamente
+identifica. Eso tiene una implicancia de uso directa: el score no puede
+leerse como una probabilidad individual de que a una persona le pase
+algo en una zona puntual. Puede leerse, en cambio, como un criterio de
+priorización relativa entre zonas, que es exactamente lo que la interfaz
+hace al ordenar las zonas por nivel de riesgo en vez de exhibir el
+número crudo del modelo. El trabajo de calibración de los cortes que
+separan los niveles de riesgo mostrados al usuario -\/- qué proporción
+de zonas, ordenadas de menor a mayor score, queda en cada nivel -\/-
+sostiene esa decisión con evidencia: el corte vigente mantiene casi
+plana la capacidad de detectar los casos mortales en el rango donde más
+importa, a costa de detectar menos casos graves, una decisión de costo
+por clase ya tomada y documentada, no una omisión.
+
+El análisis de estabilidad termina de precisar qué tan sólido es ese
+ordenamiento zona por zona: para medir cuánto cambiaría el resultado
+solo por azar, se entrenaron diez modelos sobre distintas muestras
+tomadas al azar (con reemplazo) del mismo conjunto de datos, con la
+misma configuración de producción. El voto mayoritario de esos diez
+modelos, agregado sobre 336 escenarios de remuestreo, coincide con el
+nivel de riesgo vigente en el 84,9\% de las 740 zonas, pero esa
+coincidencia baja a 78,5-78,9\% justo en los niveles crítico y alto, los
+que más le importan a un usuario que decide una ruta. La inestabilidad
+no está distribuida parejo: se concentra donde más pesa. La implicancia
+de diseño directa de este hallazgo -\/- declarar la incertidumbre del
+propio sistema donde existe, en vez de uniformar una seguridad que los
+datos no respaldan -\/- ya está aplicada: la columna
+confianza\_estabilidad se agregó a hotspots\_contexto.csv y se expone en
+/hotspots sin costo adicional por request, precalculada igual que los
+umbrales de riesgo. nivel\_riesgo no cambia -\/- sigue siendo el output
+íntegro del modelo entrenado -\/- y confianza\_estabilidad es un dato
+adicional, no un reemplazo.
+
+El agrupamiento de siniestros en zonas de riesgo (un método que junta
+puntos cercanos en el mapa para formar una sola zona, en vez de
+tratarlos como hechos aislados) tiene una implicancia distinta, más
+auspiciosa: cambiar el algoritmo de agrupamiento por una versión más
+flexible, capaz de formar zonas de tamaño y densidad desiguales en vez
+de exigir el mismo criterio en todo el mapa, no fue solo un ajuste de
+parámetros: resolvió un problema real de cobertura (de 49,9\% a 75,6\%
+de los siniestros de moto asignados a alguna zona) sin inflar
+artificialmente el número de zonas. Que la misma metodología aplicada a
+inseguridad general dé una cobertura menor (50,2\%) no es una falla del
+método, es evidencia de que los delitos del GCBA están geográficamente
+más dispersos que los siniestros de moto, que se repiten en las mismas
+intersecciones. El patrón espacial que la hipótesis de trabajo suponía
+existe, es detectable, y es distinto según la fuente de datos que se
+agrupe.
+
+La validación con usuarios reales es la implicancia que más cambia el
+eje del proyecto. Antes de esa prueba, el riesgo percibido era casi
+exclusivamente técnico: que el modelo no discrimine bien las clases
+graves. Después de la prueba con 12 motociclistas, apareció un riesgo
+distinto y comparable en magnitud: que el sistema mida algo honesto y
+aun así una persona sin entrenamiento previo lo entienda mal. Dos de
+doce casos siguieron interpretando el score como una predicción de
+accidente pese a la aclaración textual existente, y solo 4 de 12
+completaron sin ayuda la tarea de comparar rutas y explicar la
+cobertura, la que exige entender qué mide el número y no solo leerlo. La
+implicancia de fondo es que la precisión del modelo y la comprensión del
+usuario son dos problemas distintos, y que resolver el primero sin el
+segundo deja al sistema igual de inútil en la práctica.
+
+Tomadas juntas, estas cinco líneas de evidencia (modelo, estabilidad del
+score, clustering, comprensión de usuario, ingesta de prensa) sostienen
+una misma conclusión transversal: MotoSafe GBA funciona mejor como
+herramienta de ordenamiento y contexto declarado que como herramienta de
+predicción. Esa distinción no es una limitación lateral del proyecto, es
+su resultado central, y condiciona cómo deben leerse las conclusiones de
+la sección siguiente.
+
+\section{Conclusiones respecto de los objetivos y la hipótesis de trabajo}
+
+El objetivo general del proyecto fue diseñar e implementar un MVP web
+que permitiera consultar, visualizar y comparar información de riesgo
+vial y contexto reciente para motociclistas del AMBA, con trazabilidad
+de fuentes, cobertura declarada y límites de interpretación explícitos.
+Ese objetivo se cumple: el sistema existe, está en operación, integra
+las cinco fuentes previstas (siniestros, inseguridad, prensa, clima y
+reportes colaborativos) y cada capa expone su procedencia, su antigüedad
+y su cobertura en la interfaz, no solo en la documentación. Lo que el
+Capítulo 7 agrega es que ese cumplimiento es honesto en un sentido
+específico: declara también dónde el sistema no llega, en vez de
+presentar una cobertura pareja que no existe.
+
+Sobre los cinco objetivos específicos planteados para el proyecto, el
+balance es el siguiente:
+
+Integrar datos históricos de siniestralidad de motociclistas en CABA y
+representarlos como zonas de referencia sobre un mapa interactivo.
+Cumplido. Los 23.338 siniestros de moto georreferenciados están
+cargados, agrupados en zonas con el método descrito antes y expuestos
+como 740 zonas de riesgo con 75,6\% de cobertura, visibles en el mapa
+con su período de origen (2019-2025).
+
+Implementar un modelo de clasificación de gravedad condicionado a la
+ocurrencia de un siniestro, documentando de forma explícita qué estima y
+qué no estima. Cumplido, con una salvedad que el Capítulo 7 obliga a
+nombrar: el modelo está implementado, documentado y la distinción entre
+severidad condicionada y probabilidad de ocurrencia está clara en el
+contrato técnico del sistema. Pero la validación con usuarios reales
+muestra que esa documentación no elimina la confusión del lado del
+usuario, ya que 2 de los 12 participantes siguieron confundiendo ambas
+cosas, así que el objetivo está cumplido en el sistema y parcialmente
+cumplido en la experiencia real de quien lo usa.
+
+Incorporar capas de inseguridad general, noticias de prensa, clima y
+reportes colaborativos sin equiparar su procedencia ni su cobertura con
+la de los datos históricos de siniestros. Cumplido. Cada capa declara su
+propia fecha de generación, su propio período de cobertura y su propia
+fuente; el endpoint de cobertura por capas (/capas/cobertura) y la
+leyenda del mapa muestran estos datos diferenciados, sin fusionarlos en
+una cifra única.
+
+Diseñar una interfaz cartográfica accesible, operable en escritorio y en
+dispositivos móviles. Cumplido con evidencia de auditoría real: la
+revisión de accesibilidad encontró y corrigió dos defectos concretos (el
+modal de bienvenida no atrapaba el foco de teclado, y el fallo
+silencioso del tráfico en vivo no avisaba al usuario), y quedó
+verificada en los tamaños de pantalla de escritorio y celular probados.
+Queda pendiente, declarado como tal, la prueba en un dispositivo físico
+real: todo lo verificado hasta esta entrega fue emulación de navegador.
+
+Construir una arquitectura reproducible, con API propia, base
+PostgreSQL/PostGIS, proceso de ingesta de prensa programado y una vía de
+despliegue en la nube documentada. Cumplido. El entorno fija versiones
+exactas de cada dependencia, verificables contra su huella digital (un
+valor que cambia si el archivo cambia, aunque sea en un solo carácter),
+y el proceso de reentrenamiento es reproducible de punta a punta sobre
+datos ya descargados: se verificó que produce exactamente el mismo
+resultado, con la misma huella digital, en dos corridas distintas. El
+despliegue en producción corre las migraciones de base de datos, la
+carga de datos y el scraper con sus controles de concurrencia de forma
+automática. Lo que falta es ejecutar ese mismo pipeline contra los
+servicios externos reales en vivo, no contra una copia ya descargada.
+
+La pregunta de investigación que guio el proyecto -\/- si una plataforma
+que integre siniestralidad histórica, inseguridad, prensa y clima puede
+mejorar la información disponible para un motociclista sin sobreestimar
+su capacidad predictiva -\/- tiene, a esta altura del proyecto, una
+respuesta afirmativa pero acotada. La plataforma sí mejora la
+información disponible: antes de MotoSafe GBA, un motociclista que
+quisiera cruzar estas fuentes tenía que hacerlo a mano, sin saber qué
+antigüedad o cobertura tenía cada una. Lo que el Capítulo 7 obliga a
+matizar es la segunda parte de la pregunta: el sistema evita
+sobreestimar su capacidad predictiva en su documentación y en su
+contrato técnico, pero la validación con usuarios muestra que esa
+prevención todavía no alcanza por completo a la experiencia de uso real,
+donde una porción de usuarios sigue leyendo el score como una predicción
+individual.
+
+La hipótesis de trabajo sostenía que la utilidad de una herramienta de
+este tipo no estaría en predecir con precisión la ocurrencia de un
+siniestro individual, sino en la trazabilidad de las fuentes que
+integre, y que una interfaz que declare qué sabe, desde cuándo lo sabe y
+con qué cobertura lo sabe resultaría más defendible y más útil que una
+que convierta información heterogénea en un único indicador de riesgo.
+La evidencia reunida hasta esta entrega es consistente con esta
+hipótesis, aunque no la prueba de forma comparativa: los doce casos de
+la validación con motociclistas evaluaron la interfaz de MotoSafe GBA
+tal como se presenta, no contra una alternativa real de un único score,
+así que la superioridad frente a esa alternativa sigue siendo una
+hipótesis plausible, no un resultado comprobado. Lo que sí muestra la
+evidencia es que el modelo, por sí solo, tiene una capacidad de
+discriminación baja en las clases más graves (0,3032 en la medida
+explicada antes, bajo la evaluación que respeta el orden temporal); lo
+que distingue a MotoSafe GBA de una alternativa que mostrara un único
+score sin contexto es precisamente que no se apoya solo en esa cifra,
+sino en la combinación de procedencia, antigüedad y cobertura declaradas
+capa por capa. La hipótesis no se sostiene, en cambio, de forma
+automática: la validación con usuarios muestra que declarar esa
+información en el sistema no garantiza por sí sola que el usuario la
+incorpore a su interpretación, lo que convierte la claridad de esa
+comunicación en un trabajo de diseño pendiente, no en un hecho ya
+resuelto.
+
+\section{Recomendaciones técnicas}
+
+Las recomendaciones de esta sección parten del registro de tareas
+pendientes que el proyecto ya mantiene relevado y priorizado, y
+seleccionan lo que condiciona de forma directa la entrega final.
+
+Confirmar la corrida de integración continua en GitHub, pendiente en una
+entrega anterior por faltar la autorización de la cuenta de GitHub
+utilizada. Ya resuelta: el flujo corrió contra la plataforma real, no
+solo en local, con el job de backend (sintaxis más la suite completa de
+pruebas contra PostgreSQL/PostGIS real y desechable) y el de frontend,
+los dos en verde.
+
+La pista de calidad de dato por año en la inestabilidad temporal entre
+evaluaciones de distintos períodos ya se siguió hasta el final. La
+anomalía de completitud que se había detectado no aparece en los campos
+que describen el hecho en sí -\/- dónde ocurrió, con qué otro vehículo,
+en qué tipo de vía -\/-, que se mantienen estables entre años. Aparece,
+en cambio, en los dos campos que describen a la víctima, sexo y edad,
+que varían juntos y de forma marcada de un año a otro. Reentrenar sin el
+sexo de la víctima como variable del modelo confirma que esa variable
+explica la mayor parte de la inestabilidad: la brecha entre evaluar
+contra distintos años prácticamente desaparece, y además mejora el
+reconocimiento de los casos leves. Pero no es una mejora sin costo: en
+el período más reciente evaluado, empeora el reconocimiento de los casos
+graves y mortales, que son los que más importan para una alerta
+preventiva. Con ese costo cuantificado, la decisión de sacar o no esa
+variable del modelo queda planteada para resolverse antes de la entrega
+final, no tomada todavía.
+
+Seguir separando incrementalmente el archivo principal de la interfaz
+del frontend. El componente concentraba 2140 líneas de código y
+alrededor de 30 bloques que recalculan datos cuando algo cambia en
+pantalla; una medición real ya descartó que esto haga que la pantalla se
+vuelva a dibujar de más, así que la urgencia no es de velocidad sino de
+mantenimiento: un archivo de ese tamaño es más difícil de revisar y de
+modificar sin introducir un error de alcance no deseado. Se extrajeron
+nueve módulos autocontenidos con una interfaz de props chica (el panel
+de capas, el panel de opciones de ruta, el menú de herramientas, la hoja
+de reporte, la tarjeta de maniobra activa, el resumen de navegación con
+velocímetro, el panel de detalle de zona, la leyenda de riesgo e
+inseguridad, y el buscador de lugar/calle), sin cambio de
+comportamiento, bajando el archivo a 1959 líneas en su punto más bajo
+registrado. Trabajo posterior (el sistema de usuarios y otras
+correcciones) volvió a sumar código: al cierre de esta entrega, App.jsx
+tiene 2099 líneas. La revisión mostró que esa dependencia cruzada vivía
+sobre todo en los cálculos (los bloques que calculan velocidad, tiempo
+estimado de llegada y paso activo durante la navegación), no en el
+código que solo define qué se muestra en pantalla: una vez separado el
+cálculo de la presentación visual, los bloques resultaron más fáciles de
+separar de lo previsto. Lo que queda -\/- el formulario de ruta con
+origen y destino, el panel de actividad reciente y los banners de error
+de capas -\/- sí tiene acoplamiento cruzado real entre los campos del
+formulario y necesita una sesión dedicada a desenredarlo antes de
+separarlo.
+
+Ejecutar el pipeline de datos de punta a punta contra los servicios
+reales en producción. La reproducibilidad del pipeline ya está
+demostrada contra una copia de datos ya descargada, con hash idéntico al
+artefacto vigente. Lo que falta es correr los mismos pasos contra los
+servicios en vivo (descarga de delitos, clima y corredores desde sus
+fuentes originales), no contra una copia local, para confirmar que el
+proceso de actualización periódica funciona en las condiciones reales de
+operación y no solo en un entorno de prueba controlado.
+
+Construir un conjunto etiquetado para la extracción de calles del
+scraper de prensa. La deduplicación semántica de notas publicadas por
+medios distintos sobre el mismo hecho se mide de forma automática por
+ventana de días, radio geográfico y similitud de título, sin revisión
+humana y sin descartar ninguna fila. Medida contra 450 filas reales
+re-geocodificadas (426 a nivel de barrio, 24 a nivel de calle o
+intersección): los nueve duplicados reales de la muestra se detectan
+igual, porque el umbral de similitud de título por sí solo ya alcanza
+cuando dos notas comparten barrio, sin necesitar coordenada precisa. El
+hueco real medido es más angosto: notas de barrio con títulos
+editorialmente distintos del mismo hecho, caso que no aparece ninguna
+vez en esas 450 filas y que se detectó una sola vez en una corrida en
+vivo (Villa Pueyrredón, cuatro medios). Se acepta ese residuo como
+riesgo conocido y acotado en vez de perseguirlo con una heurística sin
+sustento. Lo que sigue pendiente es otra cosa: la extracción de calles e
+intersecciones del texto de las notas nunca se validó contra un conjunto
+etiquetado a mano, solo contra la inspección manual de casos puntuales.
+
+Decidir el destino de las filas de prensa de la fuente retirada. Las
+notas provenientes de Google Noticias no se borraron cuando esa fuente
+dejó de usarse como origen de datos: siguen en la base, pero la API las
+excluye de inmediato (no se muestran ni se cuentan), igual que las notas
+marcadas como duplicado semántico de otra. Es una decisión de criterio
+pendiente, no una tarea técnica compleja: definir si esas filas deben
+purgarse antes de la entrega final o si conservarlas en la base sin
+mostrarlas de forma indefinida es un criterio aceptable.
+
+\section{Recomendaciones de adopción, gobernanza y uso}
+
+Simplificar la pantalla principal por defecto, tal como lo pidió la
+validación con usuarios reales. Ya aplicada: la cobertura por fuente y
+el desglose de puntos de cada tarjeta de ruta quedaron detrás de un
+control opcional ("Ver cómo se calcula"), y por default solo se muestra
+tiempo, distancia y la advertencia principal, que es exactamente lo que
+pidieron los usuarios de la prueba real. Falta el paso que cierra el
+ciclo: repetir la validación con usuarios reales para confirmar que la
+fricción medida anteriormente efectivamente bajó.
+
+Rediseñar la explicación visual del score y de la cobertura. Aplicada
+parcialmente: el texto aclaratorio dependía de un tooltip de mouse,
+inútil en un celular usado en la calle, que es el contexto real de uso.
+Se reemplazó por un ejemplo visual siempre disponible con números reales
+("cobertura de siniestros 40\% significa 4 de cada 10 tramos..."),
+visible junto al mismo control de detalle agregado en la recomendación
+anterior. Queda parcial, no cerrada, porque sigue sin confirmarse con
+una nueva ronda de usuarios si ese ejemplo efectivamente reduce la
+confusión que hoy afecta a uno de cada seis casos.
+
+Corregir la nomenclatura de los filtros de seguridad. Ya aplicada,
+corrigiendo los dos defectos puntuales que señaló la prueba con
+usuarios: el filtro de prensa llamado "Seguridad" se renombró a
+"Violencia", que es lo que esa categoría realmente trae según las
+palabras clave del scraper (tiroteos, homicidios, secuestros, ya
+separados de robo y de choque); y la nota que explica que apagar la capa
+de inseguridad no la saca del cálculo de ruta, que ya existía pero
+genérica al pie del panel, se duplicó en una versión más corta pegada
+directamente a esas opciones.
+
+Formalizar una política de privacidad para los datos de ubicación de los
+reportes colaborativos. Ya resuelta con un documento nuevo en la carpeta
+de operación del repositorio, que describe qué guarda cada reporte
+(latitud y longitud exactas, categoría, un identificador de dispositivo
+sin dato personal), qué no guarda (IP persistida, nombre, email), cómo
+se retiene y se borra, y declara de forma explícita una limitación que
+antes no estaba escrita en ningún lado: la ubicación se guarda sin
+redondear, con el costo de privacidad real que eso implica si alguien
+correlacionara varios reportes del mismo dispositivo.
+
+Validar el diferencial de mercado antes de pensar en escalar. MotoSafe
+GBA no compite en un vacío: cualquier aplicación de navegación ya
+instalada podría sumar una función similar. El diferencial real del
+proyecto, el foco hiperlocal en motociclistas del GBA con reportes
+comunitarios, corredores de riesgo y prensa georreferenciada combinados
+en un mismo mapa, todavía no se validó contra una base de usuarios que
+lo sostenga más allá de la prueba de doce casos. Antes de evaluar
+cualquier escalamiento posterior a la entrega académica, conviene medir
+si ese diferencial efectivamente retiene usuarios con el tiempo, no solo
+si les resulta útil en una sesión de prueba moderada.
+
+Sostener la gobernanza de un solo responsable técnico con registro
+explícito. El desarrollo a cargo de una sola persona no es, en sí mismo,
+un riesgo no gestionado: el registro de decisiones y de cada paso en la
+bitácora de desarrollo cumple la función que en un equipo más grande
+cumpliría un proceso formal de revisión. La recomendación, de cara a una
+eventual continuidad del proyecto más allá de la tesis, es que esa misma
+disciplina de registro se mantenga si se suma una segunda persona al
+desarrollo, en vez de diluirse con el crecimiento del equipo.
+
+\section{Cierre}
+
+Un sistema que predijera con precisión no necesitaría declarar su
+incertidumbre por zona, ni su cobertura por capa, ni la diferencia entre
+dos protocolos de evaluación: alcanzaría con mostrar un número. MotoSafe
+GBA hace lo contrario porque no tiene otra opción honesta: el modelo
+discrimina poco en las clases más graves, el acuerdo entre las muestras
+tomadas al azar para medir su estabilidad cae justo donde más importa, y
+la propia validación con usuarios reales muestra que ni siquiera una
+aclaración textual correcta garantiza que se entienda bien. Declarar
+estos límites, en vez de ocultarlos detrás de una interfaz prolija, es
+la decisión de diseño que atraviesa todo el proyecto.
+
+Las conclusiones anteriores muestran que el objetivo general y los cinco
+objetivos específicos se cumplen, con dos salvedades declaradas y no
+escondidas: la comprensión del usuario todavía no está a la altura de la
+honestidad técnica del sistema, y la ejecución repetida y sostenida del
+pipeline de reentrenamiento contra los servicios externos en vivo
+(delitos, clima, geometría de corredores) sigue sin confirmarse más allá
+de la corrida puntual ya hecha (detalle en 8.3); el scraper de prensa sí
+corre así, de forma repetida y verificada, desde GitHub Actions. Las
+recomendaciones de las dos secciones anteriores no son una lista de
+deseos para un proyecto futuro: son los pasos concretos y ya
+identificados que separan a MotoSafe GBA, en su estado actual, de una
+versión que cierre esas dos brechas antes de la entrega final. El
+criterio que sostuvo el proyecto hasta esta entrega, medir antes de
+afirmar y declarar el límite en vez de disimularlo, es el mismo que
+debería guiar el trabajo que queda.

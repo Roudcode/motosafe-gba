@@ -1,0 +1,121 @@
+%!TEX root = ../main.tex
+% APÉNDICE B — Detalles técnicos e implementación
+% (ocupa el segundo lugar en la lista de apéndices; ver main.tex)
+
+\chapter{Detalles técnicos e implementación}\label{apx:tecnicos}
+
+\begin{guia}
+Todo lo que alguien necesita para reproducir los resultados:
+hiperparámetros exactos, identificadores y versiones de los datos,
+versiones de librerías, variables de entorno (sin secretos) y esquemas
+de base de datos. Reproducibilidad total es un marcador de excelencia.
+\end{guia}
+
+\section{Configuración del modelo}
+
+El modelo de gravedad en producción es un \texttt{RandomForestClassifier}
+de scikit-learn, entrenado sobre 23.338 registros de siniestros con
+motocicleta cruzados con clima histórico. La configuración de
+hiperparámetros, ya fija, es la siguiente.
+
+\begin{table}[H]
+    \centering
+    \caption{Hiperparámetros del modelo de gravedad en producción}
+    \label{tab:hiperparametros}
+    \small
+    \begin{tabularx}{\textwidth}{l l L}
+        \toprule
+        \tb{Parámetro} & \tb{Valor} & \tb{Criterio} \\
+        \midrule
+        n\_estimators & 300 & cantidad de árboles combinados en el bosque \\
+        max\_depth & 12 & profundidad máxima por árbol, evita que un árbol memorice casos particulares \\
+        min\_samples\_leaf & 5 & mínimo de muestras por hoja, mismo objetivo que el límite anterior \\
+        class\_weight & balanced\_subsample & compensa el desbalance entre las clases LEVE, GRAVE y MORTAL dándoles más peso relativo a las minoritarias en cada árbol \\
+        random\_state & 42 & semilla fija, para que el entrenamiento sea reproducible \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+El modelo recibe 53 columnas de entrada después de codificación one-hot
+(hora, temperatura, humedad, índice de inseguridad general por comuna,
+día, comuna, tipo de vía, contraparte, sexo y condición de lluvia, entre
+las variables de origen). La edad de la víctima y su indicador de edad
+desconocida se excluyeron de la versión final: esa variante generalizó
+peor entre años que la que no las incluye, según el protocolo de
+evaluación temporal retrospectiva descrito en el
+capítulo~\ref{cap:marco-tecnologico}. El artefacto entrenado no tiene
+una tabla propia de versiones en la base de datos: se guarda
+directamente como un archivo serializado (pickle) en el repositorio.
+
+\section{Datos utilizados}
+
+Los siniestros históricos de motociclistas que entrenan el modelo se
+procesan fuera de línea, como archivos CSV, en un pipeline que no vive
+en la base de datos de producción. No constituyen una tabla del esquema
+relacional: su identificador, fuente y fecha de descarga quedan
+documentados junto con el propio artefacto del modelo en el
+repositorio, no en este apéndice, para no duplicar una versión que
+pueda desactualizarse frente a la real.
+
+\section{Arquitectura de la aplicación}
+
+\subsection{Stack tecnológico}
+
+\begin{itemize}
+    \item \textbf{Interfaz}: React con Vite (aplicación de una sola página).
+    \item \textbf{Mapa}: MapLibre GL JS.
+    \item \textbf{API}: FastAPI (Python), con el modelo Random Forest cargado en memoria.
+    \item \textbf{Base de datos}: PostgreSQL 17 con la extensión PostGIS, alojada en Supabase.
+    \item \textbf{Modelo de gravedad}: Python, pandas y scikit-learn.
+    \item \textbf{Contenedores}: Docker y Docker Compose, con servicios diferenciados para interfaz, API, base de datos y el proceso periódico de ingesta de prensa.
+    \item \textbf{Despliegue}: Render (API y sitio web, como Web Services Docker del plan gratuito).
+    \item \textbf{Tarea periódica}: scraper de prensa en GitHub Actions, con ejecución programada cada tres horas.
+\end{itemize}
+
+Las versiones exactas de cada dependencia (\texttt{requirements.txt} del
+backend y del modelo, \texttt{package.json} del frontend) quedan fijadas
+por archivo de bloqueo en el repositorio del proyecto, citado en el
+anexo~\ref{anx:repositorios}; no se transcriben aquí para evitar que este
+apéndice quede desactualizado frente al repositorio real.
+
+\subsection{Esquema de base de datos}
+
+El esquema real del backend en PostgreSQL/PostGIS está compuesto por las
+tablas que se detallan en la Figura~\ref{fig:4-2} del
+capítulo~\ref{cap:marco-tecnologico}: \texttt{hotspots\_riesgo} y
+\texttt{corredores\_riesgo} (capas de riesgo vial derivadas por
+agregación espacial), \texttt{hotspots\_inseguridad} (capa de contexto
+de inseguridad general), \texttt{reportes\_prensa} (noticias de prensa
+clasificadas), \texttt{reportes\_colaborativos} con
+\texttt{reportes\_confirmaciones} (reportes cargados por usuarios y su
+validación por otros usuarios), \texttt{usuarios} y
+\texttt{codigos\_auth} (esquema de cuentas y verificación por código).
+Las tablas \texttt{hotspots\_riesgo} y \texttt{hotspots\_inseguridad}
+guardan sus coordenadas también como geometría nativa de PostGIS, aunque
+el backend hoy calcula proximidad con la fórmula de Haversine en código
+Python en lugar de una consulta espacial.
+
+\subsection{Variables de entorno}
+
+\begin{table}[H]
+    \centering
+    \caption{Variables de entorno declaradas por la aplicación (sin valores reales)}
+    \label{tab:env}
+    \small
+    \begin{tabularx}{\textwidth}{l L}
+        \toprule
+        \tb{Variable} & \tb{Propósito} \\
+        \midrule
+        DATABASE\_URL & cadena de conexión a PostgreSQL/PostGIS en Supabase (pooler de sesión) \\
+        GMAIL\_OAUTH\_TOKEN & token de larga duración para el envío de códigos de verificación por la API HTTP de Gmail \\
+        SESSION\_SECRET & clave usada para firmar la cookie de sesión (HMAC) \\
+        MODEL\_PATH & ruta del artefacto serializado (pickle) del modelo de gravedad \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Ningún secreto real (contraseñas, tokens, claves) se versiona en el
+repositorio: las variables de entorno se cargan en el panel de cada
+proveedor (Render, Supabase, GitHub Actions) y el repositorio incluye
+únicamente un archivo de ejemplo con los nombres de las variables, sin
+valores.

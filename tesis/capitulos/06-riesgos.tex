@@ -1,0 +1,452 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 6 — ANÁLISIS DE RIESGOS     (Entrega 6 · 5 % · 29/9)
+% =============================================================
+
+\chapter{Análisis de riesgos}\label{cap:riesgos}
+
+\begin{guia}[Guía de la cátedra: qué espera ver en este capítulo]
+Formato obligatorio de cada riesgo: \textbf{``Debido a [causa], podría
+ocurrir [evento], lo que provocaría [efecto]''}. Sin causa es un miedo,
+no un riesgo.
+\begin{enumerate}
+    \item \textbf{Tabla de riesgos} con ID, descripción causa--evento--efecto,
+          naturaleza, etapa, probabilidad (1--5), impacto (1--5),
+          \gls{exposicion} (1--25), respuesta, responsable y contingencia;
+          ordenada por exposición descendente. Con los 6 a 8 primeros bien
+          tratados alcanza; el resto se monitorea.
+    \item Al menos un riesgo de \textbf{cada naturaleza} (alcance, técnicos,
+          recursos, terceros, datos y cumplimiento) y de \textbf{cada etapa}
+          (antes de arrancar, durante, pasaje a producción, operación).
+    \item Al menos un riesgo \textbf{externo} (``si no tienen ninguno, no
+          miraron para afuera'') y al menos uno con respuesta
+          \textbf{aceptar} bien justificado (``aceptar se escribe; ignorar
+          se paga'').
+    \item \textbf{Supuestos y restricciones} separados de los riesgos. Cada
+          supuesto que falla se convierte en riesgo.
+    \item Que sean propios: ``un riesgo copiado de internet se nota a tres
+          metros''.
+\end{enumerate}
+Los siete que matan proyectos: alcance que nunca cierra (el número uno
+de la materia), pérdida de la fuente de datos, equipo que se desarma,
+tecnología que no da, inviabilidad de costo, barrera legal o ética,
+nadie a cargo. Y la pregunta de jurado: ¿quién lo mantiene cuando
+ustedes se reciben? Marco de referencia: \citet{pmi2021}.
+\end{guia}
+
+\section{Metodología}
+
+Este capítulo identifica, analiza y trata los riesgos del proyecto
+MotoSafe GBA siguiendo el proceso visto en la cátedra: identificar,
+analizar, evaluar y tratar. Un riesgo, a diferencia de un problema,
+todavía no ocurrió: es algo que puede llegar a pasar, con una
+probabilidad y una consecuencia asociadas. Cuando el evento ya sucedió y
+ya se resolvió, como varios de los casos de este capítulo, se lo
+documenta igual, porque la forma en que se trató muestra mejor la
+capacidad de gestión del proyecto que un riesgo puramente hipotético.
+
+Cada riesgo se redacta explicando su causa, el evento que podría ocurrir
+y su efecto (por ejemplo: "debido a X, podría pasar Y, lo que provocaría
+Z"), en vez de un enunciado vago del tipo "puede fallar el servidor". La
+probabilidad y el impacto se califican en una escala de 1 a 5, y el
+producto de ambos (la exposición) ordena la tabla de mayor a menor
+prioridad. Cada riesgo recibe una de cuatro respuestas: evitarlo,
+reducirlo, transferirlo a un tercero o aceptarlo; aceptar un riesgo no
+es lo mismo que ignorarlo, sino dejarlo declarado por escrito con el
+motivo.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.0997}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3878}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.5125}}@{}}
+\caption{escala de probabilidad e impacto usada en este capítulo (1 a 5). La exposición es su producto, de 1 a 25.}\label{tab:6-0}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Valor}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Probabilidad}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Impacto}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Valor}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Probabilidad}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Impacto}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & Muy baja: prácticamente no va a pasar. & Insignificante: no cambia
+nada relevante del proyecto. \\
+2 & Baja: podría pasar, pero no es lo esperable. & Menor: molesta pero
+no afecta ningún resultado clave. \\
+3 & Media: tan probable como no. & Moderado: afecta un resultado, pero
+se puede compensar. \\
+4 & Alta: es lo más probable que pase. & Grave: afecta un resultado
+central del proyecto. \\
+5 & Muy alta: ya pasó, o va a pasar casi seguro. & Crítico: pone en duda
+el aporte principal del proyecto. \\
+\end{longtable}
+
+\section{Supuestos y restricciones}
+
+Los supuestos son hechos o hipótesis sobre los que se apoya el proyecto;
+las restricciones son condiciones dadas que lo limitan en tiempo, costo
+o recursos. Se listan por separado de los riesgos porque no son lo
+mismo: si un supuesto resulta falso, invalida parte del análisis,
+mientras que un riesgo es un evento que puede o no llegar a ocurrir.
+
+\subsection{Supuestos}
+
+\begin{itemize}
+\item
+  Los datos oficiales de siniestros de CABA usados para entrenar el
+  modelo son representativos del riesgo vial actual, aunque no incluyan
+  siniestros posteriores a la última actualización del dataset.
+\item
+  El usuario final de la aplicación cuenta con un teléfono con GPS y
+  conexión de datos al usar el modo de navegación en la vía pública.
+\item
+  Los servicios externos de los que depende el sistema (ruteo con
+  tráfico, clima, túnel de acceso público) sostienen durante el
+  desarrollo y la defensa de la tesis el mismo nivel de servicio con el
+  que se los integró.
+\item
+  Los cálculos económicos del Capítulo 5 (cuántos usuarios se suman por
+  año, el horizonte de cinco años, la estructura de costos) son una
+  proyección de referencia: todavía no hay ninguna validación real de
+  mercado que confirme que esos números se van a cumplir.
+\end{itemize}
+
+\subsection{Restricciones}
+
+\begin{itemize}
+\item
+  Restricción de tiempo: el proyecto tiene que entregarse dentro del
+  cronograma fijo de diez entregas de la cátedra, lo que limita cuánto
+  se puede seguir profundizando cada punto pendiente antes de la entrega
+  final.
+\item
+  Restricción de recursos humanos: el desarrollo está a cargo de una
+  sola persona, con asistencia de herramientas de inteligencia
+  artificial, lo que limita cuánto se puede paralelizar y revisar de
+  forma cruzada.
+\item
+  Restricción de datos: solo la Ciudad de Buenos Aires publica un
+  registro de siniestros con ubicación exacta; el resto del conurbano no
+  cuenta con un equivalente accesible.
+\item
+  Restricción de costo: hoy el sistema corre sobre los niveles gratuitos
+  de sus proveedores (base de datos, ruteo, clima). Escalarlo a un
+  entorno productivo real tiene un costo mensual que el Capítulo 5 sí
+  contempla dentro de la proyección económica, pero que el proyecto
+  todavía no paga porque no genera ingresos reales.
+\end{itemize}
+
+\section{Matriz de riesgos}
+
+Los riesgos con impacto económico directo ya están en la Tabla 5.9 del
+Capítulo 5. Esta matriz reúne los demás: técnicos, de alcance, de
+terceros, de datos y cumplimiento, y de producto (persuadir al usuario
+de usar la aplicación y diferenciarse de cualquier alternativa),
+ordenados de mayor a menor exposición.
+
+\begin{footnotesize}
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0489}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1007}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3365}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0992}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0305}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0304}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0420}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0791}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2329}}@{}}
+\caption{Matriz de riesgos de MotoSafe GBA, ordenada por exposición (probabilidad × impacto).}\label{tab:6-1}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{ID}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Categoría}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Descripción (causa -- evento -- efecto)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Etapa}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{P}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{I}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Exp.}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Respuesta}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Acción tomada o prevista}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{ID}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Categoría}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Descripción (causa -- evento -- efecto)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Etapa}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{P}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{I}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Exp.}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Respuesta}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Acción tomada o prevista}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+R-01 & Datos y cumplimiento & Debido a que se sumó Google Noticias como
+fuente de scraping sin revisar antes si el sitio lo permitía, se
+incorporó una fuente que su propio sitio prohíbe usar de esa forma, y
+que llegó a aportar la mayor parte del contenido nuevo de una corrida
+real. & Durante el desarrollo & 5 & 4 & 20 & Mitigar (ya aplicada) & Ya
+se retiró Google Noticias del scraper y se documentó el cambio. Como
+prevención hacia adelante, revisar los términos de uso de cualquier
+fuente nueva antes de sumarla. \\
+R-02 & Alcance & Debido a que solo la Ciudad de Buenos Aires publica un
+registro de siniestros con ubicación exacta (la Provincia de Buenos
+Aires solo publica informes generales; existe una fuente nacional
+parcial ---el Sistema de Alerta Temprana de Muertes Viales del SNIC,
+geocodificada por partido--- pero limitada a víctimas fatales, sin
+cubrir todas las severidades como el dataset de CABA), el modelo de
+riesgo se entrenó únicamente con datos de CABA. Otras partes del sistema
+sí cubren todo el GBA sin esa limitación (los reportes de la comunidad,
+las notas de prensa georreferenciadas y el ruteo con tráfico funcionan
+en cualquier punto con GPS), pero el cálculo de riesgo por zona, que es
+el corazón del proyecto, todavía solo está validado para CABA, aunque el
+nombre del proyecto prometa el GBA completo. & Antes de arrancar & 5 & 4
+& 20 & Mitigar & Sostener en toda entrega que el modelo de riesgo está
+validado solo para CABA, y que el resto del GBA se ofrece hoy como zona
+de navegación, reportes y prensa, no de predicción. Ya se identificó una
+fuente nacional parcial (SNIC, solo víctimas fatales, sin cubrir
+heridos); evaluar si vale la pena integrarla queda pendiente de
+decisión, no reemplaza al dataset de CABA. \\
+R-03 & Datos y cumplimiento & Debido a que los primeros reportes
+comunitarios se identificaban con un código que la propia aplicación
+mostraba en público, sin ningún control de quién era el dueño del
+reporte, cualquier usuario que viera ese código podía borrar un reporte
+ajeno, lo que habría provocado pérdida de información de otras personas
+sin ninguna forma de detectarlo. & Durante el desarrollo & 4 & 4 & 16 &
+Mitigar (ya aplicada) & Se reemplazó el identificador público por un
+token privado de una sola entrega para poder borrar un reporte. Los
+reportes creados antes del cambio no tienen ese token y se mantienen
+así, sin una migración retroactiva: es una limitación aceptada, no una
+tarea pendiente. \\
+R-04 & Producto y experiencia de usuario & Debido a que probar una
+aplicación una sola vez no garantiza que el usuario vuelva a abrirla, y
+a que la prueba real con los 12 motociclistas ya mostró fricción
+concreta (comparar rutas fue la tarea que más ayuda necesitó, y la
+demanda más repetida fue mostrar menos información por default), existe
+el riesgo de que MotoSafe GBA no logre persuadir a los motociclistas de
+incorporarlo a su rutina diaria, y quede como una aplicación que se
+prueba una vez y se abandona, sin llegar a construir una base de
+usuarios activa. & Operación & 4 & 4 & 16 & Mitigar & Aplicada. La
+cobertura por fuente y el desglose de puntos de cada tarjeta de ruta
+ahora quedan detrás de un control opcional ("Ver cómo se calcula"); por
+default solo se muestra tiempo, distancia y la advertencia principal,
+tal como pidieron los usuarios de la prueba real. Falta repetir la
+validación con usuarios reales para confirmar que la fricción bajó. \\
+R-05 & Producto y experiencia de usuario & Debido a que la aplicación
+muestra un puntaje de riesgo por zona sin que el término alcance por sí
+solo para despejar toda ambigüedad, en la prueba real con 12
+motociclistas dos de ellos interpretaron ese puntaje como una predicción
+de que a ellos les iba a pasar un accidente, en vez de una medida
+relativa entre zonas. Si esa confusión se repite a mayor escala, los
+usuarios podrían tomar decisiones basadas en una lectura equivocada del
+dato, o perder confianza en la aplicación al notar la diferencia entre
+lo que entendieron y lo que el sistema realmente mide. & Operación & 4 &
+3 & 12 & Mitigar & Aplicada parcialmente. El texto aclaratorio dependía
+de un tooltip de mouse, inútil en celular; se reemplazó por un ejemplo
+visual siempre disponible con números reales ("cobertura de siniestros
+40\% significa 4 de cada 10 tramos..."), visible junto al control de
+detalle de la tarjeta de ruta. Falta repetir la prueba con usuarios
+reales para confirmar si el ejemplo reduce la confusión detectada. \\
+R-06 & De terceros & Debido a que el sistema depende de varios servicios
+externos gratuitos sin garantía de disponibilidad (el clima, la
+ubicación de direcciones y el ruteo con tráfico en vivo), si alguno de
+ellos cae o cambia sus condiciones de uso, funciones centrales de la
+aplicación (trazar una ruta, mostrar el clima de la zona, ubicar un
+reporte por dirección) dejan de funcionar para cualquier usuario real,
+no solo durante una demostración puntual. & Operación & 3 & 4 & 12 &
+Mitigar & Sumar manejo de error visible cuando un servicio externo no
+responde, en vez de dejar la función colgada sin aviso. Para la defensa
+oral en particular, grabar de antemano un video corto de respaldo de
+cada función principal por si algún servicio falla ese día. Si el
+proyecto avanza a producción real, evaluar un nivel pago con garantía de
+disponibilidad para las funciones más críticas. \\
+R-07 & Producto y mercado & Debido a que MotoSafe GBA no es la única
+forma posible de resolver el problema de información preventiva vial
+(una aplicación de navegación ya instalada podría sumar una función
+parecida, o podría aparecer un proyecto equivalente con más recursos de
+desarrollo o de difusión), existe el riesgo de que, aunque el sistema
+funcione bien técnicamente, no logre diferenciarse lo suficiente frente
+a una alternativa más conocida, y quede sin la base de usuarios
+necesaria para sostenerse más allá de la entrega académica. & Pasaje a
+producción & 3 & 3 & 9 & Mitigar & Sostener como diferencial el foco
+hiperlocal en motociclistas del GBA (reportes comunitarios, corredores
+de riesgo, prensa georreferenciada combinados en un mismo mapa), algo
+que hoy ninguna alternativa conocida ofrece junto; validar ese
+diferencial con usuarios reales antes de pensar en escalarlo más allá de
+la tesis. \\
+R-08 & Técnicos & Debido a que el archivo de dependencias del proyecto
+no fija una versión exacta de la librería de machine learning usada,
+sino un rango abierto, una futura reinstalación del entorno podría traer
+una versión más nueva no probada contra el modelo ya entrenado, lo que
+podría hacer que las cifras de desempeño documentadas en el Capítulo 4
+dejen de poder reproducirse exactamente tal como fueron medidas. &
+Operación & 3 & 2 & 6 & Aceptar & Si en algún momento hace falta
+reproducir el entrenamiento con exactitud (por ejemplo, ante una
+revisión académica puntual), fijar en ese momento la versión exacta de
+la librería. \\
+\end{longtable}
+\end{footnotesize}
+
+\section{Riesgos de mayor exposición}
+
+Los riesgos R-01 y R-02 comparten la mayor exposición de la matriz,
+aunque por motivos distintos. R-01 es una falla que ya se produjo y ya
+se corrigió: se sumó Google Noticias como fuente de scraping sin revisar
+antes si el sitio lo permitía, y esa fuente llegó a aportar la mayor
+parte del contenido nuevo de una corrida real antes de que se la
+retirara. R-02 no es un error a corregir sino una limitación conocida
+desde el inicio del desarrollo: no existe todavía, para el resto del
+conurbano bonaerense, un registro de siniestros con la misma calidad que
+el de CABA, así que el modelo de riesgo se entrenó solo con datos de esa
+ciudad, aunque el nombre del proyecto prometa una cobertura mayor.
+Nombrarlo como riesgo en este capítulo, y no solo mencionarlo al pasar,
+sirve para no dar por sentada una cobertura que el sistema todavía no
+puede sostener con evidencia.
+
+R-01 y R-03 los dos son fallas que ya se produjeron y ya se corrigieron.
+En ambos casos la corrección ya está aplicada y verificada; lo que se
+agrega en este capítulo es el criterio para que el mismo tipo de error
+no se repita: revisar los permisos de uso de una fuente antes de
+sumarla, y no mostrar en público ningún código que funcione como llave
+para borrar contenido.
+
+Dos riesgos de este capítulo no son técnicos sino de producto, y se
+tratan con el mismo peso que los anteriores porque tocan la razón de ser
+del proyecto: que alguien lo use de verdad. R-04 recoge algo que ya se
+observó en la prueba real con usuarios: probar la aplicación una vez no
+garantiza que el motociclista vuelva a abrirla, y esa misma prueba
+mostró fricción concreta en una de sus funciones centrales. R-07
+reconoce que MotoSafe GBA compite, aunque sea de forma indirecta, contra
+cualquier alternativa que un motociclista ya tenga instalada para
+orientarse en la calle: el proyecto no gana usuarios solo por funcionar
+bien por dentro, sino por ofrecer algo que esas alternativas no ofrecen.
+
+\section{Riesgos estructurales del proyecto}
+
+Además de la matriz anterior, conviene revisar el proyecto contra los
+patrones generales que suelen hacer fracasar un proyecto de este tipo,
+vistos en la cátedra, para dejar constancia de cuáles están presentes y
+cuáles no:
+
+\textbf{El alcance nunca termina de cerrar.} Presente en forma acotada:
+el alcance creció varias veces durante el desarrollo (capa de
+inseguridad, reportes de prensa, tráfico en vivo, corredores de riesgo),
+pero cada expansión quedó documentada por etapa, no como un crecimiento
+silencioso sin control.
+
+\textbf{Depender de que alguien externo siga aportando datos.} No
+aplica: los datos de siniestros son un registro público oficial
+descargado una sola vez, sin depender de que una persona o entidad siga
+entregando información para que el proyecto funcione.
+
+\textbf{El equipo se desarma.} No aplica en el sentido tradicional,
+porque el desarrollo está a cargo de una sola persona, pero sí existe un
+riesgo parecido de coordinación: el proyecto se desarrolla con
+asistencia de herramientas de inteligencia artificial, y no siempre se
+revisó con el mismo nivel de detalle cada cambio sugerido antes de
+incorporarlo, lo que contribuyó a las fallas de R-01 y R-03.
+
+\textbf{La tecnología elegida no funciona como se esperaba.} No se
+materializó: cada cambio de tecnología del proyecto (el motor de mapa,
+el método de agrupamiento de zonas, el motor de rutas) fue una decisión
+evaluada y documentada, no un cambio forzado porque algo dejó de andar.
+
+\textbf{El costo o la infraestructura no son viables.} Presente y ya
+tratado en el Capítulo 5: sostener el sistema en un entorno productivo
+real depende de servicios pagos cuyo costo todavía no está validado
+contra una fuente de ingresos real.
+
+\textbf{Hay una barrera legal o ética de fondo. Presente de forma
+acotada en R-01 (una fuente cuyo uso está restringido). La falta de una
+política de privacidad formal para los datos de ubicación de los
+reportes comunitarios se cerró con una política documentada: describe
+qué se guarda (lat/lng exactas, categoría, autor\_id como UUID de
+dispositivo, sin dato personal identificable), qué no se guarda (IP
+persistida, nombre, email), retención y borrado por categoría, y declara
+de forma explícita la limitación de que la ubicación se guarda sin
+redondear. Esa política, escrita para los reportes comunitarios, todavía
+no cubre los datos de cuenta que se sumaron después con el sistema de
+autenticación (4.8): email, nombre de usuario, hash de contraseña
+(bcrypt) y los códigos de verificación de un solo uso. Esos datos se
+guardan en las tablas usuarios y codigos\_auth, se usan exclusivamente
+para autenticar (nunca se muestran en una interfaz pública ni se
+comparten con terceros), y falta extender el documento de política para
+declararlos junto con los de reportes.}
+
+\textbf{Nadie está a cargo del proyecto. No aplica: hay una sola persona
+responsable de todas las decisiones, con registro de decisiones y de
+cada paso en la bitácora de desarrollo.}
+
+\section{Síntesis}
+
+De los ocho riesgos relevados, dos ya se materializaron y fueron
+tratados con evidencia verificable (R-01, R-03), lo que muestra que
+MotoSafe GBA gestiona sus riesgos a medida que aparecen, en vez de
+dejarlos para el informe final. De los seis restantes, dos siguen
+abiertos con una acción concreta pendiente (R-02, R-07), dos tienen su
+acción técnica aplicada y solo falta repetir la validación con usuarios
+para confirmar el efecto (R-04, R-05, ya aplicadas), uno depende de
+servicios externos y solo puede reducirse en parte (R-06), y uno se
+acepta de forma explícita y justificada (R-08), porque el costo de
+eliminarlo por completo hoy es mayor que su impacto real.
+
+El riesgo de mayor exposición del proyecto no es de infraestructura ni
+de plazos, sino de honestidad metodológica y de alcance real: haber
+corregido a tiempo una fuente de datos que no estaba autorizada a usarse
+(R-01), y sostener con claridad que el modelo de riesgo todavía solo
+está validado para CABA, aunque el proyecto lleve GBA en el nombre
+(R-02). Declarar estas dos cosas con evidencia, en vez de minimizarlas,
+es en sí mismo parte de cómo se tratan: una tesis que reconoce sus
+propios límites es más sólida frente al jurado que una que los esconde y
+deja que otro los encuentre.
+
+Pero un sistema puede estar técnicamente sólido y de todos modos no
+conseguir usuarios reales. Los riesgos R-04 y R-07 quedan documentados
+con ese mismo peso: el proyecto no se sostiene solo por funcionar bien
+por dentro, sino por lograr que un motociclista real lo elija y lo siga
+usando en vez de cualquier otra alternativa que ya tenga a mano.
+
+\section{Seguimiento de los riesgos}
+
+Esta matriz no se completa una sola vez y se archiva. El seguimiento se
+hace en el propio repositorio del proyecto, donde cada hallazgo real
+queda con su estado (validado, en curso, pendiente), en vez de vivir
+solo en este capítulo. Algunos de los riesgos de esta matriz ya se
+revisaron más de una vez a medida que apareció evidencia nueva durante
+el desarrollo (el caso más claro es la medición de precisión del scraper
+de prensa, corregida después de encontrar falsos positivos geográficos
+reproducibles), y el mismo criterio se sostiene hasta la entrega final.

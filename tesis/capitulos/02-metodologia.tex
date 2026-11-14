@@ -1,0 +1,207 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 2 — METODOLOGÍA             (Entrega 2 · 5 % · 5/5)
+% =============================================================
+
+\chapter{Metodología y procedimientos}\label{cap:metodologia}
+
+\begin{guia}[Guía de la cátedra: qué se evalúa en este capítulo]
+La cátedra exige \textbf{dos metodologías}. El error más común es
+entregar solo una.
+\begin{enumerate}
+    \item \textbf{Metodología de la investigación}: área temática,
+          planteamiento y delimitación del problema, marco teórico
+          previsto, diseño concreto (fases), indicadores medibles con
+          fuente y umbral, técnicas de recolección, instrumentos, datos,
+          procesamiento, análisis crítico y síntesis. Tipo de
+          investigación: en general, aplicada.
+    \item \textbf{Metodología de dirección del proyecto}: marco de trabajo
+          justificado, alcance y entregables, cronograma con fechas reales
+          (Gantt con hitos que coinciden con las entregas), costos, riesgos
+          (referencia al capítulo~\ref{cap:riesgos}), calidad, recursos y
+          satisfacción de las partes interesadas.
+    \item \textbf{Declaración de uso de IA}: qué tareas fueron asistidas y
+          cómo se verificaron. Los prompts se guardan en una carpeta
+          compartida con la cátedra.
+\end{enumerate}
+Extensión orientativa: 6 a 10 páginas. Referencias habituales:
+\citet{hernandezsampieri2014} para investigación y \citet{pmi2021}
+para gestión.
+\end{guia}
+
+\section{Área temática y diseño de investigación}
+
+El proyecto combinará desarrollo de software, análisis de datos
+históricos y evaluación técnica reproducible. No será una investigación
+exclusivamente empírica ni exclusivamente de ingeniería de software: la
+validez de sus conclusiones dependerá tanto de que el sistema funcione
+como de que sus estimaciones estén correctamente delimitadas y
+evaluadas. El diseño será aplicado y de estudio de caso único, con AMBA
+como área temática y CABA como unidad geográfica de validación.
+
+\section{Planteamiento y delimitación}
+
+La unidad principal de análisis del componente de aprendizaje automático
+será un registro de siniestro con víctima en motocicleta. La salida del
+modelo se interpretará, en todo momento, como gravedad condicionada a la
+ocurrencia de ese siniestro, nunca como probabilidad de que un viaje
+termine en accidente. Esta delimitación no será una aclaración retórica:
+determinará qué preguntas podrá responder el sistema y cuáles quedarán
+fuera de su alcance, incluida cualquier afirmación sobre seguridad de
+una ruta o riesgo individual de una persona.
+
+\section{Unidad de análisis, fuentes de datos e indicadores}
+
+Las fuentes locales que alimentarán el pipeline de datos serán el
+dataset de hechos de motocicleta ya depurado, complementado por el
+dataset de siniestros viales con víctimas y cruzado con el dataset de
+clima histórico. Este pipeline se aplica sobre los datos históricos que
+entrenan y evalúan el modelo; cuando esos datasets históricos se
+actualicen con nueva información oficial, se volverán a procesar con el
+mismo pipeline para mantener la consistencia. Los aportes en vivo, como
+noticias recientes y reportes de motociclistas, siguen un circuito de
+ingesta y validación distinto, porque no pasan por el mismo proceso de
+depuración estadística que los datos históricos.
+
+El pipeline aplicará filtros de calidad: descarte de registros sin hora
+o clima disponible, cruce por fecha y hora entre datasets, y tratamiento
+de la edad de la víctima cuando cae fuera del rango 14-95 años
+considerado válido. En ese último caso, en lugar de descartar el
+registro o completar la edad con un valor inventado, se lo conserva
+marcado con una categoría aparte (edad desconocida): la ausencia de ese
+dato puede estar relacionada con la gravedad del siniestro, y ocultarla
+sería un error metodológico mayor que dejarla explícita.
+
+Sobre ese universo se derivarán hotspots y corredores viales. La capa de
+inseguridad general se construirá sobre delitos de la Ciudad procesados
+con clustering HDBSCAN (agrupamiento por densidad que no exige fijar de
+antemano la cantidad de zonas), y se cruzará con los hechos de
+motocicleta para estimar qué proporción de esa inseguridad general
+coincide con la exposición del motociclista.
+
+Las variables de entrada al modelo incluirán hora, día, comuna, tipo de
+vía, contraparte, condición climática y campos demográficos de la
+víctima cuando existan.
+
+\section{Técnicas e instrumentos de recolección}
+
+Se utilizarán datasets y servicios públicos documentados, scripts de
+procesamiento en Python, pruebas automatizadas (pytest en el backend,
+Vitest en el frontend) y control de versiones Git. El trabajo de campo
+con motociclistas se realiza bajo protocolo, con consentimiento
+informado y resultados verificables desde su diseño: se recogen sus
+opiniones sobre el funcionamiento de la aplicación en rondas sucesivas,
+bajo el mismo protocolo en cada una.
+
+\section{Procesamiento, evaluación y criterios de validez}
+
+Evaluar un modelo sobre un recorte al azar de los mismos años que usó
+para entrenar suele mostrar un desempeño mejor al real, porque el modelo
+puede terminar aprendiendo patrones propios de esa época en vez de
+patrones que se sostengan en el tiempo. Por eso el proyecto va a dejar
+por escrito, antes de reportar cualquier métrica, qué datos se usan para
+entrenar, cuáles para ajustar decisiones intermedias sin tocar la
+evaluación final, y cuáles quedan completamente reservados para medir el
+desempeño una única vez. Ese documento, el contrato de evaluación, va a
+organizar el tiempo en tres tramos: los años más antiguos del dataset se
+usan para entrenar el modelo, un año completo posterior sirve para
+comparar configuraciones y ajustar decisiones sin tocar la evaluación
+final, y el año más reciente disponible queda reservado, sin tocarlo
+hasta el final, para medir una única vez qué tan bien predice el modelo
+sobre un período que nunca vio.
+
+La imputación de edad, las categorías codificadas y el conjunto de
+columnas se ajustarán exclusivamente con el conjunto de entrenamiento,
+siguiendo la práctica documentada por scikit-learn (la biblioteca de
+Python de referencia para aprendizaje automático clásico) para evitar
+fuga de preprocesamiento entre partición de entrenamiento y partición de
+evaluación \citep{sklearndocs}.
+
+El desempeño del modelo se medirá con F1 macro (el promedio del
+equilibrio entre precisión y recall calculado por separado para cada
+clase de gravedad, sin favorecer a la clase mayoritaria) y con ECE
+multiclase (error de calibración: qué tan cerca está la probabilidad que
+informa el modelo de la frecuencia real con la que acierta); la
+precisión y el recall por clase se derivarán de la matriz de confusión
+correspondiente.
+
+\section{Gestión del proyecto y cronograma}
+
+La gestión del proyecto se centralizará en un repositorio de control de
+versiones como fuente única de verdad: un backlog con identificadores
+estables para hallazgos y oportunidades de mejora, una bitácora
+cronológica de sesiones de trabajo, y un registro de decisiones que
+distinguirá explícitamente una recomendación de una decisión
+efectivamente tomada, evitando que una propuesta de mejora se confunda
+con trabajo ya implementado.
+
+El trabajo se acompañará de auditoría técnica periódica sobre el propio
+código y la documentación, en lugar de concentrar esa revisión al final
+del proyecto. Las decisiones tecnológicas relevantes (contenedores,
+despliegue en la nube, proveedores externos) se tomarán pensando en la
+operación sostenida del sistema y no solo en la demostración puntual de
+una entrega.
+
+\begin{figure}[H]
+    \centering
+    \begin{ganttchart}[
+        hgrid, vgrid={*{6}{draw=none}, dotted},
+        x unit=0.42mm,
+        y unit chart=6mm, y unit title=7mm,
+        time slot format=isodate,
+        bar label font=\small, milestone label font=\small,
+        title label font=\small,
+        bar/.append style={fill=mainColor!60, draw=none},
+        milestone/.append style={fill=mainColor, draw=none},
+    ]{2026-03-16}{2026-11-20}
+        \gantttitlecalendar{month=shortname} \\
+        \ganttbar{Idea y resumen}{2026-03-16}{2026-04-10} \\
+        \ganttbar{Metodología}{2026-04-06}{2026-05-05} \\
+        \ganttbar{Introducción}{2026-05-06}{2026-06-09} \\
+        \ganttbar{Marco teórico}{2026-06-01}{2026-07-28} \\
+        \ganttbar{Marco tecnológico}{2026-07-01}{2026-08-25} \\
+        \ganttbar{Justif. económica}{2026-08-10}{2026-09-15} \\
+        \ganttbar{Riesgos}{2026-09-01}{2026-09-29} \\
+        \ganttbar{Desarrollo del sistema}{2026-06-15}{2026-10-10} \\
+        \ganttbar{Resultados}{2026-09-20}{2026-10-13} \\
+        \ganttbar{Conclusiones}{2026-10-05}{2026-10-20} \\
+        \ganttbar{Integración y revisión}{2026-10-21}{2026-11-16} \\
+        \ganttmilestone{Entrega final}{2026-11-17}
+    \end{ganttchart}
+    \caption{Cronograma del proyecto (ciclo lectivo 2026)}
+    \label{fig:gantt}
+\end{figure}
+
+\section{Declaración de uso de inteligencia artificial y trazabilidad}
+
+Durante el proyecto se contó con el acompañamiento de herramientas de
+inteligencia artificial en distintas tareas de apoyo: documentación
+técnica, auditoría de código, y revisión y sugerencias de redacción
+sobre partes de este informe, además de algunas intervenciones puntuales
+de código bajo pedido y revisión previos a cada commit. Ningún dato,
+cita o resultado incorporado a este documento se presenta sin
+verificación en su fuente primaria o en la evidencia técnica del
+repositorio; la IA no sustituye trabajo empírico no realizado.
+
+\begin{table}[H]
+    \centering
+    \caption{Esquema de entregas y ponderación de la cátedra (ciclo lectivo 2026)}
+    \label{tab:hitos}
+    \small
+    \begin{tabularx}{\textwidth}{l L l}
+        \toprule
+        \tb{Entrega} & \tb{Contenido} & \tb{Peso} \\
+        \midrule
+        1 & Idea del proyecto y abstract & 15\,\% \\
+        2 & Capítulo 1. Introducción & 5\,\% \\
+        3 & Capítulo 2. Metodología y procedimientos & 5\,\% \\
+        4 & Capítulo 3. Marco teórico y tecnológico & 15\,\% \\
+        5 & MVP & 5\,\% \\
+        6 & Capítulo 4. Arquitectura y diseño del sistema, Presentación v1 & 15\,\% \\
+        7 & Prototipo & 5\,\% \\
+        8 & Capítulo 5. Justificación técnico-económica & 10\,\% \\
+        9 & Capítulo 6. Análisis de riesgos, Presentación v2 & 5\,\% \\
+        10 & Presentación final, proyecto funcional y defensa & 20\,\% \\
+        \bottomrule
+    \end{tabularx}
+\end{table}

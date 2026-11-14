@@ -1,0 +1,210 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 3 — MARCO TEÓRICO Y ESTADO DEL ARTE
+%                                       (Entrega 3 · 10 % · 28/7)
+% =============================================================
+
+\chapter{Síntesis de la literatura consultada}\label{cap:marco-teorico}
+
+\begin{guia}[Guía de la cátedra: qué se evalúa en este capítulo]
+\begin{enumerate}
+    \item \textbf{Estado del arte}: investigaciones nacionales,
+          internacionales y productos similares, por separado. De cada
+          trabajo: qué hizo y qué resultados obtuvo, con métricas.
+    \item \textbf{Brechas identificadas}: qué falta en lo existente y
+          justifica \emph{este} proyecto. Es lo que separa un estado del
+          arte de un listado. Incluir también los resultados negativos de
+          la literatura.
+    \item \textbf{Bases teóricas}: desarrollan las variables del título y su
+          relación. Cada concepto termina explicando cómo se usa en el
+          proyecto (teoría instrumental, no de relleno). Citas canónicas
+          antes que tutoriales.
+    \item \textbf{Marco conceptual}: conceptos que se nombran pero no se
+          desarrollan. Los términos del glosario se marcan con
+          \verb|\gls{}|, por ejemplo \gls{g:mvp} y \gls{prototipo}.
+    \item \textbf{Calidad bibliográfica}: papers, tesis y libros de
+          editoriales serias, con datos completos. Wikipedia y blogs restan.
+    \item \textbf{Entrevistas a especialistas} (si las hay): fecha, nombre,
+          cargo y aporte; transcripción en el apéndice~\ref{apx:entrevista}.
+\end{enumerate}
+Errores que la cátedra marca: falta de coherencia interna, bibliografía
+superficial, información irrelevante o redundante. Es uno de los
+capítulos más extensos (orientativo: 20 a 30 páginas).
+\end{guia}
+
+\section{Seguridad vial y exposición de motociclistas}
+
+Las estadísticas oficiales y los estudios académicos consultados
+coinciden en un punto: por kilómetro recorrido, el motociclista es el
+usuario vial más expuesto a sufrir una lesión grave. El Global status
+report on road safety 2023, de la Organización Mundial de la Salud,
+ubica a peatones, ciclistas y motociclistas como los grupos que
+concentran de manera desproporcionada las muertes de tránsito a nivel
+global, en especial en países de ingresos bajos y medios, y señala que
+los siniestros viales siguen siendo la principal causa de muerte de
+niños y jóvenes de 5 a 29 años (WHO, 2023).
+
+Para el contexto latinoamericano, CAF (2013) propone una metodología
+específica para que los gobiernos locales elaboren planes de seguridad
+vial dirigidos a motociclistas, con un enfoque participativo que integra
+diagnóstico, diseño de medidas y seguimiento. El documento parte de una
+premisa que MotoSafe GBA comparte: la motocicleta no puede tratarse como
+una variante menor del automóvil dentro de la política de seguridad
+vial, porque su patrón de siniestralidad y de exposición es
+cualitativamente distinto.
+
+En Argentina, datos oficiales de la Agencia Nacional de Seguridad Vial
+correspondientes a 2025 ubicaron a los motociclistas en el 46\% de las
+víctimas fatales de siniestros viales del país (Infoecos, 2026, citando
+a la ANSV), en línea con coberturas periodísticas independientes que
+reportaron cifras de 46-47\% para el mismo período (La Nación, 2025;
+Dato Posta, 2025). \citet{camacho2025}, en su tesis de maestría sobre
+implementación del Plan Estratégico de Seguridad Vial 2024-2027 en
+gobiernos locales argentinos (incluyendo casos del AMBA), documenta que
+la capacidad institucional para ejecutar políticas de seguridad vial,
+entre ellas las dirigidas a motociclistas, depende tanto del diseño
+nacional como del desarrollo institucional y la articulación
+intersectorial a nivel municipal. Este antecedente sitúa a MotoSafe GBA
+como una herramienta de nivel operativo (información al usuario final)
+que no sustituye, pero puede complementar, ese nivel de política
+pública.
+
+\section{Datos geoespaciales, cobertura y comunicación de incertidumbre}
+
+Un estudio de \citet{alsahfi2024} analiza patrones de siniestralidad vial en
+ciudades de California durante un período de cinco años combinando tres
+herramientas de análisis espacial: DBSCAN (un algoritmo de clustering
+que agrupa puntos por densidad, sin necesidad de fijar de antemano
+cuántos grupos existen), estimación de densidad de kernel o KDE (que
+suaviza puntos dispersos en un mapa de densidad continuo) y el
+estadístico Getis-Ord Gi* (que identifica, con significancia
+estadística, si una zona concentra más o menos casos de los esperables
+por azar). El aporte metodológico relevante para este proyecto no es
+solo la técnica de clustering, similar a la usada para los hotspots de
+inseguridad de MotoSafe GBA, sino la insistencia del estudio en reportar
+la relación entre densidad poblacional y siniestralidad detectada: sin
+ese control, un área con más registros puede confundirse con un área más
+riesgosa cuando en realidad solo tiene más tránsito o más reporte.
+
+La comunicación de incertidumbre en datos de origen colaborativo tiene
+un antecedente directo en la evaluación de reportes de Waze realizada
+por \citet{aminnaseri2018}, que midió que los reportes colaborativos
+de esa aplicación cubrían el 43,2\% de los eventos de choque y
+congestión registrados por sistemas oficiales de gestión de tránsito. La
+cifra es útil no como benchmark de cobertura a igualar, sino como
+evidencia de que una fuente colaborativa aporta valor real sin alcanzar
+cobertura total, y de que ese porcentaje debe comunicarse en lugar de
+asumirse. MotoSafe GBA aplica el mismo principio a su capa de prensa y
+de reportes comunitarios: la ausencia de un registro en una zona se
+muestra como "sin datos", explícitamente distinto de un "0\%" que
+sugeriría ausencia de riesgo.
+
+\section{Aprendizaje automático para gravedad vial}
+
+Un estudio de \citet{islam2022} compara tres modelos de clasificación
+(Random Forest, Gradient Boosting y regresión logística) para predecir
+la severidad de siniestros viales en Al-Ahsa, Arabia Saudita, sobre un
+mismo conjunto de datos de siniestros con víctimas, e incorpora
+autocorrelación espacial mediante el estadístico Getis-Ord G* para
+localizar zonas de alta y baja severidad. En esa comparación directa, el
+Random Forest obtuvo mejor desempeño de clasificación que la regresión
+logística y que el Gradient Boosting, con el tipo de colisión como la
+variable de mayor peso en sus predicciones; ese resultado respalda la
+elección de un Random Forest como algoritmo base para MotoSafe GBA, en
+vez de partir directamente de un modelo más simple (regresión logística)
+o de uno más costoso de ajustar (Gradient Boosting) sin evidencia previa
+de que la complejidad adicional se traduzca en mejor desempeño sobre
+datos de este tipo. Ese estudio, sin embargo, no reporta el desbalance
+de clases que presenta el dataset de este proyecto (LEVE muy mayoritaria
+frente a GRAVE y MORTAL), lo que exige un tratamiento adicional durante
+el entrenamiento y una lectura cuidadosa de precisión frente a recall
+por clase.
+
+La documentación oficial de scikit-learn (la biblioteca de Python de
+referencia para aprendizaje automático clásico, la misma que se usa para
+entrenar y evaluar el modelo de MotoSafe GBA) sobre errores frecuentes
+de evaluación \citep{sklearndocs} formaliza un riesgo
+metodológico central para este tipo de proyectos: la fuga de datos (data
+leakage) que ocurre cuando una transformación (selección de variables,
+imputación, codificación) se ajusta sobre todo el conjunto de datos
+antes de separar entrenamiento y evaluación, inflando artificialmente el
+desempeño reportado. El protocolo de evaluación temporal descripto en el
+Capítulo 2 sigue esa recomendación de manera explícita: la imputación de
+edad y la codificación de categorías se ajustan únicamente sobre el
+conjunto de entrenamiento.
+
+Random Forest es, además, una elección apropiada por el tipo de dato de
+entrada del proyecto: MotoSafe GBA trabaja con datos tabulares (hora,
+comuna, tipo de vía, clima, variables demográficas), no con imágenes ni
+con secuencias temporales complejas. Un modelo de árboles como Random
+Forest es más liviano de entrenar, no requiere infraestructura de GPU, y
+permite auditar la importancia de cada variable por separado, algo
+relevante para un proyecto que necesita poder explicar por qué el modelo
+predice lo que predice, no solo qué predice.
+
+\section{Sistemas de información geográfica, navegación y fuentes públicas}
+
+Representar información vial requiere algo más que un mapa de fondo con
+puntos dibujados encima: cada consulta necesita responderse contra
+geometrías reales, idealmente con operaciones espaciales (distancia,
+contención, intersección) resueltas por la propia base de datos en vez
+de por el código de la aplicación. Un sistema de información geográfica
+(SIG) es, en términos generales, cualquier sistema que almacena,
+consulta y analiza datos asociados a una ubicación en el espacio; la
+decisión de diseño relevante para este proyecto no es si usar un SIG,
+sino en qué capa de la arquitectura vive esa lógica espacial: en la base
+de datos, en el servidor de aplicación, o en el navegador del usuario.
+
+MotoSafe GBA elige resolver esa lógica en la base de datos: se apoya en
+PostGIS como extensión geoespacial de PostgreSQL, y en MapLibre GL JS
+como motor de renderizado cartográfico sin dependencia de un proveedor
+cerrado de mapas. Tratar el componente espacial como una capa de
+análisis propia, con sus propias herramientas estadísticas, y no como un
+simple fondo visual sobre el que se dibujan puntos, es lo que justifica
+elegir PostGIS en primer lugar: sus funciones espaciales permiten
+resolver proximidad y pertenencia a un hotspot directamente en la base,
+en vez de recorrer listas de coordenadas en el backend. Hoy, con PostGIS
+habilitado y dos tablas con geometría nativa, el cálculo de proximidad
+corre en código de aplicación; migrarlo a funciones espaciales de
+PostGIS queda como el siguiente paso natural de esa capa.
+
+Los datos históricos de siniestros y de inseguridad describen un patrón
+general de una zona, pero no dicen nada sobre lo que pasó ahí la semana
+pasada: para eso, MotoSafe GBA suma una capa de noticias locales, que
+aporta contexto reciente (un corte de calle, un operativo, un hecho
+puntual) que los datasets históricos no capturan por su propia
+naturaleza, ya que se actualizan con mucha menor frecuencia. Automatizar
+la lectura periódica de varios sitios de noticias, en lugar de
+revisarlos manualmente, exige respetar las reglas que cada sitio publica
+sobre qué contenido puede recorrer un proceso automático y qué contenido
+está reservado a la lectura humana.
+
+\section{Estado del arte y brecha abordada por MotoSafe}
+
+Los antecedentes revisados en este capítulo responden, cada uno, a una
+pregunta distinta de la que responde MotoSafe GBA, y esa diferencia es
+la que define el aporte del proyecto. Por un lado, los trabajos de
+análisis espacial y de clasificación de severidad (Islam et al., 2022;
+Alsahfi, 2024) están pensados para que un organismo de tránsito o un
+planificador urbano identifique, a escala de ciudad, dónde concentrar
+recursos o intervenciones: responden "¿qué zonas requieren atención?",
+no "¿qué puedo saber yo, ahora, sobre esta zona antes de circular por
+ahí?". Por otro lado, los documentos de política pública y planificación
+institucional \citep{caf2013,camacho2025} responden una pregunta de
+gestión: cómo diseñar e implementar un plan de seguridad vial a nivel
+municipal o nacional, sin bajar nunca a una herramienta que un
+motociclista concreto pueda consultar antes de un viaje.
+
+Ninguno de los dos grupos de antecedentes construye, ni se propone
+construir, una consulta orientada al usuario final que integre esas
+fuentes con su procedencia y su cobertura declaradas. Esa es la brecha
+que aborda MotoSafe GBA: no la ausencia total de datos, sino la
+distancia entre fuentes dispersas y heterogéneas en procedencia y
+cobertura, por un lado, y una consulta comprensible para un motociclista
+concreto, por el otro. La evidencia sobre cobertura parcial de fuentes
+colaborativas \citep{aminnaseri2018} y el riesgo metodológico de
+fuga de datos en modelos de clasificación (scikit-learn developers,
+s.f.) son, en ese sentido, restricciones de diseño tanto como
+antecedentes teóricos: definen qué no puede afirmarse sin evidencia
+adicional, y por eso delimitan tanto lo que el sistema muestra como lo
+que se abstiene de afirmar.

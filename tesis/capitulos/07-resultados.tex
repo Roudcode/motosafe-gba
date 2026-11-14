@@ -1,0 +1,333 @@
+%!TEX root = ../main.tex
+% =============================================================
+%  CAPÍTULO 7 — PRESENTACIÓN DE RESULTADOS
+%                                       (Entrega 7 · 5 % · 13/10)
+% =============================================================
+
+\chapter{Presentación de resultados}\label{cap:resultados}
+
+\begin{guia}[Guía de la cátedra: qué se evalúa en este capítulo]
+\begin{enumerate}
+    \item \textbf{Requerimientos formales}: \gls{rf} y \gls{rnf} con ID,
+          descripción, prioridad y criterio de aceptación medible,
+          trazados a los indicadores del capítulo~\ref{cap:metodologia}.
+    \item \textbf{Evidencia de implementación}: capturas reales del sistema
+          funcionando, enlaces al repositorio (anexo~\ref{anx:repositorios})
+          y al despliegue.
+    \item \textbf{Resultados cuantitativos honestos}: diseño experimental,
+          métricas, matrices de confusión o su equivalente en el dominio,
+          incluyendo lo que salió mal y su análisis. Reportar también lo
+          malo y argumentarlo vale más que esconderlo. Hiperparámetros y
+          versiones en el apéndice~\ref{apx:tecnicos}.
+    \item \textbf{Validación con usuarios y expertos}: idealmente
+          triangulada (métricas técnicas, encuesta, entrevista) y
+          traducida a decisiones de diseño concretas. Instrumentos en los
+          apéndices \ref{apx:encuesta} y \ref{apx:entrevista}.
+\end{enumerate}
+El sistema tiene que existir y andar: la entrega final incluye el
+proyecto funcional.
+\end{guia}
+
+Este capítulo presenta los resultados obtenidos hasta esta entrega sobre
+seis ejes: el modelo predictivo de severidad, el clustering de zonas de
+riesgo, la validación con usuarios reales, la suite de pruebas
+automatizadas, la ingesta de noticias de prensa y el comparador de
+rutas. La hipótesis de trabajo del proyecto (1.5) sostiene que la
+utilidad de esta herramienta no está en predecir con precisión un
+siniestro individual, sino en la trazabilidad de las fuentes que
+integra; los resultados de este capítulo se leen en función de qué tanto
+la sostienen. El clustering (7.2) aporta la base de esa lectura:
+confirma que el riesgo vial tiene patrones geográficos reales y
+estables, sobre los que esa trazabilidad tiene algo concreto que
+mostrar; el resto de los ejes puntúan si declarar procedencia,
+antigüedad y cobertura resulta, en la práctica, más útil que un único
+indicador de riesgo.
+
+\section{Resultados del modelo predictivo de severidad}
+
+El modelo vigente es un Random Forest de 300 árboles entrenado sobre
+23.338 siniestros de moto georreferenciados en CABA, que estima la
+gravedad probable de un siniestro (leve, grave o mortal) en una zona
+dada, condicionada a que ese siniestro ocurra; no estima la probabilidad
+de que un siniestro ocurra. Midió dos cifras de desempeño bajo dos
+protocolos distintos, y la diferencia entre ambas es en sí misma un
+resultado relevante del proyecto.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3545}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3213}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3242}}@{}}
+\caption{F1 macro del modelo de severidad según protocolo de evaluación.}\label{tab:7-1}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Protocolo de evaluación}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{F1 macro}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Observación}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Protocolo de evaluación}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{F1 macro}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Observación}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Split aleatorio interno & 0,368 & Mezcla años; usado durante la
+selección de configuraciones \\
+Evaluación temporal retrospectiva & 0,3032 & Año evaluado completo
+(2024), nunca visto en entrenamiento. Corresponde a la variante sin edad
+(con sexo e índice de inseguridad) vigente en producción \\
+\end{longtable}
+
+La caída de 0,368 a 0,3032 confirma que el primer número estaba inflado
+por fuga de información entre años: el split aleatorio deja datos del
+mismo período repartidos entre entrenamiento y evaluación, así que el
+modelo termina memorizando patrones propios de ese período en vez de
+generalizar. La evaluación temporal, que entrena con los años anteriores
+y mide contra un año completo que el modelo nunca vio, da la cifra que
+de verdad importa para decidir si el sistema sirve fuera del período con
+el que se entrenó.
+
+La matriz de confusión de esa evaluación temporal muestra dónde está el
+límite real del modelo: en las clases más graves, la precisión es baja
+(GRAVE 0,084; MORTAL 0,072) mientras que el recall es más alto (0,600 y
+0,512 respectivamente). El modelo tiende a marcar muchas zonas como
+graves o mortales de las que en realidad no lo son tanto, antes que
+dejar pasar una zona grave sin marcar. Para un sistema de alerta
+preventiva ese sesgo es defendible (es preferible sobre-advertir antes
+que ignorar un caso grave), pero no habilita usar el score como una
+medida fina de probabilidad: el sistema lo usa solo como criterio de
+priorización relativa entre zonas, nunca como una cifra exacta de
+riesgo.
+
+Las ablaciones corridas sobre la variante anterior del modelo (que
+todavía incluía la edad de la víctima) habían mostrado que sacarla como
+variable subía el F1 macro de evaluación temporal a 0,286, y sacarla
+junto con el sexo lo subía a 0,362, ambas por encima del 0,262 con
+demografía completa; la demografía disponible (45\% de edad desconocida
+en entrenamiento, 12\% en el año evaluado) no generalizaba bien entre
+años. A partir de ese hallazgo, el modelo se reentrenó sin la variable
+edad (conservando sexo e índice de inseguridad), vigente en producción;
+los números de la Tabla 7.1 ya corresponden a esa variante. Esto es
+consistente con un problema conocido en la predicción de severidad de
+siniestros viales, en general difícil de resolver con buena precisión en
+las clases más graves porque son, por definición, las menos frecuentes
+en cualquier dataset real.
+
+\section{Resultados del clustering de zonas de riesgo}
+
+El universo de zonas de riesgo pasó por dos metodologías de clustering
+antes de llegar a la que está en producción. El primer intento con
+DBSCAN (eps=300m, min\_samples=8) fusionó casi toda la ciudad en un solo
+cluster por efecto de encadenamiento, típico en tramas urbanas densas.
+Ajustar el radio a 60m mejoró la separación (430 hotspots) pero dejó un
+67,9\% de los siniestros sin cluster asignado.
+
+La migración de DBSCAN a HDBSCAN, que no exige un radio fijo, es el
+resultado que de verdad resolvió el problema: 412 a 740 zonas de
+siniestros de moto, con la cobertura subiendo de 49,9\% a 75,6\% de los
+datos. El mismo método aplicado a inseguridad general, con los
+parámetros definitivos del sweep (mcs=150, ms=20), dio 633 hotspots con
+50,2\% de cobertura. La brecha de cobertura entre ambas capas (75,6\%
+contra 50,2\%) no es un error de calibración: responde a que los delitos
+del GCBA están más dispersos geográficamente que los siniestros de moto,
+que tienden a repetirse en las mismas intersecciones y avenidas.
+
+\section{Resultados de la validación con usuarios reales}
+
+Se aplicó un instrumento de validación a 12 motociclistas reales, en
+sesiones individuales moderadas de forma virtual, con tareas de uso del
+mapa y preguntas de percepción sobre una escala de 1 a 5. El
+reclutamiento fue por contacto directo, así que los resultados son
+indicativos y no representan a toda la población motociclista de
+CABA/GBA. Los resultados centrales, para este capítulo, son tres.
+Primero, el mapa en sí se usa sin dificultad: las tareas de activar una
+capa y filtrar prensa se completaron sin ayuda en 10 de 12 casos.
+Segundo, interpretar lo que el mapa muestra es harina de otro costal: la
+tarea de comparar rutas y explicar la cobertura, la que exige entender
+qué mide el número y no solo leerlo, solo la completaron sin asistencia
+4 de 12, y 2 de 12 siguieron entendiendo el modelo como una predicción
+de accidente pese a la aclaración textual existente. Tercero, la demanda
+más repetida entre perfiles de uso muy distintos (reparto diario, uso de
+fin de semana) fue la misma: reducir lo que se muestra por default y
+dejar el detalle del cálculo como algo opcional.
+
+Esa brecha entre uso del mapa y comprensión del score es el resultado
+más accionable de esta validación: confirma que el riesgo del proyecto
+no está en la interfaz, sino en la distancia entre lo que el sistema
+declara medir y lo que una persona sin entrenamiento previo entiende al
+usarlo. La muestra es chica y no aleatoria (n=12), así que estos
+resultados son indicativos, no una medición poblacional.
+
+\section{Resultados de la suite de pruebas automatizadas}
+
+Al cierre de esta entrega, la suite de pruebas automatizadas tiene 168
+pruebas de backend y 111 de frontend, 279 en total, todas en verde,
+incluida la corrida en integración continua contra una base
+PostgreSQL/PostGIS real y desechable (detalle en 4.10). La suite cubre
+lógica de negocio, endpoints, cálculo de score de rutas y clasificación
+de riesgo; no cubre todavía pruebas end-to-end contra navegador real ni
+contra los servicios externos en producción (TomTom, clima), que siguen
+siendo una verificación manual.
+
+\section{Resultados de la ingesta de prensa}
+
+Dos corridas reales y comparables muestran el efecto de un cambio de
+fuente sobre el volumen de datos.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2659}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1773}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1883}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1883}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1801}}@{}}
+\caption{Candidatas, ubicadas, guardadas y relacionadas con moto por corrida del scraper.}\label{tab:7-2}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Corrida}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Candidatas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ubicadas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Guardadas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{De moto}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Corrida}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Candidatas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ubicadas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Guardadas}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{De moto}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Histórica, con agregador (incluía Google Noticias) & 560 & 289 & 267 &
+99 \\
+Directa, tras retirar Google Noticias como fuente & 122 & 57 & 4 & 20 \\
+\end{longtable}
+
+La caída de 267 a 4 notas guardadas no es una regresión del sistema: es
+la consecuencia directa y esperada de retirar Google Noticias como
+fuente al confirmar que esa fuente no autorizaba ese uso. Esa fuente
+aportaba la mayor parte del volumen de la corrida histórica, así que
+perderla bajó el número bruto de notas, pero corregir una fuente no
+autorizada era la decisión correcta aunque empeorara la métrica
+superficial. Esa comparación no es un experimento controlado: la segunda
+corrida parte de una base que ya tenía buena parte de esas notas
+cargadas de corridas anteriores, así que contrasta dos corridas en
+estados de base distintos, no un antes/después aislado del cambio de
+fuente. Corridas posteriores con medios locales verificados (sitemaps
+propios, sin agregador) vienen recuperando volumen de forma más lenta
+pero legítima.
+
+\section{Resultados del comparador de rutas}
+
+El comparador de rutas calcula, para cada alternativa que devuelve el
+buscador de caminos en tiempo real, un puntaje de riesgo a partir de
+cuántas zonas de siniestros e inseguridad atraviesa el trazado y qué tan
+cerca pasa de cada una. El puntaje no se usa en términos absolutos sino
+relativos: las alternativas de un mismo pedido se comparan entre sí y se
+etiquetan como bajo, medio, alto o crítico según su posición dentro de
+ese grupo, no según un valor fijo, así que una ruta no cambia de
+categoría solo porque el cálculo sumó o restó puntos por un ajuste
+interno, mientras siga siendo, en términos relativos, la más o la menos
+riesgosa del lote.
+
+Se armaron cuatro casos reales contra el sistema en funcionamiento,
+elegidos a partir de los propios datos de siniestros e inseguridad y no
+al azar. Un caso de desvío, donde la ruta más corta de las tres
+alternativas atraviesa una zona de inseguridad clasificada como crítica
+y el sistema recomienda en cambio una opción 4,2 km más larga con
+exposición baja. Un caso de cobertura parcial, donde una de las
+alternativas cae fuera de la Ciudad de Buenos Aires y la cobertura de
+inseguridad de esa zona baja a 56\% de los datos disponibles: un 44\%
+del trayecto queda sin información de inseguridad para evaluarlo, no
+porque no haya inseguridad ahí sino porque falta dato registrado. Un
+caso de empate, donde tres alternativas llegan en el mismo tiempo
+estimado con tráfico y el sistema las distingue solo por su nivel de
+exposición al riesgo. Y un caso de discordancia entre fuentes, en una
+zona con 2151 delitos registrados a diez metros del trazado pero apenas
+12 siniestros de moto en el mismo tramo, donde las dos fuentes de datos
+no coinciden en cuán riesgosa es la zona.
+
+Sobre esos mismos cuatro casos se midió además qué tan sensible es el
+resultado a dos parámetros internos del cálculo. El primero es el peso
+relativo que se le da a cada nivel de riesgo al sumar el puntaje total
+de una ruta: variarlo de una escala lineal a una que castiga mucho más
+fuerte lo crítico no cambió en ningún caso cuál alternativa resultó la
+de menor exposición (la recomendada), aunque el orden entre las
+alternativas restantes sí puede cambiar según el peso elegido, porque la
+comparación es por posición relativa dentro del lote, no por el valor
+absoluto del puntaje. El segundo es la distancia máxima a la que una
+zona de riesgo todavía se considera cruzada por la ruta: ahí sí hubo
+cambios reales. Achicar esa distancia de 600 a 300 metros hizo caer la
+cobertura de inseguridad del caso de cobertura parcial de 56\% a 18\%, y
+en el caso de discordancia hizo que dos alternativas que antes se
+distinguían con claridad (una de riesgo bajo, otra de riesgo medio)
+terminaran con la misma clasificación. Agrandar esa misma distancia a un
+kilómetro llegó a cambiar cuál de las tres alternativas del caso de
+cobertura parcial salía mejor puntuada. Con estos resultados, el cálculo
+es robusto al peso que se le da a cada nivel de riesgo, pero sensible al
+umbral de distancia elegido, un parámetro que hasta esta medición no
+tenía respaldo empírico propio más allá del criterio con que se fijó
+originalmente.
+
+La segunda medición de sensibilidad fue sobre el agrupamiento de tramos
+de calle en corredores de riesgo, el proceso que decide qué calles
+entran al mapa como corredor antes de mostrarlas. El parámetro que más
+mueve el resultado es la cantidad mínima de siniestros que una calle
+necesita para entrar en esa lista: bajarlo agregó un 50\% más de calles
+candidatas y subirlo sacó más de la mitad de las que estaban, aunque el
+orden de las calles que sí entran, de mayor a menor cantidad de
+siniestros, no cambió en ninguna configuración. Un segundo parámetro, el
+largo de tramo en que se divide cada calle para el análisis, no afecta
+qué calles entran, solo en cuántos pedazos se las analiza: cambia el
+nivel de detalle, no la cobertura.
+
+Estos cuatro casos y las dos mediciones de sensibilidad quedan
+documentados con datos reales, no estimados, y todavía están pendientes
+de una revisión de criterio independiente sobre si cada resultado
+concreto es razonable. Confirmar que el cálculo funciona como está
+diseñado, que es lo que esta medición hace, es distinto de evaluar si
+está diseñado de la forma más conveniente, que todavía no se hizo; esa
+separación es deliberada en esta etapa del proyecto.
+
+\section{Síntesis y vínculo con la hipótesis}
+
+Los resultados de este capítulo sostienen la hipótesis del proyecto de
+forma parcial, no absoluta. El clustering (7.2) sí encontró patrones
+geográficos reales y estables, con una cobertura final razonable sobre
+el dato disponible. El modelo (7.1) sí captura algo de señal, pero con
+una capacidad de discriminación baja en las clases que más importan
+(grave y mortal), así que su uso honesto es priorizar zonas entre sí, no
+estimar una probabilidad precisa. La validación con usuarios (7.3)
+agrega una dimensión que la hipótesis original no contemplaba: un
+sistema puede capturar el patrón correctamente y aun así no ser
+entendido por quien lo usa, y esa brecha de comprensión es, a esta
+altura del proyecto, tan relevante como la precisión del modelo.
+
+En conjunto, la evidencia reunida en este capítulo no permite afirmar
+que MotoSafe GBA predice el riesgo vial de forma precisa, pero sí
+sostiene que ordena el riesgo de forma consistente y verificable, con
+sus límites declarados en vez de ocultos. Esa distinción, entre predecir
+y priorizar con honestidad, es el resultado de fondo del proyecto hasta
+esta entrega.
