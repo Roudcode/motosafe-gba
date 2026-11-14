@@ -1,0 +1,28 @@
+{
+  "duration_seconds": 84.0,
+  "frames": 2016,
+  "metadata": {
+    "ffmpeg_version": "7.1-essentials_build-www.gyan.dev built with gcc 14.2.0 (Rev1, Built by MSYS2 project)",
+    "codec": "h264",
+    "pix_fmt": "yuv420p(progressive)",
+    "audio_codec": "aac",
+    "fps": 24.0,
+    "source_size": [
+      1920,
+      1080
+    ],
+    "size": [
+      1920,
+      1080
+    ],
+    "rotate": 0,
+    "duration": 84.0
+  },
+  "bytes": 11089575,
+  "decode": "complete without errors",
+  "visual_review": "one decoded frame for each of the 12 scenes, plus source scene previews",
+  "html_checks": "vm.Script, 12 scene positions, bounds, elapsed time, stop at 84 seconds, original image bytes, no external scripts",
+  "html_limit": "DOM substitutes, no visual browser validation; prior file protocol block respected",
+  "audio": "original instrumental synthesized locally; no narration; no human listening verification",
+  "app_tests": "not run; no application code changes"
+}

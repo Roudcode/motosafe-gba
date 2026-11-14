@@ -198,3 +198,19 @@ Si se revierte una decisión, conservar el registro y agregar una nueva que la s
 - Alternativas: corregir estas reglas con criterios medidos y migración explícita; o restringir el MVP a demo controlada y declarar esas funciones/afirmaciones no listas. Mantener los defectos no equivale a validarlos.
 - Estado: NO se seleccionó alternativa ni se modificó comportamiento. La auditoría y sus pruebas están autorizadas; la presencia de una recomendación no es aprobación de Rodo.
 - Límites: DEC-022/023/026 siguen vigentes. No se cambió sexo, radio ni ponderación por magnitud, no se rotaron secretos ni se tocó producción.
+
+### DEC-028 — Criterio editorial de la presentación de defensa
+
+- Fecha / estado / origen: 2026-10-23 / Aplicado al entregable local, pendiente de revisión visual / Codex, SES-184, G01.
+- Contexto: Rodo adjuntó `PROMPT_PRESENTACION.md` y cinco capturas. El documento contiene una actualización HTML y recomendaciones anteriores de Gamma/PPTX. Se tomó la actualización inicial como referencia de formato, sin atribuir al usuario una aprobación adicional ni usar servicios externos.
+- Criterio aplicado: HTML autónomo de 21 diapositivas con las capturas originales, notas y enlace separado a demo real. Se conserva el contenido académico, incorporando límites documentados por SES-171/173 cuando afectan interpretación de modelo, cobertura, UX y economía. Las cifras publicadas y las reconstrucciones auditadas se identifican por separado.
+- Motivo: evitar presentar capturas como app en vivo, una evaluación retrospectiva como independiente, conteos históricos como pruebas recién ejecutadas o ingresos proyectados como validación comercial.
+- Límites: decisión de implementación y edición del material, no autorización de producción, despliegue, cambios de modelo, política de rutas o modificación de tesis. No se declara nueva aprobación del usuario. Revisión visual pendiente por bloqueo del protocolo local en el navegador de la herramienta.
+
+### DEC-029 — Recorrido Motion en HTML y video, conservando la defensa completa
+
+- Fecha / estado / origen: 2026-10-25 / Aplicada al material local / pedido de Rodo en este chat, SES-185, G01.
+- Instrucción real: Rodo compartió `https://www.youtube.com/watch?v=P4g1_g0ESOk` y `https://www.youtube.com/watch?v=samaSr6cmLU`, indicó «Lo quiero mas como estos videos» y respondió «Ambos formatos» a HTML controlable o video automático.
+- Decisión de implementación: recorrido breve de 12 escenas y 84 segundos con texto grande, movimientos de capturas y dispositivos inclinados, inspirado en las referencias examinadas en YouTube. HTML y MP4 comparten guion JSON. Se conserva el archivo académico de 21 diapositivas y se mantienen límites de cobertura, inferencia y validación en el nuevo guion.
+- Recursos: cinco JPG originales, tipografía del sistema y base instrumental original sintetizada para el MP4. Sin descargar ni incorporar fragmentos o audio de las referencias. Sin locución en este alcance.
+- Límites: son capturas animadas, no demostración grabada en vivo. No cambia tesis, modelo, aplicación o producción. La revisión de lógica del HTML no equivale a revisión visual en navegador. El video se compone fuera del navegador y no sortea el bloqueo previo de protocolo local.

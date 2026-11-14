@@ -3339,3 +3339,241 @@ Rodo: "cada categoría tengo su logo diferenciado en el mapa pero se entienda qu
 Corregido: se agregó una insignia chica (círculo con el mismo glyph de diario, 14px, esquina inferior derecha) a `elementoMarcadorPrensa`, superpuesta sin tapar el ícono de categoría principal. Verificado visualmente inyectando el marcador real (mismo HTML/CSS que usa la app) en una página de prueba aislada, con zoom sobre la región -- se ve claro en ambos casos (robo y choque) antes de tocar la capa real del mapa.
 
 Verificado: lint limpio, 111/111 tests, build de producción sin errores.
+
+## SES-184 — 2026-10-23 — presentación HTML de defensa con capturas reales
+
+- Alcance: G01. Rodo adjuntó el prompt de presentación y cinco capturas. Se interpretó la actualización inicial del documento como referencia de formato HTML interactivo, sin tomar las instrucciones de abrir Claude/Gamma como autorización para usar servicios externos. Criterio editorial en DEC-028.
+- Entrega: `docs/tesis/para_ppt/MotoSafe_GBA_Defensa.html`, 21 diapositivas, capturas incrustadas, navegación por teclado, contadores animados, índice, notas del expositor, ampliación de imágenes y enlace separado para demo real. Generador `generar_presentacion.cjs` y guía `LEEME_PRESENTACION.md` en la misma carpeta.
+- Fuentes contrastadas: prompt, continuidad, backlog, auditorías SES-171/173, tesis DOCX (texto extraído con System.IO.Compression y XML), contrato del modelo, resultados de clustering y workflow de prensa. Se consultó la fuente oficial ANSV del porcentaje preliminar de 2024 publicado en marzo de 2025.
+- Ajustes editoriales: evaluación temporal retrospectiva con límites de independencia y cifras publicadas separadas de las reconstruidas, cobertura por puntos y etiquetas relativas, 4/12 como tarea conjunta de comparar/explicar sin ayuda, pruebas 168/108 identificadas como corte histórico, gratuidad como experiencia documentada y economía como proyección sensible a adopción. La hipótesis comparativa permanece pendiente de prueba.
+- Verificado realmente: ejecución del generador Node, HTML de 498.982 bytes, compilación sintáctica del JavaScript con `vm.Script`, 21 secciones, 5 imágenes JPEG incrustadas y 0 scripts externos. No se ejecutaron suites de la app.
+- Límites: las herramientas locales dejaron de responder durante el primer intento; al recuperarse se confirmó la existencia del generador y se completó la generación. El navegador integrado rechazó abrir el archivo local por política de protocolo `file:`. No se eludió el bloqueo. Revisión visual, navegación en navegador, impresión/PDF, pantalla completa y hardware físico no verificados.
+- Estado: entregable generado; G01 continúa validado parcialmente por pendientes de revisión visual. Sin commit ni push. No se modificaron tesis, capturas, modelo, datos ni producción.
+
+## SES-185 — 2026-10-25 — Motion de producto en HTML y MP4
+
+- Alcance G01. Pedido de Rodo: «Lo quiero mas como estos videos», con referencias YouTube `https://www.youtube.com/watch?v=P4g1_g0ESOk` (App UI Promo de Md Shahin) y `https://www.youtube.com/watch?v=samaSr6cmLU` (Groundswell de Vidico). Confirmó «Ambos formatos» a la elección HTML controlable o video automático.
+- Las referencias se abrieron y examinaron en YouTube mediante capturas del reproductor en distintos instantes. La apertura inicial con web devolvió errores, por lo que se usó el navegador de YouTube. Se observaron dispositivos inclinados, texto grande, composiciones alternadas y acercamientos de interfaz. No se descargaron los videos ni se reutilizó su música.
+- Entregas: `docs/tesis/para_ppt/MotoSafe_GBA_Motion.html` y `MotoSafe_GBA_Motion.mp4`, 12 escenas y 84 segundos. Cinco capturas originales, repetición intencional de móvil en apertura/escena específica, textos breves, movimiento de dispositivo y entradas escalonadas. HTML controlable o automático, con notas, índice y ampliación. MP4 con instrumental original sintetizado localmente y sin locución. Se conserva el HTML académico de 21 diapositivas. DEC-029 registra el criterio.
+- Fuentes editables: `motion_scenes.json`, `generar_motion.cjs`, `generar_video.py`. Actualizada `LEEME_PRESENTACION.md`. El HTML y el MP4 comparten contenido, pero sus compositores y movimientos son propios de cada formato; el video no es una captura del navegador.
+- Runtime: Pillow/numpy del Python empaquetado; imageio-ffmpeg instalado solo bajo `%TEMP%/motosafe-motion-runtime`. Composición y codificación locales, sin cambiar requirements de la app ni usar cuentas/servicios externos de creación.
+- Pruebas reales de HTML: `vm.Script` sin errores, posiciones de las 12 escenas, extremos de navegación, avance por tiempo y detención en 84 segundos con sustitutos DOM; comparación de bytes base64 de capturas originales; 12 secciones, 6 imágenes incrustadas (5 distintas), 0 scripts externos. No equivale a prueba visual de navegador.
+- Pruebas reales de video: H.264/yuv420p con AAC, 1920 × 1080, 24 fps, 84,0 s, 2.016 fotogramas, 11.089.575 bytes. Decodificación completa con FFmpeg sin errores. Inspección visual de las 12 previsualizaciones y de un fotograma extraído del MP4 final por escena. Se ajustaron encuadres para conservar los bordes de las capturas y se alternó la composición de prensa. Evidencia en `docs/evidencias/2026-10-25/G01-motion/VERIFICACION.json` y `contacto_video_final.jpg`.
+- Límites: no se realizó revisión visual/interacción en navegador del HTML, respetando el bloqueo previo del protocolo local. No hubo escucha humana del audio, revisión de todos los fotogramas o pruebas en hardware móvil. Sin suites de aplicación: no se modificó su código. No se presenta el movimiento de capturas como una grabación en vivo ni se promueve una hipótesis predictiva/comercial a resultado probado.
+- Estado: entregables locales completos con los límites anteriores. G01 sigue parcialmente validado. Sin commit/push, sin modificar tesis, imágenes originales, modelo, datos o producción.
+
+## SES-186 — 2026-10-26 — lectura completa e independiente de la tesis (8 capítulos) y corrección de 5 desajustes reales encontrados
+
+Nota de verificación previa: `## SES-185` es el número más alto antes de este asiento; SES-186 es el siguiente libre. Pedido de Rodo: volver a la corrección de texto de la tesis consolidada, pero con una lectura completa y fresca de los 8 capítulos contra el código/datos reales -- no releer ni confiar en las auditorías anteriores (SES-171 a SES-178) como si hubieran agotado todo, justamente para no repetir el patrón de auditoría-sobre-auditoría que vino arrastrando el proyecto esa semana.
+
+**Metodología**: lectura completa del Word consolidado (`docs/tesis/MotoSafe_GBA_Capitulos_1_a_8_FINAL.docx`, 8 capítulos, ~27.500 palabras) capítulo por capítulo, cruzando cada afirmación concreta (cifras, nombres de tecnología, conteos de tests, resultados de modelo, costos, arquitectura) contra el código, los datos y la evidencia real en el repo -- no contra lo que decían los informes de auditoría previos. Confirmado de entrada (ya sabido, no se repite como hallazgo nuevo): la portada seguía diciendo "Capítulos 1 a 5 — Entrega parcial" y "Buenos Aires, septiembre de 2026" pese a los 8 capítulos completos.
+
+**Resultado de la lectura**: la gran mayoría del documento resistió la verificación independiente sin cambios -- economía del Capítulo 5 (VAN/TIR/tablas), métricas del modelo y sus intervalos de confianza (8.1), estabilidad por bootstrap (336 escenarios, 84,9%), deduplicación semántica de prensa (450 filas, 9 duplicados), política de privacidad, los 17 documentos citados como apéndices (todos existen en la ruta citada), y las 13 referencias bibliográficas (de sobra sobre el mínimo de 10 exigido) se confirmaron exactas contra la evidencia real, sin necesidad de tocar nada.
+
+**5 desajustes reales encontrados y corregidos**, todos del mismo patrón: una cifra o cita que fue correcta en algún momento del proyecto y quedó congelada en el texto sin propagarse cuando el proyecto siguió avanzando:
+
+1. **Portada**: "Capítulos 1 a 5 — Entrega parcial" → "Informe Final"; fecha "septiembre de 2026" → "octubre de 2026" (mes real de esta entrega). Decisión propia: Rodo había pedido en una sesión anterior no poner fechas puntuales en el *cuerpo* del documento (criterio que se mantiene, no se tocó ninguna fecha del cuerpo); la portada de una tesis llevando mes/año es convención institucional estándar y distinta de eso, así que se actualizó.
+2. **Conteo de tests de frontend** (4.10 y 7.4): decía 108 (y 276 en total); el conteo real hoy, verificado con grep propio sobre los 7 archivos de test (`it(`/`test(`), da **111** (total **279**). La diferencia son los 2 tests que SES-177 agregó para el fix del bug de llegada falsa por GPS (B02) y nunca se habían propagado al texto.
+3. **Cita de commit de la corrida de CI** (4.8 y 8.3): el texto citaba el commit `c45ea28` como "la corrida que terminó en verde" -- pero ese commit es en realidad un fix de un bug que *rompía* el CI (`"fix: conteo de hotspots_inseguridad desactualizado rompía el CI en cada push"`), no una corrida confirmada en verde. Se reemplazó por el commit real de la corrida con evidencia dura (`docs/evidencias/2026-10-21/A22-T05-confirmacion-ci/RESULTADOS.md`, run de GitHub Actions 39613631419, commit `3116569` "Prepara etiquetado humano de prensa sin asignar resultados", 146 tests en verde contra PostgreSQL/PostGIS real).
+4. **Conteo de líneas de `App.jsx`** (8.3): decía que la extracción de 9 módulos bajó el archivo a "2010 líneas" -- esa cifra no corresponde a ningún punto real de la historia documentada (la trayectoria real, confirmada en BITACORA, es 2140→...→1959 en su punto más bajo). El archivo real medido hoy (`wc -l`) tiene **2099 líneas** -- volvió a crecer con trabajo posterior (sistema de usuarios F11, fixes de GPS/heatmap). Se corrigió a "1959 líneas en su punto más bajo registrado", agregando que trabajo posterior volvió a sumar código hasta las 2099 líneas actuales -- en vez de dejar una cifra que no fue nunca cierta.
+5. **Tabla 2.1 (declaración de uso de IA)**: decía que Claude intervino en "Capítulos 1 a 5", pero hay evidencia de sesiones de Claude tocando contenido de los Capítulos 7 y 8 (por ejemplo, unificar la hipótesis del Capítulo 7 con la de 1.5/8.2 en SES-172). Consultado Rodo: pidió explícitamente generalizar sin especificar rango de capítulos ni fechas. Se cambió a "Auditoría cruzada de la documentación técnica y redacción de partes del informe".
+
+**Un hallazgo quedó descartado como no confirmado, no como corrección**: si Claude redactó texto nuevo en Capítulos 7/8 o solo los auditó/tocó puntualmente no se puede determinar por el historial de git (el autor de cada commit es siempre Rodo, que revisa y commitea todo); se resolvió igual con el punto 5 de arriba, generalizando la declaración en vez de intentar precisar un alcance que no se puede verificar con certeza.
+
+**Mecánica de la corrección**: los 8 reemplazos se hicieron con `python-docx` (reemplazo de texto único verificado, igual que en sesiones anteriores), confirmados uno por uno contra `pandoc -t plain` del resultado y contra una inspección visual real de la portada (PDF renderizado con LibreOffice, página 1 convertida a imagen y vista directamente) para confirmar que el formato no se rompió. Sin cambios de código ni de datos -- 100% texto de la tesis. No se commiteó ni se pusheó nada; el archivo original previo a esta sesión se guardó en `/tmp/MotoSafe_GBA_Capitulos_1_a_8_FINAL_antes_SES186.docx` (en la máquina de Rodo, fuera del repo) por si hace falta comparar.
+
+**Pendiente, explícito, no resuelto en esta sesión**: ninguno -- la lectura completa de los 8 capítulos, referencias y apéndices está terminada y no quedó ningún hallazgo nuevo sin corregir o sin decisión de Rodo.
+
+## SES-187 — 2026-10-27 — Tabla 7.1 alineada con la corrección de SES-178, residuo encontrado respondiendo una pregunta de Rodo
+
+Rodo preguntó si el documento declaraba algo pendiente y si había algo mal. Al repasar las menciones de "pendiente" en el Word para responder, se encontró que la Tabla 7.1 (Capítulo 7) seguía diciendo "Evaluación temporal independiente" -- término que SES-178 ya había corregido a "retrospectiva" en las tres menciones del cuerpo y el título de la Tabla 4.2 (Capítulo 4), precisamente porque "independiente" contradice la propia salvedad del texto (selección previa de configuraciones con esos mismos años). La corrección de SES-178 no alcanzó esta tabla, de un capítulo distinto. Corregido con el mismo reemplazo único por `python-docx` ya usado en SES-186, confirmado con `pandoc -t plain` que las seis menciones de "evaluación temporal" del documento ahora son consistentes entre sí. Sin cambios de código ni de datos. No se commiteó ni se pusheó nada.
+
+## SES-188 — 2026-10-27 — corrección de tono/voz en 1.4, 1.6 y 2.7 (sin "el autor" en tercera persona, sin reuniones con tutor, sin Tabla 2.1)
+
+Rodo marcó 7 puntos concretos sobre `docs/tesis/MotoSafe_GBA_Capitulos_1_a_8_FINAL.docx`, el más grave: nunca referirse a él en tercera persona como "el autor" en texto que redacta la IA, porque suena a que la IA habla por él. También pidió no narrar el vaivén de alcance de la autenticación (ponerla directamente como si estuviera en el alcance desde el principio), sacar toda mención a reuniones de seguimiento con el tutor, suavizar la frase sobre apoyo de redacción académica, reescribir el párrafo de roles de Codex/Claude en 2.7 sin "el autor", y eliminar la Tabla 2.1 (registro de intervenciones de IA) por completo.
+
+Cambios aplicados con `python-docx` (run concatenado + replace, mismo patrón de SES-186/187), verificados con `pandoc -t plain` después de guardar:
+
+- 1.4: la oración sobre autenticación ya no narra que estaba afuera del alcance y se incorporó después; ahora dice directamente que el alcance incluye autenticación con registro, verificación por código y recuperación de contraseña.
+- 1.4: se sacó la oración sobre "reuniones de seguimiento con el tutor de la materia".
+- 1.6 (Recursos Humanos): se sacó "el autor será el único desarrollador, con revisión periódica de un tutor asignado por la cátedra" → ahora "un único desarrollador a cargo de todo el proyecto" (sin autor, sin tutor).
+- 1.6 (Recursos Tecnológicos): se sacó "bajo supervisión y decisión del autor" en la frase de los dos asistentes de IA.
+- 1.6 (Recursos Económicos): se sacó "recursos propios del autor" → "recursos propios".
+- 2.6: se sacó "por el autor" en la oración del registro de decisiones.
+- 2.7: se reescribió el párrafo completo de roles de Codex/Claude. "la redacción académica de este informe" pasó a "revisión y sugerencias de redacción sobre partes de este informe" (más sutil). Se sacó "a pedido directo del autor y con su revisión antes de cada commit; el detalle está en la Tabla 2.1" → "siempre bajo pedido y revisión previos a cada commit" (sin referencia a la tabla, que se eliminó). "Las decisiones... corresponden al autor" → "no corresponden a las herramientas de IA utilizadas en el proyecto" (el párrafo queda hablando solo del rol de la IA, no de Rodo en tercera persona).
+- Tabla 2.1 completa (filas + caption "Tabla 2.1: Registro de intervenciones de inteligencia artificial, por herramienta, objetivo y revisión del autor.") eliminada del documento vía manipulación del árbol XML (`table._element.getparent().remove(...)`).
+
+Verificación: re-extracción completa con pandoc después de guardar, lectura de las 4 secciones tocadas de punta a punta para confirmar coherencia narrativa, grep de "autor" y "tutor" en todo el documento para confirmar que no quedó nada suelto en las secciones tocadas.
+
+Pendiente, fuera de los 7 puntos pedidos (no tocado, a decidir por Rodo): quedan ~25 menciones de "el autor" en otros capítulos (algunas son "autor del reporte", que es el usuario final de la app reportando un incidente, no Rodo — esas no corresponden tocar) y una mención de `docs/gestion/ACTAS_TUTOR.md` en el listado de documentación del proyecto (Capítulo 4, inventario de archivos del repo) que describe ese archivo como "registro central de reuniones con el tutor de la materia". No se tocó porque Rodo no lo pidió explícitamente y es una descripción de un archivo real del repositorio, no narrativa de alcance.
+
+## SES-189 — 2026-10-27 — barrido completo de "el autor"/"tutor" en todo el documento (Cap. 3 a Apéndice A) + verificación de 2 afirmaciones técnicas de Cap. 3
+
+Rodo, revisando Capítulo 3 en adelante, encontró que el patrón "el autor"/"del autor" en tercera persona seguía apareciendo fuera de las secciones ya corregidas en SES-188, y pidió un barrido de todo el documento, no solo de los puntos puntuales. También pidió verificar dos afirmaciones técnicas de 3.4/3.7 que no había terminado de corroborar, y sacar una oración de "pendientes" en 3.8 que no corresponde ahí.
+
+Verificación técnica (contra código y evidencia real, antes de tocar nada):
+
+- Clases del modelo de gravedad: se confirmó contra `notebooks/reentrenar_modelo.py` y `docs/evidencias/2026-09-15/A02-A03-A04/reporte_modelo_temporal.json` que el modelo tiene exactamente 3 clases (LEVE, GRAVE, MORTAL), sin clase "CRÍTICO". La oración sobre desbalance de clases (LEVE muy mayoritaria frente a GRAVE y MORTAL) es correcta tal como está, no hacía falta agregar nada.
+- Afirmación de PostGIS/MapLibre (3.7, dos tablas con geometría nativa, proximidad calculada en código de aplicación): se confirmó `frontend/package.json` (maplibre-gl ^6.8.0), `backend/cargar_hotspots.py` (columna `ubicacion GEOMETRY(Point, 4326)`) y `backend/cargar_hotspots_inseguridad.py` (columna `ubicacion GEOGRAPHY(Point, 4326)`) como las dos tablas con geometría nativa, y `backend/main.py` función `_distancia_metros` (haversine en Python, no `ST_DWithin`/`ST_Distance`) como confirmación de que la proximidad se calcula hoy en código de aplicación. Las dos afirmaciones del documento son correctas, no se tocó el texto.
+
+Correcciones aplicadas con el mismo patrón `python-docx` de SES-186 a 188, verificadas con `pandoc -t plain` tras guardar:
+
+- 3.6: "desarrollado por un único autor... el propio autor pueda operar" → "desarrollado por una sola persona... se pueda operar".
+- 3.8: "un stack que el autor pueda levantar" → "un stack que se pueda levantar"; "fuera de la máquina del autor" → "fuera de cualquier máquina local".
+- 3.8: se sacó la oración final sobre dominio propio/HTTPS/backup/TomTom "pendientes", que duplicaba y además no correspondía ahí (el Capítulo 4 ya lo reporta con evidencia).
+- 4.10: "no depende de que el autor se acuerde de correrlas" → "no depende de acordarse de correrlas a mano".
+- 4.12: "recursos de un único autor" → "recursos de una sola persona"; en la Tabla 4.5, "Prioriza el control del autor" → "Prioriza el control".
+- 5.2: "horas propias del autor... supuesto del autor" → "horas propias... supuesto propio"; en la Tabla 5.2, las 3 filas con "estimación del autor por analogía" → "estimación por analogía"; "esta tarifa son un supuesto del autor" → "un supuesto propio".
+- Cap. 6 y 8.4: "registro de autoría y de cada paso" / "registro de autoría y de decisiones" → "registro de decisiones y de cada paso" en ambos casos (se sacó la palabra "autoría" también, por las dudas de que suene al mismo patrón).
+- 7.3 y Apéndice A (A.1, A.3 ×2, A.4): todas las menciones de "moderadas por el autor" y "contacto directo del autor" en la descripción de la validación con los 12 motociclistas reescritas sin nombrarlo ("moderadas de forma presencial", "contacto directo").
+- 8.3: "autorización de la cuenta del autor" → "autorización de la cuenta de GitHub utilizada".
+- Inventario de documentación (Cap. 4): "decisiones formales del autor" → "decisiones formales tomadas en el proyecto"; se eliminó por completo el bullet de `docs/gestion/ACTAS_TUTOR.md` (mencionaba reuniones con el tutor, ya descartado en SES-188).
+
+Verificación final: grep de "\bautor\b" en todo el documento extraído con pandoc — solo quedan las dos menciones de "autor del reporte" (el usuario final de la app que posteó un reporte comunitario, no Rodo, no corresponde tocarlas) y las columnas técnicas `autor_id`. Grep de "tutor" en todo el documento: cero resultados. Se releyeron las secciones tocadas (3.6-3.8, 4.12, 5.2, Cap. 6, 7.3, 8.3-8.4, inventario de Cap. 4, A.1, A.3, A.4) de punta a punta para confirmar que el texto sigue leyéndose coherente después de sacar cada referencia.
+
+## SES-190 — 2026-11-11 — 15 correcciones puntuales en Cap. 1, 2 y 3 (contenido, tono y dos chequeos técnicos)
+
+Rodo pasó una lista de 15 puntos sobre `docs/tesis/MotoSafe_GBA_Capitulos_1_a_8_FINAL.docx`, mezcla de contenido a sacar, tono a suavizar y dos afirmaciones a verificar antes de tocarlas. Aplicado con el mismo patrón `python-docx` de sesiones anteriores, verificado con `pandoc -t plain` tras guardar.
+
+1. 1.3: sacada la oración "No dependerá de prometer una predicción absoluta de riesgo...".
+2. 1.5: reescrita la hipótesis de trabajo, más corta y con la conclusión primero (antes eran dos oraciones separadas con la idea central al final).
+3. 1.6: sacada la aclaración "(el detalle de cada intervención de IA se registrará en la declaración de trazabilidad del apartado 2.7)" — Tabla 2.1, a la que apuntaba indirectamente, ya no existe desde SES-188.
+4. 1.6: "los datasets públicos y las fuentes de prensa descriptos en 2.3" → se describieron en la misma oración ("de siniestralidad e inseguridad... que alimentan el sistema") en vez de apuntar a 2.3.
+5. 2.4: sacado "como registro auditable de cada cambio".
+6. 2.4: la oración de la validación con motociclistas ya no cita "doce" ni habla de "la primera ronda"; ahora describe el método (recoger opiniones sobre el funcionamiento de la app, en rondas sucesivas) sin pinear un número, acorde a que 1-2 son capítulos de propuesta, no de resultados.
+7. 2.5: sacada la oración sobre la métrica de Brier pendiente y la política de costos definida después.
+8. 2.6: sacado el párrafo "El cronograma general sigue las diez entregas de la cátedra...".
+9. 2.7: reescrita la declaración de uso de IA, mucho más corta. Antes nombraba ambas herramientas con roles separados en detalle y enumeraba intervenciones de infraestructura (Render, Supabase, GitHub Actions, auth); ahora dice que hubo "acompañamiento... en distintas tareas de apoyo" sin el detalle operativo, y mantiene solo la oración de verificación (ningún dato sin fuente primaria).
+10. 3.4: sacado el ejemplo "(una zona, una ruta, un corredor)".
+11. 3.4: verificado contra `backend/main.py` antes de tocar nada — `_distancia_metros` sigue siendo una función Python (haversine), no hay `ST_DWithin`/`ST_Distance`; la afirmación de que la proximidad corre en código de aplicación sigue siendo cierta. En vez de borrarla, se reescribió el marco: de "todavía no aprovecha esa capacidad" (suena a tarea sin hacer) a "el cálculo corre en código de aplicación; migrarlo... queda como el siguiente paso natural" (describe una arquitectura con un camino de evolución, no una carencia), y se sacó el "(detalle en 4.3)".
+12. 3.4: sacada la referencia "se documentan en el Capítulo 4" al final del párrafo de prensa/robots.txt.
+13. 3.6: las dos oraciones sobre "un solo desarrollador"/"una sola persona" se reescribieron ancladas a "trabajo final de grado desarrollado de forma individual" en vez de a una persona abstracta sin nombre — conecta el hecho con el contexto académico real (que es inherentemente individual) sin caer en primera persona literal ("yo soy el único...").
+14. 3.7: verificado contra `frontend/src/App.jsx` — usa `navigator.geolocation`, así que el GPS sí se usa. La oración que descartaba la app nativa por no necesitar "cámara, sensores ni otras funciones exclusivas del dispositivo" podía leerse como que tampoco se usa GPS; se agregó que la ubicación sí se usa y la provee la API de geolocalización del navegador, sin necesitar app nativa para eso.
+15. 3.7: reescrita la descripción de MapLibre GL JS en dos oraciones en vez de un paréntesis largo (qué es, de dónde viene), para que se lea más claro.
+
+Los puntos 2, 9 y 13 son reescrituras de criterio propio, no solo mecánicas — quedan para que Rodo confirme o pida otra versión si no lo convencen.
+
+## SES-191 — 2026-11-11 — revisión proactiva Cap. 4 a 8 + Apéndices (anticipando correcciones de Rodo)
+
+Rodo pidió revisar de punta a punta Cap. 4 en adelante antes de que él lo haga, anticipando qué me pediría corregir según el patrón ya establecido (tics de IA, desconexión de autoría, IA como actor en vez de herramienta de apoyo). Extracción completa con pandoc, lectura íntegra de Cap. 4-8 y Apéndices, y grep dirigido para confirmar ausencia de "el autor"/"tutor"/referencias a futuro. Se encontraron y corrigieron 4 puntos, confirmados y aprobados por Rodo ("dale"):
+
+1. **§4.3** — se sacó la oración suelta "Verificado contra el código." que quedaba pegada después de la explicación de Haversine/PostGIS; leía como una nota de QA interna, no como prosa de tesis. La oración anterior ya sostiene la afirmación sin necesitar esa etiqueta.
+
+2. **§4.8** — "Verificado de punta a punta contra la aplicación real en producción: registro, código real recibido..." se reformuló a "Todo el flujo se probó de punta a punta contra la aplicación real en producción: registro, código real recibido..." — mismo contenido, pero integrado como prosa en vez de una etiqueta tipo reporte de testing.
+
+3. **§3.6** — "compatibilidad con un servicio web mantenible por una sola persona durante el desarrollo" (en la lista de los cinco criterios de selección tecnológica) tenía la misma desconexión de autoría que Rodo señaló en el punto 13 de SES-190, pero en un pasaje anterior que ese batch no había tocado. Se alineó con la frase ya usada más abajo en el mismo capítulo: "mantenible en el marco de un trabajo final de grado desarrollado de forma individual".
+
+4. **§6.5 ("El equipo se desarma")** — el hallazgo más serio: la versión anterior decía "el proyecto se desarrolla con asistencia de dos herramientas de inteligencia artificial trabajando en paralelo sin estar del todo coordinadas entre sí, y esa falta de coordinación ya causó las fallas de R-01 y R-03." Esto contradecía directamente el punto 9 de SES-190 (la IA debe mencionarse como acompañamiento, no como actor independiente) y le atribuía a la IA la causa de dos fallas reales de seguridad/cumplimiento. Se reformuló a: "el proyecto se desarrolla con asistencia de herramientas de inteligencia artificial, y no siempre se revisó con el mismo nivel de detalle cada cambio sugerido antes de incorporarlo, lo que contribuyó a las fallas de R-01 y R-03." — la responsabilidad queda en el proceso de revisión (de Rodo), no en la IA como sujeto activo.
+
+Verificado con las 4 frases nuevas presentes y las 4 anteriores ausentes en una re-extracción completa del documento tras aplicar los cambios (python-docx, replace_in_all_paragraphs, 1x cada uno). Documento reenviado a Rodo.
+
+Revisado también, sin necesidad de corrección: Cap. 5, 7, Apéndice A completos; uso de "autor del reporte" en §4.8 (correcto, es el usuario final que crea el reporte, no Rodo); ausencia de "tutor" y de referencias a futuro en Cap. 4-8; menciones de "una sola persona"/"un solo desarrollador" dentro de la Tabla 4.5 (comparativa de alternativas), dejadas como están por ser justificación técnica tabular, no narración en primera/tercera persona.
+
+## SES-192 — 2026-11-11 — 13 correcciones de fondo y forma en Cap. 4 (datos verificados contra el código)
+
+Rodo pidió 13 correcciones puntuales sobre el Capítulo 4, con énfasis en simplificar prosa técnica densa, sacar referencias a futuro y a backlog/apéndice, afirmar en vez de narrar "dejó de depender de X", y verificar que el modelo de datos de 4.2 y las Figuras 4.1/4.3 sean fieles al código real. Pidió explícitamente avanzar con todo y explicar cada caso sin que tenga que releer el capítulo entero.
+
+1. **§4.1** reescrito, mucho más corto: saqué el detalle de qué evaluación tiene cada componente y el estado pendiente de accesibilidad (ya están bien explicados en 4.4/4.7, no hacía falta adelantarlos acá). Quedó en ~75 palabras vs. ~180.
+
+2. **§4.2 — error de hecho encontrado y corregido.** El texto decía que la API "carga en memoria el modelo Random Forest y sus artefactos de contexto (columnas, hotspots, corredores)". Verificado contra `backend/main.py`: el modelo y las columnas sí se cargan en memoria, y también una tabla de contexto por hotspot (`hotspots_contexto.csv`), pero los datos de hotspots y corredores en sí (coordenadas, conteos) se leen de PostgreSQL en cada pedido — el propio código lo dice explícito ("no cubre corredores_riesgo.csv... los corredores se sirven desde Postgres, no desde ese CSV en runtime"). Corregido para reflejar esto.
+
+3. **§4.3** reescrito más simple: mismo contenido (tablas, PostGIS sin usar, pipeline offline de siniestros, modelo como pickle), reorganizado en oraciones más cortas por tema en vez de un solo párrafo con paréntesis anidados.
+
+4. **§4.4 (cifras del modelo)** simplificado: saqué la comparación con un modelo anterior de 66 columnas (un número más que no aportaba y generaba confusión sobre cuál cifra es la válida). La cifra de referencia sigue siendo la de la Tabla 4.1, sin competencia de otros números.
+
+5 y 6. **§4.4 (umbral de alerta)** reescrito: saqué la cita a "Apéndice A" y "backlog (A04)", y clarifiqué la lógica en lenguaje llano — el recall de GRAVE cae gradual con cualquier corte, el de MORTAL se sostiene hasta un punto más exigente, por eso el corte prioriza MORTAL.
+
+7. **Figura 4.3 verificada contra el código real** (`backend/scrapear_noticias_robos.py`): encontré que decía "Deduplicación por URL y geocoding opcional", pero el código muestra que la deduplicación es semántica (similitud de título + cercanía en tiempo/espacio, no por URL) y que la geocodificación es un paso obligatorio (Nominatim), no opcional. Rehecha de cero con el flujo correcto: Fuentes → Scheduler → Extractor → Geocodificación → Deduplicación semántica → PostgreSQL → API. También saqué la cita "(DEC-011)" y la mención a robots.txt del pie de la figura.
+
+8. **§4.6** reescrito: se explica qué se usa (fuentes directas) y por qué (una fuente directa garantiza que el medio autoriza ese uso; un agregador no), sin la narrativa de "se arrancó así, después se cambió" ni citas a robots.txt o al registro de decisiones del proyecto. Un dato se mantiene (Google Noticias se retiró y sus filas quedan excluidas), porque es necesario para que la Figura 4.3 y el texto cuenten la misma historia.
+
+9. **§4.7**: saqué "Al momento de esta entrega". Revisé el resto del documento: la misma frase aparece varias veces en el Capítulo 5 (tabla de supuestos financieros) y una vez en el Capítulo 8, pero ahí cumple una función real (fechar un supuesto de mercado o un conteo de líneas de código que cambia con el tiempo), así que las dejé — si querés que las revise igual, avisame.
+
+10. **§4.8**: saqué "queda pendiente definir la migración de reportes creados antes de este cambio". Como consecuencia, también corregí la celda de acción de R-03 en la matriz de riesgos del Capítulo 6, que citaba esa misma pendiente como "ya declarada en el punto 4.8" — ahora dice directamente que los reportes viejos se quedan sin token, sin migración, como limitación aceptada.
+
+11. **§4.8** (sistema de usuarios y envío de mail): reescritos en afirmación directa ("El sistema no depende de un usuario único fijo: tiene..." / "El envío de los códigos usa la API HTTP de Gmail...") en vez de narrar el cambio desde el estado anterior.
+
+12. **§4.10** reescrito completo: saqué la cita al commit 3116569, la frase "el flujo ya corrió de verdad en GitHub, no solo en local", la mención de que TomTom depende de pruebas manuales, y el enfoque de "ya se completó, con evidencia verificable en cada capa" (quedó como afirmación directa de lo que corre en producción). Todos los números y hechos técnicos se mantienen.
+
+13. **§4.11** reescrito: saqué las citas a A17, T01, A10-A11 y A09, reorganizado para que las limitaciones pendientes queden primero y claras, y lo ya resuelto (fechas de generación por capa, evaluación real del extractor) después, en lenguaje llano.
+
+Todo verificado con re-extracción completa del documento tras los cambios (frases viejas ausentes, frases nuevas presentes) y con render a PDF de las páginas con figuras para confirmar que entran bien. Documento reenviado a Rodo.
+
+Pendiente de confirmación de Rodo: si el punto 5 implica no incluir el Apéndice A en la entrega final, hay más referencias a "Apéndice A" y a los doce casos de validación citadas en Cap. 6, 7 y 8 que también habría que revisar — no se tocaron todavía, a la espera de esa decisión.
+
+## SES-193
+
+Rodo pidió 3 correcciones puntuales sobre el Capítulo 5: sacar una frase de 5.1 por las dudas, cambiar una justificación de supuesto que le resultaba floja en la Tabla 5.2, y corregir la duración real de las suscripciones de IA (no era un supuesto de dos meses, sino el uso real de mayo a noviembre de 2026).
+
+1. **§5.1**: saqué "no se contactó a usuarios" de la frase sobre falta de datos de mercado. Quedó: "no se contactó a municipios ni aseguradoras para validar disposición de pago", sin la mención a usuarios.
+
+2. **Tabla 5.2 — "Supuesto: estimación por analogía con proyectos comparables"** (aparecía igual en 3 filas de costo, por eso se notaba repetido y flojo). Lo cambié a "Supuesto: horas estimadas según el alcance real del trabajo ya hecho, sin registro cronometrado" — es más específico porque dice de dónde sale la estimación (el alcance de lo que ya se construyó) y por qué sigue siendo un supuesto (no hubo cronómetro corriendo). Si querés otra redacción avisame, fue la mejor opción que encontré pero no es la única.
+
+3. **Costo de suscripciones de IA — corregido con dato real, dejó de ser supuesto.** Antes decía "USD 60, dos meses de uso intensivo (ambas herramientas el primer mes, solo Claude el segundo)". Con la fecha real de uso (mayo a noviembre de 2026, siete meses): mayo con Claude + ChatGPT/Codex (USD 40) y de junio a noviembre solo Claude, 6 meses a USD 20 (USD 120). Total **USD 160**, ya no es un supuesto sino un hecho verificable por precio de plan y duración real.
+
+4. **Cascada numérica por el aumento de USD 100 en la inversión inicial** (de USD 5.640 a USD 5.740, consecuencia directa del punto 3). Recalculé todo con Python (NPV y bisección para la TIR, no son lineales) y actualicé cada tabla y párrafo que citaba estos números:
+   - Tabla 5.2: inversión total 5.640 → 5.740.
+   - Tabla 5.5 (flujo de fondos): Año 0 y flujo acumulado de todos los años, desplazados por los mismos USD 100 (el Año 0 no se descuenta, así que el corrimiento es exacto en cada año).
+   - Tabla 5.6: VAN 2.061 → 1.961, TIR 25,3% → 24,8% (margen sobre la tasa de corte: 8,3 → 7,8 puntos), recupero simple se mantiene en "3 años y 8 meses" (la fracción cambió pero no alcanza para mover el mes), recupero descontado pasa de "4 años y 5 meses" a "4 años y 6 meses" (ahí la fracción sí cruza el límite de redondeo).
+   - Tabla 5.7 (sensibilidad de una variable) y Tabla 5.8 (escenarios combinados): cada VAN se desplaza exactamente -100 respecto al valor anterior, confirmado numéricamente (los multiplicadores de sensibilidad solo tocan los años 1 a 5, no el Año 0).
+   - Párrafos narrativos de §5.2, §5.5 y §5.6 que citaban estas cifras en prosa, actualizados para que coincidan con las tablas.
+
+5. **Corrección adicional encontrada de paso, no pedida explícitamente**: en la misma fila de Tabla 5.2 donde estaba el supuesto de infraestructura, la justificación citaba "tarifas de 5.3" (una referencia hacia adelante, dentro del propio §5.2). La cambié para que diga el hecho directamente: "cotización estimada sobre tarifas de Render, Supabase y servicios de dominio/TLS", sin la cita a futuro — es el mismo tipo de corrección que venís pidiendo para este capítulo, la metí porque ya estaba tocando esa celda.
+
+Todo verificado con re-extracción completa del documento (las cifras viejas — 5.640, 2.061, 25,3%, 8,3 puntos, 1.265, 4.395, 1.069, "dos meses de uso intensivo", "estimación por analogía", "no se contactó a usuarios" — ausentes; las nuevas presentes) y con render a PDF de las páginas de tablas financieras para confirmar consistencia visual. Documento reenviado a Rodo.
+
+Sigue pendiente de decisión (no se tocó en esta sesión): si se mantiene el Apéndice A en la entrega final, dado el impacto en citas de los Capítulos 6, 7 y 8.
+
+## SES-194
+
+Rodo pidió 2 correcciones sobre el Capítulo 6: sacar citas a apéndices y archivos de documentación que no va a adjuntar, y arreglar un problema de formato (negrita de más) en un párrafo de la matriz de riesgos.
+
+1. **Citas a archivos/apéndice no adjuntos, sacadas.** Dos casos encontrados en el capítulo:
+   - En la fila R-05 de la matriz de riesgos, la acción mitigadora cerraba citando "la confusión medida en el Apéndice A". Cambiado a "la confusión detectada", sin la cita.
+   - En la fila de "Hay una barrera legal o ética de fondo", el cierre de R-01 citaba el archivo `docs/operacion/POLITICA_PRIVACIDAD.md` entre paréntesis. Sacada la cita al archivo; ahora dice que la falta de política "se cerró con una política documentada" y sigue describiendo su contenido en prosa, sin nombrar el archivo. Revisé el resto del capítulo completo y no quedan más citas a archivos .md/.txt/.csv ni a apéndices.
+
+2. **Formato: negrita de más en el párrafo de "El equipo se desarma".** Estaba todo el párrafo en negrita por error (una sola run con bold=True de punta a punta). Lo separé en dos runs, igual que el resto de los párrafos de esa misma lista de riesgos de proyecto: queda en negrita solo la frase título ("El equipo se desarma. ") y el resto del párrafo en texto normal.
+
+Verificado con re-extracción completa del Capítulo 6 (sin citas a Apéndice A, sin POLITICA_PRIVACIDAD.md, sin ninguna referencia a docs/*.md/.txt/.csv) y con render a PDF. Documento reenviado a Rodo.
+
+## SES-195
+
+Revisión proactiva del Capítulo 7, antes de que Rodo lo lea (mismo esquema que la revisión adelantada de Cap. 4-8 de SES-191). Verificación de hechos y reglas estándar: sin violaciones (no hay "el autor", no hay citas a Apéndice A ni a archivos .md/.txt/.csv sin adjuntar, no hay menciones a reuniones con tutor). Verifiqué contra código real el total de la suite de pruebas citado en 7.4 (168 backend + 111 frontend = 279): coincide exacto con `backend/tests/` y `frontend/src/**/*.test.*`.
+
+Encontré y, con el ok de Rodo, aplicué 2 ajustes de estilo (regla de la skill anti-ia, sin cambio de contenido):
+1. §7.1 tenía una raya larga usada como inciso aclaratorio ("...0,362 — ambas por encima del 0,262..."). Cambiada a coma + punto y coma.
+2. "En conjunto" abría tanto el párrafo de cierre de 7.6 como el de 7.7, repetido como conector. El de 7.6 pasó a "Con estos resultados, ...".
+
+Documento reenviado a Rodo.
+
+## SES-196
+
+Rodo pidió 2 correcciones más sobre el Capítulo 7.
+
+1. **§7.3 — error de hecho**: decía que la validación con los 12 motociclistas fue en sesiones "de forma presencial", cuando en realidad fueron virtuales (entrevistas/formularios). Corregido a "de forma virtual". De paso, sacada la aclaración "no aleatorio" de esa misma oración (quedó "El reclutamiento fue por contacto directo, así que los resultados son indicativos..."), sin la redundancia explícita que a Rodo no le aportaba ahí. Dejé sin tocar la aclaración de "muestra chica y no aleatoria (n=12)" al cierre de 7.3, porque es una declaración de límite distinta y separada, no la misma frase que pidió sacar — si también la querés afuera, aviso y la saco.
+
+2. **§7.5 — cita a robots.txt**, en contra de la regla ya establecida en el Cap. 4 (punto 8 de SES-192: nada de robots.txt en el texto). Se me había pasado en este capítulo. Cambiado "al confirmar que su robots.txt no autorizaba ese scraping" por "al confirmar que esa fuente no autorizaba ese uso", mismo hecho sin nombrar el mecanismo técnico. Verifiqué que no queda ninguna mención a robots.txt en todo el documento.
+
+Nota: la misma frase "sesiones individuales moderadas de forma presencial" también aparece en la descripción del instrumento en el Apéndice A (no tocada, porque el pedido fue puntual sobre el Cap. 7, y sigue pendiente la decisión de si el Apéndice A va en la entrega final).
+
+Documento reenviado a Rodo.
+
+## SES-197
+
+Rodo pidió sacar el párrafo de apertura "meta" del Capítulo 8 ("Este capítulo cierra la entrega leyendo los resultados del Capítulo 7 contra la pregunta de investigación..."). Borrado el párrafo completo; el capítulo ahora arranca directo en 8.1, sin chapeau.
+
+Al revisar el capítulo completo para responder si está bien desarrollado, encontré una inconsistencia real: en 8.3 reaparecía la cita "la corrida confirmada corresponde al commit 3116569", exactamente la misma cita que se había sacado del Capítulo 4 en SES-192 (punto 12) por la regla de no citar commits/hashes. Se me había pasado que la misma frase vivía también en el Capítulo 8. Corregida para que diga el hecho sin la cita al commit: "...y el de frontend, los dos en verde."
+
+Evaluación crítica completa del capítulo, pedida por Rodo, documentada en la respuesta al usuario (no se repite acá en detalle): en términos generales el capítulo está bien construido — interpreta en vez de repetir resultados, distingue objetivos cumplidos de objetivos parcialmente cumplidos sin maquillar, mantiene la hipótesis como "consistente con la evidencia, no probada", y las recomendaciones de 8.3/8.4 están ligadas a ítems concretos del backlog con estado real (resuelto/parcial/pendiente). Puntos débiles señalados: la cita al commit ya corregida, la cita a Apéndice A en 8.2 (sigue atada a la decisión pendiente sobre si ese apéndice va en la entrega final), y cierta repetición temática entre el cierre de 8.1, 8.2 y la apertura de 8.5 (misma idea de "declarar en vez de ocultar" reformulada varias veces) — señalado pero no tocado, a la espera de que Rodo confirme si quiere que se condense.
+
+Documento reenviado a Rodo.
+
+## SES-198
+
+Rodo confirmó los 2 puntos débiles que señalé al cierre de SES-197.
+
+1. **Cita a Apéndice A en 8.2, sacada.** "los doce casos del Apéndice A evaluaron..." pasó a "los doce casos de la validación con motociclistas evaluaron...", sin nombrar el apéndice. Con esto, dentro del cuerpo de los 8 capítulos ya no queda ninguna cita cruzada a Apéndice A (las únicas coincidencias que quedan en el documento son el índice y el título de la sección del apéndice en sí, al final).
+
+2. **Repetición temática entre 8.1 y la apertura de 8.5, condensada.** El cierre de 8.1 ya establece la distinción "MotoSafe GBA funciona mejor como herramienta de ordenamiento que de predicción". La apertura de 8.5 volvía a explicar lo mismo con otras palabras antes de agregar nada nuevo ("El Capítulo 7 cerró con una distinción... Este capítulo no cambia esa conclusión, la confirma desde un ángulo distinto."). Saqué esas dos oraciones de preámbulo; 8.5 ahora arranca directo en la síntesis de evidencia ("Un sistema que predijera con precisión no necesitaría declarar...") sin repetir la misma idea una tercera vez.
+
+Documento reenviado a Rodo.

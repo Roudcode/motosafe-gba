@@ -341,3 +341,11 @@ Lista de tareas abiertas para no perder el hilo entre sesiones, en el orden en q
 - [ ] **Vista de navegación 3D / heading**: rotar el mapa según la orientación de marcha, o al menos rotar el ícono de posición (opción más segura por compatibilidad con `react-leaflet-cluster`).
 - [ ] **Evaluación de hosting real**: backend + Postgres/PostGIS + frontend (Railway, Render, Fly.io, VPS u otra opción).
 - [ ] **Pendiente administrativo**: pushear el commit `1bd3213` (auditoría de arquitectura) — quedó commiteado local pero sin subir.
+
+## Autor
+
+Rodolfo Barrionuevo — Proyecto Final de Ingeniería Informática, Universidad del Salvador (USAL).
+
+## Licencia
+
+MIT. Ver [LICENSE](./LICENSE).

@@ -1,5 +1,17 @@
 # Continuidad del proyecto — leer primero
 
+## SES-185, 25/10/2026 — versión Motion en HTML y MP4
+
+Rodo pidió un estilo similar a las referencias `P4g1_g0ESOk` y `samaSr6cmLU` de YouTube y confirmó ambos formatos. Entregas locales: [HTML Motion](../tesis/para_ppt/MotoSafe_GBA_Motion.html) y [video MP4](../tesis/para_ppt/MotoSafe_GBA_Motion.mp4), 12 escenas, 84 segundos. Dispositivos inclinados, capturas reales con movimiento, tipografía grande y fondos claro/oscuro/amarillo. El MP4 tiene instrumental original sintetizado, sin voz. Se conserva la defensa anterior de 21 diapositivas. Guion JSON y generadores en la misma carpeta; alcance editorial en DEC-029.
+
+Verificado: MP4 H.264/AAC, 1920 × 1080, 24 fps, 2.016 fotogramas, 84,0 segundos, decodificación completa sin errores. Se inspeccionó un fotograma final de cada escena y sus previsualizaciones. HTML: sintaxis, navegación de las 12 escenas y extremos, avance temporal, pausa final y capturas originales incrustadas, con sustitutos DOM. Revisión visual en navegador y escucha humana del audio no realizadas; no se sorteó el bloqueo previo de `file:`. Evidencia en [G01-motion](../evidencias/2026-10-25/G01-motion/VERIFICACION.json). Sin suites de la app, commit, push ni cambios productivos. G01 continúa parcialmente validado.
+
+## SES-184, 23/10/2026 — presentación HTML para la defensa
+
+Entregable local bajo G01: [presentación de 21 diapositivas](../tesis/para_ppt/MotoSafe_GBA_Defensa.html), [guía de uso y límites](../tesis/para_ppt/LEEME_PRESENTACION.md) y generador editable en la misma carpeta. Se tomó la actualización HTML del prompt adjunto como referencia, con las cinco capturas originales incrustadas, navegación, animaciones, índice, ampliación y notas del expositor. Se distinguen evaluación retrospectiva y reconstrucción auditada, cobertura por puntos, cifras históricas de pruebas y economía condicional. La demo real se ofrece mediante un enlace separado, no como simulación dentro de las capturas.
+
+Verificado: generación con Node, sintaxis del JavaScript incrustado, 21 secciones, 5 JPEG incrustados y ausencia de scripts externos. Revisión visual e interacciones pendientes: el navegador integrado rechazó abrir `file:` por política de seguridad. No se intentó sortear ese bloqueo. Sin pruebas nuevas de la app, sin commit/push, sin editar tesis, modelo o producción. G01 sigue parcialmente validado.
+
 ## SES-176, 23/10/2026 — evaluación UX móvil vertical
 
 Informe heurístico en [AUDITORIA_UX_MOVIL_VERTICAL_2026-10-23.md](../experiencia/AUDITORIA_UX_MOVIL_VERTICAL_2026-10-23.md). Prioriza búsqueda con teclado virtual, simplificación visual del mapa, comparación de rutas y lectura de navegación en 360–390 px; también prensa, reportes y errores. Se revisaron código, CSS, capturas y evidencias V existentes. No hubo prueba nueva en teléfono físico ni cambio de interfaz. Los criterios corresponden a IDs ya existentes V01/V03/V05/V06/V08/V09/V10/V13/V14, A23 y T02.
